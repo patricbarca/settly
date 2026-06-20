@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { addGroup } from "../lib/store";
 import { uid } from "../lib/format";
+import { useUser } from "../lib/auth";
 import { useT } from "../lib/i18n";
 import { CURRENCIES } from "../lib/currencies";
 import type { Group } from "../lib/types";
@@ -9,24 +10,26 @@ import { Overlay } from "./Overlay";
 
 export function CreateGroupModal({ onClose }: { onClose: () => void }) {
   const t = useT();
+  const user = useUser();
   const [name, setName] = useState("");
   const [currency, setCurrency] = useState("USD");
   const [people, setPeople] = useState("");
 
   function create() {
     if (!name.trim()) return;
-    let names = people
+    const meId = uid();
+    const me = { id: meId, name: user?.name || "Tú", avatar: "" };
+    const others = people
       .split(",")
       .map((s) => s.trim())
-      .filter(Boolean);
-    if (names.length === 0) names = ["Tú"];
-    const members = names.map((n) => ({ id: uid(), name: n, avatar: "" }));
+      .filter(Boolean)
+      .map((n) => ({ id: uid(), name: n, avatar: "" }));
     const group: Group = {
       id: uid(),
       name: name.trim(),
       currency,
-      meId: members[0].id,
-      members,
+      meId,
+      members: [me, ...others],
       expenses: [],
     };
     addGroup(group);

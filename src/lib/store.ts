@@ -1,57 +1,106 @@
 import { useSyncExternalStore } from "react";
 import type { Group } from "./types";
+import { supabase } from "./supabase";
 import { createSeed } from "./seed";
 
-const KEY = "settly.v1";
+type State = { groups: Group[]; activeId: string | null; loading: boolean };
 
-type State = { groups: Group[]; activeId: string | null };
+let state: State = { groups: [], activeId: null, loading: true };
+let currentUserId: string | null = null;
+let channel: ReturnType<typeof supabase.channel> | null = null;
 
-let state: State = load();
 const listeners = new Set<() => void>();
 
-function load(): State {
-  if (typeof window === "undefined") return { groups: [], activeId: null };
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as State;
-      if (parsed.groups) return { groups: parsed.groups, activeId: null }; // arranca en el inicio
-    }
-  } catch {}
-  const init: State = { groups: [createSeed()], activeId: null };
-  persist(init);
-  return init;
-}
-
-function persist(s: State) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(KEY, JSON.stringify(s));
-  } catch {}
-}
-
 function emit() {
-  persist(state);
   listeners.forEach((l) => l());
 }
 
-function subscribe(l: () => void) {
+function sub(l: () => void) {
   listeners.add(l);
-  return () => {
-    listeners.delete(l);
-  };
+  return () => listeners.delete(l);
 }
 
+async function loadGroups(userId: string) {
+  state = { ...state, loading: true };
+  emit();
+
+  const { data: memberships } = await supabase
+    .from("group_members")
+    .select("group_id, member_id")
+    .eq("user_id", userId);
+
+  if (!memberships?.length) {
+    state = { groups: [], activeId: null, loading: false };
+    emit();
+    return;
+  }
+
+  const ids = memberships.map((m) => m.group_id);
+  const meMap = Object.fromEntries(memberships.map((m) => [m.group_id, m.member_id]));
+
+  const { data: rows } = await supabase
+    .from("groups")
+    .select("id, data, created_at")
+    .in("id", ids)
+    .order("created_at", { ascending: false });
+
+  const groups: Group[] = (rows ?? []).map((r) => ({
+    ...(r.data as Group),
+    id: r.id,
+    meId: meMap[r.id],
+  }));
+
+  state = { groups, activeId: null, loading: false };
+  emit();
+}
+
+function subscribeRealtime(userId: string) {
+  channel?.unsubscribe();
+  channel = supabase
+    .channel(`groups:${userId}`)
+    .on("postgres_changes", { event: "*", schema: "public", table: "groups" }, () => {
+      if (currentUserId) loadGroups(currentUserId);
+    })
+    .subscribe();
+}
+
+function persist(group: Group) {
+  if (!currentUserId) return;
+  supabase
+    .from("groups")
+    .update({ data: group, updated_at: new Date().toISOString() })
+    .eq("id", group.id)
+    .then(({ error }) => { if (error) console.error("persist:", error); });
+}
+
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (session) {
+    currentUserId = session.user.id;
+    loadGroups(session.user.id);
+    subscribeRealtime(session.user.id);
+  } else {
+    currentUserId = null;
+    channel?.unsubscribe();
+    channel = null;
+    state = { groups: [], activeId: null, loading: false };
+    emit();
+  }
+});
+
 export function useGroups(): Group[] {
-  return useSyncExternalStore(subscribe, () => state.groups, () => state.groups);
+  return useSyncExternalStore(sub, () => state.groups, () => state.groups);
 }
 
 export function useActiveGroup(): Group | undefined {
   return useSyncExternalStore(
-    subscribe,
+    sub,
     () => state.groups.find((g) => g.id === state.activeId),
     () => state.groups.find((g) => g.id === state.activeId)
   );
+}
+
+export function useGroupsLoading(): boolean {
+  return useSyncExternalStore(sub, () => state.loading, () => state.loading);
 }
 
 export function setActiveGroup(id: string | null) {
@@ -62,28 +111,50 @@ export function setActiveGroup(id: string | null) {
 export function addGroup(group: Group) {
   state = { groups: [group, ...state.groups], activeId: group.id };
   emit();
+  if (!currentUserId) return;
+  supabase.from("groups")
+    .insert({ id: group.id, owner_id: currentUserId, data: group })
+    .then(({ error }) => { if (error) console.error("addGroup:", error); });
+  supabase.from("group_members")
+    .insert({ group_id: group.id, user_id: currentUserId, member_id: group.meId })
+    .then(({ error }) => { if (error) console.error("addMember:", error); });
 }
 
 export function archiveGroup(id: string, value: boolean) {
-  state = {
-    groups: state.groups.map((g) => (g.id === id ? { ...g, archived: value } : g)),
-    activeId: value && state.activeId === id ? null : state.activeId,
-  };
+  const groups = state.groups.map((g) => (g.id === id ? { ...g, archived: value } : g));
+  state = { ...state, groups, activeId: value && state.activeId === id ? null : state.activeId };
   emit();
+  const g = groups.find((g) => g.id === id);
+  if (g) persist(g);
 }
 
 export function deleteGroup(id: string) {
-  const groups = state.groups.filter((g) => g.id !== id);
-  state = { groups, activeId: state.activeId === id ? null : state.activeId };
+  state = {
+    ...state,
+    groups: state.groups.filter((g) => g.id !== id),
+    activeId: state.activeId === id ? null : state.activeId,
+  };
   emit();
+  if (!currentUserId) return;
+  supabase.from("groups").delete().eq("id", id)
+    .then(({ error }) => { if (error) console.error("deleteGroup:", error); });
 }
 
 export function updateGroup(id: string, fn: (g: Group) => Group) {
-  state = { ...state, groups: state.groups.map((g) => (g.id === id ? fn(g) : g)) };
+  const groups = state.groups.map((g) => (g.id === id ? fn(g) : g));
+  state = { ...state, groups };
+  emit();
+  const g = groups.find((g) => g.id === id);
+  if (g) persist(g);
+}
+
+export function loadGuestMode() {
+  state = { groups: [createSeed()], activeId: null, loading: false };
   emit();
 }
 
 export function resetSeed() {
-  state = { groups: [createSeed()], activeId: null };
+  if (currentUserId) return;
+  state = { groups: [createSeed()], activeId: null, loading: false };
   emit();
 }
