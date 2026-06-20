@@ -144,14 +144,14 @@ export function GroupView({ group }: { group: Group }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 glass rounded-full p-1 my-4">
+      <div className="flex gap-1.5 my-4">
         {TABS.map((tb) => {
           const on = tab === tb.id;
           return (
             <button
               key={tb.id}
               onClick={() => setTab(tb.id)}
-              className={`flex-1 rounded-full py-2 text-sm font-semibold ${on ? "" : "text-muted"}`}
+              className={`flex-1 rounded-full py-2 text-sm font-semibold ${on ? "" : "glass text-muted"}`}
               style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
             >
               {tb.label}
@@ -164,7 +164,6 @@ export function GroupView({ group }: { group: Group }) {
         <div className="space-y-4 anim-up">
           <AddExpense group={group} />
           <RecurringList group={group} />
-          <CategoryChart group={group} />
           <ExpenseList group={group} />
         </div>
       )}
@@ -175,7 +174,8 @@ export function GroupView({ group }: { group: Group }) {
         </div>
       )}
       {tab === "stats" && (
-        <div className="anim-up">
+        <div className="space-y-4 anim-up">
+          <CategoryChart group={group} />
           <Analytics group={group} />
         </div>
       )}

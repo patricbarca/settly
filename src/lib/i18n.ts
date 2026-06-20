@@ -217,6 +217,7 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "bal.title": { es: "Saldos del grupo", en: "Group balances" },
   "bal.total": { es: "Total {amt} · {p} personas", en: "Total {amt} · {p} people" },
+  "bal.totalSpent": { es: "Total gastado", en: "Total spent" },
   "bal.toSettle": { es: "Para saldar", en: "To settle up" },
   "bal.simplified": { es: "Deudas simplificadas · mínimo de pagos", en: "Simplified debts · fewest payments" },
   "bal.allSettled": { es: "Todo saldado, sin deudas.", en: "All settled, no debts." },
@@ -329,9 +330,10 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "offline.banner": { es: "Sin conexión · los cambios se sincronizarán al reconectar", en: "Offline · changes will sync when you reconnect" },
 
-  "settings.title":    { es: "Ajustes del grupo", en: "Group settings" },
-  "settings.currency": { es: "Moneda", en: "Currency" },
-  "settings.custom":   { es: "Otra", en: "Other" },
+  "settings.title":         { es: "Ajustes del grupo", en: "Group settings" },
+  "settings.currency":      { es: "Moneda", en: "Currency" },
+  "settings.custom":        { es: "Otra", en: "Other" },
+  "settings.currencyOther": { es: "Otra moneda (CHF, kr, ₹…)", en: "Other currency (CHF, kr, ₹…)" },
   "settings.members":  { es: "Miembros", en: "Members" },
   "settings.saved":    { es: "Guardado", en: "Saved" },
 

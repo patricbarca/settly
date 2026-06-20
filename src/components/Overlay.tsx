@@ -8,7 +8,7 @@ export function Overlay({ onClose, children }: { onClose: () => void; children: 
   if (typeof document === "undefined") return null;
   return createPortal(
     <div
-      className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-3 anim-up"
+      className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40 backdrop-blur-sm p-3 anim-up"
       onClick={onClose}
     >
       {children}

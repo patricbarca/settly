@@ -49,13 +49,17 @@ export function Balances({ group }: { group: Group }) {
     }));
 
   return (
-    <section className="grid sm:grid-cols-2 gap-3">
+    <section className="space-y-3">
+      {/* Total pill */}
+      <div className="glass rounded-2xl px-4 py-3 flex items-center justify-between">
+        <span className="text-sm font-semibold text-muted">{t("bal.totalSpent")}</span>
+        <span className="font-mono font-bold">{money(total, group.currency)}</span>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-3">
       {/* Saldos por persona */}
       <div className="glass rounded-3xl p-5">
         <div className="text-xs uppercase tracking-widest font-mono text-muted">{t("bal.title")}</div>
-        <div className="text-sm text-muted mt-0.5 mb-1">
-          {t("bal.total", { amt: money(total, group.currency), p: group.members.length })}
-        </div>
         <div className="mt-3 space-y-1.5">
           {group.members.map((m) => {
             const v = net[m.id] || 0;
@@ -200,6 +204,7 @@ export function Balances({ group }: { group: Group }) {
           onClose={() => setMark(null)}
         />
       )}
+      </div>
     </section>
   );
 }

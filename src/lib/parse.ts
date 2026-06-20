@@ -1,4 +1,4 @@
-import type { Category, Member } from "./types";
+import type { Category, Member, RecurrenceInterval } from "./types";
 
 // Diferenciador de Settly: convierte lenguaje natural en un gasto estructurado.
 // Esta es la versión LOCAL (sin IA, gratis, funciona offline). El plan es
@@ -18,6 +18,7 @@ export interface ParsedExpense {
   payerId: string;
   participantIds: string[];
   category: Category;
+  interval?: RecurrenceInterval;
 }
 
 const firstName = (m: Member) => m.name.trim().split(/\s+/)[0].toLowerCase();
@@ -37,7 +38,14 @@ export function parseExpense(
 
   // Participantes: miembros cuyo nombre aparece en el texto.
   let participants = members.filter((m) => t.includes(" " + firstName(m)));
-  if (/\btodos\b|\bgrupo\b/.test(t)) participants = [...members];
+  if (/\btodos\b|\bgrupo\b|\ball\b|\beveryone\b|\ball of us\b|\bnosotros\b|\btodas\b/.test(t)) participants = [...members];
+
+  // Intervalo de recurrencia.
+  let interval: RecurrenceInterval | undefined;
+  if (/\bdaily\b|\bdiario\b|\bdiaria\b|\bcada d[ií]a\b/.test(t)) interval = "daily";
+  else if (/\bweekly\b|\bsemanal\b|\bcada semana\b/.test(t)) interval = "weekly";
+  else if (/\bmonthly\b|\bmensu(al)?\b|\bcada mes\b/.test(t)) interval = "monthly";
+  else if (/\byearly\b|\banual\b|\bcada a[ñn]o\b|\bannual\b/.test(t)) interval = "yearly";
 
   // Pagador: "pagó <nombre>" / "yo" / "pagué".
   let payerId: string | null = null;
@@ -72,9 +80,9 @@ export function parseExpense(
     "gi"
   );
   let label = text
-    .replace(/\d+(?:[.,]\d+)?\s*(€|eur|euros?|\$|usd)?/gi, " ")
+    .replace(/\d+(?:[.,]\d+)?\s*(€|eur|euros?|\$|usd|aud|gbp|cad|chf|mxn|brl|cop|ars|jpy|cny)?\b/gi, " ")
     .replace(names, " ")
-    .replace(/\b(con|y|e|pagu[eé]|pag[oó]|entre|todos|grupo|yo|de|del|la|el|los|las|un|una|para|por)\b/gi, " ")
+    .replace(/\b(con|y|e|pagu[eé]|pag[oó]|entre|todos|todas|grupo|yo|de|del|la|el|los|las|un|una|para|por|all|everyone|all of us|nosotros|daily|weekly|monthly|yearly|diario|diaria|semanal|mensual|anual|cada d[ií]a|cada semana|cada mes|cada a[ñn]o|annual)\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
   label = label.split(/\s+/).slice(0, 5).join(" ");
@@ -86,5 +94,6 @@ export function parseExpense(
     payerId,
     participantIds: participants.map((p) => p.id),
     category,
+    interval,
   };
 }

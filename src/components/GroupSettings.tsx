@@ -13,12 +13,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
   const t = useT();
   const [name, setName] = useState(group.name);
   const [currency, setCurrency] = useState(group.currency);
-  const [customCurrency, setCustomCurrency] = useState(
-    CURRENCIES.includes(group.currency) ? "" : group.currency
-  );
   const [saved, setSaved] = useState(false);
-
-  const effectiveCurrency = CURRENCIES.includes(currency) ? currency : customCurrency;
 
   const { net } = computeSettle(group.members, group.expenses, group.settlements ?? []);
 
@@ -33,11 +28,11 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
     referenced.add(s.to);
   });
 
-  const dirty = name.trim() !== group.name || effectiveCurrency !== group.currency;
+  const dirty = name.trim() !== group.name || currency !== group.currency;
 
   function save() {
     const n = name.trim();
-    const c = effectiveCurrency.trim();
+    const c = currency.trim();
     if (!n || !c) return;
     updateGroup(group.id, (g) => ({ ...g, name: n, currency: c }));
     setSaved(true);
@@ -88,23 +83,13 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
                 </button>
               );
             })}
-            <button
-              onClick={() => setCurrency("")}
-              className={`rounded-full px-3 py-1.5 text-sm font-medium ${!CURRENCIES.includes(currency) ? "" : "glass text-muted"}`}
-              style={!CURRENCIES.includes(currency) ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
-            >
-              {t("settings.custom")}
-            </button>
           </div>
-          {!CURRENCIES.includes(currency) && (
-            <input
-              autoFocus
-              value={customCurrency}
-              onChange={(e) => setCustomCurrency(e.target.value)}
-              placeholder="CHF, kr, ₹…"
-              className="glass rounded-xl px-3 py-2 text-sm mt-2 w-28"
-            />
-          )}
+          <input
+            value={CURRENCIES.includes(currency) ? "" : currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            placeholder={t("settings.currencyOther")}
+            className="glass rounded-xl px-3 py-2 text-sm mt-2 w-full"
+          />
         </div>
 
         {/* Members */}

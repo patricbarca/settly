@@ -42,6 +42,7 @@ function RecurringModal({ group, onClose }: { group: Group; onClose: () => void 
       participantIds: r.participantIds?.length ? r.participantIds : d.participantIds,
       category: r.category || d.category,
     }));
+    if (r.interval) setInterval(r.interval);
     setFormKey((k) => k + 1);
   }
 
