@@ -1,4 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="112" fill="#0FA3A3"/>
-  <path d="M350 190C358 135 322 95 256 95C188 95 140 136 140 193C140 253 193 270 256 272C319 274 372 291 372 352C372 413 324 418 257 418C190 418 148 385 155 347" fill="none" stroke="white" stroke-width="78" stroke-linecap="round"/>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="settly-g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5B5BF0"/>
+      <stop offset="55%" stop-color="#0FA3A3"/>
+      <stop offset="100%" stop-color="#0EA5E9"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background (full bleed, no margin) -->
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#settly-g)"/>
+  <!-- Two overlapping circles scaled to 512/48 ≈ 10.67x -->
+  <circle cx="203" cy="256" r="96" fill="#ffffff" fill-opacity="0.92"/>
+  <circle cx="309" cy="256" r="96" fill="#ffffff" fill-opacity="0.5"/>
+  <!-- Checkmark path scaled same ratio -->
+  <path d="M167 260l29 29 54-60" stroke="#5B5BF0" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
