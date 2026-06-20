@@ -13,6 +13,7 @@ import { GroupView } from "./components/GroupView";
 import { Logo } from "./components/Logo";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { OfflineBanner } from "./components/OfflineBanner";
+import { AccountModal } from "./components/AccountModal";
 
 export default function App() {
   const user = useUser();
@@ -22,6 +23,7 @@ export default function App() {
   const theme = useTheme();
   const group = useActiveGroup();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showAccount, setShowAccount] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -93,13 +95,15 @@ export default function App() {
           ))}
         </div>
         <div className="glass rounded-full pl-1 pr-1.5 py-1 flex items-center gap-1.5 text-sm">
-          <span
-            className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold"
-            style={{ background: personColor(user.name) + "22" }}
-          >
-            {initials(user.name)}
-          </span>
-          <span className="font-medium max-w-[90px] truncate">{user.name}</span>
+          <button onClick={() => setShowAccount(true)} className="flex items-center gap-1.5 hover-lift" title={t("account.title")}>
+            <span
+              className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold"
+              style={{ background: personColor(user.name) + "22" }}
+            >
+              {initials(user.name)}
+            </span>
+            <span className="font-medium max-w-[90px] truncate">{user.name}</span>
+          </button>
           <button onClick={signOut} className="lk ml-0.5 flex items-center" title={t("app.signout")}>
             <Icon name="power" size={15} />
           </button>
@@ -107,6 +111,8 @@ export default function App() {
       </div>
 
       {group ? <GroupView group={group} /> : <Home />}
+
+      {showAccount && <AccountModal onClose={() => setShowAccount(false)} />}
 
       {showOnboarding && (
         <OnboardingModal onDone={() => {
