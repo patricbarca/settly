@@ -14,7 +14,7 @@ export default defineConfig({
         navigateFallback: "/settly/index.html",
         navigateFallbackDenylist: [/^\/api/],
       },
-      includeAssets: ["icons/icon.svg"],
+      includeAssets: ["icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"],
       manifest: {
         name: "Settly",
         short_name: "Settly",
@@ -27,9 +27,15 @@ export default defineConfig({
         scope: "/settly/",
         icons: [
           {
-            src: "icons/icon.svg",
-            sizes: "any",
-            type: "image/svg+xml",
+            src: "icons/icon-192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "any",
+          },
+          {
+            src: "icons/icon-512.png",
+            sizes: "512x512",
+            type: "image/png",
             purpose: "any maskable",
           },
         ],
