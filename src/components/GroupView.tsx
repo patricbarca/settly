@@ -13,8 +13,9 @@ import { ReadyToSettle } from "./ReadyToSettle";
 import { Achievements } from "./Achievements";
 import { CategoryChart } from "./CategoryChart";
 import { ExpenseList } from "./ExpenseList";
+import { Analytics } from "./Analytics";
 
-type Tab = "expenses" | "balances" | "achievements";
+type Tab = "expenses" | "balances" | "stats" | "achievements";
 
 export function GroupView({ group }: { group: Group }) {
   const t = useT();
@@ -45,6 +46,7 @@ export function GroupView({ group }: { group: Group }) {
   const TABS: { id: Tab; label: string }[] = [
     { id: "expenses", label: t("tab.expenses") },
     { id: "balances", label: t("tab.balances") },
+    { id: "stats", label: t("tab.stats") },
     { id: "achievements", label: t("tab.achievements") },
   ];
 
@@ -114,6 +116,11 @@ export function GroupView({ group }: { group: Group }) {
         <div className="space-y-4 anim-up">
           <Balances group={group} />
           <ReadyToSettle group={group} />
+        </div>
+      )}
+      {tab === "stats" && (
+        <div className="anim-up">
+          <Analytics group={group} />
         </div>
       )}
       {tab === "achievements" && (
