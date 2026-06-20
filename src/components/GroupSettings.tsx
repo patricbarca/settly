@@ -3,16 +3,20 @@ import type { Group } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { computeSettle } from "../lib/split";
 import { money, personColor, initials } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { useT, useLang } from "../lib/i18n";
+import { CURRENCIES, currencyOf, localCurrencyName, resolveToCode } from "../lib/currencies";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 
-const CURRENCIES = ["€", "$", "£", "¥", "CHF", "CAD", "AUD", "MXN", "BRL", "COP", "ARS"];
+const COMMON_CODES = ["EUR", "USD", "GBP", "AUD", "CAD", "CHF", "MXN", "BRL", "COP", "ARS", "JPY"];
 
 export function GroupSettings({ group, onClose }: { group: Group; onClose: () => void }) {
   const t = useT();
+  const lang = useLang();
+  const locale = lang === "es" ? "es-ES" : "en-US";
+
   const [name, setName] = useState(group.name);
-  const [currency, setCurrency] = useState(group.currency);
+  const [currency, setCurrency] = useState(() => resolveToCode(group.currency));
   const [saved, setSaved] = useState(false);
 
   const { net } = computeSettle(group.members, group.expenses, group.settlements ?? []);
@@ -28,7 +32,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
     referenced.add(s.to);
   });
 
-  const dirty = name.trim() !== group.name || currency !== group.currency;
+  const dirty = name.trim() !== group.name || currency !== resolveToCode(group.currency);
 
   function save() {
     const n = name.trim();
@@ -42,6 +46,8 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
   function removeMember(id: string) {
     updateGroup(group.id, (g) => ({ ...g, members: g.members.filter((m) => m.id !== id) }));
   }
+
+  const isCommon = COMMON_CODES.includes(currency);
 
   return (
     <Overlay onClose={onClose}>
@@ -69,27 +75,39 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
         {/* Currency */}
         <div className="mb-5">
           <label className="text-xs font-semibold text-muted">{t("settings.currency")}</label>
+
+          {/* Common currencies as quick-pick pills */}
           <div className="flex gap-1.5 flex-wrap mt-1.5">
-            {CURRENCIES.map((c) => {
-              const on = currency === c;
+            {COMMON_CODES.map((code) => {
+              const c = currencyOf(code);
+              const on = currency === code;
               return (
                 <button
-                  key={c}
-                  onClick={() => setCurrency(c)}
+                  key={code}
+                  onClick={() => setCurrency(code)}
                   className={`rounded-full px-3 py-1.5 text-sm font-medium ${on ? "" : "glass text-muted"}`}
                   style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                  title={localCurrencyName(code, locale)}
                 >
-                  {c}
+                  {c.symbol}
                 </button>
               );
             })}
           </div>
-          <input
-            value={CURRENCIES.includes(currency) ? "" : currency}
-            onChange={(e) => setCurrency(e.target.value)}
-            placeholder={t("settings.currencyOther")}
+
+          {/* Full searchable dropdown */}
+          <select
+            value={isCommon ? "" : currency}
+            onChange={(e) => { if (e.target.value) setCurrency(e.target.value); }}
             className="glass rounded-xl px-3 py-2 text-sm mt-2 w-full"
-          />
+          >
+            <option value="">{t("settings.currencyOther")}</option>
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.symbol} {c.code} — {localCurrencyName(c.code, locale)}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Members */}

@@ -45,3 +45,21 @@ export const currencyOf = (code: string): Currency =>
   CURRENCIES.find((c) => c.code === code) ?? CURRENCIES[0];
 
 export const currencySymbol = (code: string): string => currencyOf(code).symbol;
+
+/** Returns the currency name localised to the given BCP-47 locale tag. */
+export function localCurrencyName(code: string, locale: string): string {
+  try {
+    const dn = new Intl.DisplayNames([locale], { type: "currency" });
+    const raw = dn.of(code) ?? code;
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  } catch {
+    return CURRENCIES.find((c) => c.code === code)?.name ?? code;
+  }
+}
+
+/** Resolve a stored value that may be a legacy symbol (e.g. "€") or a code (e.g. "EUR"). */
+export function resolveToCode(value: string): string {
+  if (CURRENCIES.find((c) => c.code === value)) return value;
+  return CURRENCIES.find((c) => c.symbol === value)?.code ?? value;
+}
+

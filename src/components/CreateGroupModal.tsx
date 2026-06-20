@@ -2,14 +2,16 @@ import { useState } from "react";
 import { addGroup } from "../lib/store";
 import { uid } from "../lib/format";
 import { useUser } from "../lib/auth";
-import { useT } from "../lib/i18n";
-import { CURRENCIES } from "../lib/currencies";
+import { useT, useLang } from "../lib/i18n";
+import { CURRENCIES, localCurrencyName } from "../lib/currencies";
 import type { Group } from "../lib/types";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 
 export function CreateGroupModal({ onClose }: { onClose: () => void }) {
   const t = useT();
+  const lang = useLang();
+  const locale = lang === "es" ? "es-ES" : "en-US";
   const user = useUser();
   const [name, setName] = useState("");
   const [currency, setCurrency] = useState("USD");
@@ -68,7 +70,7 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
             >
               {CURRENCIES.map((c) => (
                 <option key={c.code} value={c.code}>
-                  {c.code} ({c.symbol}) — {c.name}
+                  {c.symbol} {c.code} — {localCurrencyName(c.code, locale)}
                 </option>
               ))}
             </select>
