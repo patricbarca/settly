@@ -46,7 +46,7 @@ export default function App() {
   }, [phase, user]);
 
   useEffect(() => {
-    if (phase === "authenticated" && !localStorage.getItem("settly.onboarded")) {
+    if ((phase === "authenticated" || phase === "guest") && !localStorage.getItem("settly.onboarded")) {
       setShowOnboarding(true);
     }
   }, [phase]);
