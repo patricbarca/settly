@@ -54,7 +54,22 @@ const DICT: Record<string, { es: string; en: string }> = {
   "login.haveAccount": { es: "¿Ya tienes cuenta? Entra", en: "Already have an account? Sign in" },
   "login.noAccount": { es: "¿No tienes cuenta? Regístrate", en: "No account? Sign up" },
   "login.guest": { es: "Entrar como invitado", en: "Continue as guest" },
-  "login.demoNote": { es: "Demo: el login es local. El Google real se conecta con Supabase.", en: "Demo: login is local. Real Google connects with Supabase." },
+  "login.checkEmail": { es: "Revisa tu correo", en: "Check your email" },
+  "login.otpSent": { es: "Enviamos un código a", en: "We sent a code to" },
+  "login.otpPlaceholder": { es: "123456", en: "123456" },
+  "login.verify": { es: "Verificar código", en: "Verify code" },
+  "login.verifying": { es: "Verificando...", en: "Verifying..." },
+  "login.resend": { es: "Reenviar código", en: "Resend code" },
+  "login.sending": { es: "Enviando...", en: "Sending..." },
+  "login.namePrompt": { es: "¿Cómo te llamas?", en: "What's your name?" },
+  "login.nameHint": { es: "Solo necesitamos tu nombre para los grupos.", en: "We just need your name for groups." },
+  "login.continue": { es: "Continuar", en: "Continue" },
+
+  "group.invite": { es: "Invitar", en: "Invite" },
+  "group.copied": { es: "¡Copiado!", en: "Copied!" },
+  "group.inviteError": { es: "Error al crear link", en: "Error creating link" },
+
+  "app.footerCloud": { es: "Settly · datos guardados en la nube.", en: "Settly · data saved in the cloud." },
 
   "home.createGroup": { es: "Crear grupo", en: "Create group" },
   "home.featVoiceT": { es: "Habla y listo", en: "Just say it" },

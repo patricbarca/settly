@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signInEmail, signInGoogle, signInGuest } from "../lib/auth";
+import { signInEmail, signInGoogle, signInGuest, verifyOtp, useAuthPhase, useOtpEmail } from "../lib/auth";
 import { useLang, setLang, useT } from "../lib/i18n";
 import { useTheme, toggleTheme } from "../lib/theme";
 import { Logo } from "./Logo";
@@ -9,39 +9,122 @@ export function Login() {
   const t = useT();
   const lang = useLang();
   const theme = useTheme();
+  const phase = useAuthPhase();
+  const otpEmail = useOtpEmail();
+
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  function submit() {
-    if (!email.trim()) return;
-    signInEmail(mode === "signup" ? name : email.split("@")[0], email);
+  async function submit() {
+    if (!email.trim() || loading) return;
+    setLoading(true);
+    setError("");
+    try {
+      await signInEmail(mode === "signup" ? name : "", email);
+    } catch (e: any) {
+      setError(e.message ?? "Error al enviar el código");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function verify() {
+    if (otp.length < 6 || !otpEmail || loading) return;
+    setLoading(true);
+    setError("");
+    try {
+      await verifyOtp(otpEmail, otp.trim());
+    } catch {
+      setError("Código incorrecto. Inténtalo de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function resend() {
+    if (!otpEmail || loading) return;
+    setLoading(true);
+    setError("");
+    setOtp("");
+    try {
+      await signInEmail("", otpEmail);
+    } catch (e: any) {
+      setError(e.message ?? "Error al reenviar");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const Controls = () => (
+    <div className="flex justify-end gap-2 mb-3">
+      <button
+        onClick={toggleTheme}
+        className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
+        title={theme === "dark" ? "Light" : "Dark"}
+      >
+        <Icon name={theme === "dark" ? "sun" : "moon"} size={16} />
+      </button>
+      <div className="glass rounded-full p-0.5 flex text-xs font-semibold">
+        {(["es", "en"] as const).map((l) => (
+          <button
+            key={l}
+            onClick={() => setLang(l)}
+            className={`px-2.5 py-1 rounded-full ${lang === l ? "" : "text-muted"}`}
+            style={lang === l ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+          >
+            {l.toUpperCase()}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (phase === "otp_sent" && otpEmail) {
+    return (
+      <div className="min-h-full flex flex-col">
+        <div className="max-w-md w-full mx-auto px-4 flex-1 flex flex-col justify-center py-8">
+          <Controls />
+          <div className="glass-strong rounded-3xl p-6 anim-up">
+            <div className="text-4xl mb-3 text-center">📬</div>
+            <h2 className="font-display text-2xl font-bold mb-1 text-center">{t("login.checkEmail")}</h2>
+            <p className="text-sm text-muted mb-5 text-center">
+              {t("login.otpSent")} <strong>{otpEmail}</strong>
+            </p>
+            <input
+              autoFocus
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              onKeyDown={(e) => e.key === "Enter" && verify()}
+              placeholder={t("login.otpPlaceholder")}
+              inputMode="numeric"
+              className="glass rounded-xl px-3 py-3 w-full text-center text-3xl tracking-[0.5em] font-mono mb-3"
+            />
+            {error && <p className="text-red-500 text-xs mb-3 text-center">{error}</p>}
+            <button
+              onClick={verify}
+              disabled={otp.length < 6 || loading}
+              className="w-full rounded-full px-4 py-3 font-semibold text-white hover-lift disabled:opacity-50"
+              style={{ background: "var(--ink)" }}
+            >
+              {loading ? t("login.verifying") : t("login.verify")}
+            </button>
+            <button onClick={resend} disabled={loading} className="lk text-sm w-full text-center mt-3">
+              {loading ? t("login.sending") : t("login.resend")}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-full flex flex-col">
       <div className="max-w-md w-full mx-auto px-4 flex-1 flex flex-col justify-center py-8">
-        <div className="flex justify-end gap-2 mb-3">
-          <button
-            onClick={toggleTheme}
-            className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
-            title={theme === "dark" ? "Light" : "Dark"}
-          >
-            <Icon name={theme === "dark" ? "sun" : "moon"} size={16} />
-          </button>
-          <div className="glass rounded-full p-0.5 flex text-xs font-semibold">
-            {(["es", "en"] as const).map((l) => (
-              <button
-                key={l}
-                onClick={() => setLang(l)}
-                className={`px-2.5 py-1 rounded-full ${lang === l ? "" : "text-muted"}`}
-                style={lang === l ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
-              >
-                {l.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
+        <Controls />
 
         <div className="hero anim-up">
           <span className="blob b1" />
@@ -91,13 +174,14 @@ export function Login() {
               type="email"
               className="glass rounded-xl px-3 py-2.5 text-sm w-full"
             />
+            {error && <p className="text-red-500 text-xs">{error}</p>}
             <button
               onClick={submit}
-              disabled={!email.trim()}
+              disabled={!email.trim() || loading}
               className="w-full rounded-full px-4 py-3 font-semibold text-white hover-lift disabled:opacity-50"
               style={{ background: "var(--ink)" }}
             >
-              {mode === "signup" ? t("login.signup") : t("login.signin")}
+              {loading ? t("login.sending") : mode === "signup" ? t("login.signup") : t("login.signin")}
             </button>
           </div>
 
@@ -113,8 +197,6 @@ export function Login() {
               {t("login.guest")}
             </button>
           </div>
-
-          <p className="text-[11px] text-muted text-center mt-4 leading-relaxed">{t("login.demoNote")}</p>
         </div>
       </div>
     </div>

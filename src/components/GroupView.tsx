@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Group } from "../lib/types";
 import { setActiveGroup, deleteGroup, archiveGroup } from "../lib/store";
+import { createInviteLink } from "../lib/invite";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -19,6 +20,21 @@ export function GroupView({ group }: { group: Group }) {
   const t = useT();
   const [confirmDel, setConfirmDel] = useState(false);
   const [tab, setTab] = useState<Tab>("expenses");
+  const [copied, setCopied] = useState(false);
+  const [inviteError, setInviteError] = useState(false);
+
+  async function invite() {
+    setInviteError(false);
+    try {
+      const link = await createInviteLink(group.id);
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      setInviteError(true);
+      setTimeout(() => setInviteError(false), 2500);
+    }
+  }
 
   const TABS: { id: Tab; label: string }[] = [
     { id: "expenses", label: t("tab.expenses") },
@@ -33,6 +49,10 @@ export function GroupView({ group }: { group: Group }) {
           <Icon name="back" size={16} /> {t("group.back")}
         </button>
         <div className="flex items-center gap-3">
+          <button onClick={invite} className="lk text-sm inline-flex items-center gap-1" style={inviteError ? { color: "#D14444" } : copied ? { color: "#0A8B5E" } : undefined}>
+            <Icon name="copy" size={14} />
+            {inviteError ? t("group.inviteError") : copied ? t("group.copied") : t("group.invite")}
+          </button>
           <button onClick={() => archiveGroup(group.id, true)} className="lk text-sm inline-flex items-center gap-1">
             <Icon name="archive" size={14} /> {t("group.archive")}
           </button>
