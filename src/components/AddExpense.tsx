@@ -143,63 +143,67 @@ export function AddExpense({ group }: { group: Group }) {
         <div className="mt-4 glass rounded-3xl p-4 anim-pop">
           <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{t("add.review")}</div>
 
-          {/* One-time / Recurring toggle */}
-          <div className="flex gap-1.5 mb-4">
-            {(["one-time", "recurring"] as ExpenseType[]).map((type) => {
-              const on = expenseType === type;
-              return (
-                <button
-                  key={type}
-                  onClick={() => setExpenseType(type)}
-                  className={`rounded-full px-4 py-1.5 text-sm font-medium ${on ? "" : "glass text-muted"}`}
-                  style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
-                >
-                  {t(type === "one-time" ? "add.oneTime" : "add.recurringType")}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Interval + start date (recurring only) */}
-          {expenseType === "recurring" && (
-            <div className="mb-4 space-y-3">
-              <div>
-                <label className="text-xs font-semibold text-muted">{t("recur.interval")}</label>
-                <div className="flex gap-1.5 flex-wrap mt-1">
-                  {INTERVALS.map((iv) => {
-                    const on = recurInterval === iv;
-                    return (
-                      <button
-                        key={iv}
-                        onClick={() => setRecurInterval(iv)}
-                        className={`rounded-full px-4 py-1.5 text-sm font-medium ${on ? "" : "glass text-muted"}`}
-                        style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
-                      >
-                        {t(`recur.${iv}`)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-muted">{t("recur.startDate")}</label>
-                <input
-                  type="date"
-                  value={recurStartDate}
-                  onChange={(e) => setRecurStartDate(e.target.value)}
-                  className="glass rounded-xl px-3 py-2 text-sm w-full mt-1"
-                />
-              </div>
-            </div>
-          )}
-
           <ExpenseForm
             group={group}
             initial={draft}
             onSave={save}
             onCancel={() => { setDraft(null); setExpenseType("one-time"); }}
             submitLabel={expenseType === "recurring" ? t("recur.save") : t("add.submit")}
-          />
+          >
+            {/* Recurring toggle — sits between category and save button */}
+            <div className="border-t pt-3 mt-1" style={{ borderColor: "var(--line)" }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Icon name="repeat" size={14} className="text-muted" />
+                  <span className="text-sm">{t("add.repeatToggle")}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setExpenseType((e) => (e === "recurring" ? "one-time" : "recurring"))}
+                  className="relative w-11 h-6 rounded-full shrink-0 transition-colors"
+                  style={{ background: expenseType === "recurring" ? "var(--teal)" : "rgba(128,128,128,0.25)" }}
+                >
+                  <span
+                    className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
+                    style={{ left: 2, transform: expenseType === "recurring" ? "translateX(20px)" : "none" }}
+                  />
+                </button>
+              </div>
+
+              {expenseType === "recurring" && (
+                <div className="mt-3 space-y-3 anim-pop">
+                  <div>
+                    <label className="text-xs font-semibold text-muted">{t("recur.interval")}</label>
+                    <div className="flex gap-1.5 flex-wrap mt-1">
+                      {INTERVALS.map((iv) => {
+                        const on = recurInterval === iv;
+                        return (
+                          <button
+                            key={iv}
+                            type="button"
+                            onClick={() => setRecurInterval(iv)}
+                            className={`rounded-full px-4 py-1.5 text-sm font-medium ${on ? "" : "glass text-muted"}`}
+                            style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                          >
+                            {t(`recur.${iv}`)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-muted">{t("recur.startDate")}</label>
+                    <input
+                      type="date"
+                      value={recurStartDate}
+                      onChange={(e) => setRecurStartDate(e.target.value)}
+                      className="glass rounded-xl px-3 py-2 text-sm w-full mt-1"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </ExpenseForm>
         </div>
       )}
 

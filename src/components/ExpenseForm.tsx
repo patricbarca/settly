@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import type { Category, Group } from "../lib/types";
 import type { SplitMode } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
@@ -103,12 +103,14 @@ export function ExpenseForm({
   onSave,
   onCancel,
   submitLabel,
+  children,
 }: {
   group: Group;
   initial: ExpenseDraft;
   onSave: (d: ExpenseDraft) => void;
   onCancel: () => void;
   submitLabel?: string;
+  children?: React.ReactNode;
 }) {
   const t = useT();
   const sym = currencySymbol(group.currency);
@@ -436,6 +438,8 @@ export function ExpenseForm({
           })}
         </div>
       </div>
+
+      {children}
 
       <div className="flex gap-2 pt-1">
         <button

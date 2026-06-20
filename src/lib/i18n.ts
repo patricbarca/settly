@@ -185,6 +185,7 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "add.oneTime":       { es: "Gasto puntual", en: "One-time" },
   "add.recurringType": { es: "Recurrente", en: "Recurring" },
+  "add.repeatToggle":  { es: "Repetir este gasto", en: "Repeat this expense" },
   "add.title": { es: "Añade un gasto hablando", en: "Add an expense by speaking" },
   "add.placeholder": { es: 'Ej: "Cena con Ale y Cote, pagué 90"', en: 'E.g. "Dinner with Ale and Cote, I paid 90"' },
   "add.interpret": { es: "Interpretar", en: "Interpret" },
