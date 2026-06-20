@@ -324,6 +324,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "recur.resume":    { es: "Reanudar", en: "Resume" },
   "recur.save":      { es: "Guardar recurrente", en: "Save recurring" },
   "recur.addHint":   { es: "Añade un gasto recurrente (alquiler, suscripciones…)", en: "Add a recurring expense (rent, subscriptions…)" },
+
+  "offline.banner": { es: "Sin conexión · los cambios se sincronizarán al reconectar", en: "Offline · changes will sync when you reconnect" },
 };
 
 export function useT() {
