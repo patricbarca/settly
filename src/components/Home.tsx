@@ -64,19 +64,9 @@ export function Home() {
         ))}
       </div>
 
-      <div className="flex items-center justify-between mt-8 mb-2 px-1">
-        <h2 className="font-display text-xl font-bold">{t("home.yourGroups")}</h2>
-        <button
-          onClick={() => setCreating(true)}
-          className="glass rounded-full px-3 py-1.5 text-sm hover-lift text-muted inline-flex items-center gap-1"
-        >
-          <Icon name="plus" size={15} /> {t("home.new")}
-        </button>
-      </div>
-
       {/* Getting started checklist — shows until all 3 steps done */}
       {!allDone && (
-        <div className="space-y-2 mb-4">
+        <div className="space-y-2 mt-6">
           <p className="text-xs font-semibold text-muted px-1 uppercase tracking-wide">{t("onboard.checklist")}</p>
           <StartStep
             n={1}
@@ -103,6 +93,16 @@ export function Home() {
           />
         </div>
       )}
+
+      <div className="flex items-center justify-between mt-6 mb-2 px-1">
+        <h2 className="font-display text-xl font-bold">{t("home.yourGroups")}</h2>
+        <button
+          onClick={() => setCreating(true)}
+          className="glass rounded-full px-3 py-1.5 text-sm hover-lift text-muted inline-flex items-center gap-1"
+        >
+          <Icon name="plus" size={15} /> {t("home.new")}
+        </button>
+      </div>
 
       <div className="space-y-2">
         {active.length === 0 && allDone && (
