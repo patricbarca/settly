@@ -7,6 +7,21 @@ export type Category =
   | "otros";
 
 export type SplitMode = "equal" | "percent" | "exact" | "shares";
+export type RecurrenceInterval = "daily" | "weekly" | "monthly" | "yearly";
+
+export interface RecurringExpense {
+  id: string;
+  label: string;
+  amount: number;
+  payerId: string;
+  payments?: { memberId: string; amount: number }[];
+  participantIds: string[];
+  splits?: Record<string, number> | null;
+  category: Category;
+  interval: RecurrenceInterval;
+  nextDate: string; // YYYY-MM-DD
+  active: boolean;
+}
 
 export type PayType = "payid" | "bank" | "paypal" | "revolut" | "wise" | "bizum" | "bunq" | "other";
 
@@ -59,6 +74,7 @@ export interface Group {
   archived?: boolean;
   /** memberIds que marcaron "ya agregué todos mis gastos" */
   ready?: string[];
+  recurring?: RecurringExpense[];
 }
 
 import type { IconName } from "../components/Icon";

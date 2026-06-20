@@ -1,7 +1,8 @@
 import { useSyncExternalStore } from "react";
-import type { Group } from "./types";
+import type { Group, RecurringExpense, RecurrenceInterval } from "./types";
 import { supabase } from "./supabase";
 import { createSeed } from "./seed";
+import { uid } from "./format";
 
 type State = { groups: Group[]; activeId: string | null; loading: boolean };
 
@@ -146,6 +147,60 @@ export function updateGroup(id: string, fn: (g: Group) => Group) {
   emit();
   const g = groups.find((g) => g.id === id);
   if (g) persist(g);
+}
+
+export function addRecurring(groupId: string, r: RecurringExpense) {
+  updateGroup(groupId, (g) => ({ ...g, recurring: [...(g.recurring ?? []), r] }));
+}
+
+export function updateRecurring(groupId: string, id: string, patch: Partial<RecurringExpense>) {
+  updateGroup(groupId, (g) => ({
+    ...g,
+    recurring: (g.recurring ?? []).map((r) => (r.id === id ? { ...r, ...patch } : r)),
+  }));
+}
+
+export function deleteRecurring(groupId: string, id: string) {
+  updateGroup(groupId, (g) => ({ ...g, recurring: (g.recurring ?? []).filter((r) => r.id !== id) }));
+}
+
+function advanceDate(date: string, interval: RecurrenceInterval): string {
+  const d = new Date(date + "T00:00:00");
+  if (interval === "daily")   d.setDate(d.getDate() + 1);
+  if (interval === "weekly")  d.setDate(d.getDate() + 7);
+  if (interval === "monthly") d.setMonth(d.getMonth() + 1);
+  if (interval === "yearly")  d.setFullYear(d.getFullYear() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+export function processRecurring(groupId: string) {
+  const today = new Date().toISOString().slice(0, 10);
+  updateGroup(groupId, (g) => {
+    if (!g.recurring?.some((r) => r.active && r.nextDate <= today)) return g;
+    let newExpenses = [...g.expenses];
+    const updatedRecurring = g.recurring.map((r) => {
+      if (!r.active || r.nextDate > today) return r;
+      let nextDate = r.nextDate;
+      let count = 0;
+      while (nextDate <= today && count < 12) {
+        newExpenses.unshift({
+          id: uid(),
+          label: r.label,
+          amount: r.amount,
+          payerId: r.payerId,
+          ...(r.payments?.length ? { payments: r.payments } : {}),
+          participantIds: r.participantIds,
+          splits: r.splits ?? null,
+          category: r.category,
+          date: nextDate,
+        });
+        nextDate = advanceDate(nextDate, r.interval);
+        count++;
+      }
+      return { ...r, nextDate };
+    });
+    return { ...g, expenses: newExpenses, recurring: updatedRecurring };
+  });
 }
 
 export function loadGuestMode() {

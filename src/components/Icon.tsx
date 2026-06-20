@@ -26,7 +26,10 @@ export type IconName =
   | "copy"
   | "sun"
   | "moon"
-  | "archive";
+  | "archive"
+  | "repeat"
+  | "pause"
+  | "play";
 
 function glyph(name: IconName): ReactNode {
   switch (name) {
@@ -186,6 +189,24 @@ function glyph(name: IconName): ReactNode {
           <path d="M10 12h4" />
         </>
       );
+    case "repeat":
+      return (
+        <>
+          <path d="M17 3l4 4-4 4" />
+          <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+          <path d="M7 21l-4-4 4-4" />
+          <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+        </>
+      );
+    case "pause":
+      return (
+        <>
+          <rect x="6" y="4" width="4" height="16" rx="1" />
+          <rect x="14" y="4" width="4" height="16" rx="1" />
+        </>
+      );
+    case "play":
+      return <path d="M6 4l14 8-14 8z" />;
     default:
       return null;
   }
