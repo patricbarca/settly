@@ -163,7 +163,7 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
         {/* Invite link */}
         <button
           onClick={copyInvite}
-          className="glass rounded-2xl px-4 py-3 w-full flex items-center gap-2 hover-lift mb-4"
+          className="glass rounded-3xl px-4 py-3 w-full flex items-center gap-2 hover-lift mb-4"
           style={{ color: inviteCopied ? "#0A8B5E" : inviteErr ? "#D14444" : "var(--teal)" }}
         >
           <Icon name="copy" size={16} />
@@ -176,7 +176,7 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
         {addMode === "idle" && (
           <button
             onClick={() => setAddMode("search")}
-            className="glass-strong rounded-2xl px-4 py-3 w-full flex items-center gap-2 hover-lift"
+            className="glass-strong rounded-3xl px-4 py-3 w-full flex items-center gap-2 hover-lift"
             style={{ color: "var(--teal)" }}
           >
             <Icon name="plus" size={16} />
@@ -185,7 +185,7 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
         )}
 
         {addMode !== "idle" && (
-          <div className="glass rounded-2xl p-4 anim-up">
+          <div className="glass rounded-3xl p-4 anim-up">
             {addMode === "search" && (
               <>
                 <p className="text-xs text-muted mb-2">{t("members.searchHint")}</p>

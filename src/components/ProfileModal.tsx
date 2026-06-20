@@ -48,7 +48,7 @@ export function ProfileModal({
           </button>
         </div>
 
-        <div className="flex items-center gap-3 glass rounded-2xl p-3 mb-3">
+        <div className="flex items-center gap-3 glass rounded-3xl p-3 mb-3">
           <SettleRing value={s.score} size={48} stroke={6} color="#0FA3A3" track="var(--line)" />
           <div className="text-sm">
             <div className="text-muted text-xs">{t("home.yourBalance")}</div>

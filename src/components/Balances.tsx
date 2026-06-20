@@ -51,7 +51,7 @@ export function Balances({ group }: { group: Group }) {
   return (
     <section className="space-y-3">
       {/* Total pill */}
-      <div className="glass rounded-2xl px-4 py-3 flex items-center justify-between">
+      <div className="glass rounded-3xl px-4 py-3 flex items-center justify-between">
         <span className="text-sm font-semibold text-muted">{t("bal.totalSpent")}</span>
         <span className="font-mono font-bold">{money(total, group.currency)}</span>
       </div>

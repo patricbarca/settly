@@ -40,7 +40,7 @@ export function PayMethodModal({ group, onClose }: { group: Group; onClose: () =
           {group.members.map((m) => {
             const type = m.pay?.type ?? "payid";
             return (
-              <div key={m.id} className="glass rounded-2xl p-3">
+              <div key={m.id} className="glass rounded-3xl p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <span
                     className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold"

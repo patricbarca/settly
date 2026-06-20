@@ -68,7 +68,7 @@ export function ReadyToSettle({ group }: { group: Group }) {
 
       {allReady && (
         <div
-          className="mt-3 rounded-2xl p-3 text-sm font-semibold text-center"
+          className="mt-3 rounded-3xl p-3 text-sm font-semibold text-center"
           style={{ background: "rgba(10,139,94,0.12)", color: "#0A8B5E" }}
         >
           {t("ready.allReady")}

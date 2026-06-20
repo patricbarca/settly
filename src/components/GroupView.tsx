@@ -96,7 +96,7 @@ export function GroupView({ group }: { group: Group }) {
 
       {/* Balance card — visual, no labels */}
       <div
-        className="rounded-2xl p-4 mt-3 flex items-center gap-4"
+        className="rounded-3xl p-4 mt-3 flex items-center gap-4"
         style={{
           background: ok ? "rgba(10,163,163,0.08)" : mine > 0 ? "rgba(10,139,94,0.08)" : "rgba(209,68,68,0.08)",
           border: `1.5px solid ${ok ? "rgba(10,163,163,0.15)" : mine > 0 ? "rgba(10,139,94,0.15)" : "rgba(209,68,68,0.15)"}`,
@@ -128,7 +128,7 @@ export function GroupView({ group }: { group: Group }) {
       </div>
 
       {/* Share group card */}
-      <div className="glass rounded-2xl px-4 py-3 mt-3 flex items-center justify-between gap-3">
+      <div className="glass rounded-3xl px-4 py-3 mt-3 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="text-sm font-semibold">{t("group.shareTitle")}</div>
           <div className="text-xs text-muted mt-0.5">{t("group.shareHint")}</div>

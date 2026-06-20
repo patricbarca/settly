@@ -156,7 +156,7 @@ export function RecurringList({ group }: { group: Group }) {
       <>
         <button
           onClick={() => setShowAdd(true)}
-          className="glass rounded-2xl px-4 py-3 w-full text-left text-sm text-muted hover-lift flex items-center gap-2"
+          className="glass rounded-3xl px-4 py-3 w-full text-left text-sm text-muted hover-lift flex items-center gap-2"
         >
           <Icon name="repeat" size={16} />
           <span>{t("recur.addHint")}</span>

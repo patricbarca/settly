@@ -140,7 +140,7 @@ export function AddExpense({ group }: { group: Group }) {
       </div>
 
       {draft && (
-        <div className="mt-4 glass rounded-2xl p-4 anim-pop">
+        <div className="mt-4 glass rounded-3xl p-4 anim-pop">
           <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{t("add.review")}</div>
 
           {/* One-time / Recurring toggle */}

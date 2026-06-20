@@ -66,7 +66,7 @@ export function ExpenseList({ group }: { group: Group }) {
           ? e.payments.map((p) => name(p.memberId)).join(", ")
           : name(e.payerId);
         return (
-          <div key={e.id} className="glass rounded-2xl overflow-hidden hover-lift">
+          <div key={e.id} className="glass rounded-3xl overflow-hidden hover-lift">
             <div className="p-3 flex items-center gap-3 cursor-pointer" onClick={() => setOpenId(open ? null : e.id)}>
               <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 surface-soft text-[color:var(--ink)]">
                 <Icon name={c.icon} size={20} />

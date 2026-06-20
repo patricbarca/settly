@@ -32,7 +32,7 @@ export function Home() {
           <span className="blob b2" />
           <span className="blob b3" />
           <div className="relative z-10 flex flex-col items-center text-center py-3">
-            <div className="glass rounded-full p-3 mb-4">
+            <div className="glass rounded-3xl p-3 mb-4">
               <Logo size={54} />
             </div>
             <h1 className="text-white font-display text-5xl font-extrabold tracking-tight">Settly</h1>
@@ -90,7 +90,7 @@ export function Home() {
 
       <div className="space-y-2">
         {active.length === 0 && allDone && (
-          <div className="glass rounded-2xl p-8 text-center text-muted">{t("home.empty")}</div>
+          <div className="glass rounded-3xl p-8 text-center text-muted">{t("home.empty")}</div>
         )}
         {active.map((g) => {
           const { net } = computeSettle(g.members, g.expenses, g.settlements ?? []);
@@ -101,7 +101,7 @@ export function Home() {
             <button
               key={g.id}
               onClick={() => setActiveGroup(g.id)}
-              className="glass rounded-2xl p-4 w-full text-left hover-lift flex items-center gap-3"
+              className="glass rounded-3xl p-4 w-full text-left hover-lift flex items-center gap-3"
             >
               <div className="shrink-0">
                 <SettleRing value={groupSettleScore(g)} size={44} stroke={5} color="#0FA3A3" track="var(--line)" />
@@ -151,7 +151,7 @@ export function Home() {
               {archived.map((g) => {
                 const total = g.expenses.reduce((s, e) => s + e.amount, 0);
                 return (
-                  <div key={g.id} className="glass rounded-2xl p-3 flex items-center gap-2" style={{ opacity: 0.8 }}>
+                  <div key={g.id} className="glass rounded-3xl p-3 flex items-center gap-2" style={{ opacity: 0.8 }}>
                     <button onClick={() => setActiveGroup(g.id)} className="flex-1 text-left min-w-0">
                       <div className="font-semibold truncate">{g.name}</div>
                       <div className="text-xs text-muted">
@@ -185,7 +185,7 @@ function StartStep({
 }) {
   return (
     <div
-      className="glass rounded-2xl px-4 py-3 flex items-center gap-3 transition-opacity"
+      className="glass rounded-3xl px-4 py-3 flex items-center gap-3 transition-opacity"
       style={{ opacity: !active && !done ? 0.45 : 1 }}
     >
       <div

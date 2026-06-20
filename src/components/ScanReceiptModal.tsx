@@ -130,7 +130,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         {stage === "review" && (
           <div className="space-y-3">
             <div className="text-xs font-semibold text-muted">{t("scan.items")}</div>
-            <div className="glass rounded-2xl p-3 space-y-3">
+            <div className="glass rounded-3xl p-3 space-y-3">
               {items.map((it, idx) => (
                 <div key={it.id} className={idx < items.length - 1 ? "pb-3 border-b border-black/5" : ""}>
                   <div className="flex items-center gap-2">
@@ -196,7 +196,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
               </div>
             </div>
 
-            <div className="glass rounded-2xl p-3">
+            <div className="glass rounded-3xl p-3">
               {group.members.map((m) => (
                 <div key={m.id} className="flex items-center justify-between text-sm py-0.5">
                   <span>{m.name}</span>

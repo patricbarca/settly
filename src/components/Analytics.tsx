@@ -77,12 +77,12 @@ export function Analytics({ group }: { group: Group }) {
           { label: t("stats.numExpenses"), value: String(expenses.length) },
           { label: t("stats.avgExpense"),  value: money(avg, group.currency) },
         ].map((c) => (
-          <div key={c.label} className="glass rounded-2xl p-4">
+          <div key={c.label} className="glass rounded-3xl p-4">
             <div className="text-xs text-muted font-semibold uppercase tracking-wide mb-1">{c.label}</div>
             <div className="font-mono font-bold text-xl">{c.value}</div>
           </div>
         ))}
-        <div className="glass rounded-2xl p-4">
+        <div className="glass rounded-3xl p-4">
           <div className="text-xs text-muted font-semibold uppercase tracking-wide mb-1">{t("stats.topPayer")}</div>
           {topPayer ? (
             <div className="flex items-center gap-2 mt-1">
