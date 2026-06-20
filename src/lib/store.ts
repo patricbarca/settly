@@ -278,6 +278,18 @@ export function processRecurring(groupId: string) {
   });
 }
 
+export function updateMyMember(patch: Partial<import("./types").Member>) {
+  const groupIds = state.groups
+    .filter((g) => g.members.some((m) => m.id === g.meId))
+    .map((g) => g.id);
+  for (const id of groupIds) {
+    updateGroup(id, (g) => ({
+      ...g,
+      members: g.members.map((m) => (m.id === g.meId ? { ...m, ...patch } : m)),
+    }));
+  }
+}
+
 export function loadGuestMode() {
   state = { groups: [createSeed()], activeId: null, loading: false };
   emit();

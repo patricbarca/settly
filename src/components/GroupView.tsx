@@ -15,12 +15,14 @@ import { CategoryChart } from "./CategoryChart";
 import { ExpenseList } from "./ExpenseList";
 import { Analytics } from "./Analytics";
 import { RecurringList } from "./RecurringList";
+import { GroupSettings } from "./GroupSettings";
 
 type Tab = "expenses" | "balances" | "stats" | "achievements";
 
 export function GroupView({ group }: { group: Group }) {
   const t = useT();
   const [confirmDel, setConfirmDel] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [tab, setTab] = useState<Tab>("expenses");
   const [copied, setCopied] = useState(false);
   const [inviteError, setInviteError] = useState(false);
@@ -60,6 +62,9 @@ export function GroupView({ group }: { group: Group }) {
           <Icon name="back" size={16} /> {t("group.back")}
         </button>
         <div className="flex items-center gap-3">
+          <button onClick={() => setShowSettings(true)} className="lk text-sm inline-flex items-center gap-1">
+            <Icon name="settings" size={14} /> {t("settings.title")}
+          </button>
           <button onClick={() => archiveGroup(group.id, true)} className="lk text-sm inline-flex items-center gap-1">
             <Icon name="archive" size={14} /> {t("group.archive")}
           </button>
@@ -132,6 +137,8 @@ export function GroupView({ group }: { group: Group }) {
           <Achievements group={group} />
         </div>
       )}
+
+      {showSettings && <GroupSettings group={group} onClose={() => setShowSettings(false)} />}
 
       {confirmDel && (
         <Overlay onClose={() => setConfirmDel(false)}>

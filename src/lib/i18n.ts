@@ -326,6 +326,17 @@ const DICT: Record<string, { es: string; en: string }> = {
   "recur.addHint":   { es: "Añade un gasto recurrente (alquiler, suscripciones…)", en: "Add a recurring expense (rent, subscriptions…)" },
 
   "offline.banner": { es: "Sin conexión · los cambios se sincronizarán al reconectar", en: "Offline · changes will sync when you reconnect" },
+
+  "settings.title":    { es: "Ajustes del grupo", en: "Group settings" },
+  "settings.currency": { es: "Moneda", en: "Currency" },
+  "settings.custom":   { es: "Otra", en: "Other" },
+  "settings.members":  { es: "Miembros", en: "Members" },
+  "settings.saved":    { es: "Guardado", en: "Saved" },
+
+  "account.title":   { es: "Mi cuenta", en: "My account" },
+  "account.name":    { es: "Tu nombre", en: "Your name" },
+  "account.payHint": { es: "Se muestra al saldar deudas con el grupo.", en: "Shown when settling debts in a group." },
+  "account.saved":   { es: "Guardado", en: "Saved" },
 };
 
 export function useT() {
