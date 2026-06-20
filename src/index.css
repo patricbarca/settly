@@ -65,11 +65,11 @@ body {
     -webkit-backdrop-filter: blur(16px) saturate(150%);
     border: 1px solid var(--glass-border);
     box-shadow: var(--elev-2), inset 0 1px 0 var(--glass-hi);
-    /* iOS Safari: overflow clips the blur region; translateZ forces a compositing
-       layer so the clip actually applies to the backdrop-filter effect */
     overflow: hidden;
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
+    /* iOS Safari: contain:paint clips backdrop-filter to the border-radius boundary */
+    contain: paint;
   }
   .glass-strong {
     background: var(--glass-strong-bg);
@@ -80,6 +80,7 @@ body {
     overflow: hidden;
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
+    contain: paint;
   }
 }
 
