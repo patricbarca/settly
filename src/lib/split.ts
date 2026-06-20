@@ -43,7 +43,13 @@ export function computeSettle(
   });
 
   for (const e of expenses) {
-    if (paid[e.payerId] != null) paid[e.payerId] += Number(e.amount || 0);
+    if (e.payments?.length) {
+      for (const p of e.payments) {
+        if (paid[p.memberId] != null) paid[p.memberId] += Number(p.amount || 0);
+      }
+    } else if (paid[e.payerId] != null) {
+      paid[e.payerId] += Number(e.amount || 0);
+    }
     const sh = shareFor(e, ids);
     ids.forEach((id) => (owed[id] += sh[id] || 0));
   }
