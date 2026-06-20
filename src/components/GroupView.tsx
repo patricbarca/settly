@@ -23,16 +23,22 @@ export function GroupView({ group }: { group: Group }) {
   const [copied, setCopied] = useState(false);
   const [inviteError, setInviteError] = useState(false);
 
-  async function invite() {
+  async function share() {
     setInviteError(false);
     try {
       const link = await createInviteLink(group.id);
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      setInviteError(true);
-      setTimeout(() => setInviteError(false), 2500);
+      if (navigator.share) {
+        await navigator.share({ title: group.name, text: `Únete al grupo "${group.name}" en Settly`, url: link });
+      } else {
+        await navigator.clipboard.writeText(link);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      }
+    } catch (e: any) {
+      if (e?.name !== "AbortError") {
+        setInviteError(true);
+        setTimeout(() => setInviteError(false), 2500);
+      }
     }
   }
 
@@ -49,10 +55,6 @@ export function GroupView({ group }: { group: Group }) {
           <Icon name="back" size={16} /> {t("group.back")}
         </button>
         <div className="flex items-center gap-3">
-          <button onClick={invite} className="lk text-sm inline-flex items-center gap-1" style={inviteError ? { color: "#D14444" } : copied ? { color: "#0A8B5E" } : undefined}>
-            <Icon name="copy" size={14} />
-            {inviteError ? t("group.inviteError") : copied ? t("group.copied") : t("group.invite")}
-          </button>
           <button onClick={() => archiveGroup(group.id, true)} className="lk text-sm inline-flex items-center gap-1">
             <Icon name="archive" size={14} /> {t("group.archive")}
           </button>
@@ -66,6 +68,22 @@ export function GroupView({ group }: { group: Group }) {
       <Hero group={group} />
       <div className="mt-4">
         <Members group={group} />
+      </div>
+
+      {/* Share group card */}
+      <div className="glass rounded-2xl px-4 py-3 mt-3 flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-sm font-semibold">{t("group.shareTitle")}</div>
+          <div className="text-xs text-muted mt-0.5">{t("group.shareHint")}</div>
+        </div>
+        <button
+          onClick={share}
+          className="glass-strong rounded-full px-4 py-2 text-sm font-semibold hover-lift inline-flex items-center gap-1.5 shrink-0"
+          style={inviteError ? { color: "#D14444" } : copied ? { color: "#0A8B5E" } : { color: "var(--teal)" }}
+        >
+          <Icon name="copy" size={14} />
+          {inviteError ? t("group.inviteError") : copied ? t("group.copied") : t("group.shareBtn")}
+        </button>
       </div>
 
       {/* Pestañas */}

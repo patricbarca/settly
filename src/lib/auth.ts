@@ -7,6 +7,7 @@ export type User = {
   id: string;
   name: string;
   email?: string;
+  phone?: string;
   avatar: string;
   provider: "email" | "google" | "guest";
 };
@@ -16,10 +17,12 @@ export type AuthPhase =
   | "unauthenticated"
   | "otp_sent"
   | "needs_name"
+  | "needs_phone"
+  | "phone_otp_sent"
   | "authenticated"
   | "guest";
 
-type State = { phase: AuthPhase; user: User | null; otpEmail?: string };
+type State = { phase: AuthPhase; user: User | null; otpEmail?: string; pendingPhone?: string };
 
 let state: State = { phase: "loading", user: null };
 const listeners = new Set<() => void>();
@@ -38,7 +41,7 @@ async function fromSession(session: Session) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("name")
+    .select("name, phone, phone_verified")
     .eq("id", au.id)
     .single();
 
@@ -55,18 +58,29 @@ async function fromSession(session: Session) {
   }
 
   if (!profile?.name) {
-    await supabase.from("profiles").upsert({ id: au.id, name });
+    // also sync email if column exists (after migrate_v2.sql is applied)
+    await supabase.from("profiles").upsert({ id: au.id, name, email: au.email || "" })
+      .then(() => {})
+      .catch(() => supabase.from("profiles").upsert({ id: au.id, name }));
   }
 
-  const user: User = {
+  const partialUser: User = {
     id: au.id,
     name,
     email: au.email,
+    phone: profile?.phone || undefined,
     avatar: au.user_metadata?.avatar_url || "",
     provider: (au.app_metadata?.provider as User["provider"]) ?? "email",
   };
 
-  state = { phase: "authenticated", user };
+  const phoneSkipped = sessionStorage.getItem("settly.phoneSkipped") === "1";
+  if (!profile?.phone_verified && !phoneSkipped) {
+    state = { phase: "needs_phone", user: partialUser };
+    emit();
+    return;
+  }
+
+  state = { phase: "authenticated", user: partialUser };
   emit();
 }
 
@@ -89,6 +103,10 @@ export function useAuthPhase(): AuthPhase {
 
 export function useOtpEmail(): string | undefined {
   return useSyncExternalStore(sub, () => state.otpEmail, () => state.otpEmail);
+}
+
+export function usePendingPhone(): string | undefined {
+  return useSyncExternalStore(sub, () => state.pendingPhone, () => state.pendingPhone);
 }
 
 export async function signInEmail(name: string, email: string) {
@@ -130,11 +148,36 @@ export async function setProfileName(name: string) {
   await fromSession(session);
 }
 
+export async function submitPhone(phone: string) {
+  const { error } = await supabase.auth.updateUser({ phone: phone.trim() });
+  if (error) throw error;
+  state = { ...state, phase: "phone_otp_sent", pendingPhone: phone.trim() };
+  emit();
+}
+
+export async function verifyPhone(phone: string, token: string) {
+  const { error } = await supabase.auth.verifyOtp({ phone, token, type: "phone_change" });
+  if (error) throw error;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    await supabase.from("profiles").update({ phone: phone.trim(), phone_verified: true }).eq("id", session.user.id);
+    sessionStorage.removeItem("settly.phoneSkipped");
+    await fromSession(session);
+  }
+}
+
+export async function skipPhone() {
+  sessionStorage.setItem("settly.phoneSkipped", "1");
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) await fromSession(session);
+}
+
 export async function signOut() {
   if (state.phase === "guest") {
     state = { phase: "unauthenticated", user: null };
     emit();
     return;
   }
+  sessionStorage.removeItem("settly.phoneSkipped");
   await supabase.auth.signOut();
 }

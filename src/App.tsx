@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useUser, useAuthPhase, signOut, setProfileName } from "./lib/auth";
+import { useUser, useAuthPhase, signOut, setProfileName, submitPhone, verifyPhone, skipPhone, usePendingPhone } from "./lib/auth";
 import { useLang, setLang, useT } from "./lib/i18n";
 import { resetSeed, useActiveGroup, loadGuestMode } from "./lib/store";
 import { useTheme, toggleTheme } from "./lib/theme";
@@ -54,6 +54,7 @@ export default function App() {
   }
 
   if (phase === "needs_name") return <SetNameScreen />;
+  if (phase === "needs_phone" || phase === "phone_otp_sent") return <PhoneScreen />;
   if (phase === "unauthenticated" || phase === "otp_sent") return <Login />;
   if (!user) return <Login />;
 
@@ -146,6 +147,125 @@ function SetNameScreen() {
           style={{ background: "var(--ink)" }}
         >
           {t("login.continue")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function PhoneScreen() {
+  const t = useT();
+  const phase = useAuthPhase();
+  const pendingPhone = usePendingPhone();
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function send() {
+    const p = phone.trim();
+    if (!p || loading) return;
+    setLoading(true);
+    setError("");
+    try {
+      await submitPhone(p);
+    } catch (e: any) {
+      setError(e.message ?? t("phone.errorSend"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function verify() {
+    if (otp.length < 6 || !pendingPhone || loading) return;
+    setLoading(true);
+    setError("");
+    try {
+      await verifyPhone(pendingPhone, otp.trim());
+    } catch {
+      setError(t("phone.errorOtp"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function resend() {
+    if (!pendingPhone || loading) return;
+    setLoading(true);
+    setError("");
+    setOtp("");
+    try {
+      await submitPhone(pendingPhone);
+    } catch (e: any) {
+      setError(e.message ?? t("phone.errorSend"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (phase === "phone_otp_sent" && pendingPhone) {
+    return (
+      <div className="min-h-full flex items-center justify-center p-4">
+        <div className="glass-strong rounded-3xl p-8 w-full max-w-sm text-center anim-pop">
+          <div className="flex justify-center mb-4"><Logo size={48} /></div>
+          <div className="text-4xl mb-3">📱</div>
+          <h2 className="font-display text-2xl font-bold mb-1">{t("phone.checkTitle")}</h2>
+          <p className="text-sm text-muted mb-5">
+            {t("phone.otpSent")} <strong>{pendingPhone}</strong>
+          </p>
+          <input
+            autoFocus
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            onKeyDown={(e) => e.key === "Enter" && verify()}
+            placeholder="123456"
+            inputMode="numeric"
+            className="glass rounded-xl px-3 py-3 w-full text-center text-3xl tracking-[0.5em] font-mono mb-3"
+          />
+          {error && <p className="text-red-500 text-xs mb-3 text-center">{error}</p>}
+          <button
+            onClick={verify}
+            disabled={otp.length < 6 || loading}
+            className="w-full rounded-full px-4 py-3 font-semibold text-white hover-lift disabled:opacity-50"
+            style={{ background: "var(--ink)" }}
+          >
+            {loading ? t("login.verifying") : t("login.verify")}
+          </button>
+          <button onClick={resend} disabled={loading} className="lk text-sm w-full text-center mt-3">
+            {loading ? t("login.sending") : t("login.resend")}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-full flex items-center justify-center p-4">
+      <div className="glass-strong rounded-3xl p-8 w-full max-w-sm text-center anim-pop">
+        <div className="flex justify-center mb-4"><Logo size={48} /></div>
+        <div className="text-4xl mb-3">📱</div>
+        <h2 className="font-display text-2xl font-bold mb-1">{t("phone.title")}</h2>
+        <p className="text-sm text-muted mb-5">{t("phone.hint")}</p>
+        <input
+          autoFocus
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && send()}
+          placeholder="+1 234 567 8900"
+          type="tel"
+          className="glass rounded-xl px-3 py-2.5 text-sm w-full mb-3"
+        />
+        {error && <p className="text-red-500 text-xs mb-3 text-center">{error}</p>}
+        <button
+          onClick={send}
+          disabled={!phone.trim() || loading}
+          className="w-full rounded-full px-4 py-3 font-semibold text-white hover-lift disabled:opacity-50"
+          style={{ background: "var(--ink)" }}
+        >
+          {loading ? t("login.sending") : t("phone.send")}
+        </button>
+        <button onClick={skipPhone} className="lk text-sm w-full text-center mt-3 text-muted">
+          {t("phone.skip")}
         </button>
       </div>
     </div>
