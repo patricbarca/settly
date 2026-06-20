@@ -308,6 +308,22 @@ const DICT: Record<string, { es: string; en: string }> = {
   "ready.allReady": { es: "Todos listos · hora de saldar", en: "Everyone's ready · time to settle" },
   "ach.crew.t": { es: "Crew", en: "Crew" },
   "ach.crew.d": { es: "4+ personas", en: "4+ people" },
+
+  "recur.title":     { es: "Gastos recurrentes", en: "Recurring expenses" },
+  "recur.new":       { es: "Nuevo", en: "New" },
+  "recur.newTitle":  { es: "Nuevo gasto recurrente", en: "New recurring expense" },
+  "recur.interval":  { es: "Frecuencia", en: "Frequency" },
+  "recur.startDate": { es: "Primera fecha", en: "First date" },
+  "recur.daily":     { es: "Diario", en: "Daily" },
+  "recur.weekly":    { es: "Semanal", en: "Weekly" },
+  "recur.monthly":   { es: "Mensual", en: "Monthly" },
+  "recur.yearly":    { es: "Anual", en: "Yearly" },
+  "recur.next":      { es: "Próx. {date}", en: "Next {date}" },
+  "recur.paused":    { es: "Pausado", en: "Paused" },
+  "recur.pause":     { es: "Pausar", en: "Pause" },
+  "recur.resume":    { es: "Reanudar", en: "Resume" },
+  "recur.save":      { es: "Guardar recurrente", en: "Save recurring" },
+  "recur.addHint":   { es: "Añade un gasto recurrente (alquiler, suscripciones…)", en: "Add a recurring expense (rent, subscriptions…)" },
 };
 
 export function useT() {

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Group } from "../lib/types";
-import { setActiveGroup, deleteGroup, archiveGroup } from "../lib/store";
+import { setActiveGroup, deleteGroup, archiveGroup, processRecurring } from "../lib/store";
 import { createInviteLink } from "../lib/invite";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -14,6 +14,7 @@ import { Achievements } from "./Achievements";
 import { CategoryChart } from "./CategoryChart";
 import { ExpenseList } from "./ExpenseList";
 import { Analytics } from "./Analytics";
+import { RecurringList } from "./RecurringList";
 
 type Tab = "expenses" | "balances" | "stats" | "achievements";
 
@@ -23,6 +24,8 @@ export function GroupView({ group }: { group: Group }) {
   const [tab, setTab] = useState<Tab>("expenses");
   const [copied, setCopied] = useState(false);
   const [inviteError, setInviteError] = useState(false);
+
+  useEffect(() => { processRecurring(group.id); }, [group.id]);
 
   async function share() {
     setInviteError(false);
@@ -108,6 +111,7 @@ export function GroupView({ group }: { group: Group }) {
       {tab === "expenses" && (
         <div className="space-y-4 anim-up">
           <AddExpense group={group} />
+          <RecurringList group={group} />
           <CategoryChart group={group} />
           <ExpenseList group={group} />
         </div>
