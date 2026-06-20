@@ -45,12 +45,13 @@ const ANIM = `
 
 // ── Slide 1: Welcome — floating group cards ──────────────────────────────────
 function Slide1Anim() {
+  const t = useT();
   return (
     <div style={{ width: "100%", maxWidth: 300, margin: "0 auto", position: "relative", height: 170 }}>
       <div style={{ animation: "ob-float 3.2s ease-in-out infinite", position: "absolute", top: 0, left: 0, right: 0 }}>
         <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: "11px 14px", backdropFilter: "blur(8px)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-            <span style={{ color: "white", fontWeight: 700, fontSize: 13 }}>✈️ Viaje a París</span>
+            <span style={{ color: "white", fontWeight: 700, fontSize: 13 }}>✈️ {t("onboard.demo.group1")}</span>
             <span style={{ color: "#34d399", fontWeight: 700, fontSize: 13, fontFamily: "monospace" }}>+€24.50</span>
           </div>
           <div style={{ display: "flex", gap: 4 }}>
@@ -63,7 +64,7 @@ function Slide1Anim() {
       <div style={{ animation: "ob-float 4s ease-in-out infinite", animationDelay: "1.4s", position: "absolute", top: 88, left: 12, right: 12 }}>
         <div style={{ background: "rgba(255,255,255,0.09)", borderRadius: 14, padding: "9px 12px", backdropFilter: "blur(8px)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-            <span style={{ color: "white", fontWeight: 700, fontSize: 12 }}>🏠 Piso compartido</span>
+            <span style={{ color: "white", fontWeight: 700, fontSize: 12 }}>🏠 {t("onboard.demo.group2")}</span>
             <span style={{ color: "#f87171", fontWeight: 700, fontSize: 12, fontFamily: "monospace" }}>−€38.00</span>
           </div>
           <div style={{ display: "flex", gap: 3 }}>
@@ -79,15 +80,16 @@ function Slide1Anim() {
 
 // ── Slide 2: Groups — members appearing one by one ───────────────────────────
 function Slide2Anim() {
+  const t = useT();
   const [phase, setPhase] = useState(0);
   useEffect(() => {
     const delays = [900, 650, 650, 650, 2200];
-    const t = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 900);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 900);
+    return () => clearTimeout(timer);
   }, [phase]);
 
   const members = [
-    { name: "Tú", color: "#7c3aed" },
+    { name: t("onboard.demo.you"), color: "#7c3aed" },
     { name: "Ana G.", color: "#0891b2" },
     { name: "Pedro R.", color: "#dc2626" },
   ];
@@ -95,7 +97,7 @@ function Slide2Anim() {
   return (
     <div style={{ width: "100%", maxWidth: 280, margin: "0 auto" }}>
       <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
-        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>Cena de cumpleaños</div>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>{t("onboard.demo.dinner")}</div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", minHeight: 36 }}>
           {members.slice(0, Math.min(phase + 1, 3)).map((m, i) => (
             <div key={i} style={{ animation: "ob-pop 0.4s cubic-bezier(.34,1.56,.64,1) both", background: `${m.color}2a`, border: `1.5px solid ${m.color}55`, borderRadius: 20, padding: "4px 10px", display: "flex", alignItems: "center", gap: 5 }}>
@@ -108,7 +110,7 @@ function Slide2Anim() {
           <div style={{ animation: "ob-fadeup 0.4s ease both", marginTop: 10, background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: "7px 10px", display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ fontSize: 13 }}>🔗</span>
             <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 10 }}>settly.app/join/xk9p</span>
-            <span style={{ marginLeft: "auto", color: "#34d399", fontSize: 11, fontWeight: 700 }}>Copiar</span>
+            <span style={{ marginLeft: "auto", color: "#34d399", fontSize: 11, fontWeight: 700 }}>{t("onboard.demo.copy")}</span>
           </div>
         )}
       </div>
@@ -118,11 +120,12 @@ function Slide2Anim() {
 
 // ── Slide 3: Receipt scan ────────────────────────────────────────────────────
 function Slide3Anim() {
+  const t = useT();
   const [phase, setPhase] = useState(0);
   useEffect(() => {
     const delays = [600, 2000, 1800, 2400];
-    const t = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 600);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 600);
+    return () => clearTimeout(timer);
   }, [phase]);
 
   const items = [
@@ -136,11 +139,11 @@ function Slide3Anim() {
     return (
       <div style={{ width: "100%", maxWidth: 260, margin: "0 auto", animation: "ob-pop 0.5s cubic-bezier(.34,1.56,.64,1) both" }}>
         <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
-          <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>✓ Gasto detectado</div>
-          <div style={{ color: "white", fontWeight: 700, fontSize: 15, marginBottom: 2 }}>Cena restaurante</div>
+          <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{t("onboard.demo.detected")}</div>
+          <div style={{ color: "white", fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{t("onboard.demo.restaurant")}</div>
           <div style={{ color: "#34d399", fontWeight: 800, fontSize: 24, fontFamily: "monospace", marginBottom: 10 }}>€53.00</div>
           <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
-            {[["Tú","€17.67","#7c3aed"],["Ana","€17.67","#0891b2"],["Pedro","€17.66","#dc2626"]].map(([n,a,c],i) => (
+            {[[t("onboard.demo.you"),"€17.67","#7c3aed"],["Ana","€17.67","#0891b2"],["Pedro","€17.66","#dc2626"]].map(([n,a,c],i) => (
               <div key={i} style={{ flex: 1, background: `${c}22`, border: `1px solid ${c}44`, borderRadius: 8, padding: "5px 4px", textAlign: "center", animation: `ob-fadeup 0.3s ease ${i * 0.1 + 0.1}s both` }}>
                 <div style={{ color: "white", fontSize: 9, fontWeight: 700 }}>{n}</div>
                 <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 9, fontFamily: "monospace" }}>{a}</div>
@@ -148,7 +151,7 @@ function Slide3Anim() {
             ))}
           </div>
           <div style={{ background: "rgba(52,211,153,0.18)", borderRadius: 8, padding: "6px 8px", textAlign: "center", color: "#34d399", fontSize: 11, fontWeight: 700 }}>
-            Añadir al grupo →
+            {t("onboard.demo.addGroup")}
           </div>
         </div>
       </div>
@@ -179,15 +182,16 @@ function Slide3Anim() {
 }
 
 // ── Slide 4: Voice to text ───────────────────────────────────────────────────
-const VOICE_SENTENCE = "Cena con Ana y Pedro, pagué 90€";
 function Slide4Anim() {
+  const t = useT();
+  const voiceSentence = t("onboard.demo.voiceText");
   const [phase, setPhase] = useState(0);
   const [typed, setTyped] = useState("");
 
   useEffect(() => {
     const delays = [800, 2200, 1600, 2200];
-    const t = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 800);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 800);
+    return () => clearTimeout(timer);
   }, [phase]);
 
   useEffect(() => {
@@ -196,13 +200,13 @@ function Slide4Anim() {
       let i = 0;
       const iv = setInterval(() => {
         i++;
-        setTyped(VOICE_SENTENCE.slice(0, i));
-        if (i >= VOICE_SENTENCE.length) clearInterval(iv);
+        setTyped(voiceSentence.slice(0, i));
+        if (i >= voiceSentence.length) clearInterval(iv);
       }, 45);
       return () => clearInterval(iv);
     }
     if (phase === 0) setTyped("");
-  }, [phase]);
+  }, [phase, voiceSentence]);
 
   const bars = [0.5, 0.9, 0.65, 1, 0.75, 0.55, 0.85];
 
@@ -231,7 +235,7 @@ function Slide4Anim() {
       {(phase === 2 || phase === 3) && (
         <div style={{ animation: "ob-fadeup 0.3s ease both", background: "rgba(255,255,255,0.1)", borderRadius: 12, padding: "8px 14px", color: "white", fontSize: 13, fontStyle: "italic", textAlign: "center", maxWidth: 240 }}>
           "{typed}"
-          {phase === 2 && typed.length < VOICE_SENTENCE.length && <span style={{ animation: "ob-pulse 0.8s ease-in-out infinite" }}>|</span>}
+          {phase === 2 && typed.length < voiceSentence.length && <span style={{ animation: "ob-pulse 0.8s ease-in-out infinite" }}>|</span>}
         </div>
       )}
 
@@ -240,8 +244,8 @@ function Slide4Anim() {
         <div style={{ animation: "ob-pop 0.45s cubic-bezier(.34,1.56,.64,1) both", background: "rgba(255,255,255,0.13)", borderRadius: 14, padding: "10px 14px", width: "100%", backdropFilter: "blur(8px)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
-              <div style={{ color: "white", fontWeight: 700, fontSize: 13 }}>Cena</div>
-              <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 10 }}>Pagó: Tú · Ana, Pedro</div>
+              <div style={{ color: "white", fontWeight: 700, fontSize: 13 }}>{t("onboard.demo.voiceTitle")}</div>
+              <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 10 }}>{t("onboard.demo.voiceMeta")}</div>
             </div>
             <div style={{ color: "#34d399", fontWeight: 800, fontSize: 18, fontFamily: "monospace" }}>€90</div>
           </div>
@@ -253,11 +257,12 @@ function Slide4Anim() {
 
 // ── Slide 5: Balances & settle ───────────────────────────────────────────────
 function Slide5Anim() {
+  const t = useT();
   const [phase, setPhase] = useState(0);
   useEffect(() => {
     const delays = [600, 1800, 1600, 2000];
-    const t = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 600);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 600);
+    return () => clearTimeout(timer);
   }, [phase]);
 
   const people = [
@@ -289,8 +294,8 @@ function Slide5Anim() {
       {phase >= 2 && (
         <div style={{ animation: "ob-fadeup 0.4s ease both", background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.35)", borderRadius: 12, padding: "9px 12px", textAlign: "center" }}>
           {settled
-            ? <span style={{ color: "#34d399", fontWeight: 700, fontSize: 12 }}>✓ Todos a cero · ¡Saldado!</span>
-            : <span style={{ color: "#34d399", fontSize: 11 }}>Settly calculó 3 transferencias mínimas</span>}
+            ? <span style={{ color: "#34d399", fontWeight: 700, fontSize: 12 }}>{t("onboard.demo.settled")}</span>
+            : <span style={{ color: "#34d399", fontSize: 11 }}>{t("onboard.demo.transfers")}</span>}
         </div>
       )}
     </div>
@@ -301,10 +306,10 @@ function Slide5Anim() {
 function Slide6Anim() {
   const t = useT();
   const cards = [
-    { emoji: "📊", label: t("onboard.extra1"), detail: "Comida · Ocio · Viaje" },
+    { emoji: "📊", label: t("onboard.extra1"), detail: t("onboard.demo.detail1") },
     { emoji: "💱", label: t("onboard.extra2"), detail: "€ $ £ ¥ AUD..." },
-    { emoji: "⚡", label: t("onboard.extra3"), detail: "Cambios al instante" },
-    { emoji: "📜", label: t("onboard.extra4"), detail: "Comprobantes y recibos" },
+    { emoji: "⚡", label: t("onboard.extra3"), detail: t("onboard.demo.detail3") },
+    { emoji: "📜", label: t("onboard.extra4"), detail: t("onboard.demo.detail4") },
   ];
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, width: "100%", maxWidth: 280, margin: "0 auto" }}>
