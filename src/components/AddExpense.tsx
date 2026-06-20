@@ -1,6 +1,6 @@
 import { useState } from "react";
-import type { Group } from "../lib/types";
-import { updateGroup } from "../lib/store";
+import type { Group, RecurrenceInterval } from "../lib/types";
+import { updateGroup, addRecurring } from "../lib/store";
 import { parseExpense } from "../lib/parse";
 import { useSpeech } from "../lib/speech";
 import { uid } from "../lib/format";
@@ -9,10 +9,16 @@ import { Icon } from "./Icon";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 import { ScanReceiptModal } from "./ScanReceiptModal";
 
+const INTERVALS: RecurrenceInterval[] = ["daily", "weekly", "monthly", "yearly"];
+type ExpenseType = "one-time" | "recurring";
+
 export function AddExpense({ group }: { group: Group }) {
   const t = useT();
   const [text, setText] = useState("");
   const [draft, setDraft] = useState<ExpenseDraft | null>(null);
+  const [expenseType, setExpenseType] = useState<ExpenseType>("one-time");
+  const [recurInterval, setRecurInterval] = useState<RecurrenceInterval>("monthly");
+  const [recurStartDate, setRecurStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [scan, setScan] = useState(false);
   const sp = useSpeech((tx) => setText((p) => (p ? `${p} ${tx}` : tx)));
 
@@ -30,6 +36,12 @@ export function AddExpense({ group }: { group: Group }) {
       splitValues: {},
       category: r.category,
     });
+    if (r.interval) {
+      setExpenseType("recurring");
+      setRecurInterval(r.interval);
+    } else {
+      setExpenseType("one-time");
+    }
   }
 
   function manual() {
@@ -44,29 +56,47 @@ export function AddExpense({ group }: { group: Group }) {
       splitValues: {},
       category: "otros",
     });
+    setExpenseType("one-time");
   }
 
   function save(d: ExpenseDraft) {
     const { payerId, payments, splits } = draftToExpenseFields(d);
-    updateGroup(group.id, (g) => ({
-      ...g,
-      expenses: [
-        {
-          id: uid(),
-          label: d.label.trim(),
-          amount: Number(d.amount) || 0,
-          payerId,
-          payments,
-          participantIds: d.participantIds,
-          splits,
-          category: d.category,
-          date: new Date().toISOString().slice(0, 10),
-        },
-        ...g.expenses,
-      ],
-    }));
+    if (expenseType === "recurring") {
+      addRecurring(group.id, {
+        id: uid(),
+        label: d.label.trim(),
+        amount: Number(d.amount) || 0,
+        payerId,
+        ...(payments?.length ? { payments } : {}),
+        participantIds: d.participantIds,
+        splits: splits ?? null,
+        category: d.category,
+        interval: recurInterval,
+        nextDate: recurStartDate,
+        active: true,
+      });
+    } else {
+      updateGroup(group.id, (g) => ({
+        ...g,
+        expenses: [
+          {
+            id: uid(),
+            label: d.label.trim(),
+            amount: Number(d.amount) || 0,
+            payerId,
+            payments,
+            participantIds: d.participantIds,
+            splits,
+            category: d.category,
+            date: new Date().toISOString().slice(0, 10),
+          },
+          ...g.expenses,
+        ],
+      }));
+    }
     setDraft(null);
     setText("");
+    setExpenseType("one-time");
   }
 
   return (
@@ -111,13 +141,64 @@ export function AddExpense({ group }: { group: Group }) {
 
       {draft && (
         <div className="mt-4 glass rounded-2xl p-4 anim-pop">
-          <div className="text-xs uppercase tracking-widest font-mono text-muted mb-2">{t("add.review")}</div>
+          <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{t("add.review")}</div>
+
+          {/* One-time / Recurring toggle */}
+          <div className="flex gap-1.5 mb-4">
+            {(["one-time", "recurring"] as ExpenseType[]).map((type) => {
+              const on = expenseType === type;
+              return (
+                <button
+                  key={type}
+                  onClick={() => setExpenseType(type)}
+                  className={`rounded-full px-4 py-1.5 text-sm font-medium ${on ? "" : "glass text-muted"}`}
+                  style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                >
+                  {t(type === "one-time" ? "add.oneTime" : "add.recurringType")}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Interval + start date (recurring only) */}
+          {expenseType === "recurring" && (
+            <div className="mb-4 space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-muted">{t("recur.interval")}</label>
+                <div className="flex gap-1.5 flex-wrap mt-1">
+                  {INTERVALS.map((iv) => {
+                    const on = recurInterval === iv;
+                    return (
+                      <button
+                        key={iv}
+                        onClick={() => setRecurInterval(iv)}
+                        className={`rounded-full px-4 py-1.5 text-sm font-medium ${on ? "" : "glass text-muted"}`}
+                        style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                      >
+                        {t(`recur.${iv}`)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted">{t("recur.startDate")}</label>
+                <input
+                  type="date"
+                  value={recurStartDate}
+                  onChange={(e) => setRecurStartDate(e.target.value)}
+                  className="glass rounded-xl px-3 py-2 text-sm w-full mt-1"
+                />
+              </div>
+            </div>
+          )}
+
           <ExpenseForm
             group={group}
             initial={draft}
             onSave={save}
-            onCancel={() => setDraft(null)}
-            submitLabel={t("add.submit")}
+            onCancel={() => { setDraft(null); setExpenseType("one-time"); }}
+            submitLabel={expenseType === "recurring" ? t("recur.save") : t("add.submit")}
           />
         </div>
       )}

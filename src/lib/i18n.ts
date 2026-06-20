@@ -171,7 +171,7 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "users.title": { es: "Miembros", en: "Members" },
   "members.you": { es: "tú", en: "you" },
-  "members.add": { es: "+ miembro", en: "+ member" },
+  "members.add": { es: "Añadir miembro", en: "Add member" },
   "members.name": { es: "Nombre", en: "Name" },
   "members.searchHint": { es: "Busca por email o teléfono de un usuario registrado.", en: "Search by email or phone of a registered user." },
   "members.searchPh": { es: "email@ejemplo.com  o  +34 600 000 000", en: "email@example.com  or  +1 234 567 8900" },
@@ -183,6 +183,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "members.manualHint": { es: "Esta persona no necesita tener Settly instalado.", en: "This person doesn't need to have Settly installed." },
   "members.backSearch": { es: "← Buscar por email/teléfono", en: "← Search by email/phone" },
 
+  "add.oneTime":       { es: "Gasto puntual", en: "One-time" },
+  "add.recurringType": { es: "Recurrente", en: "Recurring" },
   "add.title": { es: "Añade un gasto hablando", en: "Add an expense by speaking" },
   "add.placeholder": { es: 'Ej: "Cena con Ale y Cote, pagué 90"', en: 'E.g. "Dinner with Ale and Cote, I paid 90"' },
   "add.interpret": { es: "Interpretar", en: "Interpret" },

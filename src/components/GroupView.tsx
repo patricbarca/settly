@@ -69,7 +69,7 @@ export function GroupView({ group }: { group: Group }) {
     <div className="max-w-2xl mx-auto px-4 pb-10">
       <div className="flex items-center justify-between pt-4 pb-3">
         <div className="flex items-center gap-2">
-          <div className="glass rounded-xl p-1">
+          <div className="glass rounded-2xl p-1">
             <Logo size={24} />
           </div>
           <button onClick={() => setActiveGroup(null)} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift" title={t("group.back")}>
@@ -144,14 +144,14 @@ export function GroupView({ group }: { group: Group }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 my-4">
+      <div className="flex gap-1.5 my-4 flex-wrap">
         {TABS.map((tb) => {
           const on = tab === tb.id;
           return (
             <button
               key={tb.id}
               onClick={() => setTab(tb.id)}
-              className={`flex-1 rounded-full py-2 text-sm font-semibold ${on ? "" : "glass text-muted"}`}
+              className={`rounded-full px-4 py-2 text-sm font-semibold ${on ? "" : "glass text-muted"}`}
               style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
             >
               {tb.label}

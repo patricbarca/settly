@@ -32,7 +32,7 @@ export function Home() {
           <span className="blob b2" />
           <span className="blob b3" />
           <div className="relative z-10 flex flex-col items-center text-center py-3">
-            <div className="glass rounded-3xl p-3 mb-4">
+            <div className="glass rounded-full p-3 mb-4">
               <Logo size={54} />
             </div>
             <h1 className="text-white font-display text-5xl font-extrabold tracking-tight">Settly</h1>
