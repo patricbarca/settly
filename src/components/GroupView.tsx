@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import type { Group } from "../lib/types";
 import { setActiveGroup, deleteGroup, archiveGroup, processRecurring } from "../lib/store";
+import { computeSettle } from "../lib/split";
 import { createInviteLink } from "../lib/invite";
+import { money } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
@@ -17,6 +19,7 @@ import { ExpenseList } from "./ExpenseList";
 import { Analytics } from "./Analytics";
 import { RecurringList } from "./RecurringList";
 import { GroupSettings } from "./GroupSettings";
+import { UsersModal } from "./UsersModal";
 
 type Tab = "expenses" | "balances" | "stats" | "achievements";
 
@@ -24,11 +27,17 @@ export function GroupView({ group }: { group: Group }) {
   const t = useT();
   const [confirmDel, setConfirmDel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showUsers, setShowUsers] = useState(false);
   const [tab, setTab] = useState<Tab>("expenses");
   const [copied, setCopied] = useState(false);
   const [inviteError, setInviteError] = useState(false);
 
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); }, [group.id]);
   useEffect(() => { processRecurring(group.id); }, [group.id]);
+
+  const { net } = computeSettle(group.members, group.expenses, group.settlements ?? []);
+  const mine = net[group.meId] || 0;
+  const ok = Math.abs(mine) < 0.01;
 
   async function share() {
     setInviteError(false);
@@ -68,6 +77,9 @@ export function GroupView({ group }: { group: Group }) {
           </button>
         </div>
         <div className="flex items-center gap-1.5">
+          <button onClick={() => setShowUsers(true)} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift" title={t("users.title")}>
+            <Icon name="users" size={15} />
+          </button>
           <button onClick={() => setShowSettings(true)} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift" title={t("settings.title")}>
             <Icon name="settings" size={15} />
           </button>
@@ -80,8 +92,37 @@ export function GroupView({ group }: { group: Group }) {
         </div>
       </div>
 
-      {/* Siempre visibles: saldo + Settle Score, y todos los integrantes */}
       <Hero group={group} />
+
+      {/* Balance card — visual, no labels */}
+      <div
+        className="rounded-2xl p-4 mt-3 flex items-center gap-4"
+        style={{
+          background: ok ? "rgba(10,163,163,0.08)" : mine > 0 ? "rgba(10,139,94,0.08)" : "rgba(209,68,68,0.08)",
+          border: `1.5px solid ${ok ? "rgba(10,163,163,0.15)" : mine > 0 ? "rgba(10,139,94,0.15)" : "rgba(209,68,68,0.15)"}`,
+        }}
+      >
+        <div
+          className="h-14 w-14 rounded-2xl flex items-center justify-center shrink-0"
+          style={{
+            background: ok ? "rgba(10,163,163,0.18)" : mine > 0 ? "rgba(10,139,94,0.18)" : "rgba(209,68,68,0.18)",
+            color: ok ? "var(--teal)" : mine > 0 ? "#0A8B5E" : "#D14444",
+          }}
+        >
+          {ok ? <Icon name="check" size={26} strokeWidth={2.5} /> : <span className="text-2xl font-bold">{mine > 0 ? "↑" : "↓"}</span>}
+        </div>
+        <div
+          className="font-display text-3xl font-extrabold leading-none"
+          style={{ color: ok ? "var(--teal)" : mine > 0 ? "#0A8B5E" : "#D14444" }}
+        >
+          {ok
+            ? t("hero.uptodate")
+            : mine > 0
+              ? `+${money(mine, group.currency)}`
+              : `−${money(-mine, group.currency)}`}
+        </div>
+      </div>
+
       <div className="mt-4">
         <Members group={group} />
       </div>
@@ -102,7 +143,7 @@ export function GroupView({ group }: { group: Group }) {
         </button>
       </div>
 
-      {/* Pestañas */}
+      {/* Tabs */}
       <div className="flex gap-1 glass rounded-full p-1 my-4">
         {TABS.map((tb) => {
           const on = tab === tb.id;
@@ -144,6 +185,7 @@ export function GroupView({ group }: { group: Group }) {
         </div>
       )}
 
+      {showUsers && <UsersModal group={group} onClose={() => setShowUsers(false)} />}
       {showSettings && <GroupSettings group={group} onClose={() => setShowSettings(false)} />}
 
       {confirmDel && (

@@ -5,7 +5,7 @@ import { groupSettleScore } from "../lib/gamification";
 import { money, personColor, initials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Logo } from "./Logo";
-import { Icon, type IconName } from "./Icon";
+import { Icon } from "./Icon";
 import { SettleRing } from "./SettleRing";
 import { CreateGroupModal } from "./CreateGroupModal";
 import type { Group } from "../lib/types";
@@ -23,12 +23,6 @@ export function Home() {
   const hasExpense = active.some((g) => g.expenses.length > 0);
   const hasSettlement = active.some((g) => (g.settlements ?? []).some((s) => s.status === "confirmed"));
   const allDone = hasGroup && hasExpense && hasSettlement;
-
-  const FEATURES: { icon: IconName; title: string; desc: string }[] = [
-    { icon: "mic", title: t("home.featVoiceT"), desc: t("home.featVoiceD") },
-    { icon: "balance", title: t("home.featClearT"), desc: t("home.featClearD") },
-    { icon: "users", title: t("home.featGroupT"), desc: t("home.featGroupD") },
-  ];
 
   return (
     <div className="max-w-2xl mx-auto px-4 pb-10">
@@ -52,16 +46,6 @@ export function Home() {
             </button>
           </div>
         </div>
-      </div>
-
-      <div className="grid sm:grid-cols-3 gap-3 mt-4">
-        {FEATURES.map((f) => (
-          <div key={f.title} className="glass rounded-2xl p-4">
-            <Icon name={f.icon} size={22} className="text-[color:var(--indigo)]" />
-            <div className="font-semibold mt-2">{f.title}</div>
-            <div className="text-sm text-muted mt-0.5 leading-snug">{f.desc}</div>
-          </div>
-        ))}
       </div>
 
       {/* Getting started checklist — shows until all 3 steps done */}

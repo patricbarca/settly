@@ -169,6 +169,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "group.deleteQ": { es: "¿Eliminar “{name}”?", en: "Delete “{name}”?" },
   "group.deleteWarn": { es: "Se borrarán sus gastos. No se puede deshacer.", en: "Its expenses will be deleted. This can't be undone." },
 
+  "users.title": { es: "Miembros", en: "Members" },
   "members.you": { es: "tú", en: "you" },
   "members.add": { es: "+ miembro", en: "+ member" },
   "members.name": { es: "Nombre", en: "Name" },

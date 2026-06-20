@@ -3,6 +3,8 @@ import type { Group, RecurrenceInterval } from "../lib/types";
 import { addRecurring, updateRecurring, deleteRecurring } from "../lib/store";
 import { draftToExpenseFields, ExpenseForm, type ExpenseDraft } from "./ExpenseForm";
 import { uid, personColor, initials } from "../lib/format";
+import { parseExpense } from "../lib/parse";
+import { useSpeech } from "../lib/speech";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -13,8 +15,9 @@ function RecurringModal({ group, onClose }: { group: Group; onClose: () => void 
   const t = useT();
   const [interval, setInterval] = useState<RecurrenceInterval>("monthly");
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
-
-  const draft: ExpenseDraft = {
+  const [voiceText, setVoiceText] = useState("");
+  const [formKey, setFormKey] = useState(0);
+  const [draft, setDraft] = useState<ExpenseDraft>({
     label: "",
     amount: "",
     payerId: group.meId,
@@ -24,7 +27,23 @@ function RecurringModal({ group, onClose }: { group: Group; onClose: () => void 
     splitMode: "equal",
     splitValues: {},
     category: "otros",
-  };
+  });
+
+  const sp = useSpeech((tx) => setVoiceText((p) => (p ? `${p} ${tx}` : tx)));
+
+  function interpret() {
+    if (!voiceText.trim()) return;
+    const r = parseExpense(voiceText, group.members, group.meId);
+    setDraft((d) => ({
+      ...d,
+      label: r.label || d.label,
+      amount: r.amount ? String(r.amount) : d.amount,
+      payerId: r.payerId || d.payerId,
+      participantIds: r.participantIds?.length ? r.participantIds : d.participantIds,
+      category: r.category || d.category,
+    }));
+    setFormKey((k) => k + 1);
+  }
 
   function handleSave(d: ExpenseDraft) {
     const { payerId, payments, splits } = draftToExpenseFields(d);
@@ -51,6 +70,33 @@ function RecurringModal({ group, onClose }: { group: Group; onClose: () => void 
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="font-display text-xl font-bold mb-4">{t("recur.newTitle")}</h3>
+
+        {/* Voice / text input */}
+        <div className="flex gap-2 items-stretch mb-4">
+          <input
+            value={voiceText}
+            onChange={(e) => setVoiceText(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && interpret()}
+            placeholder={t("add.placeholder")}
+            className="glass rounded-xl px-3 py-2.5 text-sm flex-1"
+          />
+          <button
+            onClick={sp.toggle}
+            disabled={!sp.supported}
+            title={sp.supported ? t("add.dictate") : t("add.voiceOff")}
+            className={`h-10 w-10 shrink-0 rounded-full text-white flex items-center justify-center disabled:opacity-40 ${sp.listening ? "mic-on" : ""}`}
+            style={{ background: sp.listening ? "#D14444" : "var(--ink)" }}
+          >
+            <Icon name="mic" size={17} />
+          </button>
+          <button
+            onClick={interpret}
+            disabled={!voiceText.trim()}
+            className="glass-strong rounded-xl px-3 py-2.5 text-sm font-medium hover-lift disabled:opacity-40"
+          >
+            {t("add.interpret")}
+          </button>
+        </div>
 
         {/* Interval */}
         <div className="mb-3">
@@ -84,6 +130,7 @@ function RecurringModal({ group, onClose }: { group: Group; onClose: () => void 
         </div>
 
         <ExpenseForm
+          key={formKey}
           group={group}
           initial={draft}
           onSave={handleSave}
