@@ -7,7 +7,7 @@ import { money, fmtDate, personColor, initials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
-import { ExpenseForm, type ExpenseDraft } from "./ExpenseForm";
+import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 
 export function ExpenseList({ group }: { group: Group }) {
   const t = useT();
@@ -26,6 +26,7 @@ export function ExpenseList({ group }: { group: Group }) {
     }));
   }
   function saveEdit(id: string, d: ExpenseDraft) {
+    const { payerId, payments, splits } = draftToExpenseFields(d);
     updateGroup(group.id, (g) => ({
       ...g,
       expenses: g.expenses.map((e) =>
@@ -34,10 +35,11 @@ export function ExpenseList({ group }: { group: Group }) {
               ...e,
               label: d.label.trim(),
               amount: Number(d.amount) || 0,
-              payerId: d.payerId,
+              payerId,
+              payments,
               participantIds: d.participantIds,
               category: d.category,
-              splits: null,
+              splits,
             }
           : e
       ),
@@ -60,6 +62,9 @@ export function ExpenseList({ group }: { group: Group }) {
         const participants = (e.participantIds.length ? e.participantIds : ids).filter(
           (id) => (shares[id] || 0) > 0.001
         );
+        const payerDisplay = e.payments?.length
+          ? e.payments.map((p) => name(p.memberId)).join(", ")
+          : name(e.payerId);
         return (
           <div key={e.id} className="glass rounded-2xl overflow-hidden hover-lift">
             <div className="p-3 flex items-center gap-3 cursor-pointer" onClick={() => setOpenId(open ? null : e.id)}>
@@ -79,7 +84,7 @@ export function ExpenseList({ group }: { group: Group }) {
                   )}
                 </div>
                 <div className="text-xs text-muted">
-                  {t("exp.meta", { payer: name(e.payerId), n: participants.length, date: fmtDate(e.date) })}
+                  {t("exp.meta", { payer: payerDisplay, n: participants.length, date: fmtDate(e.date) })}
                 </div>
               </div>
               <div className="text-right shrink-0 flex items-center gap-1.5">
@@ -153,7 +158,13 @@ export function ExpenseList({ group }: { group: Group }) {
                 label: editing.label,
                 amount: editing.amount,
                 payerId: editing.payerId,
+                multiPay: !!(editing.payments?.length),
+                payments: editing.payments
+                  ? Object.fromEntries(editing.payments.map((p) => [p.memberId, p.amount]))
+                  : {},
                 participantIds: editing.participantIds,
+                splitMode: editing.splits ? "exact" : "equal",
+                splitValues: editing.splits ?? {},
                 category: editing.category,
               }}
               onSave={(d) => saveEdit(editing.id, d)}

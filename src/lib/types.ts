@@ -6,6 +6,8 @@ export type Category =
   | "compras"
   | "otros";
 
+export type SplitMode = "equal" | "percent" | "exact" | "shares";
+
 export type PayType = "payid" | "bank" | "paypal" | "revolut" | "wise" | "bizum" | "bunq" | "other";
 
 export interface PayMethod {
@@ -31,6 +33,8 @@ export interface Expense {
   note?: string;
   /** custom split memberId -> amount; null/undefined = partes iguales */
   splits?: Record<string, number> | null;
+  /** multiple payers: who paid how much */
+  payments?: { memberId: string; amount: number }[];
   reviewRequested?: boolean;
 }
 

@@ -6,7 +6,7 @@ import { useSpeech } from "../lib/speech";
 import { uid } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
-import { ExpenseForm, type ExpenseDraft } from "./ExpenseForm";
+import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 import { ScanReceiptModal } from "./ScanReceiptModal";
 
 export function AddExpense({ group }: { group: Group }) {
@@ -23,7 +23,11 @@ export function AddExpense({ group }: { group: Group }) {
       label: r.label,
       amount: r.amount || "",
       payerId: r.payerId,
+      multiPay: false,
+      payments: {},
       participantIds: r.participantIds,
+      splitMode: "equal",
+      splitValues: {},
       category: r.category,
     });
   }
@@ -33,12 +37,17 @@ export function AddExpense({ group }: { group: Group }) {
       label: "",
       amount: "",
       payerId: group.meId,
+      multiPay: false,
+      payments: {},
       participantIds: group.members.map((m) => m.id),
+      splitMode: "equal",
+      splitValues: {},
       category: "otros",
     });
   }
 
   function save(d: ExpenseDraft) {
+    const { payerId, payments, splits } = draftToExpenseFields(d);
     updateGroup(group.id, (g) => ({
       ...g,
       expenses: [
@@ -46,8 +55,10 @@ export function AddExpense({ group }: { group: Group }) {
           id: uid(),
           label: d.label.trim(),
           amount: Number(d.amount) || 0,
-          payerId: d.payerId,
+          payerId,
+          payments,
           participantIds: d.participantIds,
+          splits,
           category: d.category,
           date: new Date().toISOString().slice(0, 10),
         },
