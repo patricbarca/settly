@@ -145,6 +145,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "hero.uptodate": { es: "Estás al día", en: "You're all settled" },
   "hero.theyOwe": { es: "Te deben {amt}", en: "You're owed {amt}" },
   "hero.youOwe": { es: "Debes {amt}", en: "You owe {amt}" },
+  "hero.youOweLabel": { es: "Debes en total", en: "You owe in total" },
+  "hero.owedLabel": { es: "Te deben en total", en: "You're owed in total" },
   "hero.total": { es: "Total del grupo {amt} · {e} gastos", en: "Group total {amt} · {e} expenses" },
   "hero.groupLabel": { es: "Grupo", en: "Group" },
 
@@ -186,7 +188,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "add.oneTime":       { es: "Gasto puntual", en: "One-time" },
   "add.recurringType": { es: "Recurrente", en: "Recurring" },
   "add.repeatToggle":  { es: "Repetir este gasto", en: "Repeat this expense" },
-  "add.title": { es: "Añade un gasto hablando", en: "Add an expense by speaking" },
+  "add.title": { es: "Añadir gasto", en: "Add an Expense" },
   "add.placeholder": { es: 'Ej: "Cena con Ale y Cote, pagué 90"', en: 'E.g. "Dinner with Ale and Cote, I paid 90"' },
   "add.interpret": { es: "Interpretar", en: "Interpret" },
   "add.manual": { es: "Manual", en: "Manual" },

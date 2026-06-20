@@ -111,15 +111,22 @@ export function GroupView({ group }: { group: Group }) {
         >
           {ok ? <Icon name="check" size={26} strokeWidth={2.5} /> : <span className="text-2xl font-bold">{mine > 0 ? "↑" : "↓"}</span>}
         </div>
-        <div
-          className="font-display text-3xl font-extrabold leading-none"
-          style={{ color: ok ? "var(--teal)" : mine > 0 ? "#0A8B5E" : "#D14444" }}
-        >
-          {ok
-            ? t("hero.uptodate")
-            : mine > 0
-              ? `+${money(mine, group.currency)}`
-              : `−${money(-mine, group.currency)}`}
+        <div className="min-w-0">
+          {!ok && (
+            <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1">
+              {mine > 0 ? t("hero.owedLabel") : t("hero.youOweLabel")}
+            </div>
+          )}
+          <div
+            className="font-display text-3xl font-extrabold leading-none"
+            style={{ color: ok ? "var(--teal)" : mine > 0 ? "#0A8B5E" : "#D14444" }}
+          >
+            {ok
+              ? t("hero.uptodate")
+              : mine > 0
+                ? `+${money(mine, group.currency)}`
+                : `−${money(-mine, group.currency)}`}
+          </div>
         </div>
       </div>
 
@@ -144,14 +151,14 @@ export function GroupView({ group }: { group: Group }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 my-4 flex-wrap">
+      <div className="flex gap-1.5 my-4">
         {TABS.map((tb) => {
           const on = tab === tb.id;
           return (
             <button
               key={tb.id}
               onClick={() => setTab(tb.id)}
-              className={`rounded-full px-4 py-2 text-sm font-semibold ${on ? "" : "glass text-muted"}`}
+              className={`flex-1 rounded-full px-2 py-2 text-sm font-semibold text-center whitespace-nowrap ${on ? "" : "glass text-muted"}`}
               style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
             >
               {tb.label}

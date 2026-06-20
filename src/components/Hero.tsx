@@ -17,7 +17,7 @@ export function Hero({ group }: { group: Group }) {
           <div className="text-white/70 text-[11px] uppercase tracking-widest font-mono mb-1">{t("hero.groupLabel")}</div>
           <div className="text-white font-display text-2xl font-extrabold truncate leading-tight">{group.name}</div>
         </div>
-        <div className="text-center shrink-0">
+        <div className="text-center shrink-0 text-white">
           <SettleRing value={score} size={56} stroke={6} color="#7CF5EE" track="rgba(255,255,255,0.25)" />
           <div className="text-[9px] uppercase tracking-wide font-mono text-white/70 mt-1">{t("game.settleScore")}</div>
         </div>

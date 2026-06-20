@@ -151,21 +151,9 @@ export function RecurringList({ group }: { group: Group }) {
 
   const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
 
-  if (recurring.length === 0) {
-    return (
-      <>
-        <button
-          onClick={() => setShowAdd(true)}
-          className="glass rounded-3xl px-4 py-3 w-full text-left text-sm text-muted hover-lift flex items-center gap-2"
-        >
-          <Icon name="repeat" size={16} />
-          <span>{t("recur.addHint")}</span>
-          <span className="ml-auto font-medium" style={{ color: "var(--teal)" }}>+ {t("recur.new")}</span>
-        </button>
-        {showAdd && <RecurringModal group={group} onClose={() => setShowAdd(false)} />}
-      </>
-    );
-  }
+  // Recurring expenses are now created via the toggle in the add form,
+  // so the empty-state hint pill is hidden — only show the list when items exist.
+  if (recurring.length === 0) return null;
 
   return (
     <>

@@ -13,6 +13,9 @@
   --bg: linear-gradient(160deg, #edf0eb 0%, #e6eaf3 52%, #f1e9f1 100%);
   --glass-bg: rgba(255, 255, 255, 0.6);
   --glass-strong-bg: rgba(255, 255, 255, 0.82);
+  /* iOS fallback (no backdrop-filter) — higher opacity to compensate for missing blur */
+  --glass-solid: rgba(255, 255, 255, 0.86);
+  --glass-strong-solid: rgba(255, 255, 255, 0.95);
   --glass-border: rgba(255, 255, 255, 0.7);
   --glass-hi: #ffffffcc;
   --surface: #ffffff;
@@ -28,6 +31,8 @@
   --bg: linear-gradient(160deg, #0d0f14 0%, #12141b 52%, #17131d 100%);
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-strong-bg: rgba(32, 35, 43, 0.82);
+  --glass-solid: rgba(40, 44, 54, 0.92);
+  --glass-strong-solid: rgba(44, 48, 58, 0.97);
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-hi: rgba(255, 255, 255, 0.08);
   --surface: #262a33;
@@ -66,10 +71,6 @@ body {
     border: 1px solid var(--glass-border);
     box-shadow: var(--elev-2), inset 0 1px 0 var(--glass-hi);
     overflow: hidden;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    /* iOS Safari: contain:paint clips backdrop-filter to the border-radius boundary */
-    contain: paint;
   }
   .glass-strong {
     background: var(--glass-strong-bg);
@@ -78,9 +79,22 @@ body {
     border: 1px solid var(--glass-border);
     box-shadow: var(--elev-3), inset 0 1px 0 var(--glass-hi);
     overflow: hidden;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    contain: paint;
+  }
+}
+
+/* iOS Safari bleeds backdrop-filter past border-radius (rectangular corner
+   artifacts). Detect iOS via -webkit-touch-callout and drop the blur, using a
+   higher-opacity solid background so corners clip cleanly to the radius. */
+@supports (-webkit-touch-callout: none) {
+  .glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--glass-solid);
+  }
+  .glass-strong {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: var(--glass-strong-solid);
   }
 }
 
