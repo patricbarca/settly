@@ -74,6 +74,23 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "app.footerCloud": { es: "Settly · datos guardados en la nube.", en: "Settly · data saved in the cloud." },
 
+  "onboard.s1t": { es: "Crea un grupo", en: "Create a group" },
+  "onboard.s1d": { es: "Viaje, piso, cena… añade a todos los que participan y empieza a llevar los gastos juntos.", en: "Trip, flat, dinner… add everyone involved and start tracking expenses together." },
+  "onboard.s2t": { es: "Registra los gastos", en: "Log expenses" },
+  "onboard.s2d": { es: "Por voz, escaneando el ticket o manualmente. Settly reparte los costos al instante entre todos.", en: "By voice, scanning a receipt, or manually. Settly splits costs instantly among everyone." },
+  "onboard.s3t": { es: "Salda sin líos", en: "Settle up easily" },
+  "onboard.s3d": { es: "Settly calcula quién le debe a quién con el mínimo de transferencias posibles. Todo claro.", en: "Settly calculates who owes what with the fewest possible transfers. Crystal clear." },
+  "onboard.next": { es: "Siguiente →", en: "Next →" },
+  "onboard.start": { es: "¡Empezar!", en: "Get started!" },
+  "onboard.skip": { es: "Omitir introducción", en: "Skip intro" },
+  "onboard.checklist": { es: "Primeros pasos", en: "Getting started" },
+  "onboard.step1t": { es: "Crea tu primer grupo", en: "Create your first group" },
+  "onboard.step1d": { es: "Viaje, piso o cena — empieza aquí.", en: "Trip, flat or dinner — start here." },
+  "onboard.step2t": { es: "Añade un gasto", en: "Add an expense" },
+  "onboard.step2d": { es: "Por voz, foto del ticket o manualmente.", en: "By voice, receipt photo, or manually." },
+  "onboard.step3t": { es: "Salda una deuda", en: "Settle a debt" },
+  "onboard.step3d": { es: "Confirma un pago para terminar el ciclo.", en: "Confirm a payment to close the loop." },
+
   "phone.title": { es: "Añade tu teléfono", en: "Add your phone" },
   "phone.hint": { es: "Te enviaremos un código SMS para verificarlo. Esto protege tu cuenta.", en: "We'll send you an SMS code to verify it. This keeps your account safe." },
   "phone.send": { es: "Enviar código SMS", en: "Send SMS code" },

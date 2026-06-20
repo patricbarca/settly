@@ -8,6 +8,7 @@ import { Logo } from "./Logo";
 import { Icon, type IconName } from "./Icon";
 import { SettleRing } from "./SettleRing";
 import { CreateGroupModal } from "./CreateGroupModal";
+import type { Group } from "../lib/types";
 
 export function Home() {
   const t = useT();
@@ -17,6 +18,11 @@ export function Home() {
 
   const active = groups.filter((g) => !g.archived);
   const archived = groups.filter((g) => g.archived);
+
+  const hasGroup = active.length > 0;
+  const hasExpense = active.some((g) => g.expenses.length > 0);
+  const hasSettlement = active.some((g) => (g.settlements ?? []).some((s) => s.status === "confirmed"));
+  const allDone = hasGroup && hasExpense && hasSettlement;
 
   const FEATURES: { icon: IconName; title: string; desc: string }[] = [
     { icon: "mic", title: t("home.featVoiceT"), desc: t("home.featVoiceD") },
@@ -68,8 +74,38 @@ export function Home() {
         </button>
       </div>
 
+      {/* Getting started checklist — shows until all 3 steps done */}
+      {!allDone && (
+        <div className="space-y-2 mb-4">
+          <p className="text-xs font-semibold text-muted px-1 uppercase tracking-wide">{t("onboard.checklist")}</p>
+          <StartStep
+            n={1}
+            done={hasGroup}
+            active={!hasGroup}
+            title={t("onboard.step1t")}
+            desc={t("onboard.step1d")}
+            action={!hasGroup ? () => setCreating(true) : undefined}
+            actionLabel={t("home.createGroup")}
+          />
+          <StartStep
+            n={2}
+            done={hasExpense}
+            active={hasGroup && !hasExpense}
+            title={t("onboard.step2t")}
+            desc={t("onboard.step2d")}
+          />
+          <StartStep
+            n={3}
+            done={hasSettlement}
+            active={hasExpense && !hasSettlement}
+            title={t("onboard.step3t")}
+            desc={t("onboard.step3d")}
+          />
+        </div>
+      )}
+
       <div className="space-y-2">
-        {active.length === 0 && (
+        {active.length === 0 && allDone && (
           <div className="glass rounded-2xl p-8 text-center text-muted">{t("home.empty")}</div>
         )}
         {active.map((g) => {
@@ -153,6 +189,46 @@ export function Home() {
       )}
 
       {creating && <CreateGroupModal onClose={() => setCreating(false)} />}
+    </div>
+  );
+}
+
+function StartStep({
+  n, done, active, title, desc, action, actionLabel,
+}: {
+  n: number; done: boolean; active: boolean; title: string; desc: string;
+  action?: () => void; actionLabel?: string;
+}) {
+  return (
+    <div
+      className="glass rounded-2xl px-4 py-3 flex items-center gap-3 transition-opacity"
+      style={{ opacity: !active && !done ? 0.45 : 1 }}
+    >
+      <div
+        className="h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+        style={
+          done
+            ? { background: "#0A8B5E22", color: "#0A8B5E" }
+            : active
+            ? { background: "rgba(10,163,163,0.15)", color: "var(--teal)" }
+            : { background: "var(--glass)", color: "var(--muted)" }
+        }
+      >
+        {done ? <Icon name="check" size={15} /> : n}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className={`text-sm font-semibold ${done ? "line-through text-muted" : ""}`}>{title}</div>
+        <div className="text-xs text-muted">{desc}</div>
+      </div>
+      {active && action && (
+        <button
+          onClick={action}
+          className="glass-strong rounded-full px-3 py-1.5 text-xs font-semibold hover-lift shrink-0"
+          style={{ color: "var(--teal)" }}
+        >
+          {actionLabel}
+        </button>
+      )}
     </div>
   );
 }

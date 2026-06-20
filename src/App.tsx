@@ -11,6 +11,7 @@ import { Login } from "./components/Login";
 import { Home } from "./components/Home";
 import { GroupView } from "./components/GroupView";
 import { Logo } from "./components/Logo";
+import { OnboardingModal } from "./components/OnboardingModal";
 
 export default function App() {
   const user = useUser();
@@ -19,6 +20,7 @@ export default function App() {
   const lang = useLang();
   const theme = useTheme();
   const group = useActiveGroup();
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -42,6 +44,12 @@ export default function App() {
       if (g) { addGroup(g); setActiveGroup(g.id); }
     });
   }, [phase, user]);
+
+  useEffect(() => {
+    if (phase === "authenticated" && !localStorage.getItem("settly.onboarded")) {
+      setShowOnboarding(true);
+    }
+  }, [phase]);
 
   if (phase === "loading") {
     return (
@@ -95,6 +103,13 @@ export default function App() {
       </div>
 
       {group ? <GroupView group={group} /> : <Home />}
+
+      {showOnboarding && (
+        <OnboardingModal onDone={() => {
+          localStorage.setItem("settly.onboarded", "1");
+          setShowOnboarding(false);
+        }} />
+      )}
 
       <footer className="max-w-2xl mx-auto px-4 text-center text-xs text-muted pb-10 leading-relaxed">
         {phase === "guest" ? (
