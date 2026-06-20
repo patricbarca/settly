@@ -58,19 +58,24 @@ body {
 .font-mono { font-family: 'Space Mono', monospace; }
 .text-muted { color: var(--muted); }
 
-.glass {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px) saturate(150%);
-  -webkit-backdrop-filter: blur(16px) saturate(150%);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 12px 30px -22px rgba(20, 20, 40, 0.5), inset 0 1px 0 var(--glass-hi);
-}
-.glass-strong {
-  background: var(--glass-strong-bg);
-  backdrop-filter: blur(18px) saturate(160%);
-  -webkit-backdrop-filter: blur(18px) saturate(160%);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 18px 40px -24px rgba(20, 20, 40, 0.55), inset 0 1px 0 var(--glass-hi);
+@layer components {
+  .glass {
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--elev-2), inset 0 1px 0 var(--glass-hi);
+    /* Clip backdrop-filter to border-radius on iOS Safari */
+    overflow: hidden;
+  }
+  .glass-strong {
+    background: var(--glass-strong-bg);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--elev-3), inset 0 1px 0 var(--glass-hi);
+    overflow: hidden;
+  }
 }
 
 .hover-lift { transition: transform 0.12s ease, box-shadow 0.15s ease; }
@@ -100,8 +105,6 @@ button { cursor: pointer; font-family: inherit; }
   --elev-2: 0 2px 6px rgba(40, 40, 70, 0.05), 0 16px 34px -18px rgba(40, 40, 70, 0.2);
   --elev-3: 0 6px 16px rgba(40, 40, 70, 0.08), 0 30px 56px -24px rgba(40, 40, 70, 0.3);
 }
-.glass { box-shadow: var(--elev-2), inset 0 1px 0 var(--glass-hi); }
-.glass-strong { box-shadow: var(--elev-3), inset 0 1px 0 var(--glass-hi); }
 .hover-lift:hover { box-shadow: var(--elev-3); }
 button:focus-visible, input:focus-visible, a:focus-visible, [role="button"]:focus-visible {
   outline: 2px solid var(--indigo);
