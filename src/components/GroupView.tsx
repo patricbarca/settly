@@ -4,6 +4,7 @@ import { setActiveGroup, deleteGroup, archiveGroup, processRecurring } from "../
 import { createInviteLink } from "../lib/invite";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
+import { Logo } from "./Logo";
 import { Overlay } from "./Overlay";
 import { Hero } from "./Hero";
 import { Members } from "./Members";
@@ -58,18 +59,23 @@ export function GroupView({ group }: { group: Group }) {
   return (
     <div className="max-w-2xl mx-auto px-4 pb-10">
       <div className="flex items-center justify-between pt-4 pb-3">
-        <button onClick={() => setActiveGroup(null)} className="lk text-sm font-medium inline-flex items-center gap-1">
-          <Icon name="back" size={16} /> {t("group.back")}
-        </button>
-        <div className="flex items-center gap-3">
-          <button onClick={() => setShowSettings(true)} className="lk text-sm inline-flex items-center gap-1">
-            <Icon name="settings" size={14} /> {t("settings.title")}
+        <div className="flex items-center gap-2">
+          <div className="glass rounded-xl p-1">
+            <Logo size={24} />
+          </div>
+          <button onClick={() => setActiveGroup(null)} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift" title={t("group.back")}>
+            <Icon name="back" size={16} />
           </button>
-          <button onClick={() => archiveGroup(group.id, true)} className="lk text-sm inline-flex items-center gap-1">
-            <Icon name="archive" size={14} /> {t("group.archive")}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => setShowSettings(true)} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift" title={t("settings.title")}>
+            <Icon name="settings" size={15} />
           </button>
-          <button onClick={() => setConfirmDel(true)} className="lk lk-danger text-sm inline-flex items-center gap-1">
-            <Icon name="trash" size={14} /> {t("group.delete")}
+          <button onClick={() => archiveGroup(group.id, true)} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift" title={t("group.archive")}>
+            <Icon name="archive" size={15} />
+          </button>
+          <button onClick={() => setConfirmDel(true)} className="glass rounded-full h-8 w-8 flex items-center justify-center hover-lift" title={t("group.delete")} style={{ color: "#D14444" }}>
+            <Icon name="trash" size={15} />
           </button>
         </div>
       </div>

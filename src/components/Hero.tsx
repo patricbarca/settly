@@ -3,7 +3,6 @@ import { computeSettle } from "../lib/split";
 import { groupSettleScore } from "../lib/gamification";
 import { money } from "../lib/format";
 import { useT } from "../lib/i18n";
-import { Logo } from "./Logo";
 import { SettleRing } from "./SettleRing";
 
 export function Hero({ group }: { group: Group }) {
@@ -20,17 +19,10 @@ export function Hero({ group }: { group: Group }) {
       <span className="blob b2" />
       <span className="blob b3" />
       <div className="relative z-10">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="glass rounded-2xl p-1.5">
-              <Logo size={32} />
-            </div>
-            <div className="text-white font-display text-2xl font-extrabold">Settly</div>
-          </div>
-          <div className="text-white/75 text-xs font-mono truncate max-w-[40%] text-right">{group.name}</div>
-        </div>
+        <div className="text-white/70 text-[11px] uppercase tracking-widest font-mono mb-1">{t("hero.groupLabel")}</div>
+        <div className="text-white font-display text-2xl font-extrabold truncate leading-tight">{group.name}</div>
 
-        <div className="mt-6 flex items-end justify-between gap-3 text-white">
+        <div className="mt-5 flex items-end justify-between gap-3 text-white">
           <div className="min-w-0">
             <div className="text-white/65 text-[11px] uppercase tracking-widest font-mono">{t("home.yourBalance")}</div>
             <div className="font-display text-4xl font-extrabold mt-1 leading-tight">

@@ -146,6 +146,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "hero.theyOwe": { es: "Te deben {amt}", en: "You're owed {amt}" },
   "hero.youOwe": { es: "Debes {amt}", en: "You owe {amt}" },
   "hero.total": { es: "Total del grupo {amt} · {e} gastos", en: "Group total {amt} · {e} expenses" },
+  "hero.groupLabel": { es: "Grupo", en: "Group" },
 
   "group.back": { es: "Mis grupos", en: "My groups" },
   "group.delete": { es: "Eliminar grupo", en: "Delete group" },
