@@ -12,6 +12,7 @@ import { Home } from "./components/Home";
 import { GroupView } from "./components/GroupView";
 import { Logo } from "./components/Logo";
 import { OnboardingModal } from "./components/OnboardingModal";
+import { OfflineBanner } from "./components/OfflineBanner";
 
 export default function App() {
   const user = useUser();
@@ -70,6 +71,7 @@ export default function App() {
 
   return (
     <div className="min-h-full">
+      <OfflineBanner />
       <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">
         <button
           onClick={toggleTheme}

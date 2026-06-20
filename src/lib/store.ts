@@ -3,12 +3,22 @@ import type { Group, RecurringExpense, RecurrenceInterval } from "./types";
 import { supabase } from "./supabase";
 import { createSeed } from "./seed";
 import { uid } from "./format";
+import {
+  idbPutGroup,
+  idbGetAllGroups,
+  idbDeleteGroup,
+  idbAddToOutbox,
+  idbGetOutbox,
+  idbClearFromOutbox,
+  idbClearAll,
+} from "./db";
 
 type State = { groups: Group[]; activeId: string | null; loading: boolean };
 
 let state: State = { groups: [], activeId: null, loading: true };
 let currentUserId: string | null = null;
 let channel: ReturnType<typeof supabase.channel> | null = null;
+let isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
 
 const listeners = new Set<() => void>();
 
@@ -21,10 +31,19 @@ function sub(l: () => void) {
   return () => listeners.delete(l);
 }
 
-async function loadGroups(userId: string) {
-  state = { ...state, loading: true };
-  emit();
+async function loadFromIndexedDB() {
+  try {
+    const groups = await idbGetAllGroups();
+    if (groups.length > 0) {
+      state = { ...state, groups, loading: true };
+      emit();
+    }
+  } catch {
+    // IndexedDB unavailable (e.g. private browsing in Firefox)
+  }
+}
 
+async function loadGroups(userId: string) {
   const { data: memberships } = await supabase
     .from("group_members")
     .select("group_id, member_id")
@@ -51,8 +70,32 @@ async function loadGroups(userId: string) {
     meId: meMap[r.id],
   }));
 
-  state = { groups, activeId: null, loading: false };
+  state = { groups, activeId: state.activeId, loading: false };
   emit();
+
+  for (const g of groups) idbPutGroup(g).catch(() => {});
+}
+
+async function syncOutbox() {
+  if (!currentUserId || !isOnline) return;
+  try {
+    const pending = await idbGetOutbox();
+    if (!pending.length) return;
+
+    const synced: string[] = [];
+    for (const groupId of pending) {
+      const g = state.groups.find((g) => g.id === groupId);
+      if (!g) { synced.push(groupId); continue; }
+      const { error } = await supabase
+        .from("groups")
+        .update({ data: g, updated_at: new Date().toISOString() })
+        .eq("id", g.id);
+      if (!error) synced.push(groupId);
+    }
+    if (synced.length) await idbClearFromOutbox(synced);
+  } catch {
+    // Will retry on next reconnect
+  }
 }
 
 function subscribeRealtime(userId: string) {
@@ -67,17 +110,41 @@ function subscribeRealtime(userId: string) {
 
 function persist(group: Group) {
   if (!currentUserId) return;
+  idbPutGroup(group).catch(() => {});
+  if (!isOnline) {
+    idbAddToOutbox(group.id).catch(() => {});
+    return;
+  }
   supabase
     .from("groups")
     .update({ data: group, updated_at: new Date().toISOString() })
     .eq("id", group.id)
-    .then(({ error }) => { if (error) console.error("persist:", error); });
+    .then(({ error }) => {
+      if (error) {
+        console.error("persist:", error);
+        idbAddToOutbox(group.id).catch(() => {});
+      }
+    });
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("online", () => {
+    isOnline = true;
+    emit();
+    syncOutbox();
+  });
+  window.addEventListener("offline", () => {
+    isOnline = false;
+    emit();
+  });
 }
 
 supabase.auth.onAuthStateChange((_event, session) => {
   if (session) {
     currentUserId = session.user.id;
-    loadGroups(session.user.id);
+    loadFromIndexedDB().then(() => {
+      if (currentUserId) loadGroups(currentUserId);
+    });
     subscribeRealtime(session.user.id);
   } else {
     currentUserId = null;
@@ -85,6 +152,7 @@ supabase.auth.onAuthStateChange((_event, session) => {
     channel = null;
     state = { groups: [], activeId: null, loading: false };
     emit();
+    idbClearAll().catch(() => {});
   }
 });
 
@@ -104,6 +172,10 @@ export function useGroupsLoading(): boolean {
   return useSyncExternalStore(sub, () => state.loading, () => state.loading);
 }
 
+export function useIsOnline(): boolean {
+  return useSyncExternalStore(sub, () => isOnline, () => true);
+}
+
 export function setActiveGroup(id: string | null) {
   state = { ...state, activeId: id };
   emit();
@@ -113,6 +185,7 @@ export function addGroup(group: Group) {
   state = { groups: [group, ...state.groups], activeId: group.id };
   emit();
   if (!currentUserId) return;
+  idbPutGroup(group).catch(() => {});
   supabase.from("groups")
     .insert({ id: group.id, owner_id: currentUserId, data: group })
     .then(({ error }) => { if (error) console.error("addGroup:", error); });
@@ -136,6 +209,8 @@ export function deleteGroup(id: string) {
     activeId: state.activeId === id ? null : state.activeId,
   };
   emit();
+  idbDeleteGroup(id).catch(() => {});
+  idbClearFromOutbox([id]).catch(() => {});
   if (!currentUserId) return;
   supabase.from("groups").delete().eq("id", id)
     .then(({ error }) => { if (error) console.error("deleteGroup:", error); });
