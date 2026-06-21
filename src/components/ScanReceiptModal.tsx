@@ -1,6 +1,7 @@
 import { useState, type ChangeEvent } from "react";
 import type { Group, Category } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
+import { scanReceipt } from "../lib/ai";
 import { updateGroup } from "../lib/store";
 import { uid, money, personColor, initials } from "../lib/format";
 import { currencySymbol } from "../lib/currencies";
@@ -33,14 +34,21 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = () => {
+    reader.onload = async () => {
       setPreview(String(reader.result));
       setStage("analyzing");
-      // DEMO: aquí iría la lectura real con un modelo de visión (clave propia + backend).
-      setTimeout(() => {
+      // Lectura real con un modelo de visión (Edge Function `scan-receipt`).
+      // Si no está desplegada/configurada, cae al demo para no bloquear el flujo.
+      try {
+        const res = await scanReceipt(file);
+        const rows = res.items.length
+          ? res.items.map((s) => ({ id: uid(), name: s.name, price: s.price, who: new Set(allIds) }))
+          : [{ id: uid(), name: "", price: "" as number | string, who: new Set(allIds) }];
+        setItems(rows);
+      } catch {
         setItems(SAMPLE.map((s) => ({ id: uid(), name: s.name, price: s.price, who: new Set(allIds) })));
-        setStage("review");
-      }, 1100);
+      }
+      setStage("review");
     };
     reader.readAsDataURL(file);
   }
