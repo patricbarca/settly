@@ -11,7 +11,9 @@ Settly is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScr
 - `src/index.css` — CSS variables, glass/glass-strong components, dark mode, animations
 - `src/lib/i18n.ts` — all UI strings (bilingual ES/EN)
 - `src/lib/types.ts` — TypeScript types (Group, Expense, RecurringExpense, etc.)
-- `src/lib/store.ts` — localStorage state management
+- `src/lib/store.ts` — group state, synced to **Supabase** (Postgres + realtime) with an IndexedDB offline cache + outbox; auth in `src/lib/auth.ts`, client in `src/lib/supabase.ts`
+- `src/lib/plan.ts` — freemium plan + AI-quota scaffolding (free/pro + monthly scan count in localStorage; `activatePro` is a stub to be replaced by Stripe/Supabase)
+- `src/components/Paywall.tsx` / `InstallButton.tsx` — upgrade modal and PWA install button (`src/lib/pwa.ts` captures `beforeinstallprompt` + iOS detection)
 - `src/components/GroupView.tsx` — main group screen (tabs: Expenses, Balances, Stats, Achievements)
 - `src/components/Hero.tsx` — hero card inside GroupView (group name + owe/owed pills + Settle Score ring)
 - `src/components/ExpenseForm.tsx` — add/edit expense form (voice input, receipt scan, recurring toggle)

@@ -4,17 +4,22 @@ import { computeSettle } from "../lib/split";
 import { groupSettleScore } from "../lib/gamification";
 import { money, personColor, initials } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { usePlan } from "../lib/plan";
 import { Logo } from "./Logo";
 import { Icon } from "./Icon";
 import { SettleRing } from "./SettleRing";
 import { CreateGroupModal } from "./CreateGroupModal";
+import { InstallButton } from "./InstallButton";
+import { Paywall } from "./Paywall";
 import type { Group } from "../lib/types";
 
 export function Home() {
   const t = useT();
   const groups = useGroups();
+  const plan = usePlan();
   const [creating, setCreating] = useState(false);
   const [showArch, setShowArch] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const active = groups.filter((g) => !g.archived);
   const archived = groups.filter((g) => g.archived);
@@ -46,6 +51,27 @@ export function Home() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Install + upgrade row (each hides itself when not applicable) */}
+      <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
+        <InstallButton />
+        {plan === "free" ? (
+          <button
+            onClick={() => setShowPaywall(true)}
+            className="rounded-full px-3 py-1.5 text-sm font-semibold hover-lift inline-flex items-center gap-1.5 text-white"
+            style={{ background: "linear-gradient(180deg,#6e6cf5,#5b5bf0)" }}
+          >
+            <Icon name="sparkles" size={15} /> {t("pro.upgrade")}
+          </button>
+        ) : (
+          <span
+            className="rounded-full px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5"
+            style={{ background: "rgba(91,91,240,0.12)", color: "var(--indigo)" }}
+          >
+            <Icon name="sparkles" size={15} /> {t("pro.badge")}
+          </span>
+        )}
       </div>
 
       {/* Getting started checklist — shows until all 3 steps done */}
@@ -173,6 +199,7 @@ export function Home() {
       )}
 
       {creating && <CreateGroupModal onClose={() => setCreating(false)} />}
+      {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
     </div>
   );
 }
