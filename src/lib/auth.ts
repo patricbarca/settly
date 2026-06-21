@@ -73,13 +73,9 @@ async function fromSession(session: Session) {
     provider: (au.app_metadata?.provider as User["provider"]) ?? "email",
   };
 
-  const phoneSkipped = sessionStorage.getItem("settly.phoneSkipped") === "1";
-  if (!profile?.phone_verified && !phoneSkipped) {
-    state = { phase: "needs_phone", user: partialUser };
-    emit();
-    return;
-  }
-
+  // Teléfono opcional durante la beta: sin proveedor SMS configurado en
+  // Supabase, exigir verificación por SMS bloquearía el login. Se puede volver
+  // a activar (fase needs_phone + PhoneScreen) cuando haya proveedor SMS.
   state = { phase: "authenticated", user: partialUser };
   emit();
 }
