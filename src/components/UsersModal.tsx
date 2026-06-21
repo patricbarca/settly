@@ -93,7 +93,7 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
   async function copyInvite() {
     setInviteErr(false);
     try {
-      const link = await createInviteLink(group.id);
+      const link = await createInviteLink(group);
       await navigator.clipboard.writeText(link);
       setInviteCopied(true);
       setTimeout(() => setInviteCopied(false), 2500);

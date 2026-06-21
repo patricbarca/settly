@@ -2,10 +2,26 @@ import { supabase } from "./supabase";
 import type { Group } from "./types";
 import { uid } from "./format";
 
-export async function createInviteLink(groupId: string): Promise<string> {
+export async function createInviteLink(group: Group): Promise<string> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Inicia sesión para compartir un grupo.");
+
+  // Asegura que el grupo y la pertenencia del creador existen en Supabase antes
+  // de crear el link. Repara grupos creados sin sesión / offline y evita la
+  // carrera con addGroup (cuyos inserts no se esperan). Idempotente.
+  await supabase
+    .from("groups")
+    .upsert({ id: group.id, owner_id: user.id, data: group }, { onConflict: "id", ignoreDuplicates: true });
+  await supabase
+    .from("group_members")
+    .upsert(
+      { group_id: group.id, user_id: user.id, member_id: group.meId },
+      { onConflict: "group_id,user_id", ignoreDuplicates: true }
+    );
+
   const { data, error } = await supabase
     .from("invite_links")
-    .insert({ group_id: groupId, created_by: (await supabase.auth.getUser()).data.user?.id })
+    .insert({ group_id: group.id, created_by: user.id })
     .select("token")
     .single();
   if (error || !data) throw error ?? new Error("No se pudo crear el link");
