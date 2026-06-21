@@ -1,4 +1,5 @@
-import { activatePro } from "../lib/plan";
+import { useState } from "react";
+import { redeemCode } from "../lib/plan";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -7,13 +8,31 @@ const FEATURES = ["paywall.f1", "paywall.f2", "paywall.f3", "paywall.f4"];
 
 export function Paywall({ onClose }: { onClose: () => void }) {
   const t = useT();
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [ok, setOk] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
-  function startTrial() {
-    // TODO(backend): launch Stripe Checkout (7-day trial, card required) and set
-    // the plan from the Supabase subscription. For now activate locally so the
-    // Pro experience is testable end-to-end.
-    activatePro();
-    onClose();
+  async function redeem() {
+    if (!code.trim() || busy) return;
+    setBusy(true);
+    setErr(null);
+    const res = await redeemCode(code);
+    setBusy(false);
+    if (res.ok) {
+      setOk(true);
+      setTimeout(onClose, 1100);
+    } else {
+      const map: Record<string, string> = {
+        invalid: "code.err.invalid",
+        expired: "code.err.expired",
+        exhausted: "code.err.exhausted",
+        not_authenticated: "code.err.auth",
+        network: "code.err.network",
+        empty: "code.err.invalid",
+      };
+      setErr(t(map[res.error ?? "invalid"] ?? "code.err.invalid"));
+    }
   }
 
   return (
@@ -51,23 +70,43 @@ export function Paywall({ onClose }: { onClose: () => void }) {
           ))}
         </div>
 
-        <div className="rounded-2xl p-3 mb-4 text-center" style={{ background: "var(--glass)" }}>
-          <div className="font-display text-2xl font-bold">
-            $60<span className="text-sm font-normal text-muted">/{t("paywall.year")}</span>
+        {ok ? (
+          <div
+            className="rounded-2xl p-4 text-center font-semibold"
+            style={{ background: "rgba(10,139,94,0.12)", color: "#0A8B5E" }}
+          >
+            {t("code.success")}
           </div>
-          <div className="text-xs text-muted mt-0.5">
-            {t("paywall.or")} $7/{t("paywall.month")}
-          </div>
-        </div>
+        ) : (
+          <>
+            <div className="rounded-2xl p-3 mb-3 text-center" style={{ background: "var(--glass)" }}>
+              <div className="text-xs text-muted">{t("paywall.betaNote")}</div>
+            </div>
 
-        <button
-          onClick={startTrial}
-          className="w-full rounded-full py-3 font-semibold text-white hover-lift"
-          style={{ background: "var(--ink)" }}
-        >
-          {t("paywall.cta")}
-        </button>
-        <p className="text-[11px] text-muted text-center mt-2.5">{t("paywall.terms")}</p>
+            <label className="text-xs font-semibold text-muted">{t("code.label")}</label>
+            <div className="flex gap-2 mt-1">
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && redeem()}
+                placeholder={t("code.placeholder")}
+                autoCapitalize="characters"
+                className="glass rounded-xl px-3 py-2.5 text-sm flex-1 font-mono uppercase"
+              />
+              <button
+                onClick={redeem}
+                disabled={!code.trim() || busy}
+                className="rounded-full px-5 py-2.5 font-semibold text-white hover-lift disabled:opacity-50 shrink-0"
+                style={{ background: "var(--ink)" }}
+              >
+                {busy ? t("code.redeeming") : t("code.redeem")}
+              </button>
+            </div>
+            {err && <p className="text-red-500 text-xs mt-2">{err}</p>}
+
+            <p className="text-[11px] text-muted text-center mt-4">{t("paywall.priceNote")}</p>
+          </>
+        )}
       </div>
     </Overlay>
   );

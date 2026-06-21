@@ -4,7 +4,7 @@ import { useUser, setProfileName } from "../lib/auth";
 import { useGroups, updateMyMember } from "../lib/store";
 import { personColor, initials } from "../lib/format";
 import { useT } from "../lib/i18n";
-import { usePlan, deactivatePro, FREE_AI_QUOTA } from "../lib/plan";
+import { usePlan, FREE_AI_QUOTA } from "../lib/plan";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 import { Paywall } from "./Paywall";
@@ -118,12 +118,12 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
                 {t("pro.upgrade")}
               </button>
             ) : (
-              <button
-                onClick={deactivatePro}
-                className="glass rounded-full px-3 py-1.5 text-xs text-muted shrink-0 hover-lift"
+              <span
+                className="inline-flex items-center gap-1 text-xs font-semibold shrink-0"
+                style={{ color: "var(--indigo)" }}
               >
-                {t("pro.manage")}
-              </button>
+                <Icon name="check" size={14} /> {t("pro.active")}
+              </span>
             )}
           </div>
         </div>

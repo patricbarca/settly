@@ -1,18 +1,25 @@
-// Client-side scaffolding for the freemium plan. This is the seam that the
-// Supabase + Stripe backend will later fill: today the plan and the monthly AI
-// usage live in localStorage so the whole Pro UX (paywall, gating, quota) is
-// testable end-to-end before any payment is wired up.
+// Freemium plan + AI quota.
+//
+// The plan (entitlement) is the real source of truth in Supabase: it lives in
+// the `entitlements` table and can only be written by the `redeem_access_code`
+// SECURITY DEFINER function (see supabase/migrate_v3_plans.sql), so users can't
+// self-grant Pro. During the beta, Pro is unlocked by redeeming an access code;
+// when Stripe is added later, its webhook writes to the same table and nothing
+// here changes.
+//
+// The monthly AI quota stays client-side for now (good enough until the LLM
+// endpoint enforces it server-side).
 import { useSyncExternalStore } from "react";
+import { supabase } from "./supabase";
 
 export type Plan = "free" | "pro";
 export const FREE_AI_QUOTA = 3;
 
-const PLAN_KEY = "settly.plan";
 const USAGE_KEY = "settly.aiUsage";
-
 type Usage = { month: string; count: number };
 
-let plan: Plan = loadPlan();
+let plan: Plan = "free";
+let planReady = false;
 let usage: Usage = loadUsage();
 const listeners = new Set<() => void>();
 
@@ -25,16 +32,75 @@ function sub(l: () => void) {
   return () => listeners.delete(l);
 }
 
-function thisMonth(): string {
-  return new Date().toISOString().slice(0, 7);
+// ---------- plan (entitlement from Supabase) ----------
+
+async function loadEntitlement(userId: string) {
+  try {
+    const { data } = await supabase
+      .from("entitlements")
+      .select("plan, expires_at")
+      .eq("user_id", userId)
+      .maybeSingle();
+    const active =
+      !!data &&
+      data.plan === "pro" &&
+      (!data.expires_at || new Date(data.expires_at) > new Date());
+    plan = active ? "pro" : "free";
+  } catch {
+    // Table missing (migration not applied yet) or offline → default to free.
+    plan = "free";
+  }
+  planReady = true;
+  emit();
 }
 
-function loadPlan(): Plan {
-  try {
-    return localStorage.getItem(PLAN_KEY) === "pro" ? "pro" : "free";
-  } catch {
-    return "free";
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (session?.user) {
+    loadEntitlement(session.user.id);
+  } else {
+    plan = "free";
+    planReady = true;
+    emit();
   }
+});
+
+export function isPro(): boolean {
+  return plan === "pro";
+}
+
+export function usePlan(): Plan {
+  return useSyncExternalStore(sub, () => plan, () => plan);
+}
+
+export function usePlanReady(): boolean {
+  return useSyncExternalStore(sub, () => planReady, () => planReady);
+}
+
+export type RedeemResult = { ok: boolean; error?: string };
+
+/** Redeem an access code via the Supabase RPC and refresh the local plan. */
+export async function redeemCode(code: string): Promise<RedeemResult> {
+  const c = code.trim();
+  if (!c) return { ok: false, error: "empty" };
+  try {
+    const { data, error } = await supabase.rpc("redeem_access_code", { p_code: c });
+    if (error) return { ok: false, error: "network" };
+    const res = (data ?? {}) as { ok?: boolean; error?: string };
+    if (res.ok) {
+      const { data: u } = await supabase.auth.getUser();
+      if (u?.user) await loadEntitlement(u.user.id);
+      return { ok: true };
+    }
+    return { ok: false, error: res.error ?? "invalid" };
+  } catch {
+    return { ok: false, error: "network" };
+  }
+}
+
+// ---------- AI quota (local) ----------
+
+function thisMonth(): string {
+  return new Date().toISOString().slice(0, 7);
 }
 
 function loadUsage(): Usage {
@@ -61,14 +127,6 @@ function rollover() {
   }
 }
 
-export function isPro(): boolean {
-  return plan === "pro";
-}
-
-export function usePlan(): Plan {
-  return useSyncExternalStore(sub, () => plan, () => plan);
-}
-
 export function aiRemaining(): number {
   if (plan === "pro") return Infinity;
   rollover();
@@ -80,8 +138,8 @@ export function useAIRemaining(): number {
   return useSyncExternalStore(sub, snap, snap);
 }
 
-/** Consume one AI use. Returns true if allowed (and records it), false if the
- *  free quota is exhausted. Pro always returns true without counting. */
+/** Consume one AI use. Returns true if allowed; false if the free quota is
+ *  exhausted. Pro always returns true without counting. */
 export function consumeAI(): boolean {
   if (plan === "pro") return true;
   rollover();
@@ -90,24 +148,4 @@ export function consumeAI(): boolean {
   saveUsage();
   emit();
   return true;
-}
-
-// TODO(backend): replace with Stripe Checkout (7-day trial, card required) and
-// read the real status from the Supabase subscription. For now this flips the
-// plan locally so the Pro experience can be demoed and tested.
-export function activatePro() {
-  plan = "pro";
-  try {
-    localStorage.setItem(PLAN_KEY, "pro");
-  } catch {}
-  emit();
-}
-
-// TODO(backend): open the Stripe Customer Portal. Local stub for testing.
-export function deactivatePro() {
-  plan = "free";
-  try {
-    localStorage.setItem(PLAN_KEY, "free");
-  } catch {}
-  emit();
 }

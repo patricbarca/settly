@@ -376,6 +376,22 @@ const DICT: Record<string, { es: string; en: string }> = {
   "install.iosShare": { es: "Compartir", en: "Share" },
   "install.iosStep2": { es: "y luego", en: "then" },
   "install.iosAdd":   { es: "Añadir a pantalla de inicio", en: "Add to Home Screen" },
+
+  "pro.active": { es: "Activo", en: "Active" },
+
+  "paywall.betaNote":  { es: "Durante la beta, activa Pro con un código de acceso.", en: "During the beta, unlock Pro with an access code." },
+  "paywall.priceNote": { es: "Pro: $7/mes · $60/año (próximamente)", en: "Pro: $7/mo · $60/year (coming soon)" },
+
+  "code.label":       { es: "Código de acceso", en: "Access code" },
+  "code.placeholder": { es: "Tu código", en: "Your code" },
+  "code.redeem":      { es: "Canjear", en: "Redeem" },
+  "code.redeeming":   { es: "Canjeando…", en: "Redeeming…" },
+  "code.success":     { es: "¡Pro activado! 🎉", en: "Pro unlocked! 🎉" },
+  "code.err.invalid":   { es: "Código no válido", en: "Invalid code" },
+  "code.err.expired":   { es: "Código caducado", en: "Code expired" },
+  "code.err.exhausted": { es: "Código sin usos disponibles", en: "Code has no uses left" },
+  "code.err.auth":      { es: "Inicia sesión para canjear un código", en: "Sign in to redeem a code" },
+  "code.err.network":   { es: "Error de conexión, prueba otra vez", en: "Connection error, try again" },
 };
 
 export function useT() {
