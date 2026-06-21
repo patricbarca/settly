@@ -6,6 +6,12 @@ export type IconName =
   | "home"
   | "leisure"
   | "shopping"
+  | "cart"
+  | "drink"
+  | "health"
+  | "bolt"
+  | "plane"
+  | "gift"
   | "other"
   | "mic"
   | "camera"
@@ -79,6 +85,41 @@ function glyph(name: IconName): ReactNode {
         <>
           <path d="M4 5h7l9 9-7 7-9-9z" />
           <path d="M8 8.5h.01" />
+        </>
+      );
+    case "cart":
+      return (
+        <>
+          <circle cx="9" cy="20" r="1" />
+          <circle cx="17" cy="20" r="1" />
+          <path d="M3 4h2l2.4 11.2a1 1 0 0 0 1 .8h7.7a1 1 0 0 0 1-.8L20 7H6" />
+        </>
+      );
+    case "drink":
+      return (
+        <>
+          <path d="M6 3h12l-1.3 15a2 2 0 0 1-2 1.8H9.3a2 2 0 0 1-2-1.8z" />
+          <path d="M5.5 8h13" />
+        </>
+      );
+    case "health":
+      return (
+        <>
+          <path d="M11 4h2a1 1 0 0 1 1 1v4h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-4v4a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1v-4H5a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1h4V5a1 1 0 0 1 1-1z" />
+        </>
+      );
+    case "bolt":
+      return <path d="M13 2 4 14h7l-1 8 9-12h-7z" />;
+    case "plane":
+      return (
+        <path d="M21 15.5 13 11V4.5a1.5 1.5 0 0 0-3 0V11l-8 4.5V17l8-2.3V19l-2 1.4V22l3.5-1 3.5 1v-1.6L13 19v-4.3l8 2.3z" />
+      );
+    case "gift":
+      return (
+        <>
+          <rect x="4" y="9" width="16" height="11" rx="1" />
+          <path d="M3 9h18v3.5H3zM12 9v11" />
+          <path d="M12 9S10.6 4 8.2 5.2 12 9 12 9zM12 9s1.4-5 3.8-3.8S12 9 12 9z" />
         </>
       );
     case "mic":

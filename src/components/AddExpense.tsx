@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { Group, RecurrenceInterval } from "../lib/types";
 import { updateGroup, addRecurring } from "../lib/store";
 import { parseExpense } from "../lib/parse";
+import { parseExpenseAI } from "../lib/ai";
+import { CATEGORIES } from "../lib/types";
 import { useSpeech } from "../lib/speech";
 import { uid } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -25,6 +27,7 @@ export function AddExpense({ group }: { group: Group }) {
   const [recurInterval, setRecurInterval] = useState<RecurrenceInterval>("monthly");
   const [recurStartDate, setRecurStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [scan, setScan] = useState(false);
+  const [interpreting, setInterpreting] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const sp = useSpeech((tx) => setText((p) => (p ? `${p} ${tx}` : tx)));
 
@@ -39,9 +42,13 @@ export function AddExpense({ group }: { group: Group }) {
     setExpenseType((e) => (e === "recurring" ? "one-time" : "recurring"));
   }
 
-  function interpret() {
-    if (!text.trim()) return;
-    const r = parseExpense(text, group.members, group.meId);
+  async function interpret() {
+    if (!text.trim() || interpreting) return;
+    setInterpreting(true);
+    // Con Pro o cupo disponible, usa el LLM (función parse-expense). Si no hay
+    // cupo, falla o no está desplegado, cae al parser local de regex (gratis).
+    let r = await tryAI();
+    if (!r) r = parseExpense(text, group.members, group.meId);
     setDraft({
       label: r.label,
       amount: r.amount || "",
@@ -58,6 +65,33 @@ export function AddExpense({ group }: { group: Group }) {
       setRecurInterval(r.interval);
     } else {
       setExpenseType("one-time");
+    }
+    setInterpreting(false);
+  }
+
+  async function tryAI() {
+    if (!pro && aiLeft <= 0) return null;
+    try {
+      const ai = await parseExpenseAI(
+        text,
+        group.members,
+        group.meId,
+        group.currency,
+        CATEGORIES.map((c) => c.id)
+      );
+      const ids = new Set(group.members.map((m) => m.id));
+      const participantIds = (ai.participantIds || []).filter((id) => ids.has(id));
+      if (!pro) consumeAI();
+      return {
+        label: ai.label || "",
+        amount: ai.amount || 0,
+        payerId: ids.has(ai.payerId) ? ai.payerId : group.meId,
+        participantIds: participantIds.length ? participantIds : group.members.map((m) => m.id),
+        category: CATEGORIES.find((c) => c.id === ai.category)?.id ?? "otros",
+        interval: ai.interval || undefined,
+      };
+    } catch {
+      return null;
     }
   }
 
@@ -140,10 +174,10 @@ export function AddExpense({ group }: { group: Group }) {
       <div className="flex gap-2 mt-3 flex-wrap">
         <button
           onClick={interpret}
-          disabled={!text.trim()}
+          disabled={!text.trim() || interpreting}
           className="glass-strong rounded-full px-4 py-2 text-sm font-medium hover-lift disabled:opacity-50"
         >
-          {t("add.interpret")}
+          {interpreting ? "…" : t("add.interpret")}
         </button>
         <button
           onClick={openScan}

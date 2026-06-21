@@ -1,9 +1,15 @@
 export type Category =
   | "comida"
+  | "mercado"
+  | "bebidas"
   | "transporte"
+  | "viajes"
   | "alojamiento"
   | "ocio"
   | "compras"
+  | "salud"
+  | "servicios"
+  | "regalos"
   | "otros";
 
 export type SplitMode = "equal" | "percent" | "exact" | "shares";
@@ -81,10 +87,16 @@ import type { IconName } from "../components/Icon";
 
 export const CATEGORIES: { id: Category; icon: IconName }[] = [
   { id: "comida", icon: "food" },
+  { id: "mercado", icon: "cart" },
+  { id: "bebidas", icon: "drink" },
   { id: "transporte", icon: "transport" },
+  { id: "viajes", icon: "plane" },
   { id: "alojamiento", icon: "home" },
   { id: "ocio", icon: "leisure" },
   { id: "compras", icon: "shopping" },
+  { id: "salud", icon: "health" },
+  { id: "servicios", icon: "bolt" },
+  { id: "regalos", icon: "gift" },
   { id: "otros", icon: "other" },
 ];
 

@@ -214,10 +214,16 @@ const DICT: Record<string, { es: string; en: string }> = {
   "common.delete": { es: "Eliminar", en: "Delete" },
 
   "cat.comida": { es: "Comida", en: "Food" },
+  "cat.mercado": { es: "Supermercado", en: "Groceries" },
+  "cat.bebidas": { es: "Bebidas", en: "Drinks" },
   "cat.transporte": { es: "Transporte", en: "Transport" },
+  "cat.viajes": { es: "Viajes", en: "Travel" },
   "cat.alojamiento": { es: "Alojamiento", en: "Lodging" },
   "cat.ocio": { es: "Ocio", en: "Leisure" },
   "cat.compras": { es: "Compras", en: "Shopping" },
+  "cat.salud": { es: "Salud", en: "Health" },
+  "cat.servicios": { es: "Servicios", en: "Bills & utilities" },
+  "cat.regalos": { es: "Regalos", en: "Gifts" },
   "cat.otros": { es: "Otros", en: "Other" },
 
   "bal.title": { es: "Saldos del grupo", en: "Group balances" },

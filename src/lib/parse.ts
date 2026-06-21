@@ -5,11 +5,17 @@ import type { Category, Member, RecurrenceInterval } from "./types";
 // sustituirla/ampliarla con un LLM (voz → gasto) desde un backend con tu clave.
 
 const CAT_KW: [RegExp, Category][] = [
-  [/desayun|almuerz|comid|cen[ao]|caf[eé]|restaurante|\bbar\b|cervez|pizza|sushi|tapas|brunch|copas?/i, "comida"],
-  [/taxi|uber|cabify|bus|tren|vuelo|gasolina|peaje|parking|metro|billete/i, "transporte"],
-  [/hotel|airbnb|hostal|aloja|\bnoche?s?\b|apartamento/i, "alojamiento"],
-  [/entrada|tour|museo|cine|concierto|fiesta|disco|ocio|excursi[oó]n/i, "ocio"],
-  [/s[uú]per|mercado|compra|tienda|farmacia|regalo/i, "compras"],
+  [/cervez|vino|copas?|\bbar\b|pub|cocktail|c[oó]ctel|\bgin\b|\bron\b|whisky|bebidas?|trago/i, "bebidas"],
+  [/desayun|almuerz|comid|cen[ao]|caf[eé]|restaurante|pizza|sushi|tapas|brunch|hamburg|kebab|taco|men[uú]/i, "comida"],
+  [/s[uú]per|supermercado|mercado|verdur|frut|carnicer|panader|grocer/i, "mercado"],
+  [/farmac|m[eé]dico|doctor|hospital|dentista|salud|medicina|gimnasio|\bgym\b|cl[ií]nica/i, "salud"],
+  [/vuelo|avi[oó]n|crucero|\bviaje|excursi[oó]n/i, "viajes"],
+  [/taxi|uber|cabify|bus|tren|gasolina|peaje|parking|metro|billete|combustible|nafta/i, "transporte"],
+  [/hotel|airbnb|hostal|aloja|\bnoche?s?\b|apartamento|alquiler|renta/i, "alojamiento"],
+  [/internet|\bluz\b|\bagua\b|\bgas\b|factura|suscrip|netflix|spotify|tel[eé]fono|m[oó]vil|servicio|recibo/i, "servicios"],
+  [/regalo|gift|cumplea|aniversario/i, "regalos"],
+  [/entrada|tour|museo|cine|concierto|fiesta|disco|ocio|teatro|evento|parque/i, "ocio"],
+  [/compra|tienda|ropa|zapat|amazon|electr[oó]nica/i, "compras"],
 ];
 
 export interface ParsedExpense {

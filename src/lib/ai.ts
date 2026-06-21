@@ -3,6 +3,42 @@
 // están desplegadas o configuradas, estas llamadas devuelven un error y la UI
 // degrada con elegancia (p. ej. el escaneo cae a su demo local).
 import { supabase } from "./supabase";
+import type { Member, Category, RecurrenceInterval } from "./types";
+
+export type AIParsedExpense = {
+  label: string;
+  amount: number;
+  payerId: string;
+  participantIds: string[];
+  category: Category;
+  interval?: RecurrenceInterval | null;
+};
+
+/** Analiza una nota de gasto en lenguaje natural con un LLM (función
+ *  `parse-expense`) y devuelve el gasto estructurado + categoría. */
+export async function parseExpenseAI(
+  text: string,
+  members: Member[],
+  meId: string,
+  currency: string,
+  categories: string[]
+): Promise<AIParsedExpense> {
+  const { data, error } = await supabase.functions.invoke("parse-expense", {
+    body: {
+      text,
+      members: members.map((m) => ({ id: m.id, name: m.name })),
+      meId,
+      currency,
+      categories,
+    },
+  });
+  if (error) throw error;
+  const res = data as AIParsedExpense & { error?: string };
+  if (!res || (res as { error?: string }).error) {
+    throw new Error((res as { error?: string })?.error || "parse_failed");
+  }
+  return res;
+}
 
 export type ScannedItem = { name: string; price: number };
 export type ScanResult = { items: ScannedItem[]; currency?: string };
