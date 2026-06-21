@@ -18,6 +18,7 @@ type State = { groups: Group[]; activeId: string | null; loading: boolean };
 let state: State = { groups: [], activeId: null, loading: true };
 let currentUserId: string | null = null;
 let channel: ReturnType<typeof supabase.channel> | null = null;
+let subscribedGroupIds: Set<string> = new Set();
 let isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
 
 const listeners = new Set<() => void>();
@@ -52,6 +53,7 @@ async function loadGroups(userId: string) {
   if (!memberships?.length) {
     state = { groups: [], activeId: null, loading: false };
     emit();
+    subscribeRealtime(userId, []);
     return;
   }
 
@@ -74,6 +76,8 @@ async function loadGroups(userId: string) {
   emit();
 
   for (const g of groups) idbPutGroup(g).catch(() => {});
+
+  subscribeRealtime(userId, groups.map((g) => g.id));
 }
 
 async function syncOutbox() {
@@ -98,14 +102,35 @@ async function syncOutbox() {
   }
 }
 
-function subscribeRealtime(userId: string) {
+function subscribeRealtime(userId: string, groupIds: string[]) {
+  const newIds = new Set(groupIds);
+  const same =
+    newIds.size === subscribedGroupIds.size &&
+    [...newIds].every((id) => subscribedGroupIds.has(id));
+  if (same && channel) return;
+
+  subscribedGroupIds = newIds;
   channel?.unsubscribe();
-  channel = supabase
-    .channel(`groups:${userId}`)
-    .on("postgres_changes", { event: "*", schema: "public", table: "groups" }, () => {
-      if (currentUserId) loadGroups(currentUserId);
-    })
-    .subscribe();
+
+  const ch = supabase.channel(`groups:${userId}`);
+
+  // Detect when this user is added to a new group
+  ch.on(
+    "postgres_changes",
+    { event: "INSERT", schema: "public", table: "group_members", filter: `user_id=eq.${userId}` },
+    () => { if (currentUserId) loadGroups(currentUserId); }
+  );
+
+  // Detect expense/data changes in each group the user belongs to
+  for (const id of groupIds) {
+    ch.on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "groups", filter: `id=eq.${id}` },
+      () => { if (currentUserId) loadGroups(currentUserId); }
+    );
+  }
+
+  channel = ch.subscribe();
 }
 
 function persist(group: Group) {
@@ -137,19 +162,29 @@ if (typeof window !== "undefined") {
     isOnline = false;
     emit();
   });
+  // Re-fetch when the user returns to the app (tab/PWA back from background).
+  // This catches any updates missed while the Realtime websocket was inactive.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && currentUserId) {
+      loadGroups(currentUserId);
+    }
+  });
 }
 
 supabase.auth.onAuthStateChange((_event, session) => {
   if (session) {
     currentUserId = session.user.id;
+    // Set up group_members watcher immediately so we don't miss invites
+    // that arrive while the initial loadGroups fetch is in flight.
+    subscribeRealtime(session.user.id, []);
     loadFromIndexedDB().then(() => {
       if (currentUserId) loadGroups(currentUserId);
     });
-    subscribeRealtime(session.user.id);
   } else {
     currentUserId = null;
     channel?.unsubscribe();
     channel = null;
+    subscribedGroupIds = new Set();
     state = { groups: [], activeId: null, loading: false };
     emit();
     idbClearAll().catch(() => {});

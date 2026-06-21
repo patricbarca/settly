@@ -226,3 +226,26 @@ GRANT EXECUTE ON FUNCTION redeem_access_code(TEXT) TO authenticated;
 INSERT INTO access_codes (code, grants_plan, duration_days, max_uses, note)
 VALUES ('SETTLYBETA', 'pro', NULL, NULL, 'beta abierta')
 ON CONFLICT (code) DO NOTHING;
+
+-- ---------- REALTIME ----------
+-- Habilita cambios en tiempo real para groups y group_members.
+-- Necesario para que otros usuarios vean gastos añadidos por sus compañeros.
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'groups'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE groups;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'group_members'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE group_members;
+  END IF;
+END $$;
