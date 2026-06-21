@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Group } from "../lib/types";
 import { setActiveGroup, deleteGroup, archiveGroup, processRecurring } from "../lib/store";
-import { computeSettle } from "../lib/split";
 import { createInviteLink } from "../lib/invite";
-import { money } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
@@ -34,10 +32,6 @@ export function GroupView({ group }: { group: Group }) {
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); }, [group.id]);
   useEffect(() => { processRecurring(group.id); }, [group.id]);
-
-  const { net } = computeSettle(group.members, group.expenses, group.settlements ?? []);
-  const mine = net[group.meId] || 0;
-  const ok = Math.abs(mine) < 0.01;
 
   async function share() {
     setInviteError(false);
@@ -94,42 +88,6 @@ export function GroupView({ group }: { group: Group }) {
 
       <Hero group={group} />
 
-      {/* Balance card — visual, no labels */}
-      <div
-        className="rounded-3xl p-4 mt-3 flex items-center gap-4"
-        style={{
-          background: ok ? "rgba(10,163,163,0.08)" : mine > 0 ? "rgba(10,139,94,0.08)" : "rgba(209,68,68,0.08)",
-          border: `1.5px solid ${ok ? "rgba(10,163,163,0.15)" : mine > 0 ? "rgba(10,139,94,0.15)" : "rgba(209,68,68,0.15)"}`,
-        }}
-      >
-        <div
-          className="h-14 w-14 rounded-2xl flex items-center justify-center shrink-0"
-          style={{
-            background: ok ? "rgba(10,163,163,0.18)" : mine > 0 ? "rgba(10,139,94,0.18)" : "rgba(209,68,68,0.18)",
-            color: ok ? "var(--teal)" : mine > 0 ? "#0A8B5E" : "#D14444",
-          }}
-        >
-          {ok ? <Icon name="check" size={26} strokeWidth={2.5} /> : <span className="text-2xl font-bold">{mine > 0 ? "↑" : "↓"}</span>}
-        </div>
-        <div className="min-w-0">
-          {!ok && (
-            <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1">
-              {mine > 0 ? t("hero.owedLabel") : t("hero.youOweLabel")}
-            </div>
-          )}
-          <div
-            className="font-display text-3xl font-extrabold leading-none"
-            style={{ color: ok ? "var(--teal)" : mine > 0 ? "#0A8B5E" : "#D14444" }}
-          >
-            {ok
-              ? t("hero.uptodate")
-              : mine > 0
-                ? `+${money(mine, group.currency)}`
-                : `−${money(-mine, group.currency)}`}
-          </div>
-        </div>
-      </div>
-
       <div className="mt-4">
         <Members group={group} />
       </div>
@@ -158,7 +116,7 @@ export function GroupView({ group }: { group: Group }) {
             <button
               key={tb.id}
               onClick={() => setTab(tb.id)}
-              className={`flex-1 rounded-full px-2 py-2 text-sm font-semibold text-center whitespace-nowrap ${on ? "" : "glass text-muted"}`}
+              className={`flex-auto rounded-full px-3 py-2 text-sm font-semibold text-center whitespace-nowrap ${on ? "" : "glass text-muted"}`}
               style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
             >
               {tb.label}
