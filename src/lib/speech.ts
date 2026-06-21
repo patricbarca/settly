@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { transcribeAudio } from "./ai";
+import { transcribeLocal } from "./whisper";
 
 /**
  * Dictado por voz. En navegadores con Web Speech API (Android/escritorio) usa
@@ -68,10 +68,12 @@ export function useSpeech(onText: (t: string) => void) {
         if (!blob.size) return;
         setBusy(true);
         try {
-          const text = await transcribeAudio(blob);
+          // Transcripción local (Whisper en el navegador). La 1.ª vez descarga
+          // el modelo (~80 MB) y puede tardar unos segundos.
+          const text = await transcribeLocal(blob);
           if (text) onText(text);
         } catch {
-          // sin función desplegada / error → silencioso
+          // error de decodificación / modelo → silencioso
         } finally {
           setBusy(false);
         }

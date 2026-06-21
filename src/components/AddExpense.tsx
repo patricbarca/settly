@@ -163,7 +163,7 @@ export function AddExpense({ group }: { group: Group }) {
         />
         <button
           onClick={sp.toggle}
-          disabled={!sp.supported}
+          disabled={!sp.supported || sp.busy}
           title={sp.supported ? t("add.dictate") : t("add.voiceOff")}
           className={`h-12 w-12 shrink-0 rounded-full text-white flex items-center justify-center disabled:opacity-40 ${sp.listening ? "mic-on" : ""}`}
           style={{ background: sp.listening ? "#D14444" : "var(--ink)" }}
@@ -171,6 +171,11 @@ export function AddExpense({ group }: { group: Group }) {
           <Icon name="mic" size={20} />
         </button>
       </div>
+      {(sp.listening || sp.busy) && (
+        <div className="text-xs text-muted mt-1.5 pl-1 anim-up">
+          {sp.busy ? t("add.transcribing") : t("add.listening")}
+        </div>
+      )}
       <div className="flex gap-2 mt-3 flex-wrap">
         <button
           onClick={interpret}
