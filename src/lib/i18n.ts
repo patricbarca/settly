@@ -346,6 +346,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "account.name":    { es: "Tu nombre", en: "Your name" },
   "account.payHint": { es: "Se muestra al saldar deudas con el grupo.", en: "Shown when settling debts in a group." },
   "account.saved":   { es: "Guardado", en: "Saved" },
+  "account.changePhoto": { es: "Cambiar foto", en: "Change photo" },
 
   "common.ok": { es: "Entendido", en: "Got it" },
 

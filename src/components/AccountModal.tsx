@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import type { PayType, PayMethod } from "../lib/types";
-import { useUser, setProfileName } from "../lib/auth";
+import { useUser, setProfileName, setProfileAvatar } from "../lib/auth";
 import { useGroups, updateMyMember } from "../lib/store";
+import { fileToAvatarDataUrl } from "../lib/image";
 import { personColor, initials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { usePlan, FREE_AI_QUOTA } from "../lib/plan";
@@ -21,12 +22,23 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const myMember = groups.map((g) => g.members.find((m) => m.id === g.meId)).find(Boolean);
 
   const [name, setName] = useState(user?.name ?? "");
+  const [avatar, setAvatar] = useState(user?.avatar ?? "");
   const [payType, setPayType] = useState<PayType>(myMember?.pay?.type ?? "other");
   const [payValue, setPayValue] = useState(myMember?.pay?.value ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
   if (!user) return null;
+
+  async function onPickPhoto(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setAvatar(await fileToAvatarDataUrl(file));
+    } catch {
+      /* imagen no válida */
+    }
+  }
 
   async function save() {
     if (saving) return;
@@ -35,6 +47,10 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
     if (n && n !== user!.name) {
       await setProfileName(n);
       updateMyMember({ name: n });
+    }
+    if (avatar !== (user!.avatar ?? "")) {
+      await setProfileAvatar(avatar);
+      updateMyMember({ avatar });
     }
     const pay: PayMethod | undefined = payValue.trim()
       ? { type: payType, value: payValue.trim() }
@@ -58,14 +74,27 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {/* Avatar */}
+        {/* Avatar (Google por defecto; se puede subir una propia) */}
         <div className="flex justify-center mb-5">
-          <span
-            className="h-20 w-20 rounded-full flex items-center justify-center text-2xl font-bold"
-            style={{ background: personColor(name || user.name) + "22" }}
-          >
-            {initials(name || user.name)}
-          </span>
+          <label className="relative cursor-pointer group" title={t("account.changePhoto")}>
+            {avatar ? (
+              <img src={avatar} alt="" className="h-20 w-20 rounded-full object-cover" />
+            ) : (
+              <span
+                className="h-20 w-20 rounded-full flex items-center justify-center text-2xl font-bold"
+                style={{ background: personColor(name || user.name) + "22" }}
+              >
+                {initials(name || user.name)}
+              </span>
+            )}
+            <span
+              className="absolute bottom-0 right-0 h-7 w-7 rounded-full flex items-center justify-center text-white shadow-md"
+              style={{ background: "var(--ink)" }}
+            >
+              <Icon name="camera" size={14} />
+            </span>
+            <input type="file" accept="image/*" className="hidden" onChange={onPickPhoto} />
+          </label>
         </div>
 
         {/* Name */}
