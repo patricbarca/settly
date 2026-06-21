@@ -36,7 +36,7 @@ export function GroupView({ group }: { group: Group }) {
   async function share() {
     setInviteError(false);
     try {
-      const link = await createInviteLink(group.id);
+      const link = await createInviteLink(group);
       if (navigator.share) {
         await navigator.share({ title: group.name, text: `Únete al grupo "${group.name}" en Settly`, url: link });
       } else {
