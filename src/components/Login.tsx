@@ -86,7 +86,7 @@ export function Login() {
   if (phase === "otp_sent" && otpEmail) {
     return (
       <div className="min-h-full flex flex-col">
-        <div className="max-w-md w-full mx-auto px-4 flex-1 flex flex-col justify-center py-8">
+        <div className="max-w-md w-full mx-auto px-4 flex flex-col pt-10 pb-8">
           <Controls />
           <div className="glass-strong rounded-3xl p-6 anim-up">
             <div className="text-4xl mb-3 text-center">📬</div>
