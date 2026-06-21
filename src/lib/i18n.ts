@@ -197,6 +197,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "add.submit": { es: "Añadir gasto", en: "Add expense" },
   "add.dictate": { es: "Dictar", en: "Dictate" },
   "add.voiceOff": { es: "Voz no disponible en este navegador", en: "Voice not available in this browser" },
+  "add.listening": { es: "Escuchando… toca el micro para parar", en: "Listening… tap the mic to stop" },
+  "add.transcribing": { es: "Transcribiendo… (la 1.ª vez descarga el modelo)", en: "Transcribing… (first time downloads the model)" },
 
   "form.concept": { es: "Concepto", en: "What for" },
   "form.paid": { es: "Pagó", en: "Paid" },
