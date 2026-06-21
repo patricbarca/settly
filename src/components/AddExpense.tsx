@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import type { Group, RecurrenceInterval } from "../lib/types";
 import { updateGroup, addRecurring } from "../lib/store";
 import { parseExpense } from "../lib/parse";
+import { parseExpenseAI, type AIExpense } from "../lib/ai";
 import { useSpeech } from "../lib/speech";
 import { uid } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { usePlan, useAIRemaining, consumeAI, FREE_AI_QUOTA } from "../lib/plan";
 import { Icon } from "./Icon";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
-import { ScanReceiptModal } from "./ScanReceiptModal";
 import { Paywall } from "./Paywall";
 
 const INTERVALS: RecurrenceInterval[] = ["daily", "weekly", "monthly", "yearly"];
@@ -24,24 +24,13 @@ export function AddExpense({ group }: { group: Group }) {
   const [expenseType, setExpenseType] = useState<ExpenseType>("one-time");
   const [recurInterval, setRecurInterval] = useState<RecurrenceInterval>("monthly");
   const [recurStartDate, setRecurStartDate] = useState(new Date().toISOString().slice(0, 10));
-  const [scan, setScan] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const sp = useSpeech((tx) => setText((p) => (p ? `${p} ${tx}` : tx)));
 
-  function openScan() {
-    // Receipt scan is the AI feature gated by the freemium quota.
-    if (pro || consumeAI()) setScan(true);
-    else setShowPaywall(true);
-  }
-
-  function toggleRecurring() {
-    if (!pro) { setShowPaywall(true); return; }
-    setExpenseType((e) => (e === "recurring" ? "one-time" : "recurring"));
-  }
-
-  function interpret() {
-    if (!text.trim()) return;
-    const r = parseExpense(text, group.members, group.meId);
+  // Build the review draft from an AI/parsed expense and pre-set recurrence.
+  function fillFrom(r: AIExpense) {
     setDraft({
       label: r.label,
       amount: r.amount || "",
@@ -58,6 +47,56 @@ export function AddExpense({ group }: { group: Group }) {
       setRecurInterval(r.interval);
     } else {
       setExpenseType("one-time");
+    }
+  }
+
+  function toggleRecurring() {
+    if (!pro) { setShowPaywall(true); return; }
+    setExpenseType((e) => (e === "recurring" ? "one-time" : "recurring"));
+  }
+
+  // Texto (escrito o dictado) → IA → formulario. Si la IA falla o se acabó la
+  // cuota gratis, cae al parser local (gratis) para no bloquear nunca.
+  async function interpret() {
+    if (!text.trim() || busy) return;
+    setBusy(true);
+    let r: AIExpense | null = null;
+    if (pro || aiLeft > 0) {
+      try {
+        r = await parseExpenseAI({ text }, group.members, group.meId, group.currency);
+        if (!pro) consumeAI();
+      } catch {
+        r = null;
+      }
+    }
+    if (!r) r = parseExpense(text, group.members, group.meId);
+    fillFrom(r);
+    setBusy(false);
+  }
+
+  // Escanear ticket: la cámara/galería entrega la imagen, la IA la lee y rellena
+  // el formulario (mismo flujo que la voz). Gasta una unidad de cuota.
+  function openScan() {
+    if (busy) return;
+    if (!pro && aiLeft <= 0) { setShowPaywall(true); return; }
+    fileRef.current?.click();
+  }
+
+  async function onScanFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setBusy(true);
+    try {
+      const r = await parseExpenseAI({ file }, group.members, group.meId, group.currency);
+      if (!pro) consumeAI();
+      fillFrom(r);
+    } catch {
+      // La función no está desplegada o la lectura falló: abre el formulario
+      // manual vacío para no dejar al usuario sin salida.
+      manual();
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -140,14 +179,16 @@ export function AddExpense({ group }: { group: Group }) {
       <div className="flex gap-2 mt-3 flex-wrap">
         <button
           onClick={interpret}
-          disabled={!text.trim()}
-          className="glass-strong rounded-full px-4 py-2 text-sm font-medium hover-lift disabled:opacity-50"
+          disabled={!text.trim() || busy}
+          className="glass-strong rounded-full px-4 py-2 text-sm font-medium hover-lift disabled:opacity-50 inline-flex items-center gap-1.5"
         >
-          {t("add.interpret")}
+          {busy && <Icon name="repeat" size={14} className="spin" />}
+          {busy ? t("add.thinking") : t("add.interpret")}
         </button>
         <button
           onClick={openScan}
-          className="glass rounded-full px-4 py-2 text-sm hover-lift text-muted inline-flex items-center gap-1.5"
+          disabled={busy}
+          className="glass rounded-full px-4 py-2 text-sm hover-lift text-muted inline-flex items-center gap-1.5 disabled:opacity-50"
         >
           <Icon name="camera" size={16} /> {t("add.scan")}
           {!pro && (
@@ -156,9 +197,17 @@ export function AddExpense({ group }: { group: Group }) {
             </span>
           )}
         </button>
-        <button onClick={manual} className="glass rounded-full px-4 py-2 text-sm hover-lift text-muted">
+        <button onClick={manual} disabled={busy} className="glass rounded-full px-4 py-2 text-sm hover-lift text-muted disabled:opacity-50">
           {t("add.manual")}
         </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={onScanFile}
+        />
       </div>
 
       {draft && (
@@ -237,7 +286,6 @@ export function AddExpense({ group }: { group: Group }) {
         </div>
       )}
 
-      {scan && <ScanReceiptModal group={group} onClose={() => setScan(false)} />}
       {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
     </section>
   );

@@ -66,23 +66,35 @@ Listo: el botón "Continuar con Google" (`signInGoogle`) ya funciona.
 
 ---
 
-## 3. Escaneo de tickets (IA de visión)
+## 3. IA: interpretar gasto + escanear ticket
 
-Necesita un backend con la clave (no puede ir en el cliente). Usa la Edge
-Function `scan-receipt` (Claude Haiku 4.5 por defecto, ~0,4 céntimos/escaneo).
+La IA hace dos cosas, ambas con la **misma clave** (`ANTHROPIC_API_KEY`), que
+vive SOLO en el servidor (nunca en el cliente):
+
+- **`parse-expense`** — convierte texto (escrito o dictado por voz) **o** la foto
+  de un ticket en un gasto estructurado y categorizado, y rellena el formulario
+  para que solo confirmes. Es lo que usa el botón **Interpretar** y el botón
+  **Escanear**.
+- **`scan-receipt`** — (legado) lectura de ticket línea a línea para el reparto
+  por artículo. Opcional; `parse-expense` cubre el flujo principal.
 
 ```bash
 # requiere la CLI de Supabase y haber hecho: supabase link --project-ref TU-PROYECTO
-supabase functions deploy scan-receipt
+supabase functions deploy parse-expense
+supabase functions deploy scan-receipt   # opcional (reparto por artículo)
 supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-Opcional (cambiar de modelo/proveedor sin tocar código):
+Opcional (cambiar de modelo sin tocar código; Claude Haiku 4.5 por defecto,
+~0,4 céntimos por llamada):
 ```bash
-supabase secrets set AI_VISION_MODEL=claude-haiku-4-5   # o claude-sonnet-4-6, etc.
+supabase secrets set AI_MODEL=claude-haiku-4-5          # texto/imagen (parse-expense)
+supabase secrets set AI_VISION_MODEL=claude-haiku-4-5   # scan-receipt (legado)
 ```
 
-Mientras no esté desplegada, el escaneo **cae a un demo** (no rompe la app).
+Mientras `parse-expense` **no** esté desplegada: **Interpretar** cae al parser
+local (gratis, sin IA) y **Escanear** abre el formulario manual vacío — la app
+nunca se bloquea.
 
 ---
 

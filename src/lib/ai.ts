@@ -3,9 +3,51 @@
 // están desplegadas o configuradas, estas llamadas devuelven un error y la UI
 // degrada con elegancia (p. ej. el escaneo cae a su demo local).
 import { supabase } from "./supabase";
+import type { Category, Member, RecurrenceInterval } from "./types";
 
 export type ScannedItem = { name: string; price: number };
 export type ScanResult = { items: ScannedItem[]; currency?: string };
+
+export type AIExpense = {
+  label: string;
+  amount: number;
+  payerId: string;
+  participantIds: string[];
+  category: Category;
+  interval?: RecurrenceInterval;
+};
+
+/**
+ * Convierte texto (escrito o dictado) o la foto de un ticket en un gasto
+ * estructurado y categorizado vía la función `parse-expense` (modelo LLM).
+ * Lanza un error si la función no está desplegada/configurada, para que la UI
+ * pueda caer al parser local (`parseExpense`).
+ */
+export async function parseExpenseAI(
+  input: { text?: string; file?: File },
+  members: Member[],
+  meId: string,
+  currency: string
+): Promise<AIExpense> {
+  const body: Record<string, unknown> = {
+    members: members.map((m) => ({ id: m.id, name: m.name })),
+    meId,
+    currency,
+  };
+  if (input.text?.trim()) body.text = input.text.trim();
+  if (input.file) {
+    const { base64, mediaType } = await fileToBase64(input.file);
+    body.image = base64;
+    body.mediaType = mediaType;
+  }
+
+  const { data, error } = await supabase.functions.invoke("parse-expense", { body });
+  if (error) throw error;
+  if (!data || (data as { error?: string }).error) {
+    throw new Error((data as { error?: string })?.error || "parse_failed");
+  }
+  return data as AIExpense;
+}
 
 /** Lee una imagen de ticket vía la función `scan-receipt` (modelo de visión). */
 export async function scanReceipt(file: File): Promise<ScanResult> {

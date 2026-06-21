@@ -43,7 +43,13 @@ Settly is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScr
 - iOS home-screen PWAs cache aggressively — to force an update: force-quit twice, or delete+re-add, or clear Safari website data for the domain
 - CI deploys from `master` branch only (`.github/workflows/`)
 
+## AI expense entry (voice / text / scan → form)
+- The **Interpret** button and the **Scan** button both call the `parse-expense` Edge Function (`supabase/functions/parse-expense/index.ts`), which sends text (typed or dictated) *or* a receipt image to Claude (`AI_MODEL`, default `claude-haiku-4-5`, reuses `ANTHROPIC_API_KEY`) and returns a structured, categorized expense `{ label, amount, payerId, participantIds, category, interval? }`. The result pre-fills the manual `ExpenseForm` draft so the user just reviews and taps OK.
+- Client wrapper: `parseExpenseAI()` in `src/lib/ai.ts`. Flow lives in `src/components/AddExpense.tsx` (`interpret()` for text, `onScanFile()` for images, both via `fillFrom()`).
+- **Graceful degradation:** if `parse-expense` isn't deployed or the free AI quota is spent, Interpret falls back to the local regex parser (`src/lib/parse.ts`); Scan falls back to an empty manual form. The app never hard-blocks.
+- Quota: AI calls consume one unit of `plan.consumeAI()` for free users (Pro = unlimited); when exhausted, text still works via the local parser.
+- `src/components/ScanReceiptModal.tsx` + `scanReceipt()` (per-item split flow) are kept but no longer wired into the default Add flow — available to re-enable as a "detailed split" option.
+
 ## Pending / known issues
-- The "Interpret" button parser (`src/lib/parse.ts`) is local/regex-only (no AI yet). The code notes the plan is to replace/augment it with an LLM (voice → expense) from a backend with an API key.
 - Hero owe/owed pills always render both, showing `0` on the side that doesn't apply (could hide the zero side or show a "settled" state).
 - When reusing the same working branch across multiple PRs, reset it to `origin/master` before starting new work — squash-merges otherwise cause merge conflicts on the next PR.

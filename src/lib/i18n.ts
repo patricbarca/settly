@@ -191,6 +191,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "add.title": { es: "Añadir gasto", en: "Add an Expense" },
   "add.placeholder": { es: 'Ej: "Cena con Ale y Cote, pagué 90"', en: 'E.g. "Dinner with Ale and Cote, I paid 90"' },
   "add.interpret": { es: "Interpretar", en: "Interpret" },
+  "add.thinking": { es: "Analizando…", en: "Analyzing…" },
   "add.manual": { es: "Manual", en: "Manual" },
   "add.scan": { es: "Escanear", en: "Scan" },
   "add.review": { es: "Revisa y confirma", en: "Review and confirm" },
