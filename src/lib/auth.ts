@@ -1,7 +1,6 @@
 import { useSyncExternalStore } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
-import { uid } from "./format";
 
 export type User = {
   id: string;
@@ -9,7 +8,7 @@ export type User = {
   email?: string;
   phone?: string;
   avatar: string;
-  provider: "email" | "google" | "guest";
+  provider: "email" | "google";
 };
 
 export type AuthPhase =
@@ -19,8 +18,7 @@ export type AuthPhase =
   | "needs_name"
   | "needs_phone"
   | "phone_otp_sent"
-  | "authenticated"
-  | "guest";
+  | "authenticated";
 
 type State = { phase: AuthPhase; user: User | null; otpEmail?: string; pendingPhone?: string };
 
@@ -140,12 +138,6 @@ export async function signInGoogle() {
   });
 }
 
-export function signInGuest() {
-  const user: User = { id: "guest_" + uid(), name: "Invitado", avatar: "", provider: "guest" };
-  state = { phase: "guest", user };
-  emit();
-}
-
 export async function setProfileName(name: string) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
@@ -188,11 +180,6 @@ export async function skipPhone() {
 }
 
 export async function signOut() {
-  if (state.phase === "guest") {
-    state = { phase: "unauthenticated", user: null };
-    emit();
-    return;
-  }
   sessionStorage.removeItem("settly.phoneSkipped");
   await supabase.auth.signOut();
 }

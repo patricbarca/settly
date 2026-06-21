@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useUser, useAuthPhase, signOut, setProfileName, submitPhone, verifyPhone, skipPhone, usePendingPhone } from "./lib/auth";
 import { useLang, setLang, useT } from "./lib/i18n";
-import { resetSeed, useActiveGroup, loadGuestMode } from "./lib/store";
+import { useActiveGroup } from "./lib/store";
 import { useTheme, toggleTheme } from "./lib/theme";
 import { personColor, initials } from "./lib/format";
 import { joinByToken } from "./lib/invite";
@@ -35,10 +35,6 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (phase === "guest") loadGuestMode();
-  }, [phase]);
-
-  useEffect(() => {
     if (phase !== "authenticated" || !user) return;
     const token = sessionStorage.getItem("settly.pendingJoin");
     if (!token) return;
@@ -49,11 +45,8 @@ export default function App() {
   }, [phase, user]);
 
   useEffect(() => {
-    if (phase === "guest") {
-      setShowOnboarding(true);
-    } else if (phase === "authenticated" && !localStorage.getItem("settly.onboarded")) {
-      setShowOnboarding(true);
-    }
+    // Se muestra en cada inicio de sesión de la app (modo testeo).
+    if (phase === "authenticated") setShowOnboarding(true);
   }, [phase]);
 
   if (phase === "loading") {
@@ -115,23 +108,11 @@ export default function App() {
       {showAccount && <AccountModal onClose={() => setShowAccount(false)} />}
 
       {showOnboarding && (
-        <OnboardingModal onDone={() => {
-          localStorage.setItem("settly.onboarded", "1");
-          setShowOnboarding(false);
-        }} />
+        <OnboardingModal onDone={() => setShowOnboarding(false)} />
       )}
 
       <footer className="max-w-2xl mx-auto px-4 text-center text-xs text-muted pb-10 leading-relaxed">
-        {phase === "guest" ? (
-          <>
-            {t("app.footer")}{" "}
-            <button onClick={resetSeed} className="lk underline">
-              {t("app.resetDemo")}
-            </button>
-          </>
-        ) : (
-          t("app.footerCloud")
-        )}
+        {t("app.footerCloud")}
       </footer>
     </div>
   );

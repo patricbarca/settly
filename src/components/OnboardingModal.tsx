@@ -361,13 +361,13 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
     <>
       <style>{ANIM}</style>
       <div
-        className="fixed inset-0 z-50 flex flex-col transition-all duration-700 select-none"
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center transition-all duration-700 select-none"
         style={{ background: slide.gradient }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
         {/* Progress dots + skip */}
-        <div className="flex items-center justify-between px-6 pt-12 pb-2 shrink-0">
+        <div className="w-full max-w-sm flex items-center justify-between px-7 pb-4 shrink-0">
           <div className="flex gap-1.5">
             {SLIDES.map((_, i) => (
               <button key={i} onClick={() => setStep(i)}
@@ -384,7 +384,7 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
         </div>
 
         {/* Animation area */}
-        <div key={step} className="flex-1 flex flex-col items-center justify-center px-6 pb-2 anim-up" style={{ gap: 20 }}>
+        <div key={step} className="w-full max-w-sm flex flex-col items-center justify-center px-7 anim-up" style={{ gap: 20, minHeight: 260 }}>
           {step === 0 && (
             <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: 24, padding: 16 }}>
               <Logo size={56} />
@@ -394,7 +394,7 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
         </div>
 
         {/* Text + CTA */}
-        <div className="px-7 pb-11 shrink-0">
+        <div className="w-full max-w-sm px-7 pt-6 shrink-0">
           <h2 className="font-display font-extrabold text-white text-center mb-1.5" style={{ fontSize: 22 }}>
             {t(slide.titleKey)}
           </h2>

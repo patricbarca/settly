@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signInEmail, signInGoogle, signInGuest, verifyOtp, useAuthPhase, useOtpEmail } from "../lib/auth";
+import { signInEmail, signInGoogle, verifyOtp, useAuthPhase, useOtpEmail } from "../lib/auth";
 import { useLang, setLang, useT } from "../lib/i18n";
 import { useTheme, toggleTheme } from "../lib/theme";
 import { Logo } from "./Logo";
@@ -191,12 +191,6 @@ export function Login() {
           >
             {mode === "signin" ? t("login.noAccount") : t("login.haveAccount")}
           </button>
-
-          <div className="text-center mt-2">
-            <button onClick={signInGuest} className="lk text-sm underline">
-              {t("login.guest")}
-            </button>
-          </div>
         </div>
       </div>
     </div>
