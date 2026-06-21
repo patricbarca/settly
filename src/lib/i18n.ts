@@ -346,6 +346,36 @@ const DICT: Record<string, { es: string; en: string }> = {
   "account.name":    { es: "Tu nombre", en: "Your name" },
   "account.payHint": { es: "Se muestra al saldar deudas con el grupo.", en: "Shown when settling debts in a group." },
   "account.saved":   { es: "Guardado", en: "Saved" },
+
+  "common.ok": { es: "Entendido", en: "Got it" },
+
+  "pro.upgrade":  { es: "Mejorar a Pro", en: "Upgrade to Pro" },
+  "pro.badge":    { es: "Pro", en: "Pro" },
+  "pro.section":  { es: "Suscripción", en: "Subscription" },
+  "pro.planFree": { es: "Plan Free", en: "Free plan" },
+  "pro.planPro":  { es: "Plan Pro", en: "Pro plan" },
+  "pro.freeHint": { es: "{n} escaneos con IA al mes", en: "{n} AI scans per month" },
+  "pro.proHint":  { es: "IA ilimitada y funciones Pro", en: "Unlimited AI and Pro features" },
+  "pro.manage":   { es: "Gestionar", en: "Manage" },
+
+  "paywall.title":    { es: "Hazte Pro", en: "Go Pro" },
+  "paywall.subtitle": { es: "Desbloquea la IA sin límites y las funciones avanzadas.", en: "Unlock unlimited AI and advanced features." },
+  "paywall.f1":       { es: "Escaneo de recibos con IA ilimitado", en: "Unlimited AI receipt scanning" },
+  "paywall.f2":       { es: "Gastos recurrentes", en: "Recurring expenses" },
+  "paywall.f3":       { es: "Estadísticas avanzadas y export", en: "Advanced stats & export" },
+  "paywall.f4":       { es: "Apoya el desarrollo de Settly", en: "Support Settly's development" },
+  "paywall.year":     { es: "año", en: "year" },
+  "paywall.month":    { es: "mes", en: "month" },
+  "paywall.or":       { es: "o", en: "or" },
+  "paywall.cta":      { es: "Empezar prueba de 7 días", en: "Start 7-day trial" },
+  "paywall.terms":    { es: "7 días gratis · se pide tarjeta · cancela cuando quieras", en: "7-day free trial · card required · cancel anytime" },
+
+  "install.btn":      { es: "Instalar app", en: "Install app" },
+  "install.iosTitle": { es: "Instala Settly", en: "Install Settly" },
+  "install.iosStep1": { es: "Toca", en: "Tap" },
+  "install.iosShare": { es: "Compartir", en: "Share" },
+  "install.iosStep2": { es: "y luego", en: "then" },
+  "install.iosAdd":   { es: "Añadir a pantalla de inicio", en: "Add to Home Screen" },
 };
 
 export function useT() {

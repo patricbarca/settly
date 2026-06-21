@@ -4,8 +4,10 @@ import { useUser, setProfileName } from "../lib/auth";
 import { useGroups, updateMyMember } from "../lib/store";
 import { personColor, initials } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { usePlan, deactivatePro, FREE_AI_QUOTA } from "../lib/plan";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
+import { Paywall } from "./Paywall";
 
 const PAY_TYPES: PayType[] = ["payid", "bank", "paypal", "revolut", "wise", "bizum", "bunq", "other"];
 
@@ -13,6 +15,8 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const t = useT();
   const user = useUser();
   const groups = useGroups();
+  const plan = usePlan();
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const myMember = groups.map((g) => g.members.find((m) => m.id === g.meId)).find(Boolean);
 
@@ -82,6 +86,48 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
+        {/* Subscription */}
+        <div className="mb-5">
+          <label className="text-xs font-semibold text-muted">{t("pro.section")}</label>
+          <div className="glass rounded-xl p-3 mt-1 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span
+                className="h-8 w-8 rounded-full flex items-center justify-center shrink-0"
+                style={{
+                  background: plan === "pro" ? "rgba(91,91,240,0.15)" : "var(--glass)",
+                  color: plan === "pro" ? "var(--indigo)" : "var(--muted)",
+                }}
+              >
+                <Icon name="sparkles" size={16} />
+              </span>
+              <div className="min-w-0">
+                <div className="text-sm font-semibold">
+                  {plan === "pro" ? t("pro.planPro") : t("pro.planFree")}
+                </div>
+                <div className="text-xs text-muted truncate">
+                  {plan === "pro" ? t("pro.proHint") : t("pro.freeHint", { n: FREE_AI_QUOTA })}
+                </div>
+              </div>
+            </div>
+            {plan === "free" ? (
+              <button
+                onClick={() => setShowPaywall(true)}
+                className="rounded-full px-3 py-1.5 text-xs font-semibold text-white shrink-0 hover-lift"
+                style={{ background: "var(--indigo)" }}
+              >
+                {t("pro.upgrade")}
+              </button>
+            ) : (
+              <button
+                onClick={deactivatePro}
+                className="glass rounded-full px-3 py-1.5 text-xs text-muted shrink-0 hover-lift"
+              >
+                {t("pro.manage")}
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Payment method */}
         <div className="mb-6">
           <label className="text-xs font-semibold text-muted">{t("pay.methods")}</label>
@@ -117,6 +163,8 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
         >
           {saved ? `✓ ${t("account.saved")}` : saving ? "…" : t("common.save")}
         </button>
+
+        {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
       </div>
     </Overlay>
   );

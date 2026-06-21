@@ -5,22 +5,39 @@ import { parseExpense } from "../lib/parse";
 import { useSpeech } from "../lib/speech";
 import { uid } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { usePlan, useAIRemaining, consumeAI, FREE_AI_QUOTA } from "../lib/plan";
 import { Icon } from "./Icon";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 import { ScanReceiptModal } from "./ScanReceiptModal";
+import { Paywall } from "./Paywall";
 
 const INTERVALS: RecurrenceInterval[] = ["daily", "weekly", "monthly", "yearly"];
 type ExpenseType = "one-time" | "recurring";
 
 export function AddExpense({ group }: { group: Group }) {
   const t = useT();
+  const plan = usePlan();
+  const pro = plan === "pro";
+  const aiLeft = useAIRemaining();
   const [text, setText] = useState("");
   const [draft, setDraft] = useState<ExpenseDraft | null>(null);
   const [expenseType, setExpenseType] = useState<ExpenseType>("one-time");
   const [recurInterval, setRecurInterval] = useState<RecurrenceInterval>("monthly");
   const [recurStartDate, setRecurStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [scan, setScan] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   const sp = useSpeech((tx) => setText((p) => (p ? `${p} ${tx}` : tx)));
+
+  function openScan() {
+    // Receipt scan is the AI feature gated by the freemium quota.
+    if (pro || consumeAI()) setScan(true);
+    else setShowPaywall(true);
+  }
+
+  function toggleRecurring() {
+    if (!pro) { setShowPaywall(true); return; }
+    setExpenseType((e) => (e === "recurring" ? "one-time" : "recurring"));
+  }
 
   function interpret() {
     if (!text.trim()) return;
@@ -36,7 +53,7 @@ export function AddExpense({ group }: { group: Group }) {
       splitValues: {},
       category: r.category,
     });
-    if (r.interval) {
+    if (r.interval && pro) {
       setExpenseType("recurring");
       setRecurInterval(r.interval);
     } else {
@@ -129,10 +146,15 @@ export function AddExpense({ group }: { group: Group }) {
           {t("add.interpret")}
         </button>
         <button
-          onClick={() => setScan(true)}
+          onClick={openScan}
           className="glass rounded-full px-4 py-2 text-sm hover-lift text-muted inline-flex items-center gap-1.5"
         >
           <Icon name="camera" size={16} /> {t("add.scan")}
+          {!pro && (
+            <span className="text-[10px] font-mono opacity-70">
+              {aiLeft}/{FREE_AI_QUOTA}
+            </span>
+          )}
         </button>
         <button onClick={manual} className="glass rounded-full px-4 py-2 text-sm hover-lift text-muted">
           {t("add.manual")}
@@ -156,16 +178,24 @@ export function AddExpense({ group }: { group: Group }) {
                 <div className="flex items-center gap-2">
                   <Icon name="repeat" size={14} className="text-muted" />
                   <span className="text-sm">{t("add.repeatToggle")}</span>
+                  {!pro && (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold"
+                      style={{ background: "rgba(91,91,240,0.12)", color: "var(--indigo)" }}
+                    >
+                      <Icon name="lock" size={10} /> {t("pro.badge")}
+                    </span>
+                  )}
                 </div>
                 <button
                   type="button"
-                  onClick={() => setExpenseType((e) => (e === "recurring" ? "one-time" : "recurring"))}
+                  onClick={toggleRecurring}
                   className="relative w-11 h-6 rounded-full shrink-0 transition-colors"
-                  style={{ background: expenseType === "recurring" ? "var(--teal)" : "rgba(128,128,128,0.25)" }}
+                  style={{ background: pro && expenseType === "recurring" ? "var(--teal)" : "rgba(128,128,128,0.25)" }}
                 >
                   <span
                     className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform"
-                    style={{ left: 2, transform: expenseType === "recurring" ? "translateX(20px)" : "none" }}
+                    style={{ left: 2, transform: pro && expenseType === "recurring" ? "translateX(20px)" : "none" }}
                   />
                 </button>
               </div>
@@ -208,6 +238,7 @@ export function AddExpense({ group }: { group: Group }) {
       )}
 
       {scan && <ScanReceiptModal group={group} onClose={() => setScan(false)} />}
+      {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
     </section>
   );
 }
