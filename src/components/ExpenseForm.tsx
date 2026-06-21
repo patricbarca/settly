@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import type { Category, Group } from "../lib/types";
 import type { SplitMode } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
-import { personColor, initials, money } from "../lib/format";
+import { personColor, money } from "../lib/format";
+import { Avatar } from "./Avatar";
 import { currencySymbol } from "../lib/currencies";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -258,12 +259,7 @@ export function ExpenseForm({
                   className={`rounded-full pl-1 pr-3 py-1 text-sm flex items-center gap-1.5 border ${on ? "surface font-semibold" : "glass text-muted"}`}
                   style={{ borderColor: on ? personColor(m.name) : "transparent" }}
                 >
-                  <span
-                    className="h-6 w-6 rounded-full flex items-center justify-center text-sm"
-                    style={{ background: personColor(m.name) + "22" }}
-                  >
-                    {m.avatar || initials(m.name)}
-                  </span>
+                  <Avatar name={m.name} avatar={m.avatar} size={24} />
                   {m.name}
                 </button>
               );
@@ -273,12 +269,7 @@ export function ExpenseForm({
           <div className="mt-1 space-y-1">
             {group.members.map((m) => (
               <div key={m.id} className="flex items-center gap-2">
-                <span
-                  className="h-6 w-6 rounded-full flex items-center justify-center text-sm shrink-0"
-                  style={{ background: personColor(m.name) + "22" }}
-                >
-                  {m.avatar || initials(m.name)}
-                </span>
+                <Avatar name={m.name} avatar={m.avatar} size={24} />
                 <span className="text-sm flex-1">{m.name}</span>
                 <div className="glass rounded-lg px-2 py-1 flex items-center gap-1 w-28 shrink-0">
                   <input
@@ -345,12 +336,7 @@ export function ExpenseForm({
                 className={`rounded-full pl-1 pr-3 py-1 text-sm flex items-center gap-1.5 border ${on ? "surface" : "glass"}`}
                 style={{ borderColor: on ? personColor(m.name) : "transparent", opacity: on ? 1 : 0.5 }}
               >
-                <span
-                  className="h-6 w-6 rounded-full flex items-center justify-center text-sm"
-                  style={{ background: personColor(m.name) + "22" }}
-                >
-                  {m.avatar || initials(m.name)}
-                </span>
+                <Avatar name={m.name} avatar={m.avatar} size={24} />
                 {m.name}
               </button>
             );
@@ -374,12 +360,7 @@ export function ExpenseForm({
                   : null;
               return (
                 <div key={id} className="flex items-center gap-2">
-                  <span
-                    className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-semibold shrink-0"
-                    style={{ background: personColor(member.name) + "22" }}
-                  >
-                    {initials(member.name)}
-                  </span>
+                  <Avatar name={member.name} avatar={member.avatar} size={20} />
                   <span className="text-sm flex-1">{member.name}</span>
                   {f.splitMode === "shares" && impliedAmt !== null && (
                     <span className="text-xs text-muted font-mono">
