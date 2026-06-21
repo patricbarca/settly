@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS profiles (
 ALTER TABLE profiles
   ADD COLUMN IF NOT EXISTS email          TEXT    NOT NULL DEFAULT '',
   ADD COLUMN IF NOT EXISTS phone          TEXT    NOT NULL DEFAULT '',
-  ADD COLUMN IF NOT EXISTS phone_verified BOOLEAN NOT NULL DEFAULT FALSE;
+  ADD COLUMN IF NOT EXISTS phone_verified BOOLEAN NOT NULL DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS avatar         TEXT    NOT NULL DEFAULT '';
 
 -- Crea el perfil automáticamente al registrarse (incluye email)
 CREATE OR REPLACE FUNCTION handle_new_user()

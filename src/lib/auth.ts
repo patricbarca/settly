@@ -41,9 +41,18 @@ async function fromSession(session: Session) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("name, phone, phone_verified")
+    .select("name, phone, phone_verified, avatar")
     .eq("id", au.id)
     .single();
+
+  // Avatar: foto guardada en el perfil, o por defecto la de Google.
+  const googleAvatar = au.user_metadata?.avatar_url || "";
+  const avatar = profile?.avatar?.trim() || googleAvatar;
+  // Si no hay avatar guardado pero Google trae uno, persístelo (para que el
+  // resto de miembros también lo vean). Fire-and-forget.
+  if (!profile?.avatar && googleAvatar) {
+    supabase.from("profiles").update({ avatar: googleAvatar }).eq("id", au.id).then(() => {});
+  }
 
   const name =
     profile?.name?.trim() ||
@@ -69,7 +78,7 @@ async function fromSession(session: Session) {
     name,
     email: au.email,
     phone: profile?.phone || undefined,
-    avatar: au.user_metadata?.avatar_url || "",
+    avatar,
     provider: (au.app_metadata?.provider as User["provider"]) ?? "email",
   };
 
@@ -142,6 +151,16 @@ export async function setProfileName(name: string) {
   if (!session) return;
   await supabase.from("profiles").upsert({ id: session.user.id, name: name.trim() });
   await fromSession(session);
+}
+
+export async function setProfileAvatar(dataUrl: string) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+  await supabase.from("profiles").update({ avatar: dataUrl }).eq("id", session.user.id);
+  if (state.user) {
+    state = { ...state, user: { ...state.user, avatar: dataUrl } };
+    emit();
+  }
 }
 
 export async function submitPhone(phone: string) {

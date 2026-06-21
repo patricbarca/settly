@@ -181,17 +181,32 @@ export function setActiveGroup(id: string | null) {
   emit();
 }
 
-export function addGroup(group: Group) {
+export async function addGroup(
+  group: Group,
+  extraMembers: { userId: string; memberId: string }[] = []
+) {
   state = { groups: [group, ...state.groups], activeId: group.id };
   emit();
   if (!currentUserId) return;
   idbPutGroup(group).catch(() => {});
-  supabase.from("groups")
-    .insert({ id: group.id, owner_id: currentUserId, data: group })
-    .then(({ error }) => { if (error) console.error("addGroup:", error); });
-  supabase.from("group_members")
-    .insert({ group_id: group.id, user_id: currentUserId, member_id: group.meId })
-    .then(({ error }) => { if (error) console.error("addMember:", error); });
+  const { error: gErr } = await supabase
+    .from("groups")
+    .insert({ id: group.id, owner_id: currentUserId, data: group });
+  if (gErr) { console.error("addGroup:", gErr); return; }
+  // Mi pertenencia primero (la RLS para añadir a otros la exige existente).
+  const { error: meErr } = await supabase
+    .from("group_members")
+    .insert({ group_id: group.id, user_id: currentUserId, member_id: group.meId });
+  if (meErr) console.error("addMember:", meErr);
+  if (extraMembers.length) {
+    const rows = extraMembers.map((m) => ({
+      group_id: group.id,
+      user_id: m.userId,
+      member_id: m.memberId,
+    }));
+    const { error: exErr } = await supabase.from("group_members").insert(rows);
+    if (exErr) console.error("addExtraMembers:", exErr);
+  }
 }
 
 export function archiveGroup(id: string, value: boolean) {
