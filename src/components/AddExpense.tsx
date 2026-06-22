@@ -222,12 +222,8 @@ export function AddExpense({ group }: { group: Group }) {
         <button
           onClick={sp.toggle}
           disabled={!sp.supported || sp.busy}
-          className="rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift disabled:opacity-40"
-          style={
-            sp.listening
-              ? { background: "#D14444", color: "#fff" }
-              : { background: "var(--glass)", color: "var(--ink)" }
-          }
+          className={`rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift disabled:opacity-40 ${sp.listening ? "" : "glass"}`}
+          style={sp.listening ? { background: "#D14444", color: "#fff" } : undefined}
         >
           <Icon name="mic" size={18} />
           {t("add.voice")}
