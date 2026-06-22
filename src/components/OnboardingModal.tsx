@@ -55,7 +55,7 @@ function Slide1Anim() {
             <span style={{ color: "#34d399", fontWeight: 700, fontSize: 13, fontFamily: "monospace" }}>+$24.50</span>
           </div>
           <div style={{ display: "flex", gap: 4 }}>
-            {[["T","#7c3aed"],["A","#0891b2"],["P","#dc2626"],["M","#d97706"]].map(([l,c],i) => (
+            {[["S","#7c3aed"],["A","#0891b2"],["P","#dc2626"],["J","#d97706"]].map(([l,c],i) => (
               <div key={i} style={{ width: 26, height: 26, borderRadius: "50%", background: `${c}44`, border: `2px solid ${c}66`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "white", fontWeight: 700 }}>{l}</div>
             ))}
           </div>
@@ -68,7 +68,7 @@ function Slide1Anim() {
             <span style={{ color: "#f87171", fontWeight: 700, fontSize: 12, fontFamily: "monospace" }}>−$38.00</span>
           </div>
           <div style={{ display: "flex", gap: 3 }}>
-            {[["T","#7c3aed"],["L","#059669"],["C","#0891b2"]].map(([l,c],i) => (
+            {[["S","#7c3aed"],["A","#059669"],["P","#0891b2"]].map(([l,c],i) => (
               <div key={i} style={{ width: 22, height: 22, borderRadius: "50%", background: `${c}44`, border: `1.5px solid ${c}66`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "white", fontWeight: 700 }}>{l}</div>
             ))}
           </div>
@@ -90,8 +90,8 @@ function Slide2Anim() {
 
   const members = [
     { name: t("onboard.demo.you"), color: "#7c3aed" },
-    { name: "Ana G.", color: "#0891b2" },
-    { name: "Pedro R.", color: "#dc2626" },
+    { name: "Siena", color: "#0891b2" },
+    { name: "Alexa", color: "#dc2626" },
   ];
 
   return (
@@ -143,7 +143,7 @@ function Slide3Anim() {
           <div style={{ color: "white", fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{t("onboard.demo.restaurant")}</div>
           <div style={{ color: "#34d399", fontWeight: 800, fontSize: 24, fontFamily: "monospace", marginBottom: 10 }}>$53.00</div>
           <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
-            {[[t("onboard.demo.you"),"$17.67","#7c3aed"],["Ana","$17.67","#0891b2"],["Pedro","$17.66","#dc2626"]].map(([n,a,c],i) => (
+            {[[t("onboard.demo.you"),"$17.67","#7c3aed"],["Siena","$17.67","#0891b2"],["Alexa","$17.66","#dc2626"]].map(([n,a,c],i) => (
               <div key={i} style={{ flex: 1, background: `${c}22`, border: `1px solid ${c}44`, borderRadius: 8, padding: "5px 4px", textAlign: "center", animation: `ob-fadeup 0.3s ease ${i * 0.1 + 0.1}s both` }}>
                 <div style={{ color: "white", fontSize: 9, fontWeight: 700 }}>{n}</div>
                 <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 9, fontFamily: "monospace" }}>{a}</div>
@@ -189,7 +189,7 @@ function Slide4Anim() {
   const [typed, setTyped] = useState("");
 
   useEffect(() => {
-    const delays = [800, 2200, 1600, 2200];
+    const delays = [800, 2000, 2900, 2400];
     const timer = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 800);
     return () => clearTimeout(timer);
   }, [phase]);
@@ -340,7 +340,7 @@ function SlideTypeAnim() {
   const [phase, setPhase] = useState(0);
   const [typed, setTyped] = useState("");
   useEffect(() => {
-    const delays = [700, 1900, 2400];
+    const delays = [1800, 2000, 2600];
     const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 700);
     return () => clearTimeout(timer);
   }, [phase]);
