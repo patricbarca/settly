@@ -34,6 +34,9 @@ export type PayType = "payid" | "bank" | "paypal" | "revolut" | "wise" | "bizum"
 export interface PayMethod {
   type: PayType;
   value: string;
+  /** Segundo campo del método (p. ej. nº de cuenta cuando type="bank";
+   *  value guarda el BSB / sort code / routing según el país). */
+  value2?: string;
 }
 
 export interface Member {

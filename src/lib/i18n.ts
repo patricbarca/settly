@@ -296,6 +296,10 @@ const DICT: Record<string, { es: string; en: string }> = {
   "pay.label.bunq": { es: "bunq.me", en: "bunq.me" },
   "pay.label.other": { es: "Otro", en: "Other" },
 
+  "pay.bank.bsb": { es: "BSB", en: "BSB" },
+  "pay.bank.account": { es: "Número de cuenta", en: "Account number" },
+  "pay.ph.bankBsb": { es: "p. ej. 062-000", en: "e.g. 062-000" },
+  "pay.ph.bankAccount": { es: "p. ej. 12345678", en: "e.g. 12345678" },
   "pay.ph.payid": { es: "email o teléfono (PayID)", en: "email or phone (PayID)" },
   "pay.ph.bank": { es: "BSB + nº de cuenta", en: "BSB + account number" },
   "pay.ph.paypal": { es: "paypal.me/usuario", en: "paypal.me/username" },

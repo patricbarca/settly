@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Group } from "../lib/types";
 import { computeSettle } from "../lib/split";
 import { updateGroup } from "../lib/store";
-import { payLink } from "../lib/pay";
+import { payLink, payClipboardText } from "../lib/pay";
 import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -30,8 +30,9 @@ export function Balances({ group }: { group: Group }) {
       return;
     }
     if (payee?.pay?.value) {
-      navigator.clipboard?.writeText(payee.pay.value).catch(() => {});
-      alert(t("pay.copied", { v: payee.pay.value }));
+      const txt = payClipboardText(payee.pay);
+      navigator.clipboard?.writeText(txt).catch(() => {});
+      alert(t("pay.copied", { v: txt }));
       return;
     }
     alert(t("pay.noMethod", { name: payee?.name ?? "" }));
@@ -149,7 +150,7 @@ export function Balances({ group }: { group: Group }) {
                 {member(tr.to)?.pay?.value && (
                   <div className="text-[11px] text-muted mt-1 pl-8">
                     {t(`pay.label.${member(tr.to)!.pay!.type}`)} ·{" "}
-                    <span className="font-mono">{member(tr.to)!.pay!.value}</span>
+                    <span className="font-mono">{payClipboardText(member(tr.to)!.pay!)}</span>
                   </div>
                 )}
               </div>

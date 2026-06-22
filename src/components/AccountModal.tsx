@@ -26,6 +26,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const [avatar, setAvatar] = useState(user?.avatar ?? "");
   const [payType, setPayType] = useState<PayType>(myMember?.pay?.type ?? "other");
   const [payValue, setPayValue] = useState(myMember?.pay?.value ?? "");
+  const [payValue2, setPayValue2] = useState(myMember?.pay?.value2 ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -45,19 +46,25 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
     if (saving) return;
     setSaving(true);
     const n = name.trim();
-    if (n && n !== user!.name) {
-      await setProfileName(n);
-      updateMyMember({ name: n });
-    }
-    if (avatar !== (user!.avatar ?? "")) {
-      await setProfileAvatar(avatar);
-      updateMyMember({ avatar });
-    }
-    updateMyMember({ initials: inits.trim() || undefined });
+    if (n && n !== user!.name) await setProfileName(n);
+    if (avatar !== (user!.avatar ?? "")) await setProfileAvatar(avatar);
+
     const pay: PayMethod | undefined = payValue.trim()
-      ? { type: payType, value: payValue.trim() }
+      ? {
+          type: payType,
+          value: payValue.trim(),
+          ...(payType === "bank" && payValue2.trim() ? { value2: payValue2.trim() } : {}),
+        }
       : undefined;
-    updateMyMember({ pay });
+
+    // Una sola escritura para no perder datos por persistencias desordenadas.
+    updateMyMember({
+      ...(n && n !== user!.name ? { name: n } : {}),
+      ...(avatar !== (user!.avatar ?? "") ? { avatar } : {}),
+      initials: inits.trim() || undefined,
+      pay,
+    });
+
     setSaving(false);
     setSaved(true);
     setTimeout(() => { setSaved(false); onClose(); }, 800);
@@ -191,12 +198,35 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
               );
             })}
           </div>
-          <input
-            value={payValue}
-            onChange={(e) => setPayValue(e.target.value)}
-            placeholder={t(`pay.ph.${payType}`)}
-            className="glass rounded-xl px-3 py-2.5 text-sm w-full"
-          />
+          {payType === "bank" ? (
+            <div className="flex gap-2">
+              <div className="w-28">
+                <label className="text-[11px] font-semibold text-muted">{t("pay.bank.bsb")}</label>
+                <input
+                  value={payValue}
+                  onChange={(e) => setPayValue(e.target.value)}
+                  placeholder={t("pay.ph.bankBsb")}
+                  className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1 font-mono"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-[11px] font-semibold text-muted">{t("pay.bank.account")}</label>
+                <input
+                  value={payValue2}
+                  onChange={(e) => setPayValue2(e.target.value)}
+                  placeholder={t("pay.ph.bankAccount")}
+                  className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1 font-mono"
+                />
+              </div>
+            </div>
+          ) : (
+            <input
+              value={payValue}
+              onChange={(e) => setPayValue(e.target.value)}
+              placeholder={t(`pay.ph.${payType}`)}
+              className="glass rounded-xl px-3 py-2.5 text-sm w-full"
+            />
+          )}
         </div>
 
         <button

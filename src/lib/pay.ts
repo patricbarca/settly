@@ -17,6 +17,15 @@ function handle(v: string): string {
   return v.replace(/\/+$/, "").split("/").pop()!.trim();
 }
 
+/** Texto del método para copiar/mostrar (incluye el 2º campo en
+ *  transferencias: BSB + nº de cuenta). */
+export function payClipboardText(pay: PayMethod): string {
+  if (pay.type === "bank") {
+    return [pay.value, pay.value2].map((v) => v?.trim()).filter(Boolean).join(" / ");
+  }
+  return pay.value.trim();
+}
+
 /** Enlace de pago prerellenado, o null si el método no tiene enlace web
  *  (PayID, transferencia, Bizum → se copia el dato y se pega en la app del banco). */
 export function payLink(pay: PayMethod | undefined, amount: number): string | null {
