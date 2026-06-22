@@ -15,7 +15,7 @@ Settly is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScr
 - `src/lib/plan.ts` — freemium plan + AI-quota scaffolding (free/pro + monthly scan count in localStorage; `activatePro` is a stub to be replaced by Stripe/Supabase)
 - `src/components/Paywall.tsx` / `InstallButton.tsx` — upgrade modal and PWA install button (`src/lib/pwa.ts` captures `beforeinstallprompt` + iOS detection)
 - `src/components/GroupView.tsx` — main group screen (tabs: Expenses, Balances, Stats, Achievements)
-- `src/components/Hero.tsx` — hero card inside GroupView (group name + owe/owed pills + Settle Score ring)
+- `src/components/Hero.tsx` — hero card inside GroupView (group name + total/owe/owed pills + Settle Score ring)
 - `src/components/ExpenseForm.tsx` — add/edit expense form (voice input, receipt scan, recurring toggle)
 - `src/components/RecurringList.tsx` — recurring expenses list (hidden when empty)
 - `src/components/AddForm.tsx` — wrapper for the add expense flow
@@ -31,7 +31,7 @@ Settly is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScr
 ## Recent work completed
 - iOS Safari glass corner artifacts fixed via `@supports (-webkit-touch-callout: none)` — disables backdrop-filter on iOS
 - GroupView tabs (Expenses / Balances / Stats / Achievements) sized to content with `flex-auto whitespace-nowrap` (was `flex-1`, which left Stats roomy and cramped Achievements)
-- Hero card shows two small pills under the group name: red = total you owe, green = total you're owed (`Hero.tsx`, derived from `computeSettle` net)
+- Hero card shows three small pills under the group name: white = total group expense (T), red = total you owe (↓), green = total you're owed (↑) (`Hero.tsx`)
 - Redundant balance card below the hero was removed (the owe/owed pills replace it)
 - Settle Score ring text is always white
 - Recurring expense hint pill removed from empty state (list only shows when items exist)
