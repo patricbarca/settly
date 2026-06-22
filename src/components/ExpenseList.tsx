@@ -22,18 +22,23 @@ export function ExpenseList({ group }: { group: Group }) {
   function remove(id: string) {
     updateGroup(group.id, (g) => ({ ...g, expenses: g.expenses.filter((e) => e.id !== id) }));
   }
-  function toggleReview(id: string) {
+  function requestReview(id: string) {
     const exp = group.expenses.find((e) => e.id === id);
-    const turningOn = !!exp && !exp.reviewRequested;
+    if (!exp) return;
     updateGroup(group.id, (g) => ({
       ...g,
-      expenses: g.expenses.map((e) => (e.id === id ? { ...e, reviewRequested: !e.reviewRequested } : e)),
+      expenses: g.expenses.map((e) => (e.id === id ? { ...e, reviewRequested: true } : e)),
       // Solicitud de revisión: anónima (sin actorId) por diseño.
-      notifications: turningOn ? withNotif(g, { type: "review_requested", label: exp!.label }) : g.notifications,
+      notifications: withNotif(g, { type: "review_requested", label: exp.label }),
     }));
-    if (turningOn && exp) {
-      notifyGroup(group.id, group.name, t("notif.review_requested", { label: exp.label }));
-    }
+    notifyGroup(group.id, group.name, t("notif.review_requested", { label: exp.label }));
+  }
+  // El creador del gasto marca que ya lo revisó (resuelve la solicitud).
+  function markReviewed(id: string) {
+    updateGroup(group.id, (g) => ({
+      ...g,
+      expenses: g.expenses.map((e) => (e.id === id ? { ...e, reviewRequested: false } : e)),
+    }));
   }
   function saveEdit(id: string, d: ExpenseDraft) {
     const { payerId, payments, splits } = draftToExpenseFields(d);
@@ -135,12 +140,22 @@ export function ExpenseList({ group }: { group: Group }) {
                     >
                       <Icon name="edit" size={13} /> {t("exp.edit")}
                     </button>
-                    <button
-                      onClick={() => toggleReview(e.id)}
-                      className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted inline-flex items-center gap-1"
-                    >
-                      <Icon name="flag" size={13} /> {t("exp.review")}
-                    </button>
+                    {!e.reviewRequested ? (
+                      <button
+                        onClick={() => requestReview(e.id)}
+                        className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted inline-flex items-center gap-1"
+                      >
+                        <Icon name="flag" size={13} /> {t("exp.review")}
+                      </button>
+                    ) : e.createdBy === group.meId ? (
+                      <button
+                        onClick={() => markReviewed(e.id)}
+                        className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift inline-flex items-center gap-1"
+                        style={{ background: "#0A8B5E" }}
+                      >
+                        <Icon name="check" size={13} /> {t("exp.reviewed")}
+                      </button>
+                    ) : null}
                     <button
                       onClick={() => remove(e.id)}
                       className="glass rounded-full px-3 py-1 text-xs hover-lift lk-danger text-muted inline-flex items-center gap-1"

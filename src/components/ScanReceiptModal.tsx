@@ -103,6 +103,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
           category,
           date: new Date().toISOString().slice(0, 10),
           splits: rounded,
+          createdBy: group.meId,
         },
         ...g.expenses,
       ],

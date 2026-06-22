@@ -162,6 +162,7 @@ export function AddExpense({ group }: { group: Group }) {
             splits,
             category: d.category,
             date: new Date().toISOString().slice(0, 10),
+            createdBy: group.meId,
           },
           ...g.expenses,
         ],

@@ -249,6 +249,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "exp.edit": { es: "Editar gasto", en: "Edit expense" },
   "exp.shares": { es: "Reparto", en: "Split" },
   "exp.review": { es: "Solicitar revisión", en: "Request review" },
+  "exp.reviewed": { es: "Revisado", en: "Reviewed" },
   "exp.inReview": { es: "En revisión", en: "Under review" },
 
   "create.title": { es: "Nuevo grupo", en: "New group" },
