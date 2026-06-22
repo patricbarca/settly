@@ -52,7 +52,7 @@ function Slide1Anim() {
         <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: "11px 14px", backdropFilter: "blur(8px)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
             <span style={{ color: "white", fontWeight: 700, fontSize: 13 }}>✈️ {t("onboard.demo.group1")}</span>
-            <span style={{ color: "#34d399", fontWeight: 700, fontSize: 13, fontFamily: "monospace" }}>+€24.50</span>
+            <span style={{ color: "#34d399", fontWeight: 700, fontSize: 13, fontFamily: "monospace" }}>+$24.50</span>
           </div>
           <div style={{ display: "flex", gap: 4 }}>
             {[["T","#7c3aed"],["A","#0891b2"],["P","#dc2626"],["M","#d97706"]].map(([l,c],i) => (
@@ -65,7 +65,7 @@ function Slide1Anim() {
         <div style={{ background: "rgba(255,255,255,0.09)", borderRadius: 14, padding: "9px 12px", backdropFilter: "blur(8px)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
             <span style={{ color: "white", fontWeight: 700, fontSize: 12 }}>🏠 {t("onboard.demo.group2")}</span>
-            <span style={{ color: "#f87171", fontWeight: 700, fontSize: 12, fontFamily: "monospace" }}>−€38.00</span>
+            <span style={{ color: "#f87171", fontWeight: 700, fontSize: 12, fontFamily: "monospace" }}>−$38.00</span>
           </div>
           <div style={{ display: "flex", gap: 3 }}>
             {[["T","#7c3aed"],["L","#059669"],["C","#0891b2"]].map(([l,c],i) => (
@@ -129,10 +129,10 @@ function Slide3Anim() {
   }, [phase]);
 
   const items = [
-    { name: "Pasta carbonara", price: "€14.50" },
-    { name: "Pizza margherita", price: "€12.00" },
-    { name: "Vino tinto ×2",   price: "€22.00" },
-    { name: "Agua con gas",    price: "€4.50"  },
+    { name: "Pasta carbonara", price: "$14.50" },
+    { name: "Pizza margherita", price: "$12.00" },
+    { name: "Vino tinto ×2",   price: "$22.00" },
+    { name: "Agua con gas",    price: "$4.50"  },
   ];
 
   if (phase >= 2) {
@@ -141,9 +141,9 @@ function Slide3Anim() {
         <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
           <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{t("onboard.demo.detected")}</div>
           <div style={{ color: "white", fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{t("onboard.demo.restaurant")}</div>
-          <div style={{ color: "#34d399", fontWeight: 800, fontSize: 24, fontFamily: "monospace", marginBottom: 10 }}>€53.00</div>
+          <div style={{ color: "#34d399", fontWeight: 800, fontSize: 24, fontFamily: "monospace", marginBottom: 10 }}>$53.00</div>
           <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
-            {[[t("onboard.demo.you"),"€17.67","#7c3aed"],["Ana","€17.67","#0891b2"],["Pedro","€17.66","#dc2626"]].map(([n,a,c],i) => (
+            {[[t("onboard.demo.you"),"$17.67","#7c3aed"],["Ana","$17.67","#0891b2"],["Pedro","$17.66","#dc2626"]].map(([n,a,c],i) => (
               <div key={i} style={{ flex: 1, background: `${c}22`, border: `1px solid ${c}44`, borderRadius: 8, padding: "5px 4px", textAlign: "center", animation: `ob-fadeup 0.3s ease ${i * 0.1 + 0.1}s both` }}>
                 <div style={{ color: "white", fontSize: 9, fontWeight: 700 }}>{n}</div>
                 <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 9, fontFamily: "monospace" }}>{a}</div>
@@ -171,7 +171,7 @@ function Slide3Anim() {
           </div>
         ))}
         <div style={{ borderTop: "1px dashed #bbb", paddingTop: 5, marginTop: 4, display: "flex", justifyContent: "space-between", color: "#111", fontWeight: 700, fontSize: 11, fontFamily: "monospace" }}>
-          <span>TOTAL</span><span>€53.00</span>
+          <span>TOTAL</span><span>$53.00</span>
         </div>
       </div>
       {phase === 1 && (
@@ -247,7 +247,7 @@ function Slide4Anim() {
               <div style={{ color: "white", fontWeight: 700, fontSize: 13 }}>{t("onboard.demo.voiceTitle")}</div>
               <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 10 }}>{t("onboard.demo.voiceMeta")}</div>
             </div>
-            <div style={{ color: "#34d399", fontWeight: 800, fontSize: 18, fontFamily: "monospace" }}>€90</div>
+            <div style={{ color: "#34d399", fontWeight: 800, fontSize: 18, fontFamily: "monospace" }}>$90</div>
           </div>
         </div>
       )}
@@ -255,49 +255,56 @@ function Slide4Anim() {
   );
 }
 
-// ── Slide 5: Balances & settle ───────────────────────────────────────────────
+// ── Slide 5: Settle up — pay with details, mark paid, validate ────────────────
 function Slide5Anim() {
   const t = useT();
   const [phase, setPhase] = useState(0);
   useEffect(() => {
-    const delays = [600, 1800, 1600, 2000];
-    const timer = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 600);
+    const delays = [1800, 2000, 2600];
+    const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 1800);
     return () => clearTimeout(timer);
   }, [phase]);
 
-  const people = [
-    { name: "Ana G.", owes: 25, color: "#0891b2", pct: "62%" },
-    { name: "Pedro R.", owes: 15, color: "#dc2626", pct: "38%" },
-    { name: "Luis M.", owes: 8,  color: "#d97706", pct: "20%" },
-  ];
-
-  const settled = phase === 3;
+  const ava = (l: string, c: string) => (
+    <div style={{ width: 22, height: 22, borderRadius: "50%", background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "white", fontWeight: 700 }}>{l}</div>
+  );
 
   return (
-    <div style={{ width: "100%", maxWidth: 280, margin: "0 auto", display: "flex", flexDirection: "column", gap: 8 }}>
-      {people.map((p, i) => (
-        <div key={i} style={{ animation: `ob-fadeup 0.35s ease ${i * 0.12}s both`, background: "rgba(255,255,255,0.11)", borderRadius: 12, padding: "9px 12px", backdropFilter: "blur(8px)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-              <div style={{ width: 22, height: 22, borderRadius: "50%", background: `${p.color}44`, border: `1.5px solid ${p.color}66`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "white", fontWeight: 700 }}>{p.name[0]}</div>
-              <span style={{ color: "white", fontSize: 11, fontWeight: 600 }}>{p.name}</span>
-            </div>
-            <span style={{ color: settled ? "#34d399" : "#f87171", fontFamily: "monospace", fontSize: 12, fontWeight: 700 }}>
-              {settled ? "€0" : `−€${p.owes}`}
-            </span>
-          </div>
-          <div style={{ height: 4, background: "rgba(255,255,255,0.12)", borderRadius: 2, overflow: "hidden" }}>
-            <div style={{ height: "100%", borderRadius: 2, background: settled ? "#34d399" : p.color, width: settled ? "100%" : (phase >= 1 ? p.pct : "0%"), transition: "width 0.9s cubic-bezier(.4,0,.2,1), background 0.5s ease" }} />
-          </div>
+    <div style={{ width: "100%", maxWidth: 290, margin: "0 auto" }}>
+      <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>{t("onboard.demo.toSettle")}</div>
+
+        {/* Patrick pays Siena $18 */}
+        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
+          {ava("P", "#dc2626")}
+          <b style={{ color: "white", fontSize: 12 }}>Patrick</b>
+          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 11 }}>{t("onboard.demo.paysTo")}</span>
+          {ava("S", "#0891b2")}
+          <b style={{ color: "white", fontSize: 12 }}>Siena</b>
+          <span style={{ marginLeft: "auto", fontFamily: "monospace", fontWeight: 800, color: "white", fontSize: 14 }}>$18</span>
         </div>
-      ))}
-      {phase >= 2 && (
-        <div style={{ animation: "ob-fadeup 0.4s ease both", background: "rgba(52,211,153,0.15)", border: "1px solid rgba(52,211,153,0.35)", borderRadius: 12, padding: "9px 12px", textAlign: "center" }}>
-          {settled
-            ? <span style={{ color: "#34d399", fontWeight: 700, fontSize: 12 }}>{t("onboard.demo.settled")}</span>
-            : <span style={{ color: "#34d399", fontSize: 11 }}>{t("onboard.demo.transfers")}</span>}
-        </div>
-      )}
+
+        {/* payee payment details */}
+        <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.6)", marginBottom: 11 }}>💳 PayID · siena@pay</div>
+
+        {/* actions → states */}
+        {phase === 0 && (
+          <div style={{ display: "flex", gap: 6, animation: "ob-fadeup 0.3s ease both" }}>
+            <span style={{ background: "#34d399", color: "#06281c", fontWeight: 700, fontSize: 11, borderRadius: 999, padding: "5px 14px" }}>{t("pay.pay")}</span>
+            <span style={{ background: "rgba(255,255,255,0.14)", color: "white", fontWeight: 600, fontSize: 11, borderRadius: 999, padding: "5px 14px" }}>{t("pay.markPaid")}</span>
+          </div>
+        )}
+        {phase === 1 && (
+          <div style={{ animation: "ob-fadeup 0.3s ease both", background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: "7px 10px", display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "rgba(255,255,255,0.85)" }}>
+            ⏳ {t("onboard.demo.markedPaid")}
+          </div>
+        )}
+        {phase >= 2 && (
+          <div style={{ animation: "ob-pop 0.4s cubic-bezier(.34,1.56,.64,1) both", background: "rgba(52,211,153,0.18)", border: "1px solid rgba(52,211,153,0.4)", borderRadius: 10, padding: "8px 10px", display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: "#34d399" }}>
+            ✓ {t("onboard.demo.validated")}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -306,7 +313,7 @@ function Slide5Anim() {
 function Slide6Anim() {
   const t = useT();
   const cards = [
-    { emoji: "💱", label: t("onboard.extra2"), detail: "€ $ £ ¥ AUD" },
+    { emoji: "💱", label: t("onboard.extra2"), detail: "$ € £ ¥ AUD" },
     { emoji: "🌐", label: t("onboard.extra5"), detail: "Español · English" },
     { emoji: "🔔", label: t("onboard.extra6"), detail: t("onboard.demo.detail6") },
     { emoji: "💳", label: t("onboard.extra7"), detail: t("onboard.demo.detail7") },
@@ -365,7 +372,7 @@ function SlideTypeAnim() {
               <div style={{ color: "white", fontWeight: 700, fontSize: 13 }}>☕ {t("onboard.demo.typeTitle")}</div>
               <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 10 }}>{t("onboard.demo.typeMeta")}</div>
             </div>
-            <div style={{ color: "#34d399", fontWeight: 800, fontSize: 18, fontFamily: "monospace" }}>€12</div>
+            <div style={{ color: "#34d399", fontWeight: 800, fontSize: 18, fontFamily: "monospace" }}>$12</div>
           </div>
         </div>
       )}
