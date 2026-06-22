@@ -40,11 +40,13 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const [payType, setPayType] = useState<PayType>(memberPays(myMember)[0]?.type ?? "payid");
   const [payDraft, setPayDraft] = useState<PayDraft>(initialPayDraft);
   const cur = payDraft[payType] ?? { value: "", value2: "" };
-  const setCur = (patch: { value?: string; value2?: string }) =>
+  const setCur = (patch: { value?: string; value2?: string }) => {
+    setSaved(false);
     setPayDraft((d) => {
       const prev = d[payType] ?? { value: "" };
       return { ...d, [payType]: { ...prev, ...patch } };
     });
+  };
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [pushOn, setPushOn] = useState(isPushEnabled());
@@ -75,6 +77,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
     if (!file) return;
     try {
       setAvatar(await fileToAvatarDataUrl(file));
+      setSaved(false);
     } catch {
       /* imagen no válida */
     }
@@ -109,8 +112,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
     });
 
     setSaving(false);
-    setSaved(true);
-    setTimeout(() => { setSaved(false); onClose(); }, 800);
+    setSaved(true); // se queda en la vista; "Guardado" hasta que se edite algo
   }
 
   return (
@@ -154,7 +156,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           <label className="text-xs font-semibold text-muted">{t("account.name")}</label>
           <input
             value={name}
-            onChange={(e) => setName(e.target.value)}
+            onChange={(e) => { setName(e.target.value); setSaved(false); }}
             className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1"
           />
         </div>
@@ -164,7 +166,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           <label className="text-xs font-semibold text-muted">{t("account.initials")}</label>
           <input
             value={inits}
-            onChange={(e) => setInits(e.target.value.toUpperCase().slice(0, 3))}
+            onChange={(e) => { setInits(e.target.value.toUpperCase().slice(0, 3)); setSaved(false); }}
             maxLength={3}
             placeholder={memberInitials({ name: name || user.name })}
             className="glass rounded-xl px-3 py-2.5 text-sm w-28 mt-1 font-mono uppercase"
@@ -177,7 +179,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           <label className="text-xs font-semibold text-muted">{t("account.country")}</label>
           <select
             value={country}
-            onChange={(e) => setCountry(e.target.value)}
+            onChange={(e) => { setCountry(e.target.value); setSaved(false); }}
             className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1"
           >
             <option value="">{t("account.countryNone")}</option>
@@ -194,7 +196,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           <label className="text-xs font-semibold text-muted">{t("account.phone")}</label>
           <input
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => { setPhone(e.target.value); setSaved(false); }}
             inputMode="tel"
             placeholder={country ? `+${dialCode(country)} …` : "+61 412 345 678"}
             className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1"
@@ -344,14 +346,22 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
-        <button
-          onClick={save}
-          disabled={saving || !name.trim() || !phoneOk}
-          className="w-full rounded-full py-3 font-semibold text-white hover-lift disabled:opacity-40"
-          style={{ background: saved ? "#0A8B5E" : "var(--ink)" }}
-        >
-          {saved ? `✓ ${t("account.saved")}` : saving ? "…" : t("common.save")}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={save}
+            disabled={saving || !name.trim() || !phoneOk || saved}
+            className="flex-1 rounded-full py-3 font-semibold text-white hover-lift disabled:opacity-60"
+            style={{ background: saved ? "#0A8B5E" : "var(--ink)" }}
+          >
+            {saved ? `✓ ${t("account.saved")}` : saving ? "…" : t("common.save")}
+          </button>
+          <button
+            onClick={onClose}
+            className="rounded-full px-5 py-3 font-semibold glass text-muted hover-lift"
+          >
+            {t("common.close")}
+          </button>
+        </div>
 
         {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
       </div>
