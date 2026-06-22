@@ -1,7 +1,8 @@
 import type { Group, Member } from "../lib/types";
 import { memberStats } from "../lib/gamification";
 import { money, personColor, memberInitials } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { countryName } from "../lib/countries";
+import { useT, useLang } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 import { SettleRing } from "./SettleRing";
@@ -16,6 +17,7 @@ export function ProfileModal({
   onClose: () => void;
 }) {
   const t = useT();
+  const lang = useLang();
   const s = memberStats(group, member.id);
   const ok = Math.abs(s.net) < 0.01;
 
@@ -66,6 +68,25 @@ export function ProfileModal({
             </div>
           </div>
         </div>
+
+        {(member.country || member.phone) && (
+          <div className="glass rounded-3xl p-3 mb-3 space-y-1.5">
+            {member.country && (
+              <div className="flex items-center gap-2 text-sm">
+                <Icon name="home" size={15} className="text-muted shrink-0" />
+                <span>{countryName(member.country, lang)}</span>
+              </div>
+            )}
+            {member.phone && (
+              <div className="flex items-center gap-2 text-sm">
+                <Icon name="users" size={15} className="text-muted shrink-0" />
+                <a href={`tel:${member.phone}`} className="font-mono" style={{ color: "var(--teal)" }}>
+                  {member.phone}
+                </a>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-3 gap-2">
           {s.achievements.map((a) => (
