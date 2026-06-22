@@ -306,13 +306,15 @@ function Slide5Anim() {
 function Slide6Anim() {
   const t = useT();
   const cards = [
+    { emoji: "💱", label: t("onboard.extra2"), detail: "€ $ £ ¥ AUD" },
+    { emoji: "🌐", label: t("onboard.extra5"), detail: "Español · English" },
+    { emoji: "🔔", label: t("onboard.extra6"), detail: t("onboard.demo.detail6") },
+    { emoji: "💳", label: t("onboard.extra7"), detail: t("onboard.demo.detail7") },
+    { emoji: "🔁", label: t("onboard.extra8"), detail: t("onboard.demo.detail8") },
     { emoji: "📊", label: t("onboard.extra1"), detail: t("onboard.demo.detail1") },
-    { emoji: "💱", label: t("onboard.extra2"), detail: "€ $ £ ¥ AUD..." },
-    { emoji: "⚡", label: t("onboard.extra3"), detail: t("onboard.demo.detail3") },
-    { emoji: "📜", label: t("onboard.extra4"), detail: t("onboard.demo.detail4") },
   ];
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, width: "100%", maxWidth: 280, margin: "0 auto" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, width: "100%", maxWidth: 300, margin: "0 auto" }}>
       {cards.map((c, i) => (
         <div key={i} style={{ animation: `ob-pop 0.4s cubic-bezier(.34,1.56,.64,1) ${i * 0.12}s both`, background: "rgba(255,255,255,0.12)", borderRadius: 14, padding: "12px 10px", backdropFilter: "blur(8px)" }}>
           <div style={{ fontSize: 24, marginBottom: 5 }}>{c.emoji}</div>
@@ -324,12 +326,61 @@ function Slide6Anim() {
   );
 }
 
+// ── Slide: type it (text → AI) + manual ─────────────────────────────────────
+function SlideTypeAnim() {
+  const t = useT();
+  const sentence = t("onboard.demo.typeText");
+  const [phase, setPhase] = useState(0);
+  const [typed, setTyped] = useState("");
+  useEffect(() => {
+    const delays = [700, 1900, 2400];
+    const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 700);
+    return () => clearTimeout(timer);
+  }, [phase]);
+  useEffect(() => {
+    if (phase === 0) {
+      setTyped("");
+      let i = 0;
+      const iv = setInterval(() => {
+        i++;
+        setTyped(sentence.slice(0, i));
+        if (i >= sentence.length) clearInterval(iv);
+      }, 55);
+      return () => clearInterval(iv);
+    }
+  }, [phase, sentence]);
+  return (
+    <div style={{ width: "100%", maxWidth: 300, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ flex: 1, background: "rgba(255,255,255,0.13)", borderRadius: 14, padding: "11px 14px", color: "white", fontSize: 13, minHeight: 44, display: "flex", alignItems: "center", backdropFilter: "blur(8px)" }}>
+          {typed || <span style={{ opacity: 0.4 }}>{t("onboard.demo.typePlaceholder")}</span>}
+          {phase === 0 && typed.length < sentence.length && <span style={{ animation: "ob-pulse 0.8s ease-in-out infinite" }}>|</span>}
+        </div>
+        <div style={{ background: "white", color: "#120d36", borderRadius: 14, padding: "0 15px", display: "flex", alignItems: "center", gap: 5, fontWeight: 700, fontSize: 13, whiteSpace: "nowrap" }}>✨ {t("add.add")}</div>
+      </div>
+      {phase >= 2 && (
+        <div style={{ animation: "ob-pop 0.45s cubic-bezier(.34,1.56,.64,1) both", background: "rgba(255,255,255,0.13)", borderRadius: 14, padding: "11px 14px", backdropFilter: "blur(8px)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div>
+              <div style={{ color: "white", fontWeight: 700, fontSize: 13 }}>☕ {t("onboard.demo.typeTitle")}</div>
+              <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 10 }}>{t("onboard.demo.typeMeta")}</div>
+            </div>
+            <div style={{ color: "#34d399", fontWeight: 800, fontSize: 18, fontFamily: "monospace" }}>€12</div>
+          </div>
+        </div>
+      )}
+      <div style={{ textAlign: "center", color: "rgba(255,255,255,0.55)", fontSize: 11 }}>✋ {t("onboard.demo.orManual")}</div>
+    </div>
+  );
+}
+
 // ── Slide config ─────────────────────────────────────────────────────────────
 const SLIDES = [
   { gradient: "linear-gradient(160deg, #120d36 0%, #3d2fa0 100%)", Animation: Slide1Anim, titleKey: "onboard.s1t", descKey: "onboard.s1d" },
   { gradient: "linear-gradient(160deg, #082a28 0%, #0a7060 100%)", Animation: Slide2Anim, titleKey: "onboard.s2t", descKey: "onboard.s2d" },
   { gradient: "linear-gradient(160deg, #3d1005 0%, #c2410c 100%)", Animation: Slide3Anim, titleKey: "onboard.s3t", descKey: "onboard.s3d" },
   { gradient: "linear-gradient(160deg, #08153d 0%, #0369a1 100%)", Animation: Slide4Anim, titleKey: "onboard.s4t", descKey: "onboard.s4d" },
+  { gradient: "linear-gradient(160deg, #2a0a3d 0%, #7c3aed 100%)", Animation: SlideTypeAnim, titleKey: "onboard.sTypeT", descKey: "onboard.sTypeD" },
   { gradient: "linear-gradient(160deg, #032014 0%, #059669 100%)", Animation: Slide5Anim, titleKey: "onboard.s5t", descKey: "onboard.s5d" },
   { gradient: "linear-gradient(160deg, #160836 0%, #6d28d9 100%)", Animation: Slide6Anim, titleKey: "onboard.s6t", descKey: "onboard.s6d" },
 ];
@@ -361,13 +412,17 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
     <>
       <style>{ANIM}</style>
       <div
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center transition-all duration-700 select-none"
-        style={{ background: slide.gradient }}
+        className="fixed inset-0 z-50 flex flex-col items-center transition-all duration-700 select-none"
+        style={{
+          background: slide.gradient,
+          paddingTop: "max(env(safe-area-inset-top), 20px)",
+          paddingBottom: "max(env(safe-area-inset-bottom), 24px)",
+        }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
       >
         {/* Progress dots + skip */}
-        <div className="w-full max-w-sm flex items-center justify-between px-7 pb-4 shrink-0">
+        <div className="w-full max-w-sm flex items-center justify-between px-7 pt-2 pb-4 shrink-0">
           <div className="flex gap-1.5">
             {SLIDES.map((_, i) => (
               <button key={i} onClick={() => setStep(i)}
@@ -384,7 +439,7 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
         </div>
 
         {/* Animation area */}
-        <div key={step} className="w-full max-w-sm flex flex-col items-center justify-center px-7 anim-up" style={{ gap: 20, minHeight: 260 }}>
+        <div key={step} className="w-full max-w-sm flex-1 flex flex-col items-center justify-center px-7 anim-up" style={{ gap: 20 }}>
           {step === 0 && (
             <div style={{ background: "rgba(255,255,255,0.12)", borderRadius: 24, padding: 16 }}>
               <Logo size={56} />
@@ -394,7 +449,7 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
         </div>
 
         {/* Text + CTA */}
-        <div className="w-full max-w-sm px-7 pt-6 shrink-0">
+        <div className="w-full max-w-sm px-7 pt-6 pb-2 shrink-0">
           <h2 className="font-display font-extrabold text-white text-center mb-1.5" style={{ fontSize: 22 }}>
             {t(slide.titleKey)}
           </h2>
