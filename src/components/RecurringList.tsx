@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Group, RecurrenceInterval } from "../lib/types";
 import { addRecurring, updateRecurring, deleteRecurring } from "../lib/store";
 import { draftToExpenseFields, ExpenseForm, type ExpenseDraft } from "./ExpenseForm";
-import { uid, personColor, initials } from "../lib/format";
+import { uid, personColor, memberInitials } from "../lib/format";
 import { parseExpense } from "../lib/parse";
 import { useSpeech } from "../lib/speech";
 import { useT, useLang } from "../lib/i18n";
@@ -212,7 +212,7 @@ export function RecurringList({ group }: { group: Group }) {
                           className="h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold"
                           style={{ background: personColor(payer.name) + "22" }}
                         >
-                          {initials(payer.name)}
+                          {memberInitials(payer)}
                         </span>
                       )}
                       <span>{name(r.payerId)}</span>

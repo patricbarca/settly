@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Group } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { computeSettle } from "../lib/split";
-import { uid, personColor, initials, money } from "../lib/format";
+import { uid, personColor, memberInitials, money } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
 import { createInviteLink } from "../lib/invite";
@@ -133,7 +133,7 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
                   className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
                   style={{ background: personColor(m.name) + "22" }}
                 >
-                  {initials(m.name)}
+                  {memberInitials(m)}
                 </span>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm truncate">

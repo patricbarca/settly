@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Group, Member } from "../lib/types";
 import { memberStats } from "../lib/gamification";
-import { personColor, initials } from "../lib/format";
+import { personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { ProfileModal } from "./ProfileModal";
@@ -26,7 +26,7 @@ export function Achievements({ group }: { group: Group }) {
                 className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
                 style={{ background: personColor(m.name) + "22" }}
               >
-                {initials(m.name)}
+                {memberInitials(m)}
               </span>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-sm truncate">

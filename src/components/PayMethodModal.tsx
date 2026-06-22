@@ -1,7 +1,7 @@
 import type { Group, PayType } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { PAY_TYPES } from "../lib/pay";
-import { personColor, initials } from "../lib/format";
+import { personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -46,7 +46,7 @@ export function PayMethodModal({ group, onClose }: { group: Group; onClose: () =
                     className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold"
                     style={{ background: personColor(m.name) + "22" }}
                   >
-                    {initials(m.name)}
+                    {memberInitials(m)}
                   </span>
                   <span className="font-semibold text-sm">{m.name}</span>
                 </div>

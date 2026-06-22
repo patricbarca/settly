@@ -3,7 +3,7 @@ import type { Group } from "../lib/types";
 import { catOf } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { shareFor } from "../lib/split";
-import { money, fmtDate, personColor, initials } from "../lib/format";
+import { money, fmtDate, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -111,7 +111,7 @@ export function ExpenseList({ group }: { group: Group }) {
                             className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-semibold"
                             style={{ background: personColor(name(id)) + "22" }}
                           >
-                            {initials(name(id))}
+                            {memberInitials(group.members.find((m) => m.id === id) ?? { name: name(id) })}
                           </span>
                           {name(id)}
                         </span>

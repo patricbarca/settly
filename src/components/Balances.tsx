@@ -3,7 +3,7 @@ import type { Group } from "../lib/types";
 import { computeSettle } from "../lib/split";
 import { updateGroup } from "../lib/store";
 import { payLink } from "../lib/pay";
-import { money, personColor, initials } from "../lib/format";
+import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { PayMethodModal } from "./PayMethodModal";
@@ -71,7 +71,7 @@ export function Balances({ group }: { group: Group }) {
                     className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0"
                     style={{ background: personColor(m.name) + "22" }}
                   >
-                    {initials(m.name)}
+                    {memberInitials(m)}
                   </span>
                   <span className="truncate">
                     {m.name}{" "}
@@ -118,7 +118,7 @@ export function Balances({ group }: { group: Group }) {
                     className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0"
                     style={{ background: personColor(name(tr.from)) }}
                   >
-                    {initials(name(tr.from))}
+                    {memberInitials(member(tr.from) ?? { name: name(tr.from) })}
                   </span>
                   <b>{name(tr.from)}</b>
                   <span className="text-muted">{t("bal.paysTo")}</span>
@@ -126,7 +126,7 @@ export function Balances({ group }: { group: Group }) {
                     className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0"
                     style={{ background: personColor(name(tr.to)) }}
                   >
-                    {initials(name(tr.to))}
+                    {memberInitials(member(tr.to) ?? { name: name(tr.to) })}
                   </span>
                   <b>{name(tr.to)}</b>
                   <span className="font-mono font-bold ml-auto">{money(tr.amount, group.currency)}</span>
@@ -146,6 +146,12 @@ export function Balances({ group }: { group: Group }) {
                     {t("pay.markPaid")}
                   </button>
                 </div>
+                {member(tr.to)?.pay?.value && (
+                  <div className="text-[11px] text-muted mt-1 pl-8">
+                    {t(`pay.label.${member(tr.to)!.pay!.type}`)} ·{" "}
+                    <span className="font-mono">{member(tr.to)!.pay!.value}</span>
+                  </div>
+                )}
               </div>
             ))}
 
