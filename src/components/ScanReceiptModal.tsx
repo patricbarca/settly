@@ -76,10 +76,11 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     const per = (Number(it.price) || 0) / who.length;
     who.forEach((id) => (splits[id] += per));
   });
-  // La propina se reparte entre todos los miembros por igual.
-  if (tipNum > 0 && allIds.length) {
-    const perTip = tipNum / allIds.length;
-    allIds.forEach((id) => (splits[id] += perTip));
+  // La propina se reparte solo entre quienes consumieron algo del ticket.
+  const itemParticipants = allIds.filter((id) => splits[id] > 0.001);
+  if (tipNum > 0 && itemParticipants.length) {
+    const perTip = tipNum / itemParticipants.length;
+    itemParticipants.forEach((id) => (splits[id] += perTip));
   }
   const participants = allIds.filter((id) => splits[id] > 0.001);
 
