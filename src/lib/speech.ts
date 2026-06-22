@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { transcribeLocal } from "./whisper";
+import { isIOS } from "./pwa";
 
 /**
  * Dictado por voz en el idioma indicado (sigue el selector ES/EN de la app).
@@ -12,17 +13,21 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const [listening, setListening] = useState(false);
-  const [busy, setBusy] = useState(false); // transcribiendo (ruta de servidor)
+  const [busy, setBusy] = useState(false); // transcribiendo (modelo local)
+  const [error, setError] = useState<"mic" | "stt" | null>(null);
 
   const SR =
     typeof window !== "undefined"
       ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
       : null;
+  // En iOS, webkitSpeechRecognition puede existir pero NO funciona: forzamos la
+  // ruta de grabación + Whisper local.
+  const useNative = !!SR && !isIOS();
   const canRecord =
     typeof navigator !== "undefined" &&
     !!navigator.mediaDevices?.getUserMedia &&
     typeof (window as any).MediaRecorder !== "undefined";
-  const supported = !!SR || canRecord;
+  const supported = useNative || canRecord;
 
   // ---- Ruta 1: Web Speech API (nativa, sin servidor) ----
   function toggleNative() {
@@ -47,12 +52,13 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
         onText(txt);
       };
       rec.onend = () => { recRef.current = null; setListening(false); };
-      rec.onerror = () => { recRef.current = null; setListening(false); };
+      rec.onerror = () => { recRef.current = null; setListening(false); setError("mic"); };
       recRef.current = rec;
       setListening(true);
       rec.start();
     } catch {
       setListening(false);
+      setError("mic");
     }
   }
 
@@ -75,8 +81,9 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
           // el modelo (~80 MB) y puede tardar unos segundos.
           const text = await transcribeLocal(blob, lang);
           if (text) onText(text);
+          else setError("stt");
         } catch {
-          // error de decodificación / modelo → silencioso
+          setError("stt");
         } finally {
           setBusy(false);
         }
@@ -86,6 +93,7 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
       rec.start();
     } catch {
       setListening(false);
+      setError("mic");
     }
   }
 
@@ -102,9 +110,10 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
 
   function toggle() {
     if (!supported) return;
-    if (SR) toggleNative();
+    setError(null);
+    if (useNative) toggleNative();
     else toggleRecording();
   }
 
-  return { listening, busy, supported, toggle };
+  return { listening, busy, supported, error, toggle };
 }
