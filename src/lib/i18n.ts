@@ -216,6 +216,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "common.save": { es: "Guardar", en: "Save" },
   "common.cancel": { es: "Cancelar", en: "Cancel" },
   "common.back": { es: "Volver", en: "Back" },
+  "common.close": { es: "Cerrar", en: "Close" },
   "common.delete": { es: "Eliminar", en: "Delete" },
 
   "cat.comida": { es: "Comida", en: "Food" },
