@@ -11,22 +11,14 @@ import { Overlay } from "./Overlay";
 
 type Item = { id: string; name: string; price: number | string; who: Set<string> };
 
-// Coincide con el recibo de ejemplo del demo (cena italiana).
-const SAMPLE = [
-  { name: "Pizza Margherita", price: 12.5 },
-  { name: "Pizza Diavola", price: 14 },
-  { name: "Spaghetti Carbonara", price: 13.5 },
-  { name: "Ensalada Caprese", price: 9 },
-  { name: "Vino de la casa", price: 18 },
-  { name: "Tiramisú", price: 7.5 },
-];
-
 export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: () => void }) {
   const t = useT();
   const allIds = group.members.map((m) => m.id);
   const [stage, setStage] = useState<"pick" | "analyzing" | "review">("pick");
   const [preview, setPreview] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
+  const [scanError, setScanError] = useState(false);
+  const [tip, setTip] = useState<number | string>("");
   const [payerId, setPayerId] = useState(group.meId);
   const [category, setCategory] = useState<Category>("comida");
 
@@ -37,8 +29,10 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     reader.onload = async () => {
       setPreview(String(reader.result));
       setStage("analyzing");
+      setScanError(false);
       // Lectura real con un modelo de visión (Edge Function `scan-receipt`).
-      // Si no está desplegada/configurada, cae al demo para no bloquear el flujo.
+      // Si falla, avisamos y dejamos una fila vacía para añadir a mano (sin
+      // datos de ejemplo, que confundían al parecer un ticket real).
       try {
         const res = await scanReceipt(file);
         const rows = res.items.length
@@ -46,7 +40,8 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
           : [{ id: uid(), name: "", price: "" as number | string, who: new Set(allIds) }];
         setItems(rows);
       } catch {
-        setItems(SAMPLE.map((s) => ({ id: uid(), name: s.name, price: s.price, who: new Set(allIds) })));
+        setScanError(true);
+        setItems([{ id: uid(), name: "", price: "" as number | string, who: new Set(allIds) }]);
       }
       setStage("review");
     };
@@ -70,7 +65,9 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     setItems((arr) => [...arr, { id: uid(), name: "", price: "", who: new Set(allIds) }]);
   const removeItem = (itemId: string) => setItems((arr) => arr.filter((it) => it.id !== itemId));
 
-  const total = items.reduce((s, it) => s + (Number(it.price) || 0), 0);
+  const itemsTotal = items.reduce((s, it) => s + (Number(it.price) || 0), 0);
+  const tipNum = Number(tip) || 0;
+  const total = itemsTotal + tipNum;
   const splits: Record<string, number> = {};
   allIds.forEach((id) => (splits[id] = 0));
   items.forEach((it) => {
@@ -79,6 +76,11 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     const per = (Number(it.price) || 0) / who.length;
     who.forEach((id) => (splits[id] += per));
   });
+  // La propina se reparte entre todos los miembros por igual.
+  if (tipNum > 0 && allIds.length) {
+    const perTip = tipNum / allIds.length;
+    allIds.forEach((id) => (splits[id] += perTip));
+  }
   const participants = allIds.filter((id) => splits[id] > 0.001);
 
   function save() {
@@ -122,8 +124,13 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
             <p className="text-sm text-muted mb-4">{t("scan.pick")}</p>
             <label className="flex items-center justify-center gap-2 w-full rounded-full px-4 py-3 font-medium text-white hover-lift cursor-pointer" style={{ background: "var(--ink)" }}>
               <Icon name="camera" size={18} />
-              {t("scan.choose")}
+              {t("scan.camera")}
               <input type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
+            </label>
+            <label className="glass flex items-center justify-center gap-2 w-full rounded-full px-4 py-3 font-medium hover-lift cursor-pointer mt-2">
+              <Icon name="plus" size={16} />
+              {t("scan.gallery")}
+              <input type="file" accept="image/*" className="hidden" onChange={onFile} />
             </label>
           </div>
         )}
@@ -137,6 +144,14 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
 
         {stage === "review" && (
           <div className="space-y-3">
+            {scanError && (
+              <div
+                className="rounded-2xl px-4 py-3 text-sm"
+                style={{ background: "rgba(255,90,77,.12)", color: "var(--coral)", border: "1px solid rgba(255,90,77,.3)" }}
+              >
+                {t("scan.error")}
+              </div>
+            )}
             <div className="text-xs font-semibold text-muted">{t("scan.items")}</div>
             <div className="glass rounded-3xl p-3 space-y-3">
               {items.map((it, idx) => (
@@ -204,6 +219,23 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
               </div>
             </div>
 
+            <div className="glass rounded-3xl p-3 flex items-center justify-between">
+              <div>
+                <div className="text-sm font-medium">{t("scan.tip")}</div>
+                <div className="text-[11px] text-muted">{t("scan.tipNote")}</div>
+              </div>
+              <div className="flex items-center gap-1">
+                <input
+                  value={tip}
+                  onChange={(e) => setTip(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="0"
+                  className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
+                />
+                <span className="text-muted text-sm">{currencySymbol(group.currency)}</span>
+              </div>
+            </div>
+
             <div className="glass rounded-3xl p-3">
               {group.members.map((m) => (
                 <div key={m.id} className="flex items-center justify-between text-sm py-0.5">
@@ -217,7 +249,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
             <p className="text-[11px] text-muted leading-relaxed">{t("scan.aiNote")}</p>
 
             <div className="flex gap-2">
-              <button onClick={save} className="glass-strong rounded-full px-5 py-2.5 font-medium hover-lift">{t("scan.title")}</button>
+              <button onClick={save} className="glass-strong rounded-full px-5 py-2.5 font-medium hover-lift">{t("scan.save")}</button>
               <button onClick={onClose} className="glass rounded-full px-5 py-2.5 text-muted hover-lift">{t("common.cancel")}</button>
             </div>
           </div>
