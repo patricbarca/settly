@@ -2,11 +2,11 @@ import { useRef, useState } from "react";
 import { transcribeLocal } from "./whisper";
 
 /**
- * Dictado por voz. En navegadores con Web Speech API (Android/escritorio) usa
- * la transcripción nativa (gratis). En iPhone/Safari —que no la soporta— graba
- * un clip con MediaRecorder y lo transcribe en servidor (función `transcribe`).
+ * Dictado por voz en el idioma indicado (sigue el selector ES/EN de la app).
+ * En navegadores con Web Speech API (Android/escritorio) usa la transcripción
+ * nativa; donde no existe (iPhone/Safari) graba y transcribe en local (Whisper).
  */
-export function useSpeech(onText: (t: string) => void) {
+export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es") {
   const recRef = useRef<any>(null);
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -34,7 +34,7 @@ export function useSpeech(onText: (t: string) => void) {
     }
     try {
       const rec = new SR();
-      rec.lang = "es-ES";
+      rec.lang = lang === "en" ? "en-US" : "es-ES";
       rec.interimResults = false;
       rec.continuous = false;
       rec.onresult = (e: any) => {
@@ -70,7 +70,7 @@ export function useSpeech(onText: (t: string) => void) {
         try {
           // Transcripción local (Whisper en el navegador). La 1.ª vez descarga
           // el modelo (~80 MB) y puede tardar unos segundos.
-          const text = await transcribeLocal(blob);
+          const text = await transcribeLocal(blob, lang);
           if (text) onText(text);
         } catch {
           // error de decodificación / modelo → silencioso
