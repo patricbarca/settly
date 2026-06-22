@@ -55,8 +55,8 @@ export function NotificationsBell() {
         <Icon name="bell" size={16} />
         {unread > 0 && (
           <span
-            className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold text-white flex items-center justify-center"
-            style={{ background: "var(--coral)" }}
+            className="absolute -top-1.5 -right-1.5 min-w-[17px] h-[17px] px-[3px] rounded-full text-[10px] font-bold text-white flex items-center justify-center leading-none tabular-nums"
+            style={{ background: "var(--coral)", boxShadow: "0 0 0 2px var(--surface)" }}
           >
             {unread > 9 ? "9+" : unread}
           </span>
