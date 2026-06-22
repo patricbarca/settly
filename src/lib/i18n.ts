@@ -198,7 +198,9 @@ const DICT: Record<string, { es: string; en: string }> = {
   "add.dictate": { es: "Dictar", en: "Dictate" },
   "add.voiceOff": { es: "Voz no disponible en este navegador", en: "Voice not available in this browser" },
   "add.listening": { es: "Escuchando… toca el micro para parar", en: "Listening… tap the mic to stop" },
-  "add.transcribing": { es: "Transcribiendo… (la 1.ª vez descarga el modelo)", en: "Transcribing… (first time downloads the model)" },
+  "add.transcribing": { es: "Transcribiendo… (la 1.ª vez descarga el modelo, puede tardar)", en: "Transcribing… (first time downloads the model, may take a while)" },
+  "add.micError": { es: "No se pudo acceder al micrófono. Revisa los permisos.", en: "Couldn't access the microphone. Check permissions." },
+  "add.sttError": { es: "No se pudo transcribir. Revisa tu conexión e inténtalo de nuevo.", en: "Couldn't transcribe. Check your connection and try again." },
 
   "form.concept": { es: "Concepto", en: "What for" },
   "form.paid": { es: "Pagó", en: "Paid" },

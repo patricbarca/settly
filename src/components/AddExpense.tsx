@@ -177,6 +177,11 @@ export function AddExpense({ group }: { group: Group }) {
           {sp.busy ? t("add.transcribing") : t("add.listening")}
         </div>
       )}
+      {sp.error && !sp.listening && !sp.busy && (
+        <div className="text-xs mt-1.5 pl-1 anim-up" style={{ color: "var(--coral)" }}>
+          {sp.error === "mic" ? t("add.micError") : t("add.sttError")}
+        </div>
+      )}
       <div className="flex gap-2 mt-3 flex-wrap">
         <button
           onClick={interpret}
