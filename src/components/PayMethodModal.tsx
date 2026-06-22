@@ -12,13 +12,25 @@ export function PayMethodModal({ group, onClose }: { group: Group; onClose: () =
   function setType(mid: string, type: PayType) {
     updateGroup(group.id, (g) => ({
       ...g,
-      members: g.members.map((m) => (m.id === mid ? { ...m, pay: { type, value: m.pay?.value ?? "" } } : m)),
+      members: g.members.map((m) =>
+        m.id === mid ? { ...m, pay: { type, value: m.pay?.value ?? "", value2: m.pay?.value2 } } : m
+      ),
     }));
   }
   function setValue(mid: string, value: string) {
     updateGroup(group.id, (g) => ({
       ...g,
-      members: g.members.map((m) => (m.id === mid ? { ...m, pay: { type: m.pay?.type ?? "payid", value } } : m)),
+      members: g.members.map((m) =>
+        m.id === mid ? { ...m, pay: { type: m.pay?.type ?? "payid", value, value2: m.pay?.value2 } } : m
+      ),
+    }));
+  }
+  function setValue2(mid: string, value2: string) {
+    updateGroup(group.id, (g) => ({
+      ...g,
+      members: g.members.map((m) =>
+        m.id === mid ? { ...m, pay: { type: m.pay?.type ?? "bank", value: m.pay?.value ?? "", value2 } } : m
+      ),
     }));
   }
 
@@ -65,12 +77,29 @@ export function PayMethodModal({ group, onClose }: { group: Group; onClose: () =
                     );
                   })}
                 </div>
-                <input
-                  value={m.pay?.value ?? ""}
-                  onChange={(e) => setValue(m.id, e.target.value)}
-                  placeholder={t(`pay.ph.${type}`)}
-                  className="glass rounded-xl px-3 py-2 text-sm w-full"
-                />
+                {type === "bank" ? (
+                  <div className="flex gap-2">
+                    <input
+                      value={m.pay?.value ?? ""}
+                      onChange={(e) => setValue(m.id, e.target.value)}
+                      placeholder={t("pay.bank.bsb")}
+                      className="glass rounded-xl px-3 py-2 text-sm w-24 font-mono"
+                    />
+                    <input
+                      value={m.pay?.value2 ?? ""}
+                      onChange={(e) => setValue2(m.id, e.target.value)}
+                      placeholder={t("pay.bank.account")}
+                      className="glass rounded-xl px-3 py-2 text-sm flex-1 font-mono"
+                    />
+                  </div>
+                ) : (
+                  <input
+                    value={m.pay?.value ?? ""}
+                    onChange={(e) => setValue(m.id, e.target.value)}
+                    placeholder={t(`pay.ph.${type}`)}
+                    className="glass rounded-xl px-3 py-2 text-sm w-full"
+                  />
+                )}
               </div>
             );
           })}
