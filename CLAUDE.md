@@ -20,14 +20,13 @@ Settly is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScr
 - `src/components/RecurringList.tsx` — recurring expenses list (hidden when empty)
 - `src/components/AddForm.tsx` — wrapper for the add expense flow
 - `src/lib/auth.ts` — Supabase Auth (Google + email/OTP); phase machine incl. a **guest** mode for testing; reads/persists `profiles.avatar` (Google photo by default); `setProfileAvatar`/`setProfileName`. Phone step is optional in beta.
-- `src/lib/ai.ts` — client for the AI Edge Functions: `parseExpenseAI` (text→expense), `scanReceipt` (vision), `transcribeAudio` (server STT, currently unused — STT runs locally, see below)
-- `src/lib/whisper.ts` — **local** speech-to-text in the browser via transformers.js (Whisper `onnx-community/whisper-base`), WebGPU→WASM. Reuses a single `AudioContext` (iOS limit). No server/keys.
-- `src/lib/speech.ts` — `useSpeech(onText, lang)` dictation hook. Web Speech on Android/desktop; **on iOS forces record→local Whisper** (iOS exposes a broken `webkitSpeechRecognition`). Follows the ES/EN toggle. Exposes `listening`/`busy`/`error`.
+- `src/lib/ai.ts` — client for the AI Edge Functions: `parseExpenseAI` (text→expense), `scanReceipt` (vision), `transcribeAudio` (server STT via the `transcribe` function → Groq/Whisper)
+- `src/lib/speech.ts` — `useSpeech(onText, lang)` dictation hook. Web Speech on Android/desktop; **on iOS records→server STT** (`transcribeAudio`, since iOS exposes a broken `webkitSpeechRecognition`). Needs connection (offline → add expense manually). Follows the ES/EN toggle. Exposes `listening`/`busy`/`error`.
 - `src/lib/parse.ts` — local (regex) natural-language → expense parser + category + recurrence interval (fallback when the LLM isn't deployed)
 - `src/lib/contacts.ts` — `getNetwork()`: registered users you share groups with (for the create-group selector)
 - `src/lib/image.ts` — `fileToAvatarDataUrl()` crop/resize an uploaded photo to a small JPEG data URL
 - `src/components/Avatar.tsx` — renders a member's photo (`<img>` for URL/data URL) or emoji/initials fallback
-- `supabase/functions/parse-expense|scan-receipt|transcribe/` — Deno Edge Functions (Claude text/vision, Whisper STT). Keys in Supabase secrets (`ANTHROPIC_API_KEY`, `STT_API_KEY`). **Not deployed yet.**
+- `supabase/functions/parse-expense|scan-receipt|transcribe/` — Deno Edge Functions (Claude text/vision, Groq/Whisper STT). Keys in Supabase secrets (`ANTHROPIC_API_KEY`; STT: `STT_API_KEY` + `STT_API_URL` + `STT_MODEL`). **`transcribe` deployed (Groq `whisper-large-v3-turbo`); `parse-expense`/`scan-receipt` not deployed yet.**
 - `supabase/setup_all.sql` — idempotent full schema (tables + RLS + `redeem_access_code` SECURITY DEFINER fn + `profiles.avatar`)
 
 ## Design system
@@ -46,7 +45,7 @@ Settly is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScr
 - **Profile avatar**: Google photo by default, can upload your own (saved as data URL in `profiles.avatar`). Avatars now render as images everywhere (fixed a bug where the avatar URL showed as raw text in the expense form).
 - **Freemium / Pro**: plan read from Supabase `entitlements`; Pro unlocked via **access codes** (`redeem_access_code` SECURITY DEFINER fn; beta code `SETTLYBETA`). No Stripe yet. Recurring expenses + unlimited AI are **Pro-gated** (decision: keep recurring as Pro).
 - **Three AI paths wired** (Edge Functions, keys server-side only): `parse-expense` (text→expense+category, Claude Haiku), `scan-receipt` (vision, Claude), `transcribe` (Whisper). Interpret uses the LLM when Pro/quota, else the local regex parser. **Functions still need deploying** to actually work.
-- **Voice→text**: runs **locally in the browser** (Whisper via transformers.js) — no server/keys. Web Speech on Android/desktop; record→local Whisper on iPhone. Language follows the ES/EN toggle. Known issue below.
+- **Voice→text**: Web Speech on Android/desktop; on iPhone records→**server STT** (Edge Function `transcribe` → Groq `whisper-large-v3-turbo`). Needs connection; offline → add manually. Language follows the ES/EN toggle. (Replaced the old in-browser Whisper, which failed on iPhone — `src/lib/whisper.ts` + `@huggingface/transformers` removed.)
 - **Categories** expanded 6→12 (added Groceries, Drinks, Travel, Health, Bills/Services, Gifts) with icons, i18n, and parser keywords.
 - **UI**: login top-aligned; onboarding shows every launch (testing) and is vertically centered.
 
@@ -66,8 +65,8 @@ Settly is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScr
 - CI deploys from `master` branch only (`.github/workflows/`)
 
 ## Pending / known issues
-- **Edge Functions not deployed**: `parse-expense`, `scan-receipt`, `transcribe` exist but need `supabase functions deploy` + secrets (`ANTHROPIC_API_KEY`, `STT_API_KEY`). Until then: Interpret falls back to the local parser, scan falls back to its demo.
-- **Local voice STT fails on iPhone** ("No se pudo transcribir"): recording works, but the in-browser Whisper (WASM) fails — likely the ~80MB+23MB download and/or no `SharedArrayBuffer` on GitHub Pages (no COOP/COEP headers). Options on the table: (A) server STT via Groq [recommended], (B) `whisper-tiny` + single-thread WASM, (C) hybrid local-desktop/server-mobile, (D) surface the exact error first. Works on desktop with WebGPU.
+- **`parse-expense` / `scan-receipt` not deployed**: exist but need `supabase functions deploy` + `ANTHROPIC_API_KEY`. Until then: Interpret falls back to the local parser, scan falls back to its demo. (`transcribe` is already deployed on Groq.)
+- **Voice STT now server-side (Groq)**, resolving the old iPhone failure. Trade-off: dictation needs a connection; offline the mic shows an error and the user adds the expense manually.
 - Interpret/parser: local regex parser is the fallback; the LLM (`parse-expense`) is the smart path once deployed.
 - Hero pills render even when `0` on a side (could hide the zero side or show a "settled" state).
 - When reusing the same working branch across multiple PRs, reset it to `origin/master` before starting new work — squash-merges otherwise cause merge conflicts on the next PR.
