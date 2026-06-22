@@ -69,6 +69,8 @@ export interface Expense {
   /** multiple payers: who paid how much */
   payments?: { memberId: string; amount: number }[];
   reviewRequested?: boolean;
+  /** memberId de quien añadió el gasto (para el botón "Revisado"). */
+  createdBy?: string;
 }
 
 export interface Settlement {

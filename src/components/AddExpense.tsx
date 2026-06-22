@@ -32,7 +32,13 @@ export function AddExpense({ group }: { group: Group }) {
   const [interpreting, setInterpreting] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const lang = useLang();
-  const sp = useSpeech((tx) => setText((p) => (p ? `${p} ${tx}` : tx)), lang);
+  // La voz va directa a la validación: transcribe → interpreta sin pulsar nada.
+  const sp = useSpeech((tx) => {
+    const t = tx.trim();
+    if (!t) return;
+    setText(t);
+    interpret(t);
+  }, lang);
 
   function openScan() {
     // Receipt scan is the AI feature gated by the freemium quota.
@@ -45,13 +51,14 @@ export function AddExpense({ group }: { group: Group }) {
     setExpenseType((e) => (e === "recurring" ? "one-time" : "recurring"));
   }
 
-  async function interpret() {
-    if (!text.trim() || interpreting) return;
+  async function interpret(override?: string) {
+    const src = (override ?? text).trim();
+    if (!src || interpreting) return;
     setInterpreting(true);
     // Con Pro o cupo disponible, usa el LLM (función parse-expense). Si no hay
     // cupo, falla o no está desplegado, cae al parser local de regex (gratis).
-    let r: ParsedExpense | null = await tryAI();
-    if (!r) r = parseExpense(text, group.members, group.meId);
+    let r: ParsedExpense | null = await tryAI(src);
+    if (!r) r = parseExpense(src, group.members, group.meId);
     // Varios pagadores: solo si la IA devolvió ≥2 y los importes cuadran con
     // el total (si no, dejamos un único pagador para no crear un borrador roto).
     const pays = r.payments ?? [];
@@ -79,11 +86,11 @@ export function AddExpense({ group }: { group: Group }) {
     setInterpreting(false);
   }
 
-  async function tryAI(): Promise<ParsedExpense | null> {
+  async function tryAI(src: string): Promise<ParsedExpense | null> {
     if (!pro && aiLeft <= 0) return null;
     try {
       const ai = await parseExpenseAI(
-        text,
+        src,
         group.members,
         group.meId,
         group.currency,
@@ -155,6 +162,7 @@ export function AddExpense({ group }: { group: Group }) {
             splits,
             category: d.category,
             date: new Date().toISOString().slice(0, 10),
+            createdBy: group.meId,
           },
           ...g.expenses,
         ],
@@ -180,6 +188,7 @@ export function AddExpense({ group }: { group: Group }) {
   return (
     <section className="glass-strong rounded-3xl p-5 anim-up">
       <div className="text-xs uppercase tracking-widest font-mono text-muted mb-2">{t("add.title")}</div>
+      {/* Texto + "Agregar" (la magia con IA) */}
       <div className="flex gap-2 items-stretch">
         <input
           value={text}
@@ -189,13 +198,12 @@ export function AddExpense({ group }: { group: Group }) {
           className="glass rounded-2xl px-4 py-3 text-sm flex-1"
         />
         <button
-          onClick={sp.toggle}
-          disabled={!sp.supported || sp.busy}
-          title={sp.supported ? t("add.dictate") : t("add.voiceOff")}
-          className={`h-12 w-12 shrink-0 rounded-full text-white flex items-center justify-center disabled:opacity-40 ${sp.listening ? "mic-on" : ""}`}
-          style={{ background: sp.listening ? "#D14444" : "var(--ink)" }}
+          onClick={() => interpret()}
+          disabled={!text.trim() || interpreting}
+          className="shrink-0 rounded-2xl px-5 text-sm font-semibold text-white hover-lift disabled:opacity-40 inline-flex items-center gap-1.5"
+          style={{ background: "var(--ink)" }}
         >
-          <Icon name="mic" size={20} />
+          <Icon name="sparkles" size={16} /> {interpreting ? "…" : t("add.add")}
         </button>
       </div>
       {(sp.listening || sp.busy) && (
@@ -208,26 +216,37 @@ export function AddExpense({ group }: { group: Group }) {
           {sp.error === "mic" ? t("add.micError") : t("add.sttError")}
         </div>
       )}
-      <div className="flex gap-2 mt-3 flex-wrap">
+
+      {/* Métodos: Voz · Escanear · Manual */}
+      <div className="grid grid-cols-3 gap-2 mt-3">
         <button
-          onClick={interpret}
-          disabled={!text.trim() || interpreting}
-          className="glass-strong rounded-full px-4 py-2 text-sm font-medium hover-lift disabled:opacity-50"
+          onClick={sp.toggle}
+          disabled={!sp.supported || sp.busy}
+          className="rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift disabled:opacity-40"
+          style={
+            sp.listening
+              ? { background: "#D14444", color: "#fff" }
+              : { background: "var(--glass)", color: "var(--muted)" }
+          }
         >
-          {interpreting ? "…" : t("add.interpret")}
+          <Icon name="mic" size={18} className={sp.listening ? "" : "text-muted"} />
+          {t("add.voice")}
         </button>
         <button
           onClick={openScan}
-          className="glass rounded-full px-4 py-2 text-sm hover-lift text-muted inline-flex items-center gap-1.5"
+          className="glass rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift text-muted"
         >
-          <Icon name="camera" size={16} /> {t("add.scan")}
-          {!pro && (
-            <span className="text-[10px] font-mono opacity-70">
-              {aiLeft}/{FREE_AI_QUOTA}
-            </span>
-          )}
+          <Icon name="camera" size={18} />
+          <span className="inline-flex items-center gap-1">
+            {t("add.scan")}
+            {!pro && <span className="text-[9px] font-mono opacity-70">{aiLeft}/{FREE_AI_QUOTA}</span>}
+          </span>
         </button>
-        <button onClick={manual} className="glass rounded-full px-4 py-2 text-sm hover-lift text-muted">
+        <button
+          onClick={manual}
+          className="glass rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift text-muted"
+        >
+          <Icon name="edit" size={18} />
           {t("add.manual")}
         </button>
       </div>
