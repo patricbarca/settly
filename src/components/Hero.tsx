@@ -14,6 +14,8 @@ export function Hero({ group }: { group: Group }) {
   const owe = mine < -0.01 ? -mine : 0;
   const owed = mine > 0.01 ? mine : 0;
 
+  const total = group.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+
   return (
     <div className="hero anim-up">
       <span className="blob b1" />
@@ -24,6 +26,12 @@ export function Hero({ group }: { group: Group }) {
           <div className="text-white/70 text-[11px] uppercase tracking-widest font-mono mb-1">{t("hero.groupLabel")}</div>
           <div className="text-white font-display text-2xl font-extrabold truncate leading-tight">{group.name}</div>
           <div className="flex items-center gap-1.5 mt-2">
+            <span
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold"
+              style={{ background: "rgba(255,255,255,0.22)", color: "#FFFFFF" }}
+            >
+              T {money(total, group.currency)}
+            </span>
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold"
               style={{ background: "rgba(255,90,77,0.22)", color: "#FFC2BB" }}
