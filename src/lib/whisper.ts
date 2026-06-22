@@ -42,15 +42,25 @@ export async function transcribeLocal(blob: Blob, lang = "es"): Promise<string> 
 }
 
 // Decodifica el clip grabado y lo convierte a mono 16 kHz (lo que espera Whisper).
+// IMPORTANTE: reutilizamos un único AudioContext. iOS Safari limita el número de
+// AudioContext que se pueden crear (~4) y los cerrados no se liberan al momento;
+// crear uno por transcripción hacía que dejara de funcionar tras unos usos.
+let decodeCtx: AudioContext | null = null;
+function getDecodeCtx(): AudioContext {
+  if (!decodeCtx) {
+    const AC: typeof AudioContext =
+      (window as unknown as { AudioContext: typeof AudioContext }).AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    decodeCtx = new AC();
+  }
+  if (decodeCtx.state === "suspended") decodeCtx.resume().catch(() => {});
+  return decodeCtx;
+}
+
 async function blobToMono16k(blob: Blob): Promise<Float32Array> {
   const arrayBuf = await blob.arrayBuffer();
-  const AC: typeof AudioContext =
-    (window as unknown as { AudioContext: typeof AudioContext; webkitAudioContext: typeof AudioContext })
-      .AudioContext ||
-    (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-  const ctx = new AC();
+  const ctx = getDecodeCtx();
   const decoded = await ctx.decodeAudioData(arrayBuf);
-  ctx.close();
   const rate = 16000;
   const length = Math.max(1, Math.round(decoded.duration * rate));
   const offline = new OfflineAudioContext(1, length, rate);

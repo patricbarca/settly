@@ -33,6 +33,9 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
       return;
     }
     try {
+      // Aborta cualquier reconocimiento previo que se haya quedado colgado
+      // (si onend no llegó a dispararse, listening se quedaría en true).
+      try { recRef.current?.abort?.(); } catch {}
       const rec = new SR();
       rec.lang = lang === "en" ? "en-US" : "es-ES";
       rec.interimResults = false;
@@ -43,8 +46,8 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
           .join(" ");
         onText(txt);
       };
-      rec.onend = () => setListening(false);
-      rec.onerror = () => setListening(false);
+      rec.onend = () => { recRef.current = null; setListening(false); };
+      rec.onerror = () => { recRef.current = null; setListening(false); };
       recRef.current = rec;
       setListening(true);
       rec.start();

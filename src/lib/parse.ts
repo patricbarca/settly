@@ -48,10 +48,10 @@ export function parseExpense(
 
   // Intervalo de recurrencia.
   let interval: RecurrenceInterval | undefined;
-  if (/\bdaily\b|\bdiario\b|\bdiaria\b|\bcada d[ií]a\b/.test(t)) interval = "daily";
-  else if (/\bweekly\b|\bsemanal\b|\bcada semana\b/.test(t)) interval = "weekly";
-  else if (/\bmonthly\b|\bmensu(al)?\b|\bcada mes\b/.test(t)) interval = "monthly";
-  else if (/\byearly\b|\banual\b|\bcada a[ñn]o\b|\bannual\b/.test(t)) interval = "yearly";
+  if (/\bdaily\b|\bdiari[ao]\b|cada d[ií]a|(every|per|each)\s+day|al d[ií]a/.test(t)) interval = "daily";
+  else if (/\bweekly\b|\bsemanal\b|cada semana|(every|per|each)\s+week|(a la|por) semana/.test(t)) interval = "weekly";
+  else if (/\bmonthly\b|\bmensual(es)?\b|cada mes|(every|per|each)\s+month|(al|por) mes/.test(t)) interval = "monthly";
+  else if (/\byearly\b|\banual(es)?\b|\bannual(ly)?\b|cada a[ñn]o|(every|per|each)\s+year|(al|por) a[ñn]o/.test(t)) interval = "yearly";
 
   // Pagador: "pagó <nombre>" / "yo" / "pagué".
   let payerId: string | null = null;
@@ -88,7 +88,7 @@ export function parseExpense(
   let label = text
     .replace(/\d+(?:[.,]\d+)?\s*(€|eur|euros?|\$|usd|aud|gbp|cad|chf|mxn|brl|cop|ars|jpy|cny)?\b/gi, " ")
     .replace(names, " ")
-    .replace(/\b(con|y|e|pagu[eé]|pag[oó]|entre|todos|todas|grupo|yo|de|del|la|el|los|las|un|una|para|por|all|everyone|all of us|nosotros|daily|weekly|monthly|yearly|diario|diaria|semanal|mensual|anual|cada d[ií]a|cada semana|cada mes|cada a[ñn]o|annual)\b/gi, " ")
+    .replace(/\b(con|y|e|pagu[eé]|pag[oó]|entre|todos|todas|grupo|yo|de|del|la|el|los|las|un|una|para|por|all|everyone|all of us|nosotros|daily|weekly|monthly|yearly|diario|diaria|semanal|mensual|anual|cada d[ií]a|cada semana|cada mes|cada a[ñn]o|annual|annually|every|per|each|month|months|week|weeks|year|years|day|days|mes|semana|a[ñn]o)\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
   label = label.split(/\s+/).slice(0, 5).join(" ");
