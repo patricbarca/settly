@@ -187,7 +187,7 @@ export function AddExpense({ group }: { group: Group }) {
 
   return (
     <section className="glass-strong rounded-3xl p-5 anim-up">
-      <div className="text-xs uppercase tracking-widest font-mono text-muted mb-2">{t("add.title")}</div>
+      <div className="text-xs uppercase tracking-widest font-mono mb-2" style={{ color: "var(--muted)" }}>{t("add.title")}</div>
       {/* Texto + "Agregar" (la magia con IA) */}
       <div className="flex gap-2 items-stretch">
         <input
@@ -201,7 +201,7 @@ export function AddExpense({ group }: { group: Group }) {
           onClick={() => interpret()}
           disabled={!text.trim() || interpreting}
           className="shrink-0 rounded-2xl px-5 text-sm font-semibold text-white hover-lift disabled:opacity-40 inline-flex items-center gap-1.5"
-          style={{ background: "var(--ink)" }}
+          style={{ background: "var(--teal)" }}
         >
           <Icon name="sparkles" size={16} /> {interpreting ? "…" : t("add.add")}
         </button>
@@ -226,15 +226,15 @@ export function AddExpense({ group }: { group: Group }) {
           style={
             sp.listening
               ? { background: "#D14444", color: "#fff" }
-              : { background: "var(--glass)", color: "var(--muted)" }
+              : { background: "var(--glass)", color: "var(--ink)" }
           }
         >
-          <Icon name="mic" size={18} className={sp.listening ? "" : "text-muted"} />
+          <Icon name="mic" size={18} />
           {t("add.voice")}
         </button>
         <button
           onClick={openScan}
-          className="glass rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift text-muted"
+          className="glass rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift"
         >
           <Icon name="camera" size={18} />
           <span className="inline-flex items-center gap-1">
@@ -244,7 +244,7 @@ export function AddExpense({ group }: { group: Group }) {
         </button>
         <button
           onClick={manual}
-          className="glass rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift text-muted"
+          className="glass rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift"
         >
           <Icon name="edit" size={18} />
           {t("add.manual")}
