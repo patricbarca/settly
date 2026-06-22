@@ -3,8 +3,10 @@
 // Lee un ticket con un modelo de visión y devuelve sus líneas.
 //
 // Usa una API compatible con OpenAI (chat completions con imagen). Por defecto
-// apunta a Groq con Llama 4 Scout (multimodal, barato), reutilizando la misma
-// clave que ya configuraste para el STT (STT_API_KEY).
+// apunta a Groq con Llama 4 Scout (multimodal), reutilizando la misma clave que
+// ya configuraste para el STT. NO se usa response_format json_object: el modo
+// JSON estricto de Groq con visión rompe la generación (json_validate_failed);
+// el prompt ya pide solo JSON y extractJson lo recupera.
 //
 // Despliegue:
 //   supabase functions deploy scan-receipt
@@ -14,7 +16,6 @@
 //   AI_VISION_API_KEY  (def. = STT_API_KEY)
 //   AI_VISION_API_URL  (def. https://api.groq.com/openai/v1/chat/completions)
 //   AI_VISION_MODEL    (def. meta-llama/llama-4-scout-17b-16e-instruct)
-// Para más precisión: AI_VISION_MODEL=meta-llama/llama-4-maverick-17b-128e-instruct
 // ============================================================
 import { corsHeaders } from "../_shared/cors.ts";
 
@@ -50,10 +51,12 @@ Deno.serve(async (req) => {
         "content-type": "application/json",
       },
       body: JSON.stringify({
+        // Sin response_format json_object: en los modelos de visión de Groq el
+        // modo JSON estricto falla con json_validate_failed si la generación no
+        // es perfecta. El prompt ya pide "solo JSON" y extractJson lo recupera.
         model: MODEL,
         max_tokens: 1024,
         temperature: 0,
-        response_format: { type: "json_object" },
         messages: [
           {
             role: "user",
