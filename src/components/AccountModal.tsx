@@ -5,6 +5,7 @@ import { useGroups, updateMyMember } from "../lib/store";
 import { fileToAvatarDataUrl } from "../lib/image";
 import { personColor, memberInitials } from "../lib/format";
 import { enablePush, disablePush, isPushEnabled, pushSupported } from "../lib/push";
+import { memberPays } from "../lib/pay";
 import { useT } from "../lib/i18n";
 import { usePlan, FREE_AI_QUOTA } from "../lib/plan";
 import { Icon } from "./Icon";
@@ -25,9 +26,19 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState(user?.name ?? "");
   const [inits, setInits] = useState(myMember?.initials ?? "");
   const [avatar, setAvatar] = useState(user?.avatar ?? "");
-  const [payType, setPayType] = useState<PayType>(myMember?.pay?.type ?? "other");
-  const [payValue, setPayValue] = useState(myMember?.pay?.value ?? "");
-  const [payValue2, setPayValue2] = useState(myMember?.pay?.value2 ?? "");
+  // Un borrador por tipo, para que cada método se guarde por separado y no se
+  // "contagien" valores al cambiar de tipo.
+  type PayDraft = Record<string, { value: string; value2?: string }>;
+  const initialPayDraft: PayDraft = {};
+  for (const p of memberPays(myMember)) initialPayDraft[p.type] = { value: p.value, value2: p.value2 };
+  const [payType, setPayType] = useState<PayType>(memberPays(myMember)[0]?.type ?? "payid");
+  const [payDraft, setPayDraft] = useState<PayDraft>(initialPayDraft);
+  const cur = payDraft[payType] ?? { value: "", value2: "" };
+  const setCur = (patch: { value?: string; value2?: string }) =>
+    setPayDraft((d) => {
+      const prev = d[payType] ?? { value: "" };
+      return { ...d, [payType]: { ...prev, ...patch } };
+    });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [pushOn, setPushOn] = useState(isPushEnabled());
@@ -70,20 +81,23 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
     if (n && n !== user!.name) await setProfileName(n);
     if (avatar !== (user!.avatar ?? "")) await setProfileAvatar(avatar);
 
-    const pay: PayMethod | undefined = payValue.trim()
-      ? {
-          type: payType,
-          value: payValue.trim(),
-          ...(payType === "bank" && payValue2.trim() ? { value2: payValue2.trim() } : {}),
-        }
-      : undefined;
+    // Cada tipo se guarda por separado; conservamos solo los que tienen valor.
+    const pays: PayMethod[] = (Object.keys(payDraft) as PayType[])
+      .map((type) => {
+        const value = (payDraft[type]?.value ?? "").trim();
+        if (!value) return null;
+        const v2 = type === "bank" ? (payDraft[type]?.value2 ?? "").trim() : "";
+        return { type, value, ...(v2 ? { value2: v2 } : {}) } as PayMethod;
+      })
+      .filter((p): p is PayMethod => p !== null);
 
     // Una sola escritura para no perder datos por persistencias desordenadas.
     updateMyMember({
       ...(n && n !== user!.name ? { name: n } : {}),
       ...(avatar !== (user!.avatar ?? "") ? { avatar } : {}),
       initials: inits.trim() || undefined,
-      pay,
+      pays,
+      pay: pays[0], // compat. hacia atrás
     });
 
     setSaving(false);
@@ -207,13 +221,20 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           <div className="flex gap-1.5 flex-wrap mb-2">
             {PAY_TYPES.map((pt) => {
               const on = payType === pt;
+              const filled = !!payDraft[pt]?.value?.trim();
               return (
                 <button
                   key={pt}
                   onClick={() => setPayType(pt)}
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${on ? "" : "glass text-muted"}`}
+                  className={`rounded-full px-3 py-1 text-xs font-medium inline-flex items-center gap-1 ${on ? "" : "glass text-muted"}`}
                   style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
                 >
+                  {filled && (
+                    <span
+                      className="h-1.5 w-1.5 rounded-full"
+                      style={{ background: on ? "var(--pill-fg)" : "var(--teal)" }}
+                    />
+                  )}
                   {t(`pay.label.${pt}`)}
                 </button>
               );
@@ -224,8 +245,8 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
               <div className="w-28">
                 <label className="text-[11px] font-semibold text-muted">{t("pay.bank.bsb")}</label>
                 <input
-                  value={payValue}
-                  onChange={(e) => setPayValue(e.target.value)}
+                  value={cur.value}
+                  onChange={(e) => setCur({ value: e.target.value })}
                   placeholder={t("pay.ph.bankBsb")}
                   className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1 font-mono"
                 />
@@ -233,8 +254,8 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
               <div className="flex-1">
                 <label className="text-[11px] font-semibold text-muted">{t("pay.bank.account")}</label>
                 <input
-                  value={payValue2}
-                  onChange={(e) => setPayValue2(e.target.value)}
+                  value={cur.value2 ?? ""}
+                  onChange={(e) => setCur({ value2: e.target.value })}
                   placeholder={t("pay.ph.bankAccount")}
                   className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1 font-mono"
                 />
@@ -242,8 +263,8 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
             </div>
           ) : (
             <input
-              value={payValue}
-              onChange={(e) => setPayValue(e.target.value)}
+              value={cur.value}
+              onChange={(e) => setCur({ value: e.target.value })}
               placeholder={t(`pay.ph.${payType}`)}
               className="glass rounded-xl px-3 py-2.5 text-sm w-full"
             />

@@ -12,6 +12,13 @@ export const PAY_TYPES: PayType[] = [
   "other",
 ];
 
+/** Métodos de pago de un miembro (nuevo modelo `pays` con compat. al antiguo
+ *  `pay`). Devuelve solo los que tienen valor. */
+export function memberPays(m?: { pays?: PayMethod[]; pay?: PayMethod } | null): PayMethod[] {
+  const list = m?.pays ?? (m?.pay ? [m.pay] : []);
+  return list.filter((p) => p && p.value && p.value.trim());
+}
+
 // si pegan una URL completa, nos quedamos con el último segmento (el usuario)
 function handle(v: string): string {
   return v.replace(/\/+$/, "").split("/").pop()!.trim();

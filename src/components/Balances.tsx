@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Group } from "../lib/types";
 import { computeSettle } from "../lib/split";
 import { updateGroup } from "../lib/store";
-import { payLink, payClipboardText } from "../lib/pay";
+import { payLink, payClipboardText, memberPays } from "../lib/pay";
 import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -24,13 +24,18 @@ export function Balances({ group }: { group: Group }) {
 
   function pay(toId: string, amount: number) {
     const payee = member(toId);
-    const link = payLink(payee?.pay, amount);
-    if (link) {
-      window.open(link, "_blank", "noopener");
-      return;
+    const methods = memberPays(payee);
+    // Si algún método tiene enlace web (PayPal, etc.), abre el primero.
+    for (const m of methods) {
+      const link = payLink(m, amount);
+      if (link) {
+        window.open(link, "_blank", "noopener");
+        return;
+      }
     }
-    if (payee?.pay?.value) {
-      const txt = payClipboardText(payee.pay);
+    // Si no, copia el primer método (PayID, transferencia, Bizum…).
+    if (methods.length) {
+      const txt = payClipboardText(methods[0]);
       navigator.clipboard?.writeText(txt).catch(() => {});
       alert(t("pay.copied", { v: txt }));
       return;
@@ -147,12 +152,11 @@ export function Balances({ group }: { group: Group }) {
                     {t("pay.markPaid")}
                   </button>
                 </div>
-                {member(tr.to)?.pay?.value && (
-                  <div className="text-[11px] text-muted mt-1 pl-8">
-                    {t(`pay.label.${member(tr.to)!.pay!.type}`)} ·{" "}
-                    <span className="font-mono">{payClipboardText(member(tr.to)!.pay!)}</span>
+                {memberPays(member(tr.to)).map((pm, k) => (
+                  <div key={k} className="text-[11px] text-muted mt-1 pl-8">
+                    {t(`pay.label.${pm.type}`)} · <span className="font-mono">{payClipboardText(pm)}</span>
                   </div>
-                )}
+                ))}
               </div>
             ))}
 

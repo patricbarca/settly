@@ -45,7 +45,10 @@ export interface Member {
   avatar: string;
   /** Iniciales personalizadas (editables); si no, se derivan del nombre. */
   initials?: string;
+  /** Método principal (compat. hacia atrás). Equivale a pays[0]. */
   pay?: PayMethod;
+  /** Métodos de pago guardados por separado (PayID, banco, PayPal…). */
+  pays?: PayMethod[];
 }
 
 export interface Expense {
