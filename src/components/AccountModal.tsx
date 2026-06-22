@@ -1,6 +1,6 @@
 import { useState, useMemo, type ChangeEvent } from "react";
 import type { PayType, PayMethod } from "../lib/types";
-import { useUser, setProfileName, setProfileAvatar } from "../lib/auth";
+import { useUser, setProfileName, setProfileAvatar, deleteAccount } from "../lib/auth";
 import { useGroups, updateMyMember } from "../lib/store";
 import { fileToAvatarDataUrl } from "../lib/image";
 import { personColor, memberInitials } from "../lib/format";
@@ -52,6 +52,19 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const [pushOn, setPushOn] = useState(isPushEnabled());
   const [pushBusy, setPushBusy] = useState(false);
   const [pushMsg, setPushMsg] = useState("");
+  const [delConfirm, setDelConfirm] = useState(false);
+  const [delBusy, setDelBusy] = useState(false);
+
+  async function onDelete() {
+    if (!delConfirm) { setDelConfirm(true); return; }
+    setDelBusy(true);
+    try {
+      await deleteAccount(); // cierra sesión → la app vuelve al login
+    } catch {
+      setDelBusy(false);
+      alert(t("account.deleteError"));
+    }
+  }
 
   async function togglePush() {
     if (pushBusy) return;
@@ -360,6 +373,22 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
             className="rounded-full px-5 py-3 font-semibold glass text-muted hover-lift"
           >
             {t("common.close")}
+          </button>
+        </div>
+
+        {/* Danger zone: delete account */}
+        <div className="mt-6 pt-4" style={{ borderTop: "1px solid var(--line)" }}>
+          {delConfirm && (
+            <p className="text-xs mb-2" style={{ color: "var(--coral)" }}>{t("account.deleteWarn")}</p>
+          )}
+          <button
+            onClick={onDelete}
+            disabled={delBusy}
+            className="text-sm font-semibold hover-lift disabled:opacity-40 inline-flex items-center gap-1.5"
+            style={{ color: "var(--coral)" }}
+          >
+            <Icon name="trash" size={14} />
+            {delBusy ? "…" : delConfirm ? t("account.deleteConfirm") : t("account.delete")}
           </button>
         </div>
 

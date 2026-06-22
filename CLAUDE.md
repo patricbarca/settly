@@ -79,6 +79,8 @@ Settly is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScr
 
 ## Pending / known issues
 - **Edge Functions deploy manually**, not via CI — when you change `supabase/functions/*`, re-paste the single file in the Supabase dashboard editor and Deploy. The repo copy is just the source of truth.
+- **`delete-account` Edge Function** (RGPD/stores) needs deploying (service-role; deletes push subs + memberships + profile + auth user). Called from `auth.deleteAccount()`, wired to a "Delete account" danger button in `AccountModal`.
+- **Legal pages** live in the landing repo (`privacy.html`, `terms.html`, bilingual, linked in footer). Update the contact email + get a lawyer review before ads.
 - **Groq has no Maverick on this account** (`model_not_found`); `scan-receipt` defaults to Llama 4 Scout. For better dense-receipt accuracy later, set `AI_VISION_MODEL` (e.g. a Claude vision model via OpenRouter) — no code change.
 - **Voice STT is server-side (Groq)**: dictation needs a connection; offline the mic shows an error and the user adds the expense manually.
 - Interpret/parser: local regex parser (`parse.ts`) is the free fallback; the LLM (`parse-expense`) is the smart path. Falls back automatically on error/no quota.
