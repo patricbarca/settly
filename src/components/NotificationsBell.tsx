@@ -64,37 +64,48 @@ export function NotificationsBell() {
       </button>
 
       {open && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 mt-2 w-80 max-w-[85vw] glass-strong rounded-2xl p-2 z-50 anim-pop max-h-[70vh] overflow-y-auto shadow-xl">
-            <div className="text-xs font-semibold text-muted px-2 py-1.5">{t("notif.title")}</div>
-            {items.length === 0 ? (
-              <div className="text-sm text-muted text-center py-6">{t("notif.empty")}</div>
-            ) : (
-              <div className="space-y-0.5">
-                {items.map((n) => (
-                  <div key={n.id} className="flex gap-2 items-start px-2 py-2 rounded-xl">
-                    <span
-                      className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 text-muted"
-                      style={{ background: "var(--glass)" }}
-                    >
-                      <Icon
-                        name={n.type === "payment_made" ? "card" : n.type === "review_requested" ? "flag" : "plus"}
-                        size={14}
-                      />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm leading-snug">{message(n)}</div>
-                      <div className="text-[11px] text-muted mt-0.5">
-                        {t("notif.in", { group: n.groupName })} · {relTime(n.ts, lang)}
+        <div className="fixed inset-0 z-50 flex flex-col anim-up" style={{ background: "var(--bg)" }}>
+          <div className="max-w-2xl mx-auto w-full px-4 pt-5 flex-1 flex flex-col min-h-0">
+            <div className="flex items-center gap-3 mb-4">
+              <button
+                onClick={() => setOpen(false)}
+                className="glass rounded-full h-9 w-9 flex items-center justify-center text-muted hover-lift"
+                title={t("common.back")}
+              >
+                <Icon name="back" size={16} />
+              </button>
+              <h2 className="font-display text-2xl font-bold">{t("notif.title")}</h2>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pb-10">
+              {items.length === 0 ? (
+                <div className="glass rounded-3xl p-10 text-center text-muted mt-2">{t("notif.empty")}</div>
+              ) : (
+                <div className="space-y-1.5">
+                  {items.map((n) => (
+                    <div key={n.id} className="glass rounded-2xl flex gap-3 items-start px-4 py-3">
+                      <span
+                        className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-muted"
+                        style={{ background: "var(--glass)" }}
+                      >
+                        <Icon
+                          name={n.type === "payment_made" ? "card" : n.type === "review_requested" ? "flag" : "plus"}
+                          size={16}
+                        />
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm leading-snug">{message(n)}</div>
+                        <div className="text-[11px] text-muted mt-0.5">
+                          {t("notif.in", { group: n.groupName })} · {relTime(n.ts, lang)}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
