@@ -4,6 +4,7 @@ import { useUser, setProfileName, setProfileAvatar } from "../lib/auth";
 import { useGroups, updateMyMember } from "../lib/store";
 import { fileToAvatarDataUrl } from "../lib/image";
 import { personColor, memberInitials } from "../lib/format";
+import { enablePush, disablePush, isPushEnabled, pushSupported } from "../lib/push";
 import { useT } from "../lib/i18n";
 import { usePlan, FREE_AI_QUOTA } from "../lib/plan";
 import { Icon } from "./Icon";
@@ -29,6 +30,26 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const [payValue2, setPayValue2] = useState(myMember?.pay?.value2 ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [pushOn, setPushOn] = useState(isPushEnabled());
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushMsg, setPushMsg] = useState("");
+
+  async function togglePush() {
+    if (pushBusy) return;
+    setPushBusy(true);
+    setPushMsg("");
+    if (pushOn) {
+      await disablePush();
+      setPushOn(false);
+    } else {
+      const r = await enablePush();
+      if (r === "ok") setPushOn(true);
+      else if (r === "denied") setPushMsg(t("account.notifDenied"));
+      else if (r === "unsupported") setPushMsg(t("account.notifUnsupported"));
+      else setPushMsg(t("account.notifError"));
+    }
+    setPushBusy(false);
+  }
 
   if (!user) return null;
 
@@ -228,6 +249,36 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
             />
           )}
         </div>
+
+        {/* Push notifications */}
+        {pushSupported() && (
+          <div className="mb-6">
+            <label className="text-xs font-semibold text-muted">{t("account.notifications")}</label>
+            <div className="glass rounded-xl p-3 mt-1 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span
+                  className="h-8 w-8 rounded-full flex items-center justify-center shrink-0"
+                  style={{ background: pushOn ? "rgba(15,163,163,0.15)" : "var(--glass)", color: pushOn ? "var(--teal)" : "var(--muted)" }}
+                >
+                  <Icon name="bell" size={16} />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold">{pushOn ? t("account.notifEnabled") : t("account.notifEnable")}</div>
+                  <div className="text-xs text-muted">{t("account.notifHint")}</div>
+                </div>
+              </div>
+              <button
+                onClick={togglePush}
+                disabled={pushBusy}
+                className="rounded-full px-3 py-1.5 text-xs font-semibold shrink-0 hover-lift disabled:opacity-40"
+                style={pushOn ? { background: "var(--glass)", color: "var(--muted)" } : { background: "var(--teal)", color: "#fff" }}
+              >
+                {pushBusy ? "…" : pushOn ? t("account.notifOff") : t("account.notifOn")}
+              </button>
+            </div>
+            {pushMsg && <p className="text-xs mt-1" style={{ color: "var(--coral)" }}>{pushMsg}</p>}
+          </div>
+        )}
 
         <button
           onClick={save}

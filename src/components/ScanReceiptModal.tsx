@@ -4,6 +4,7 @@ import { CATEGORIES } from "../lib/types";
 import { scanReceipt } from "../lib/ai";
 import { updateGroup } from "../lib/store";
 import { withNotif } from "../lib/notifications";
+import { notifyGroup } from "../lib/push";
 import { uid, money, personColor, memberInitials } from "../lib/format";
 import { currencySymbol } from "../lib/currencies";
 import { useT } from "../lib/i18n";
@@ -113,6 +114,11 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         amount: Math.round(total * 100) / 100,
       }),
     }));
+    notifyGroup(
+      group.id,
+      group.name,
+      t("notif.expense_added", { name: meName, label: "Ticket", amt: money(Math.round(total * 100) / 100, group.currency) })
+    );
     onClose();
   }
 

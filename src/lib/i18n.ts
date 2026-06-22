@@ -361,6 +361,16 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "offline.banner": { es: "Sin conexión · los cambios se sincronizarán al reconectar", en: "Offline · changes will sync when you reconnect" },
 
+  "account.notifications": { es: "Notificaciones push", en: "Push notifications" },
+  "account.notifEnable": { es: "Recibe avisos en el teléfono", en: "Get alerts on your phone" },
+  "account.notifEnabled": { es: "Notificaciones activadas", en: "Notifications on" },
+  "account.notifHint": { es: "Avisos aunque la app esté cerrada. En iPhone, instala Settly en la pantalla de inicio primero.", en: "Alerts even when the app is closed. On iPhone, add Settly to your home screen first." },
+  "account.notifOn": { es: "Activar", en: "Enable" },
+  "account.notifOff": { es: "Desactivar", en: "Disable" },
+  "account.notifDenied": { es: "Permiso denegado. Actívalo en los ajustes del navegador.", en: "Permission denied. Enable it in your browser settings." },
+  "account.notifUnsupported": { es: "Tu navegador no soporta notificaciones push.", en: "Your browser doesn't support push notifications." },
+  "account.notifError": { es: "No se pudo activar. Inténtalo de nuevo.", en: "Couldn't enable. Please try again." },
+
   "settings.title":         { es: "Ajustes del grupo", en: "Group settings" },
   "settings.currency":      { es: "Moneda", en: "Currency" },
   "settings.custom":        { es: "Otra", en: "Other" },

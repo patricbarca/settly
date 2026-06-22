@@ -3,10 +3,11 @@ import type { Group, RecurrenceInterval } from "../lib/types";
 import { updateGroup, addRecurring } from "../lib/store";
 import { parseExpense, type ParsedExpense } from "../lib/parse";
 import { withNotif } from "../lib/notifications";
+import { notifyGroup } from "../lib/push";
 import { parseExpenseAI } from "../lib/ai";
 import { CATEGORIES } from "../lib/types";
 import { useSpeech } from "../lib/speech";
-import { uid } from "../lib/format";
+import { uid, money } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
 import { usePlan, useAIRemaining, consumeAI, FREE_AI_QUOTA } from "../lib/plan";
 import { Icon } from "./Icon";
@@ -165,6 +166,11 @@ export function AddExpense({ group }: { group: Group }) {
           amount: Number(d.amount) || 0,
         }),
       }));
+      notifyGroup(
+        group.id,
+        group.name,
+        t("notif.expense_added", { name: meName, label: d.label.trim(), amt: money(Number(d.amount) || 0, group.currency) })
+      );
     }
     setDraft(null);
     setText("");
