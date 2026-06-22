@@ -59,7 +59,7 @@ Rules:
 - participantIds: members it is split among; if unclear, include ALL member ids.
 - category: best match from the allowed list; if none fits use "otros".
 - interval: "daily" | "weekly" | "monthly" | "yearly" if recurring, else null.
-- Match names loosely (first name, accents, case). Output member IDS, not names.`;
+- Match names loosely: nicknames and diminutives count (e.g. "Ale" -> "Alecita", "Pato" -> "Patricio"). Output member IDS, not names.`;
 
     const res = await fetch(API_URL, {
       method: "POST",
