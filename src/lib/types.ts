@@ -74,6 +74,21 @@ export interface Settlement {
   proof?: string; // dataURL del comprobante (opcional)
 }
 
+export type NotificationType = "expense_added" | "payment_made" | "review_requested";
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  ts: string; // ISO
+  /** Quién lo originó (para no notificarse a uno mismo). Se omite en eventos
+   *  anónimos (solicitud de revisión) para preservar el anonimato. */
+  actorId?: string;
+  actorName?: string; // denormalizado para mostrar
+  toName?: string; // destinatario del pago
+  label?: string; // etiqueta del gasto
+  amount?: number;
+}
+
 export interface Group {
   id: string;
   name: string;
@@ -86,6 +101,7 @@ export interface Group {
   /** memberIds que marcaron "ya agregué todos mis gastos" */
   ready?: string[];
   recurring?: RecurringExpense[];
+  notifications?: AppNotification[];
 }
 
 import type { IconName } from "../components/Icon";

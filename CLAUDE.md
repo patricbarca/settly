@@ -46,6 +46,8 @@ Settly is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScr
 - **Scan UX**: removed the misleading Italian demo fallback (now shows a real error + blank row), added **gallery upload** (not just camera), an optional **tip** split among those who consumed, and the final button now says "Add expense".
 - **Cost note**: Groq is the cheapest path (scan ~€0.00025, parse ~€0.00002, STT ~€0.003/min). No Stripe yet; AI cost is negligible vs payment fees at scale.
 - **UI**: recurring-expenses section moved **below the "Expenses" title** (now rendered inside `ExpenseList`, not `GroupView`).
+- **Editable initials** per member (`Member.initials`, helper `memberInitials`, used in all avatars) and **bank transfer = two fields** (BSB + account, `PayMethod.value2`); pay methods shown inline when settling. Fixed a "blank pay" bug (collapsed multiple `updateMyMember` writes into one to avoid out-of-order persists).
+- **In-app notifications (Phase 1)**: bell in the header (`NotificationsBell`) showing a feed of `expense_added` / `payment_made` / `review_requested` (anonymous) events. Stored in `group.notifications` (group JSON, no SQL), synced via realtime; read-state per device in localStorage (`src/lib/notifications.ts`). **Web Push (Phase 2) pending** — chosen later; will reuse the same events table/feed.
 
 ### Backend, auth & AI (PRs #19–#32)
 - **Supabase Auth**: Google login + email/OTP + account creation. Phone/SMS step made **optional** in beta (was blocking login with no SMS provider). A **guest mode** exists for quick testing (no session → groups don't persist/sync; only real accounts persist).

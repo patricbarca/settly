@@ -39,6 +39,7 @@ export type IconName =
   | "settings"
   | "download"
   | "sparkles"
+  | "bell"
   | "lock";
 
 function glyph(name: IconName): ReactNode {
@@ -85,6 +86,13 @@ function glyph(name: IconName): ReactNode {
         <>
           <path d="M4 5h7l9 9-7 7-9-9z" />
           <path d="M8 8.5h.01" />
+        </>
+      );
+    case "bell":
+      return (
+        <>
+          <path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 8 2.5 8h-17S6 15 6 9" />
+          <path d="M10.2 21a2 2 0 0 0 3.6 0" />
         </>
       );
     case "cart":

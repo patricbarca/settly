@@ -9,6 +9,7 @@ import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 import { RecurringList } from "./RecurringList";
+import { withNotif } from "../lib/notifications";
 
 export function ExpenseList({ group }: { group: Group }) {
   const t = useT();
@@ -21,10 +22,16 @@ export function ExpenseList({ group }: { group: Group }) {
     updateGroup(group.id, (g) => ({ ...g, expenses: g.expenses.filter((e) => e.id !== id) }));
   }
   function toggleReview(id: string) {
-    updateGroup(group.id, (g) => ({
-      ...g,
-      expenses: g.expenses.map((e) => (e.id === id ? { ...e, reviewRequested: !e.reviewRequested } : e)),
-    }));
+    updateGroup(group.id, (g) => {
+      const exp = g.expenses.find((e) => e.id === id);
+      const turningOn = exp && !exp.reviewRequested;
+      return {
+        ...g,
+        expenses: g.expenses.map((e) => (e.id === id ? { ...e, reviewRequested: !e.reviewRequested } : e)),
+        // Solicitud de revisión: anónima (sin actorId) por diseño.
+        notifications: turningOn ? withNotif(g, { type: "review_requested", label: exp!.label }) : g.notifications,
+      };
+    });
   }
   function saveEdit(id: string, d: ExpenseDraft) {
     const { payerId, payments, splits } = draftToExpenseFields(d);

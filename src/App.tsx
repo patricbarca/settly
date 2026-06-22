@@ -14,6 +14,7 @@ import { Logo } from "./components/Logo";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { AccountModal } from "./components/AccountModal";
+import { NotificationsBell } from "./components/NotificationsBell";
 
 export default function App() {
   const user = useUser();
@@ -72,6 +73,7 @@ export default function App() {
     <div className="min-h-full">
       <OfflineBanner />
       <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">
+        <NotificationsBell />
         <button
           onClick={toggleTheme}
           className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
