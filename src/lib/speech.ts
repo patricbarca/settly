@@ -1,11 +1,13 @@
 import { useRef, useState } from "react";
-import { transcribeLocal } from "./whisper";
+import { transcribeAudio } from "./ai";
 import { isIOS } from "./pwa";
 
 /**
  * Dictado por voz en el idioma indicado (sigue el selector ES/EN de la app).
  * En navegadores con Web Speech API (Android/escritorio) usa la transcripción
- * nativa; donde no existe (iPhone/Safari) graba y transcribe en local (Whisper).
+ * nativa; donde no existe (iPhone/Safari) graba y transcribe en el servidor
+ * (Edge Function `transcribe` → Groq/Whisper). Requiere conexión: sin internet
+ * el dictado no está disponible y el gasto se añade a mano.
  */
 export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es") {
   const recRef = useRef<any>(null);
@@ -13,7 +15,7 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
   const [listening, setListening] = useState(false);
-  const [busy, setBusy] = useState(false); // transcribiendo (modelo local)
+  const [busy, setBusy] = useState(false); // transcribiendo (servidor)
   const [error, setError] = useState<"mic" | "stt" | null>(null);
 
   const SR =
@@ -21,7 +23,7 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
       ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
       : null;
   // En iOS, webkitSpeechRecognition puede existir pero NO funciona: forzamos la
-  // ruta de grabación + Whisper local.
+  // ruta de grabación + transcripción en servidor.
   const useNative = !!SR && !isIOS();
   const canRecord =
     typeof navigator !== "undefined" &&
@@ -77,9 +79,9 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
         if (!blob.size) return;
         setBusy(true);
         try {
-          // Transcripción local (Whisper en el navegador). La 1.ª vez descarga
-          // el modelo (~80 MB) y puede tardar unos segundos.
-          const text = await transcribeLocal(blob, lang);
+          // Transcripción en el servidor (Edge Function `transcribe` → Groq).
+          // Necesita conexión; offline lanza y caemos al mensaje de error.
+          const text = await transcribeAudio(blob, lang);
           if (text) onText(text);
           else setError("stt");
         } catch {
