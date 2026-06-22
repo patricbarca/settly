@@ -6,7 +6,7 @@ import { parseExpenseAI } from "../lib/ai";
 import { CATEGORIES } from "../lib/types";
 import { useSpeech } from "../lib/speech";
 import { uid } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { useT, useLang } from "../lib/i18n";
 import { usePlan, useAIRemaining, consumeAI, FREE_AI_QUOTA } from "../lib/plan";
 import { Icon } from "./Icon";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
@@ -29,7 +29,8 @@ export function AddExpense({ group }: { group: Group }) {
   const [scan, setScan] = useState(false);
   const [interpreting, setInterpreting] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
-  const sp = useSpeech((tx) => setText((p) => (p ? `${p} ${tx}` : tx)));
+  const lang = useLang();
+  const sp = useSpeech((tx) => setText((p) => (p ? `${p} ${tx}` : tx)), lang);
 
   function openScan() {
     // Receipt scan is the AI feature gated by the freemium quota.

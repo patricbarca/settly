@@ -5,7 +5,7 @@ import { draftToExpenseFields, ExpenseForm, type ExpenseDraft } from "./ExpenseF
 import { uid, personColor, initials } from "../lib/format";
 import { parseExpense } from "../lib/parse";
 import { useSpeech } from "../lib/speech";
-import { useT } from "../lib/i18n";
+import { useT, useLang } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 
@@ -13,6 +13,7 @@ const INTERVALS: RecurrenceInterval[] = ["daily", "weekly", "monthly", "yearly"]
 
 function RecurringModal({ group, onClose }: { group: Group; onClose: () => void }) {
   const t = useT();
+  const lang = useLang();
   const [interval, setInterval] = useState<RecurrenceInterval>("monthly");
   const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
   const [voiceText, setVoiceText] = useState("");
@@ -29,7 +30,7 @@ function RecurringModal({ group, onClose }: { group: Group; onClose: () => void 
     category: "otros",
   });
 
-  const sp = useSpeech((tx) => setVoiceText((p) => (p ? `${p} ${tx}` : tx)));
+  const sp = useSpeech((tx) => setVoiceText((p) => (p ? `${p} ${tx}` : tx)), lang);
 
   function interpret() {
     if (!voiceText.trim()) return;
