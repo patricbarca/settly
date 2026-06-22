@@ -362,6 +362,11 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "offline.banner": { es: "Sin conexión · los cambios se sincronizarán al reconectar", en: "Offline · changes will sync when you reconnect" },
 
+  "account.country": { es: "País de residencia", en: "Country of residence" },
+  "account.countryNone": { es: "Sin especificar", en: "Not set" },
+  "account.phone": { es: "Teléfono", en: "Phone" },
+  "account.phoneHint": { es: "Incluye el prefijo del país (ej. +61). Solo valida el formato.", en: "Include the country code (e.g. +61). Format is validated only." },
+  "account.phoneInvalid": { es: "Número no válido para el país elegido.", en: "Not a valid number for the selected country." },
   "account.notifications": { es: "Notificaciones push", en: "Push notifications" },
   "account.notifEnable": { es: "Recibe avisos en el teléfono", en: "Get alerts on your phone" },
   "account.notifEnabled": { es: "Notificaciones activadas", en: "Notifications on" },

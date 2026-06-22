@@ -45,6 +45,10 @@ export interface Member {
   avatar: string;
   /** Iniciales personalizadas (editables); si no, se derivan del nombre. */
   initials?: string;
+  /** País de residencia (código ISO 3166-1 alpha-2, ej. "AU"). */
+  country?: string;
+  /** Teléfono en formato internacional E.164 (ej. "+61412345678"). */
+  phone?: string;
   /** Método principal (compat. hacia atrás). Equivale a pays[0]. */
   pay?: PayMethod;
   /** Métodos de pago guardados por separado (PayID, banco, PayPal…). */

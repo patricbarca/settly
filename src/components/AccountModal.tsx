@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react";
+import { useState, useMemo, type ChangeEvent } from "react";
 import type { PayType, PayMethod } from "../lib/types";
 import { useUser, setProfileName, setProfileAvatar } from "../lib/auth";
 import { useGroups, updateMyMember } from "../lib/store";
@@ -6,7 +6,8 @@ import { fileToAvatarDataUrl } from "../lib/image";
 import { personColor, memberInitials } from "../lib/format";
 import { enablePush, disablePush, isPushEnabled, pushSupported } from "../lib/push";
 import { memberPays } from "../lib/pay";
-import { useT } from "../lib/i18n";
+import { countryList, dialCode, isValidPhone, normalizePhone } from "../lib/countries";
+import { useT, useLang } from "../lib/i18n";
 import { usePlan, FREE_AI_QUOTA } from "../lib/plan";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -23,9 +24,14 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
 
   const myMember = groups.map((g) => g.members.find((m) => m.id === g.meId)).find(Boolean);
 
+  const lang = useLang();
+  const countries = useMemo(() => countryList(lang), [lang]);
   const [name, setName] = useState(user?.name ?? "");
   const [inits, setInits] = useState(myMember?.initials ?? "");
   const [avatar, setAvatar] = useState(user?.avatar ?? "");
+  const [country, setCountry] = useState(myMember?.country ?? "");
+  const [phone, setPhone] = useState(myMember?.phone ?? "");
+  const phoneOk = !phone.trim() || isValidPhone(phone, country || undefined);
   // Un borrador por tipo, para que cada método se guarde por separado y no se
   // "contagien" valores al cambiar de tipo.
   type PayDraft = Record<string, { value: string; value2?: string }>;
@@ -75,7 +81,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   }
 
   async function save() {
-    if (saving) return;
+    if (saving || !phoneOk) return;
     setSaving(true);
     const n = name.trim();
     if (n && n !== user!.name) await setProfileName(n);
@@ -96,6 +102,8 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
       ...(n && n !== user!.name ? { name: n } : {}),
       ...(avatar !== (user!.avatar ?? "") ? { avatar } : {}),
       initials: inits.trim() || undefined,
+      country: country || undefined,
+      phone: phone.trim() ? normalizePhone(phone, country || undefined) : undefined,
       pays,
       pay: pays[0], // compat. hacia atrás
     });
@@ -162,6 +170,41 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
             className="glass rounded-xl px-3 py-2.5 text-sm w-28 mt-1 font-mono uppercase"
           />
           <p className="text-xs text-muted mt-1">{t("account.initialsHint")}</p>
+        </div>
+
+        {/* Country */}
+        <div className="mb-4">
+          <label className="text-xs font-semibold text-muted">{t("account.country")}</label>
+          <select
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1"
+          >
+            <option value="">{t("account.countryNone")}</option>
+            {countries.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.name} (+{c.dial})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Phone */}
+        <div className="mb-4">
+          <label className="text-xs font-semibold text-muted">{t("account.phone")}</label>
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            inputMode="tel"
+            placeholder={country ? `+${dialCode(country)} …` : "+61 412 345 678"}
+            className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1"
+            style={!phoneOk ? { boxShadow: "0 0 0 1.5px var(--coral)" } : undefined}
+          />
+          {!phoneOk ? (
+            <p className="text-xs mt-1" style={{ color: "var(--coral)" }}>{t("account.phoneInvalid")}</p>
+          ) : (
+            <p className="text-xs text-muted mt-1">{t("account.phoneHint")}</p>
+          )}
         </div>
 
         {/* Email read-only */}
@@ -303,7 +346,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
 
         <button
           onClick={save}
-          disabled={saving || !name.trim()}
+          disabled={saving || !name.trim() || !phoneOk}
           className="w-full rounded-full py-3 font-semibold text-white hover-lift disabled:opacity-40"
           style={{ background: saved ? "#0A8B5E" : "var(--ink)" }}
         >
