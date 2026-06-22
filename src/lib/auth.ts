@@ -196,3 +196,14 @@ export async function signOut() {
   sessionStorage.removeItem("settly.phoneSkipped");
   await supabase.auth.signOut();
 }
+
+/** Elimina la cuenta y todos los datos del usuario (Edge Function
+ *  delete-account, con service-role), y cierra sesión. */
+export async function deleteAccount() {
+  const { data, error } = await supabase.functions.invoke("delete-account");
+  if (error) throw error;
+  if (data && (data as { error?: string }).error) {
+    throw new Error((data as { error?: string }).error);
+  }
+  await supabase.auth.signOut();
+}
