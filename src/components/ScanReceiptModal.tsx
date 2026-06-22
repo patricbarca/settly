@@ -3,7 +3,7 @@ import type { Group, Category } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
 import { scanReceipt } from "../lib/ai";
 import { updateGroup } from "../lib/store";
-import { uid, money, personColor, initials } from "../lib/format";
+import { uid, money, personColor, memberInitials } from "../lib/format";
 import { currencySymbol } from "../lib/currencies";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -187,7 +187,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
                           style={{ borderColor: on ? personColor(m.name) : "transparent", opacity: on ? 1 : 0.5 }}
                         >
                           <span className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-semibold" style={{ background: personColor(m.name) + "22" }}>
-                            {initials(m.name)}
+                            {memberInitials(m)}
                           </span>
                           {m.name}
                         </button>

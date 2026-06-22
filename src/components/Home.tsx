@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useGroups, setActiveGroup, archiveGroup } from "../lib/store";
 import { computeSettle } from "../lib/split";
 import { groupSettleScore } from "../lib/gamification";
-import { money, personColor, initials } from "../lib/format";
+import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { usePlan } from "../lib/plan";
 import { Logo } from "./Logo";
@@ -138,15 +138,23 @@ export function Home() {
                   {t("home.meta", { p: g.members.length, amt: money(total, g.currency), e: g.expenses.length })}
                 </div>
                 <div className="flex -space-x-2 mt-2">
-                  {g.members.slice(0, 6).map((m) => (
+                  {g.members.slice(0, 5).map((m) => (
                     <span
                       key={m.id}
                       className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold border-2"
                       style={{ background: personColor(m.name) + "33", borderColor: "var(--ring)" }}
                     >
-                      {initials(m.name)}
+                      {memberInitials(m)}
                     </span>
                   ))}
+                  {g.members.length > 5 && (
+                    <span
+                      className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold border-2 text-muted"
+                      style={{ background: "var(--glass)", borderColor: "var(--ring)" }}
+                    >
+                      +{g.members.length - 5}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="text-right shrink-0">

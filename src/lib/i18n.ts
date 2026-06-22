@@ -360,6 +360,8 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "account.title":   { es: "Mi cuenta", en: "My account" },
   "account.name":    { es: "Tu nombre", en: "Your name" },
+  "account.initials": { es: "Iniciales", en: "Initials" },
+  "account.initialsHint": { es: "Hasta 3 letras. Se muestran en los grupos cuando no tienes foto.", en: "Up to 3 letters. Shown in groups when you have no photo." },
   "account.payHint": { es: "Se muestra al saldar deudas con el grupo.", en: "Shown when settling debts in a group." },
   "account.saved":   { es: "Guardado", en: "Saved" },
   "account.changePhoto": { es: "Cambiar foto", en: "Change photo" },

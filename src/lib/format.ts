@@ -32,6 +32,13 @@ export function initials(name: string): string {
     .toUpperCase();
 }
 
+/** Iniciales de un miembro: usa las personalizadas si las tiene; si no, las
+ *  deriva del nombre. */
+export function memberInitials(m: { initials?: string; name: string }): string {
+  const custom = m.initials?.trim();
+  return custom ? custom.slice(0, 3).toUpperCase() : initials(m.name);
+}
+
 export const uid = () => Math.random().toString(36).slice(2, 9);
 
 export function fmtDate(iso: string): string {

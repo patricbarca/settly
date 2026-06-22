@@ -3,7 +3,7 @@ import type { PayType, PayMethod } from "../lib/types";
 import { useUser, setProfileName, setProfileAvatar } from "../lib/auth";
 import { useGroups, updateMyMember } from "../lib/store";
 import { fileToAvatarDataUrl } from "../lib/image";
-import { personColor, initials } from "../lib/format";
+import { personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { usePlan, FREE_AI_QUOTA } from "../lib/plan";
 import { Icon } from "./Icon";
@@ -22,6 +22,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const myMember = groups.map((g) => g.members.find((m) => m.id === g.meId)).find(Boolean);
 
   const [name, setName] = useState(user?.name ?? "");
+  const [inits, setInits] = useState(myMember?.initials ?? "");
   const [avatar, setAvatar] = useState(user?.avatar ?? "");
   const [payType, setPayType] = useState<PayType>(myMember?.pay?.type ?? "other");
   const [payValue, setPayValue] = useState(myMember?.pay?.value ?? "");
@@ -52,6 +53,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
       await setProfileAvatar(avatar);
       updateMyMember({ avatar });
     }
+    updateMyMember({ initials: inits.trim() || undefined });
     const pay: PayMethod | undefined = payValue.trim()
       ? { type: payType, value: payValue.trim() }
       : undefined;
@@ -84,7 +86,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
                 className="h-20 w-20 rounded-full flex items-center justify-center text-2xl font-bold"
                 style={{ background: personColor(name || user.name) + "22" }}
               >
-                {initials(name || user.name)}
+                {memberInitials({ initials: inits, name: name || user.name })}
               </span>
             )}
             <span
@@ -105,6 +107,19 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
             onChange={(e) => setName(e.target.value)}
             className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1"
           />
+        </div>
+
+        {/* Initials */}
+        <div className="mb-4">
+          <label className="text-xs font-semibold text-muted">{t("account.initials")}</label>
+          <input
+            value={inits}
+            onChange={(e) => setInits(e.target.value.toUpperCase().slice(0, 3))}
+            maxLength={3}
+            placeholder={memberInitials({ name: name || user.name })}
+            className="glass rounded-xl px-3 py-2.5 text-sm w-28 mt-1 font-mono uppercase"
+          />
+          <p className="text-xs text-muted mt-1">{t("account.initialsHint")}</p>
         </div>
 
         {/* Email read-only */}

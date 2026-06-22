@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Group, Member } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { computeSettle } from "../lib/split";
-import { personColor, initials } from "../lib/format";
+import { personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { ProfileModal } from "./ProfileModal";
@@ -42,7 +42,7 @@ export function Members({ group }: { group: Group }) {
                   title={paid ? "Al día" : "Pendiente"}
                   style={{ background: personColor(m.name) + "22", boxShadow: `0 0 0 2px ${paid ? "#0A8B5E" : "#E0A400"}` }}
                 >
-                  {initials(m.name)}
+                  {memberInitials(m)}
                 </span>
                 <span className="font-medium">
                   {m.name}

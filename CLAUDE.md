@@ -38,6 +38,15 @@ Settly is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScr
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### AI live on Groq + receipt scanning (PRs #34–#37)
+- **All three AI functions deployed on Groq** (one key, `STT_API_KEY`): `transcribe` (Whisper turbo), `parse-expense` (`llama-3.1-8b-instant`), `scan-receipt` (`llama-4-scout`). Deployed manually via the Supabase dashboard editor (single-file paste); Edge Functions do **not** deploy via CI.
+- **`parse-expense`**: forces JSON, server-side **sanitize** (valid member IDs, allowed category, valid interval), matches **nicknames/diminutives** ("Ale"→"Alecita"), and a hardened system prompt (note is untrusted data, never instructions; non-expense → amount 0).
+- **Multiple payers**: `parse-expense` returns `payments` (payer→amount), independent from `participantIds` (who shares the cost). `AddExpense` enables multi-pay only when ≥2 payers and amounts sum to total. Wired through `ai.ts`/`parse.ts` types.
+- **`scan-receipt` (vision)**: **no `response_format`** — Groq's strict JSON mode makes vision models degenerate (`json_validate_failed`); rely on prompt + `extractJson`. Receipt photo is **compressed/resized** (`fileToScanImage`, ≤1600px) before upload — large photos were blowing the Edge Function limit and silently falling back to the demo.
+- **Scan UX**: removed the misleading Italian demo fallback (now shows a real error + blank row), added **gallery upload** (not just camera), an optional **tip** split among those who consumed, and the final button now says "Add expense".
+- **Cost note**: Groq is the cheapest path (scan ~€0.00025, parse ~€0.00002, STT ~€0.003/min). No Stripe yet; AI cost is negligible vs payment fees at scale.
+- **UI**: recurring-expenses section moved **below the "Expenses" title** (now rendered inside `ExpenseList`, not `GroupView`).
+
 ### Backend, auth & AI (PRs #19–#32)
 - **Supabase Auth**: Google login + email/OTP + account creation. Phone/SMS step made **optional** in beta (was blocking login with no SMS provider). A **guest mode** exists for quick testing (no session → groups don't persist/sync; only real accounts persist).
 - **Groups persist & sync** across devices for logged-in users; `addGroup` awaits ordered inserts (owner membership before others, per RLS). Fixed the "create share link" error (idempotent upsert of group+member before link creation, `src/lib/invite.ts`).
@@ -65,9 +74,10 @@ Settly is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScr
 - CI deploys from `master` branch only (`.github/workflows/`)
 
 ## Pending / known issues
-- **`parse-expense` / `scan-receipt` not deployed**: exist but need `supabase functions deploy` + `ANTHROPIC_API_KEY`. Until then: Interpret falls back to the local parser, scan falls back to its demo. (`transcribe` is already deployed on Groq.)
-- **Voice STT now server-side (Groq)**, resolving the old iPhone failure. Trade-off: dictation needs a connection; offline the mic shows an error and the user adds the expense manually.
-- Interpret/parser: local regex parser is the fallback; the LLM (`parse-expense`) is the smart path once deployed.
+- **Edge Functions deploy manually**, not via CI — when you change `supabase/functions/*`, re-paste the single file in the Supabase dashboard editor and Deploy. The repo copy is just the source of truth.
+- **Groq has no Maverick on this account** (`model_not_found`); `scan-receipt` defaults to Llama 4 Scout. For better dense-receipt accuracy later, set `AI_VISION_MODEL` (e.g. a Claude vision model via OpenRouter) — no code change.
+- **Voice STT is server-side (Groq)**: dictation needs a connection; offline the mic shows an error and the user adds the expense manually.
+- Interpret/parser: local regex parser (`parse.ts`) is the free fallback; the LLM (`parse-expense`) is the smart path. Falls back automatically on error/no quota.
 - Hero pills render even when `0` on a side (could hide the zero side or show a "settled" state).
 - When reusing the same working branch across multiple PRs, reset it to `origin/master` before starting new work — squash-merges otherwise cause merge conflicts on the next PR.
 

@@ -40,6 +40,8 @@ export interface Member {
   id: string;
   name: string;
   avatar: string;
+  /** Iniciales personalizadas (editables); si no, se derivan del nombre. */
+  initials?: string;
   pay?: PayMethod;
 }
 

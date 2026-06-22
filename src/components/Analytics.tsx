@@ -1,6 +1,6 @@
 import type { Group } from "../lib/types";
 import { catOf } from "../lib/types";
-import { money, personColor, initials, fmtDate } from "../lib/format";
+import { money, personColor, memberInitials, fmtDate } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 
@@ -90,7 +90,7 @@ export function Analytics({ group }: { group: Group }) {
                 className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
                 style={{ background: personColor(topPayer.name) + "22" }}
               >
-                {initials(topPayer.name)}
+                {memberInitials(topPayer)}
               </span>
               <span className="font-semibold text-sm truncate">{topPayer.name}</span>
             </div>
@@ -143,7 +143,7 @@ export function Analytics({ group }: { group: Group }) {
                       className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold"
                       style={{ background: personColor(m.name) + "22" }}
                     >
-                      {initials(m.name)}
+                      {memberInitials(m)}
                     </span>
                     {m.name}
                     {m.id === group.meId && <span className="text-muted text-xs">· {t("members.you")}</span>}

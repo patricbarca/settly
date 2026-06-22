@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Group } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { computeSettle } from "../lib/split";
-import { money, personColor, initials } from "../lib/format";
+import { money, personColor, memberInitials } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
 import { CURRENCIES, currencyOf, localCurrencyName, resolveToCode } from "../lib/currencies";
 import { Icon } from "./Icon";
@@ -124,7 +124,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
                     className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0"
                     style={{ background: personColor(m.name) + "22" }}
                   >
-                    {initials(m.name)}
+                    {memberInitials(m)}
                   </span>
                   <span className="text-sm font-medium flex-1 truncate">
                     {m.name}

@@ -1,6 +1,6 @@
 import type { Group, Member } from "../lib/types";
 import { memberStats } from "../lib/gamification";
-import { money, personColor, initials } from "../lib/format";
+import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -31,7 +31,7 @@ export function ProfileModal({
               className="h-12 w-12 rounded-full flex items-center justify-center text-base font-bold"
               style={{ background: personColor(member.name) + "22" }}
             >
-              {initials(member.name)}
+              {memberInitials(member)}
             </span>
             <div>
               <div className="font-display text-xl font-bold">
