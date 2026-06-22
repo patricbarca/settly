@@ -11,9 +11,6 @@ export default defineConfig({
       registerType: "autoUpdate",
       workbox: {
         globPatterns: ["**/*.{js,css,html,woff2}"],
-        // No precachear el motor de IA local (transformers.js + ONNX wasm):
-        // se cargan bajo demanda solo al usar la voz, no en cada instalación.
-        globIgnores: ["**/transformers*.js", "**/ort-*.wasm", "**/*.wasm"],
         navigateFallback: "/settly/index.html",
         navigateFallbackDenylist: [/^\/api/],
       },
