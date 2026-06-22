@@ -238,7 +238,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
               <span
                 className="h-8 w-8 rounded-full flex items-center justify-center shrink-0"
                 style={{
-                  background: plan === "pro" ? "rgba(91,91,240,0.15)" : "var(--glass)",
+                  background: plan === "pro" ? "rgba(110,139,58,0.15)" : "var(--glass)",
                   color: plan === "pro" ? "var(--indigo)" : "var(--muted)",
                 }}
               >

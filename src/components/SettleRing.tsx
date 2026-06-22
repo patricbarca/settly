@@ -2,7 +2,7 @@ export function SettleRing({
   value,
   size = 64,
   stroke = 7,
-  color = "#0FA3A3",
+  color = "#6E8B3A",
   track = "rgba(0,0,0,0.1)",
 }: {
   value: number;

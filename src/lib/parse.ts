@@ -1,6 +1,6 @@
 import type { Category, Member, RecurrenceInterval } from "./types";
 
-// Diferenciador de Settly: convierte lenguaje natural en un gasto estructurado.
+// Diferenciador de cow.ai: convierte lenguaje natural en un gasto estructurado.
 // Esta es la versión LOCAL (sin IA, gratis, funciona offline). El plan es
 // sustituirla/ampliarla con un LLM (voz → gasto) desde un backend con tu clave.
 

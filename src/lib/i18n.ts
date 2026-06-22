@@ -39,7 +39,7 @@ export function useLang(): Lang {
 }
 
 const DICT: Record<string, { es: string; en: string }> = {
-  "app.footer": { es: "Settly · los datos se guardan en este navegador.", en: "Settly · data is saved in this browser." },
+  "app.footer": { es: "cow.ai · los datos se guardan en este navegador.", en: "cow.ai · data is saved in this browser." },
   "app.resetDemo": { es: "Reiniciar demo", en: "Reset demo" },
   "app.signout": { es: "Salir", en: "Sign out" },
 
@@ -72,7 +72,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "group.shareHint": { es: "Comparte el enlace para que otros se unan.", en: "Share the link so others can join." },
   "group.shareBtn": { es: "Copiar enlace", en: "Copy link" },
 
-  "app.footerCloud": { es: "Settly · datos guardados en la nube.", en: "Settly · data saved in the cloud." },
+  "app.footerCloud": { es: "cow.ai · datos guardados en la nube.", en: "cow.ai · data saved in the cloud." },
 
   "onboard.s1t": { es: "Gastos en grupo, sin líos", en: "Group expenses, no headaches" },
   "onboard.s1d": { es: "La app que hace que todos paguen lo que deben. Sin incomodidades, sin calculadoras, sin dramas.", en: "The app that makes sure everyone pays what they owe. No awkwardness, no calculators, no drama." },
@@ -81,7 +81,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "onboard.s3t": { es: "Escanea el ticket", en: "Scan the receipt" },
   "onboard.s3d": { es: "Haz una foto al recibo. La IA lee cada artículo y genera el gasto automáticamente. Tú solo confirmas.", en: "Take a photo of the receipt. AI reads each item and creates the expense automatically. You just confirm." },
   "onboard.s4t": { es: "Solo habla", en: "Just speak" },
-  "onboard.s4d": { es: "«Cena con Alexa y Patrick, pagué 90». Settly lo entiende, crea el gasto y lo reparte. Sin tocar nada.", en: "«Dinner with Alexa and Patrick. I paid 90». Settly understands, creates the expense, and splits it. Hands-free." },
+  "onboard.s4d": { es: "«Cena con Alexa y Patrick, pagué 90». cow.ai lo entiende, crea el gasto y lo reparte. Sin tocar nada.", en: "«Dinner with Alexa and Patrick. I paid 90». cow.ai understands, creates the expense, and splits it. Hands-free." },
   "onboard.s5t": { es: "Salda con el mínimo", en: "Settle up easily" },
   "onboard.s5d": { es: "Paga con los datos del cobrador, marca el pago y la otra persona lo confirma. Cuentas claras, sin perseguir a nadie.", en: "Pay using their details, mark it, and the other person confirms. Clear books, no chasing." },
   "onboard.s6t": { es: "Y mucho más", en: "And much more" },
@@ -105,7 +105,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "onboard.demo.detail7": { es: "PayID, banco, PayPal…", en: "PayID, bank, PayPal…" },
   "onboard.demo.detail8": { es: "Suscripciones, alquiler", en: "Subscriptions, rent" },
   "onboard.next": { es: "Siguiente →", en: "Next →" },
-  "onboard.start": { es: "¡Empezar!", en: "Get started!" },
+  "onboard.start": { es: "Hagamos una vaquita", en: "Just cow it" },
   "onboard.skip": { es: "Omitir", en: "Skip" },
 
   "onboard.demo.group1":   { es: "Viaje a París",    en: "Paris Trip" },
@@ -124,7 +124,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "onboard.demo.voiceTitle":{ es: "Cena",             en: "Dinner" },
   "onboard.demo.voiceMeta":{ es: "Pagó: Tú · Alexa, Patrick", en: "Paid by: You · Alexa, Patrick" },
   "onboard.demo.settled":  { es: "✓ Todos a cero · ¡Saldado!", en: "✓ All zero · Settled up!" },
-  "onboard.demo.transfers":{ es: "Settly calculó 3 transferencias mínimas", en: "Settly found 3 minimal transfers" },
+  "onboard.demo.transfers":{ es: "cow.ai calculó 3 transferencias mínimas", en: "cow.ai found 3 minimal transfers" },
   "onboard.demo.detail1":  { es: "Comida · Ocio · Viaje", en: "Food · Leisure · Travel" },
   "onboard.demo.detail3":  { es: "Cambios al instante", en: "Instant sync" },
   "onboard.demo.detail4":  { es: "Comprobantes y recibos", en: "Receipts & proof" },
@@ -200,7 +200,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "members.addConfirm": { es: "Añadir al grupo", en: "Add to group" },
   "members.notFound": { es: "No hay cuenta con ese email/teléfono. Puedes invitarlos por link o añadirlos sin cuenta.", en: "No account found. You can invite them by link or add them without an account." },
   "members.addManual": { es: "Añadir sin cuenta", en: "Add without account" },
-  "members.manualHint": { es: "Esta persona no necesita tener Settly instalado.", en: "This person doesn't need to have Settly installed." },
+  "members.manualHint": { es: "Esta persona no necesita tener cow.ai instalado.", en: "This person doesn't need to have cow.ai installed." },
   "members.backSearch": { es: "← Buscar por email/teléfono", en: "← Search by email/phone" },
 
   "add.oneTime":       { es: "Gasto puntual", en: "One-time" },
@@ -214,7 +214,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "add.manual": { es: "Manual", en: "Manual" },
   "add.scan": { es: "Escanear", en: "Scan" },
   "add.review": { es: "Revisa y confirma", en: "Review and confirm" },
-  "add.submit": { es: "Añadir gasto", en: "Add expense" },
+  "add.submit": { es: "A la vaca", en: "Add to cow" },
   "add.dictate": { es: "Dictar", en: "Dictate" },
   "add.voiceOff": { es: "Voz no disponible en este navegador", en: "Voice not available in this browser" },
   "add.listening": { es: "Escuchando… toca el micro para parar", en: "Listening… tap the mic to stop" },
@@ -278,7 +278,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "create.peoplePh": { es: "Tú, Ale, Cote, Javi", en: "You, Ale, Cote, Javi" },
 
   "scan.title": { es: "Escanear ticket", en: "Scan receipt" },
-  "scan.pick": { es: "Sube o haz una foto del ticket. Marca quién consumió cada cosa y Settly reparte.", en: "Upload or snap a photo of the receipt. Mark who had what and Settly splits it." },
+  "scan.pick": { es: "Sube o haz una foto del ticket. Marca quién consumió cada cosa y cow.ai reparte.", en: "Upload or snap a photo of the receipt. Mark who had what and cow.ai splits it." },
   "scan.choose": { es: "Elegir o hacer foto", en: "Choose or take photo" },
   "scan.camera": { es: "Hacer foto", en: "Take photo" },
   "scan.gallery": { es: "Elegir de galería", en: "Choose from gallery" },
@@ -396,7 +396,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "account.notifications": { es: "Notificaciones push", en: "Push notifications" },
   "account.notifEnable": { es: "Recibe avisos en el teléfono", en: "Get alerts on your phone" },
   "account.notifEnabled": { es: "Notificaciones activadas", en: "Notifications on" },
-  "account.notifHint": { es: "Avisos aunque la app esté cerrada. En iPhone, instala Settly en la pantalla de inicio primero.", en: "Alerts even when the app is closed. On iPhone, add Settly to your home screen first." },
+  "account.notifHint": { es: "Avisos aunque la app esté cerrada. En iPhone, instala cow.ai en la pantalla de inicio primero.", en: "Alerts even when the app is closed. On iPhone, add cow.ai to your home screen first." },
   "account.notifOn": { es: "Activar", en: "Enable" },
   "account.notifOff": { es: "Desactivar", en: "Disable" },
   "account.notifDenied": { es: "Permiso denegado. Actívalo en los ajustes del navegador.", en: "Permission denied. Enable it in your browser settings." },
@@ -434,7 +434,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "paywall.f1":       { es: "Escaneo de recibos con IA ilimitado", en: "Unlimited AI receipt scanning" },
   "paywall.f2":       { es: "Gastos recurrentes", en: "Recurring expenses" },
   "paywall.f3":       { es: "Estadísticas avanzadas y export", en: "Advanced stats & export" },
-  "paywall.f4":       { es: "Apoya el desarrollo de Settly", en: "Support Settly's development" },
+  "paywall.f4":       { es: "Apoya el desarrollo de cow.ai", en: "Support cow.ai's development" },
   "paywall.year":     { es: "año", en: "year" },
   "paywall.month":    { es: "mes", en: "month" },
   "paywall.or":       { es: "o", en: "or" },
@@ -442,7 +442,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "paywall.terms":    { es: "7 días gratis · se pide tarjeta · cancela cuando quieras", en: "7-day free trial · card required · cancel anytime" },
 
   "install.btn":      { es: "Instalar app", en: "Install app" },
-  "install.iosTitle": { es: "Instala Settly", en: "Install Settly" },
+  "install.iosTitle": { es: "Instala cow.ai", en: "Install cow.ai" },
   "install.iosStep1": { es: "Toca", en: "Tap" },
   "install.iosShare": { es: "Compartir", en: "Share" },
   "install.iosStep2": { es: "y luego", en: "then" },

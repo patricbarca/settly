@@ -4,7 +4,7 @@ import { money } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 
-const COLORS = ["#0FA3A3", "#FF5A4D", "#5B5BF0", "#E8920C", "#E84393", "#0EA5E9"];
+const COLORS = ["#6E8B3A", "#FF5A4D", "#5B5BF0", "#E8920C", "#E84393", "#0EA5E9"];
 
 export function CategoryChart({ group }: { group: Group }) {
   const t = useT();

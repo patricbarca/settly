@@ -1,4 +1,4 @@
-// Handlers de Web Push para Settly. Lo importa el service worker de Workbox
+// Handlers de Web Push para cow.ai. Lo importa el service worker de Workbox
 // (ver vite.config.ts → workbox.importScripts). Muestra la notificación cuando
 // llega un push y enfoca/abre la app al pulsarla.
 self.addEventListener("push", (event) => {
@@ -8,7 +8,7 @@ self.addEventListener("push", (event) => {
   } catch (e) {
     data = { body: event.data ? event.data.text() : "" };
   }
-  const title = data.title || "Settly";
+  const title = data.title || "cow.ai";
   const options = {
     body: data.body || "",
     icon: "/settly/icons/icon-192.png",

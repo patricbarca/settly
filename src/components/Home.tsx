@@ -40,11 +40,11 @@ export function Home() {
             <div className="glass rounded-3xl p-3 mb-4">
               <Logo size={54} />
             </div>
-            <h1 className="text-white font-display text-5xl font-extrabold tracking-tight">Settly</h1>
+            <h1 className="text-white font-display text-5xl font-extrabold tracking-tight">cow<span className="text-[#c7dd8f]">.ai</span></h1>
             <p className="text-white/85 text-base mt-2.5 max-w-md leading-relaxed">{t("login.tagline")}</p>
             <button
               onClick={() => setCreating(true)}
-              className="mt-5 rounded-full px-6 py-3 font-semibold hover-lift text-[#241C53] inline-flex items-center gap-1.5"
+              className="mt-5 rounded-full px-6 py-3 font-semibold hover-lift text-[#33401a] inline-flex items-center gap-1.5"
               style={{ background: "#fff" }}
             >
               <Icon name="plus" size={18} /> {t("home.createGroup")}
@@ -60,14 +60,14 @@ export function Home() {
           <button
             onClick={() => setShowPaywall(true)}
             className="rounded-full px-3 py-1.5 text-sm font-semibold hover-lift inline-flex items-center gap-1.5 text-white"
-            style={{ background: "linear-gradient(180deg,#6e6cf5,#5b5bf0)" }}
+            style={{ background: "linear-gradient(180deg,#8aab44,#6e8b3a)" }}
           >
             <Icon name="sparkles" size={15} /> {t("pro.upgrade")}
           </button>
         ) : (
           <span
             className="rounded-full px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5"
-            style={{ background: "rgba(91,91,240,0.12)", color: "var(--indigo)" }}
+            style={{ background: "rgba(110,139,58,0.12)", color: "var(--indigo)" }}
           >
             <Icon name="sparkles" size={15} /> {t("pro.badge")}
           </span>
@@ -130,7 +130,7 @@ export function Home() {
               className="glass rounded-3xl p-4 w-full text-left hover-lift flex items-center gap-3"
             >
               <div className="shrink-0">
-                <SettleRing value={groupSettleScore(g)} size={44} stroke={5} color="#0FA3A3" track="var(--line)" />
+                <SettleRing value={groupSettleScore(g)} size={44} stroke={5} color="#6E8B3A" track="var(--line)" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-display text-lg font-bold truncate">{g.name}</div>

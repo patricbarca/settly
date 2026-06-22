@@ -267,7 +267,7 @@ export function AddExpense({ group }: { group: Group }) {
                   {!pro && (
                     <span
                       className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold"
-                      style={{ background: "rgba(91,91,240,0.12)", color: "var(--indigo)" }}
+                      style={{ background: "rgba(110,139,58,0.12)", color: "var(--indigo)" }}
                     >
                       <Icon name="lock" size={10} /> {t("pro.badge")}
                     </span>
