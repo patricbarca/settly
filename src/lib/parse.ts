@@ -22,6 +22,7 @@ export interface ParsedExpense {
   label: string;
   amount: number;
   payerId: string;
+  payments?: { memberId: string; amount: number }[];
   participantIds: string[];
   category: Category;
   interval?: RecurrenceInterval;

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Group, RecurrenceInterval } from "../lib/types";
 import { updateGroup, addRecurring } from "../lib/store";
-import { parseExpense } from "../lib/parse";
+import { parseExpense, type ParsedExpense } from "../lib/parse";
 import { parseExpenseAI } from "../lib/ai";
 import { CATEGORIES } from "../lib/types";
 import { useSpeech } from "../lib/speech";
@@ -48,14 +48,21 @@ export function AddExpense({ group }: { group: Group }) {
     setInterpreting(true);
     // Con Pro o cupo disponible, usa el LLM (función parse-expense). Si no hay
     // cupo, falla o no está desplegado, cae al parser local de regex (gratis).
-    let r = await tryAI();
+    let r: ParsedExpense | null = await tryAI();
     if (!r) r = parseExpense(text, group.members, group.meId);
+    // Varios pagadores: solo si la IA devolvió ≥2 y los importes cuadran con
+    // el total (si no, dejamos un único pagador para no crear un borrador roto).
+    const pays = r.payments ?? [];
+    const paysSum = pays.reduce((a, b) => a + (Number(b.amount) || 0), 0);
+    const useMulti = pays.length >= 2 && Math.abs(paysSum - (r.amount || 0)) < 0.01;
     setDraft({
       label: r.label,
       amount: r.amount || "",
       payerId: r.payerId,
-      multiPay: false,
-      payments: {},
+      multiPay: useMulti,
+      payments: useMulti
+        ? Object.fromEntries(pays.map((p) => [p.memberId, p.amount]))
+        : {},
       participantIds: r.participantIds,
       splitMode: "equal",
       splitValues: {},
@@ -70,7 +77,7 @@ export function AddExpense({ group }: { group: Group }) {
     setInterpreting(false);
   }
 
-  async function tryAI() {
+  async function tryAI(): Promise<ParsedExpense | null> {
     if (!pro && aiLeft <= 0) return null;
     try {
       const ai = await parseExpenseAI(
@@ -82,11 +89,15 @@ export function AddExpense({ group }: { group: Group }) {
       );
       const ids = new Set(group.members.map((m) => m.id));
       const participantIds = (ai.participantIds || []).filter((id) => ids.has(id));
+      const payments = (ai.payments || [])
+        .filter((p) => ids.has(p.memberId) && Number(p.amount) > 0)
+        .map((p) => ({ memberId: p.memberId, amount: Number(p.amount) }));
       if (!pro) consumeAI();
       return {
         label: ai.label || "",
         amount: ai.amount || 0,
         payerId: ids.has(ai.payerId) ? ai.payerId : group.meId,
+        payments,
         participantIds: participantIds.length ? participantIds : group.members.map((m) => m.id),
         category: CATEGORIES.find((c) => c.id === ai.category)?.id ?? "otros",
         interval: ai.interval || undefined,

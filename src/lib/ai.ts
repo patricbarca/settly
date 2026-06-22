@@ -3,12 +3,14 @@
 // están desplegadas o configuradas, estas llamadas devuelven un error y la UI
 // degrada con elegancia (p. ej. el escaneo cae a su demo local).
 import { supabase } from "./supabase";
+import { fileToScanImage } from "./image";
 import type { Member, Category, RecurrenceInterval } from "./types";
 
 export type AIParsedExpense = {
   label: string;
   amount: number;
   payerId: string;
+  payments?: { memberId: string; amount: number }[];
   participantIds: string[];
   category: Category;
   interval?: RecurrenceInterval | null;
@@ -43,9 +45,10 @@ export async function parseExpenseAI(
 export type ScannedItem = { name: string; price: number };
 export type ScanResult = { items: ScannedItem[]; currency?: string };
 
-/** Lee una imagen de ticket vía la función `scan-receipt` (modelo de visión). */
+/** Lee una imagen de ticket vía la función `scan-receipt` (modelo de visión).
+ *  La foto se redimensiona/comprime antes de enviarla (ver fileToScanImage). */
 export async function scanReceipt(file: File): Promise<ScanResult> {
-  const { base64, mediaType } = await fileToBase64(file);
+  const { base64, mediaType } = await fileToScanImage(file);
   const { data, error } = await supabase.functions.invoke("scan-receipt", {
     body: { image: base64, mediaType },
   });
@@ -77,15 +80,3 @@ export async function transcribeAudio(blob: Blob, lang = "es"): Promise<string> 
   return (res.text || "").trim();
 }
 
-function fileToBase64(file: File): Promise<{ base64: string; mediaType: string }> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = String(reader.result);
-      const base64 = result.includes(",") ? result.split(",")[1] : result;
-      resolve({ base64, mediaType: file.type || "image/jpeg" });
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
