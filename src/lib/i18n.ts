@@ -296,6 +296,12 @@ const DICT: Record<string, { es: string; en: string }> = {
   "pay.label.bunq": { es: "bunq.me", en: "bunq.me" },
   "pay.label.other": { es: "Otro", en: "Other" },
 
+  "notif.title": { es: "Novedades", en: "Activity" },
+  "notif.empty": { es: "Sin novedades por ahora.", en: "Nothing new yet." },
+  "notif.expense_added": { es: "{name} añadió «{label}» ({amt})", en: "{name} added “{label}” ({amt})" },
+  "notif.payment_made": { es: "{name} pagó {amt} a {to}", en: "{name} paid {amt} to {to}" },
+  "notif.review_requested": { es: "Alguien pidió revisar «{label}»", en: "Someone requested a review of “{label}”" },
+  "notif.in": { es: "en {group}", en: "in {group}" },
   "pay.bank.bsb": { es: "BSB", en: "BSB" },
   "pay.bank.account": { es: "Número de cuenta", en: "Account number" },
   "pay.ph.bankBsb": { es: "p. ej. 062-000", en: "e.g. 062-000" },

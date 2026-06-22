@@ -3,6 +3,7 @@ import type { Group, Category } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
 import { scanReceipt } from "../lib/ai";
 import { updateGroup } from "../lib/store";
+import { withNotif } from "../lib/notifications";
 import { uid, money, personColor, memberInitials } from "../lib/format";
 import { currencySymbol } from "../lib/currencies";
 import { useT } from "../lib/i18n";
@@ -88,6 +89,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     if (total <= 0 || participants.length === 0) return;
     const rounded: Record<string, number> = {};
     allIds.forEach((id) => (rounded[id] = Math.round(splits[id] * 100) / 100));
+    const meName = group.members.find((m) => m.id === group.meId)?.name ?? "?";
     updateGroup(group.id, (g) => ({
       ...g,
       expenses: [
@@ -103,6 +105,13 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         },
         ...g.expenses,
       ],
+      notifications: withNotif(g, {
+        type: "expense_added",
+        actorId: group.meId,
+        actorName: meName,
+        label: "Ticket",
+        amount: Math.round(total * 100) / 100,
+      }),
     }));
     onClose();
   }

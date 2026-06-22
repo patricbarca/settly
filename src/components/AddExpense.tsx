@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Group, RecurrenceInterval } from "../lib/types";
 import { updateGroup, addRecurring } from "../lib/store";
 import { parseExpense, type ParsedExpense } from "../lib/parse";
+import { withNotif } from "../lib/notifications";
 import { parseExpenseAI } from "../lib/ai";
 import { CATEGORIES } from "../lib/types";
 import { useSpeech } from "../lib/speech";
@@ -139,6 +140,7 @@ export function AddExpense({ group }: { group: Group }) {
         active: true,
       });
     } else {
+      const meName = group.members.find((m) => m.id === group.meId)?.name ?? "?";
       updateGroup(group.id, (g) => ({
         ...g,
         expenses: [
@@ -155,6 +157,13 @@ export function AddExpense({ group }: { group: Group }) {
           },
           ...g.expenses,
         ],
+        notifications: withNotif(g, {
+          type: "expense_added",
+          actorId: group.meId,
+          actorName: meName,
+          label: d.label.trim(),
+          amount: Number(d.amount) || 0,
+        }),
       }));
     }
     setDraft(null);
