@@ -15,7 +15,6 @@ import { Achievements } from "./Achievements";
 import { CategoryChart } from "./CategoryChart";
 import { ExpenseList } from "./ExpenseList";
 import { Analytics } from "./Analytics";
-import { RecurringList } from "./RecurringList";
 import { GroupSettings } from "./GroupSettings";
 import { UsersModal } from "./UsersModal";
 
@@ -128,7 +127,6 @@ export function GroupView({ group }: { group: Group }) {
       {tab === "expenses" && (
         <div className="space-y-4 anim-up">
           <AddExpense group={group} />
-          <RecurringList group={group} />
           <ExpenseList group={group} />
         </div>
       )}

@@ -8,6 +8,7 @@ import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
+import { RecurringList } from "./RecurringList";
 
 export function ExpenseList({ group }: { group: Group }) {
   const t = useT();
@@ -47,15 +48,15 @@ export function ExpenseList({ group }: { group: Group }) {
     setEditId(null);
   }
 
-  if (group.expenses.length === 0) {
-    return <div className="glass rounded-3xl p-10 text-center text-muted">{t("exp.empty")}</div>;
-  }
   const editing = editId ? group.expenses.find((x) => x.id === editId) : null;
 
   return (
     <section className="space-y-2">
       <h3 className="font-display text-lg font-bold px-1">{t("exp.title")}</h3>
-      {group.expenses.map((e) => {
+      <RecurringList group={group} />
+      {group.expenses.length === 0 ? (
+        <div className="glass rounded-3xl p-10 text-center text-muted">{t("exp.empty")}</div>
+      ) : group.expenses.map((e) => {
         const c = catOf(e.category);
         const open = openId === e.id;
         const shares = shareFor(e, ids);
