@@ -5,7 +5,6 @@ import { updateGroup } from "../lib/store";
 import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
-import { PayMethodModal } from "./PayMethodModal";
 import { MarkPaidModal } from "./MarkPaidModal";
 import { PaySheet } from "./PaySheet";
 
@@ -19,7 +18,6 @@ export function Balances({ group }: { group: Group }) {
   const pending = settlements.filter((s) => s.status === "pending");
   const confirmed = settlements.filter((s) => s.status === "confirmed");
 
-  const [methodsOpen, setMethodsOpen] = useState(false);
   const [mark, setMark] = useState<{ from: string; to: string; amount: number } | null>(null);
   const [paySheet, setPaySheet] = useState<{ to: string; amount: number } | null>(null);
 
@@ -80,17 +78,9 @@ export function Balances({ group }: { group: Group }) {
 
       {/* Para saldar + pagos */}
       <div className="glass rounded-3xl p-5">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <div className="text-xs uppercase tracking-widest font-mono text-muted">{t("bal.toSettle")}</div>
-            <div className="text-[11px] text-muted mt-0.5">{t("bal.simplified")}</div>
-          </div>
-          <button
-            onClick={() => setMethodsOpen(true)}
-            className="glass rounded-full px-2.5 py-1 text-xs hover-lift text-muted shrink-0 inline-flex items-center gap-1"
-          >
-            <Icon name="card" size={14} /> {t("pay.methods")}
-          </button>
+        <div>
+          <div className="text-xs uppercase tracking-widest font-mono text-muted">{t("bal.toSettle")}</div>
+          <div className="text-[11px] text-muted mt-0.5">{t("bal.simplified")}</div>
         </div>
 
         {transfers.length === 0 && pending.length === 0 ? (
@@ -117,21 +107,29 @@ export function Balances({ group }: { group: Group }) {
                   <b>{name(tr.to)}</b>
                   <span className="font-mono font-bold ml-auto">{money(tr.amount, group.currency)}</span>
                 </div>
-                <div className="flex gap-2 mt-1.5 pl-8">
-                  <button
-                    onClick={() => setPaySheet({ to: tr.to, amount: tr.amount })}
-                    className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift"
-                    style={{ background: "var(--teal)" }}
-                  >
-                    {t("pay.pay")}
-                  </button>
-                  <button
-                    onClick={() => setMark({ from: tr.from, to: tr.to, amount: tr.amount })}
-                    className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted"
-                  >
-                    {t("pay.markPaid")}
-                  </button>
-                </div>
+                {(tr.from === group.meId || tr.to === group.meId) && (
+                  <div className="flex gap-2 mt-1.5 pl-8">
+                    {/* Solo quien debe pagar ve "Pagar" */}
+                    {tr.from === group.meId && (
+                      <button
+                        onClick={() => setPaySheet({ to: tr.to, amount: tr.amount })}
+                        className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift"
+                        style={{ background: "var(--teal)" }}
+                      >
+                        {t("pay.pay")}
+                      </button>
+                    )}
+                    {/* Solo quien cobra confirma el pago recibido */}
+                    {tr.to === group.meId && (
+                      <button
+                        onClick={() => setMark({ from: tr.from, to: tr.to, amount: tr.amount })}
+                        className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted"
+                      >
+                        {t("pay.markPaid")}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
 
@@ -180,7 +178,6 @@ export function Balances({ group }: { group: Group }) {
         )}
       </div>
 
-      {methodsOpen && <PayMethodModal group={group} onClose={() => setMethodsOpen(false)} />}
       {paySheet && (
         <PaySheet group={group} to={paySheet.to} amount={paySheet.amount} onClose={() => setPaySheet(null)} />
       )}
