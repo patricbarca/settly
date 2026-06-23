@@ -16,13 +16,15 @@ const CSS = `
 @keyframes idemo-label   { 0%,70%{opacity:0} 80%,100%{opacity:1} }
 `;
 
-export function InstallDemoAnim() {
+export function InstallDemoAnim({ scale = 1.5 }: { scale?: number }) {
   const t = useT();
   const D = "8s";
   const grid = Array.from({ length: 8 });
+  const W = 152, H = 224;
 
   return (
-    <div style={{ position: "relative", width: 152, height: 224, margin: "0 auto" }}>
+    <div style={{ width: W * scale, height: H * scale, margin: "0 auto" }}>
+    <div style={{ position: "relative", width: W, height: H, transform: `scale(${scale})`, transformOrigin: "top left" }}>
       <style>{CSS}</style>
       {/* Marco del teléfono */}
       <div style={{
@@ -113,6 +115,7 @@ export function InstallDemoAnim() {
 
         </div>
       </div>
+    </div>
     </div>
   );
 }
