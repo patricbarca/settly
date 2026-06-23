@@ -6,7 +6,7 @@ import { Overlay } from "./Overlay";
 
 const FEATURES = ["paywall.f1", "paywall.f2", "paywall.f3", "paywall.f4"];
 
-export function Paywall({ onClose }: { onClose: () => void }) {
+export function Paywall({ onClose, reason }: { onClose: () => void; reason?: string }) {
   const t = useT();
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -58,6 +58,15 @@ export function Paywall({ onClose }: { onClose: () => void }) {
             <Icon name="close" size={16} />
           </button>
         </div>
+
+        {reason && (
+          <div
+            className="rounded-2xl p-3 mb-3 text-sm font-medium"
+            style={{ background: "rgba(91,91,240,0.1)", color: "var(--indigo)" }}
+          >
+            {reason}
+          </div>
+        )}
 
         <p className="text-sm text-muted mb-4">{t("paywall.subtitle")}</p>
 

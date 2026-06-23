@@ -14,6 +14,8 @@ import { supabase } from "./supabase";
 
 export type Plan = "free" | "pro";
 export const FREE_AI_QUOTA = 3;
+/** Máximo de grupos activos en el plan gratis (Pro = ilimitado). */
+export const FREE_GROUP_LIMIT = 3;
 
 const USAGE_KEY = "settly.aiUsage";
 type Usage = { month: string; count: number };

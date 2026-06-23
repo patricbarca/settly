@@ -479,6 +479,7 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "paywall.title":    { es: "Hazte Pro", en: "Go Pro" },
   "paywall.subtitle": { es: "Desbloquea la IA sin límites y las funciones avanzadas.", en: "Unlock unlimited AI and advanced features." },
+  "paywall.groupLimit": { es: "Llegaste al límite de {n} grupos del plan gratis. Hazte Pro para crear grupos ilimitados.", en: "You've reached the free plan's {n}-group limit. Go Pro for unlimited groups." },
   "paywall.f1":       { es: "Escaneo de recibos con IA ilimitado", en: "Unlimited AI receipt scanning" },
   "paywall.f2":       { es: "Gastos recurrentes", en: "Recurring expenses" },
   "paywall.f3":       { es: "Estadísticas avanzadas y export", en: "Advanced stats & export" },

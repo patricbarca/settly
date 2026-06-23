@@ -4,7 +4,7 @@ import { computeSettle, shareFor } from "../lib/split";
 import { groupSettleScore } from "../lib/gamification";
 import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
-import { usePlan } from "../lib/plan";
+import { usePlan, FREE_GROUP_LIMIT } from "../lib/plan";
 import { Logo } from "./Logo";
 import { Icon } from "./Icon";
 import { SettleRing } from "./SettleRing";
@@ -20,9 +20,24 @@ export function Home() {
   const [creating, setCreating] = useState(false);
   const [showArch, setShowArch] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [paywallReason, setPaywallReason] = useState<string | undefined>(undefined);
 
   const active = groups.filter((g) => !g.archived);
   const archived = groups.filter((g) => g.archived);
+
+  // Plan gratis: máx. 3 grupos activos. Al intentar crear el 4º → Paywall.
+  function startCreate() {
+    if (plan === "free" && active.length >= FREE_GROUP_LIMIT) {
+      setPaywallReason(t("paywall.groupLimit", { n: String(FREE_GROUP_LIMIT) }));
+      setShowPaywall(true);
+    } else {
+      setCreating(true);
+    }
+  }
+  function openUpgrade() {
+    setPaywallReason(undefined);
+    setShowPaywall(true);
+  }
 
   const hasGroup = active.length > 0;
   const hasExpense = active.some((g) => g.expenses.length > 0);
@@ -60,7 +75,7 @@ export function Home() {
             <p className="text-white/85 text-base mt-2.5 max-w-md leading-relaxed">{t("login.tagline")}</p>
             <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/60 mt-1.5">{t("app.poweredAI")}</div>
             <button
-              onClick={() => setCreating(true)}
+              onClick={startCreate}
               className="mt-5 rounded-full px-6 py-3 font-semibold hover-lift text-[#241C53] inline-flex items-center gap-1.5"
               style={{ background: "#fff" }}
             >
@@ -75,7 +90,7 @@ export function Home() {
         <InstallButton />
         {plan === "free" ? (
           <button
-            onClick={() => setShowPaywall(true)}
+            onClick={openUpgrade}
             className="rounded-full px-3 py-1.5 text-sm font-semibold hover-lift inline-flex items-center gap-1.5 text-white"
             style={{ background: "linear-gradient(180deg,#6e6cf5,#5b5bf0)" }}
           >
@@ -101,7 +116,7 @@ export function Home() {
             active={!hasGroup}
             title={t("onboard.step1t")}
             desc={t("onboard.step1d")}
-            action={!hasGroup ? () => setCreating(true) : undefined}
+            action={!hasGroup ? startCreate : undefined}
             actionLabel={t("home.createGroup")}
           />
           <StartStep
@@ -148,7 +163,7 @@ export function Home() {
       <div className="flex items-center justify-between mt-6 mb-2 px-1">
         <h2 className="font-display text-xl font-bold">{t("home.yourGroups")}</h2>
         <button
-          onClick={() => setCreating(true)}
+          onClick={startCreate}
           className="glass rounded-full px-3 py-1.5 text-sm hover-lift text-muted inline-flex items-center gap-1"
         >
           <Icon name="plus" size={15} /> {t("home.new")}
@@ -248,7 +263,7 @@ export function Home() {
       )}
 
       {creating && <CreateGroupModal onClose={() => setCreating(false)} />}
-      {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
+      {showPaywall && <Paywall reason={paywallReason} onClose={() => setShowPaywall(false)} />}
     </div>
   );
 }
