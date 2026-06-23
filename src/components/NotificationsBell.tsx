@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { useGroups } from "../lib/store";
 import { buildFeed, loadSeen, saveSeen, type FeedItem } from "../lib/notifications";
+import { buildActivity, type ActivityItem } from "../lib/activity";
+import type { ActivityType } from "../lib/types";
 import { money } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
-import { Icon } from "./Icon";
+import { Icon, type IconName } from "./Icon";
 
 function relTime(ts: string, lang: "es" | "en") {
   const diff = Date.now() - new Date(ts).getTime();
@@ -15,18 +17,39 @@ function relTime(ts: string, lang: "es" | "en") {
   return `${Math.floor(h / 24)}d`;
 }
 
+const ACTIVITY_ICON: Record<ActivityType, IconName> = {
+  group_created: "home",
+  group_archived: "archive",
+  group_unarchived: "archive",
+  member_added: "users",
+  member_joined: "users",
+  member_removed: "users",
+  expense_added: "plus",
+  expense_edited: "edit",
+  expense_deleted: "trash",
+  payment_made: "card",
+  marked_ready: "check",
+  unmarked_ready: "clock",
+  review_requested: "flag",
+  recurring_added: "repeat",
+  scan_used: "sparkles",
+};
+
+type Tab = "notifications" | "activity";
+
 export function NotificationsBell() {
   const t = useT();
   const lang = useLang();
   const groups = useGroups();
   const [open, setOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>("notifications");
   const [seen, setSeen] = useState<Set<string>>(() => loadSeen());
 
   const items = useMemo(() => buildFeed(groups), [groups]);
+  const activity = useMemo(() => buildActivity(groups), [groups]);
   const unread = items.filter((n) => !seen.has(n.id)).length;
 
-  function toggle() {
-    const next = !open;
+  function open_(next: boolean) {
     setOpen(next);
     if (next && items.length) {
       const s = new Set(seen);
@@ -36,7 +59,7 @@ export function NotificationsBell() {
     }
   }
 
-  function message(n: FeedItem): string {
+  function notifMessage(n: FeedItem): string {
     const amt = n.amount != null ? money(n.amount, n.currency) : "";
     if (n.type === "expense_added")
       return t("notif.expense_added", { name: n.actorName ?? "?", label: n.label ?? "", amt });
@@ -45,23 +68,36 @@ export function NotificationsBell() {
     return t("notif.review_requested", { label: n.label ?? "" });
   }
 
+  function activityMessage(a: ActivityItem): string {
+    const name = a.mine ? t("activity.you") : a.actorName || t("activity.someone");
+    const amt = a.amount != null ? money(a.amount, a.currency) : "";
+    return t(`activity.${a.type}` as any, {
+      name,
+      label: a.label ?? "",
+      amt,
+      to: a.toName ?? "?",
+    });
+  }
+
   return (
     <div className="relative">
       <button
-        onClick={toggle}
-        className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift relative"
+        onClick={() => open_(true)}
+        className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
         title={t("notif.title")}
       >
         <Icon name="bell" size={16} />
-        {unread > 0 && (
-          <span
-            className="absolute -top-1.5 -right-1.5 min-w-[17px] h-[17px] px-[3px] rounded-full text-[10px] font-bold text-white flex items-center justify-center leading-none tabular-nums"
-            style={{ background: "var(--coral)", boxShadow: "0 0 0 2px var(--surface)" }}
-          >
-            {unread > 9 ? "9+" : unread}
-          </span>
-        )}
       </button>
+      {/* El badge va FUERA del botón .glass (que recorta con overflow:hidden),
+          si no el número se ve cortado dentro del círculo. */}
+      {unread > 0 && (
+        <span
+          className="absolute -top-1.5 -right-1.5 min-w-[17px] h-[17px] px-[3px] rounded-full text-[10px] font-bold text-white flex items-center justify-center leading-none tabular-nums pointer-events-none"
+          style={{ background: "var(--coral)", boxShadow: "0 0 0 2px var(--surface)" }}
+        >
+          {unread > 9 ? "9+" : unread}
+        </span>
+      )}
 
       {open && (
         <div className="fixed inset-0 z-50 flex flex-col anim-up" style={{ background: "var(--bg)" }}>
@@ -77,26 +113,66 @@ export function NotificationsBell() {
               <h2 className="font-display text-2xl font-bold">{t("notif.title")}</h2>
             </div>
 
+            {/* Selector Notificaciones | Actividad */}
+            <div className="flex gap-1.5 mb-4">
+              {(["notifications", "activity"] as Tab[]).map((tb) => {
+                const on = tab === tb;
+                return (
+                  <button
+                    key={tb}
+                    onClick={() => setTab(tb)}
+                    className={`flex-1 rounded-full px-3 py-2 text-sm font-semibold text-center ${on ? "" : "glass text-muted"}`}
+                    style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                  >
+                    {tb === "notifications" ? t("feed.notifications") : t("feed.activity")}
+                  </button>
+                );
+              })}
+            </div>
+
             <div className="flex-1 overflow-y-auto pb-10">
-              {items.length === 0 ? (
-                <div className="glass rounded-3xl p-10 text-center text-muted mt-2">{t("notif.empty")}</div>
+              {tab === "notifications" ? (
+                items.length === 0 ? (
+                  <div className="glass rounded-3xl p-10 text-center text-muted mt-2">{t("notif.empty")}</div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {items.map((n) => (
+                      <div key={n.id} className="glass rounded-2xl flex gap-3 items-start px-4 py-3">
+                        <span
+                          className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-muted"
+                          style={{ background: "var(--glass)" }}
+                        >
+                          <Icon
+                            name={n.type === "payment_made" ? "card" : n.type === "review_requested" ? "flag" : "plus"}
+                            size={16}
+                          />
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm leading-snug">{notifMessage(n)}</div>
+                          <div className="text-[11px] text-muted mt-0.5">
+                            {t("notif.in", { group: n.groupName })} · {relTime(n.ts, lang)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : activity.length === 0 ? (
+                <div className="glass rounded-3xl p-10 text-center text-muted mt-2">{t("activity.empty")}</div>
               ) : (
                 <div className="space-y-1.5">
-                  {items.map((n) => (
-                    <div key={n.id} className="glass rounded-2xl flex gap-3 items-start px-4 py-3">
+                  {activity.map((a) => (
+                    <div key={a.id} className="glass rounded-2xl flex gap-3 items-start px-4 py-3">
                       <span
                         className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-muted"
-                        style={{ background: "var(--glass)" }}
+                        style={a.mine ? { background: "color-mix(in srgb, var(--teal) 18%, transparent)", color: "var(--teal)" } : { background: "var(--glass)" }}
                       >
-                        <Icon
-                          name={n.type === "payment_made" ? "card" : n.type === "review_requested" ? "flag" : "plus"}
-                          size={16}
-                        />
+                        <Icon name={ACTIVITY_ICON[a.type] ?? "bolt"} size={16} />
                       </span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm leading-snug">{message(n)}</div>
+                        <div className="text-sm leading-snug">{activityMessage(a)}</div>
                         <div className="text-[11px] text-muted mt-0.5">
-                          {t("notif.in", { group: n.groupName })} · {relTime(n.ts, lang)}
+                          {t("notif.in", { group: a.groupName })} · {relTime(a.ts, lang)}
                         </div>
                       </div>
                     </div>

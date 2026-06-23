@@ -3,6 +3,7 @@ import type { Group, RecurrenceInterval } from "../lib/types";
 import { updateGroup, addRecurring } from "../lib/store";
 import { parseExpense, type ParsedExpense } from "../lib/parse";
 import { withNotif } from "../lib/notifications";
+import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { parseExpenseAI } from "../lib/ai";
 import { CATEGORIES } from "../lib/types";
@@ -167,6 +168,13 @@ export function AddExpense({ group }: { group: Group }) {
           ...g.expenses,
         ],
         notifications: withNotif(g, {
+          type: "expense_added",
+          actorId: group.meId,
+          actorName: meName,
+          label: d.label.trim(),
+          amount: Number(d.amount) || 0,
+        }),
+        activity: withActivity(g, {
           type: "expense_added",
           actorId: group.meId,
           actorName: meName,

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Group } from "../lib/types";
 import { updateGroup } from "../lib/store";
+import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
 import { uid, personColor, memberInitials, money } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -71,6 +72,12 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
     updateGroup(group.id, (g) => ({
       ...g,
       members: [...g.members, { id: memberId, name: foundUser.name, avatar: "" }],
+      activity: withActivity(g, {
+        type: "member_added",
+        actorId: g.meId,
+        actorName: g.members.find((m) => m.id === g.meId)?.name,
+        label: foundUser.name,
+      }),
     }));
     await supabase.from("group_members").insert({
       group_id: group.id,
@@ -86,6 +93,12 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
     updateGroup(group.id, (g) => ({
       ...g,
       members: [...g.members, { id: uid(), name: n, avatar: "" }],
+      activity: withActivity(g, {
+        type: "member_added",
+        actorId: g.meId,
+        actorName: g.members.find((m) => m.id === g.meId)?.name,
+        label: n,
+      }),
     }));
     reset();
   }
@@ -105,7 +118,17 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
 
   function remove(id: string) {
     if (referenced.has(id) || id === group.meId) return;
-    updateGroup(group.id, (g) => ({ ...g, members: g.members.filter((m) => m.id !== id) }));
+    const removed = group.members.find((m) => m.id === id)?.name;
+    updateGroup(group.id, (g) => ({
+      ...g,
+      members: g.members.filter((m) => m.id !== id),
+      activity: withActivity(g, {
+        type: "member_removed",
+        actorId: g.meId,
+        actorName: g.members.find((m) => m.id === g.meId)?.name,
+        label: removed,
+      }),
+    }));
   }
 
   return (

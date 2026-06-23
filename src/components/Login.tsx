@@ -134,7 +134,7 @@ export function Login() {
             <div className="glass rounded-3xl p-3 mb-3">
               <Logo size={48} />
             </div>
-            <h1 className="text-white font-display text-4xl font-extrabold">Settli<span className="text-[#7fe7e2]">A</span></h1>
+            <h1 className="text-white font-display text-4xl font-extrabold">Settl<span className="text-[#60A5FA]">iA</span></h1>
             <p className="text-white/85 text-sm mt-2 max-w-xs">{t("login.tagline")}</p>
           </div>
         </div>

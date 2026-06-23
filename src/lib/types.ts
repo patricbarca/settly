@@ -98,6 +98,37 @@ export interface AppNotification {
   amount?: number;
 }
 
+/** Registro de actividad (log). A diferencia de las notificaciones, incluye
+ *  también las acciones propias y más tipos de evento. Vive en el JSON del
+ *  grupo (group.activity) y se sincroniza por Realtime, igual que el resto. */
+export type ActivityType =
+  | "group_created"
+  | "group_archived"
+  | "group_unarchived"
+  | "member_added"
+  | "member_joined"
+  | "member_removed"
+  | "expense_added"
+  | "expense_edited"
+  | "expense_deleted"
+  | "payment_made"
+  | "marked_ready"
+  | "unmarked_ready"
+  | "review_requested"
+  | "recurring_added"
+  | "scan_used";
+
+export interface ActivityEvent {
+  id: string;
+  type: ActivityType;
+  ts: string; // ISO
+  actorId?: string;
+  actorName?: string; // denormalizado para mostrar
+  label?: string; // gasto / nombre de miembro / nombre de grupo
+  amount?: number;
+  toName?: string; // destinatario (pago / miembro afectado)
+}
+
 export interface Group {
   id: string;
   name: string;
@@ -111,6 +142,7 @@ export interface Group {
   ready?: string[];
   recurring?: RecurringExpense[];
   notifications?: AppNotification[];
+  activity?: ActivityEvent[];
 }
 
 import type { IconName } from "../components/Icon";

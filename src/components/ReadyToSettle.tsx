@@ -1,5 +1,6 @@
 import type { Group, Member } from "../lib/types";
 import { updateGroup } from "../lib/store";
+import { withActivity } from "../lib/activity";
 import { personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -13,7 +14,16 @@ export function ReadyToSettle({ group }: { group: Group }) {
   function toggleMe() {
     updateGroup(group.id, (g) => {
       const r = g.ready ?? [];
-      return { ...g, ready: r.includes(g.meId) ? r.filter((x) => x !== g.meId) : [...r, g.meId] };
+      const wasReady = r.includes(g.meId);
+      return {
+        ...g,
+        ready: wasReady ? r.filter((x) => x !== g.meId) : [...r, g.meId],
+        activity: withActivity(g, {
+          type: wasReady ? "unmarked_ready" : "marked_ready",
+          actorId: g.meId,
+          actorName: g.members.find((m) => m.id === g.meId)?.name,
+        }),
+      };
     });
   }
   function remind(m: Member) {

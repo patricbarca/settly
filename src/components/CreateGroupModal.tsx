@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { addGroup } from "../lib/store";
+import { makeActivity } from "../lib/activity";
 import { uid, personColor, initials } from "../lib/format";
 import { useUser } from "../lib/auth";
 import { getNetwork, type Contact } from "../lib/contacts";
@@ -50,6 +51,7 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
       meId,
       members: [me, ...others],
       expenses: [],
+      activity: [makeActivity({ type: "group_created", actorId: meId, actorName: me.name })],
     };
     addGroup(group, extraMembers);
     onClose();

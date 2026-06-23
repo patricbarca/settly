@@ -10,6 +10,7 @@ import { Overlay } from "./Overlay";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 import { RecurringList } from "./RecurringList";
 import { withNotif } from "../lib/notifications";
+import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 
 export function ExpenseList({ group }: { group: Group }) {
@@ -20,7 +21,18 @@ export function ExpenseList({ group }: { group: Group }) {
   const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
 
   function remove(id: string) {
-    updateGroup(group.id, (g) => ({ ...g, expenses: g.expenses.filter((e) => e.id !== id) }));
+    const exp = group.expenses.find((e) => e.id === id);
+    updateGroup(group.id, (g) => ({
+      ...g,
+      expenses: g.expenses.filter((e) => e.id !== id),
+      activity: withActivity(g, {
+        type: "expense_deleted",
+        actorId: group.meId,
+        actorName: name(group.meId),
+        label: exp?.label,
+        amount: exp?.amount,
+      }),
+    }));
   }
   function requestReview(id: string) {
     const exp = group.expenses.find((e) => e.id === id);
@@ -30,6 +42,13 @@ export function ExpenseList({ group }: { group: Group }) {
       expenses: g.expenses.map((e) => (e.id === id ? { ...e, reviewRequested: true } : e)),
       // Solicitud de revisión: anónima (sin actorId) por diseño.
       notifications: withNotif(g, { type: "review_requested", label: exp.label }),
+      // En el log sí registramos quién la pidió (es tu propia actividad).
+      activity: withActivity(g, {
+        type: "review_requested",
+        actorId: group.meId,
+        actorName: name(group.meId),
+        label: exp.label,
+      }),
     }));
     notifyGroup(group.id, group.name, t("notif.review_requested", { label: exp.label }));
   }
@@ -58,6 +77,13 @@ export function ExpenseList({ group }: { group: Group }) {
             }
           : e
       ),
+      activity: withActivity(g, {
+        type: "expense_edited",
+        actorId: group.meId,
+        actorName: name(group.meId),
+        label: d.label.trim(),
+        amount: Number(d.amount) || 0,
+      }),
     }));
     setEditId(null);
   }

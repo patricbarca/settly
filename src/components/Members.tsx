@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Group, Member } from "../lib/types";
 import { updateGroup } from "../lib/store";
+import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
 import { personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -25,7 +26,17 @@ export function Members({ group }: { group: Group }) {
 
   function remove(id: string) {
     if (referenced.has(id) || id === group.meId) return;
-    updateGroup(group.id, (g) => ({ ...g, members: g.members.filter((m) => m.id !== id) }));
+    const removed = group.members.find((m) => m.id === id)?.name;
+    updateGroup(group.id, (g) => ({
+      ...g,
+      members: g.members.filter((m) => m.id !== id),
+      activity: withActivity(g, {
+        type: "member_removed",
+        actorId: g.meId,
+        actorName: g.members.find((m) => m.id === g.meId)?.name,
+        label: removed,
+      }),
+    }));
   }
 
   return (

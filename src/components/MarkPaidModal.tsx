@@ -2,6 +2,7 @@ import { useState, type ChangeEvent } from "react";
 import type { Group } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { withNotif } from "../lib/notifications";
+import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { uid, money } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -49,6 +50,13 @@ export function MarkPaidModal({
         },
       ],
       notifications: withNotif(g, {
+        type: "payment_made",
+        actorId: from,
+        actorName: name(from),
+        toName: name(to),
+        amount: Math.round(amount * 100) / 100,
+      }),
+      activity: withActivity(g, {
         type: "payment_made",
         actorId: from,
         actorName: name(from),

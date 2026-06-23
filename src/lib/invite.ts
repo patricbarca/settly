@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import type { Group } from "./types";
 import { uid } from "./format";
+import { withActivity } from "./activity";
 
 export async function createInviteLink(group: Group): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser();
@@ -69,7 +70,15 @@ export async function joinByToken(token: string, userId: string): Promise<Group 
 
   const group = row.data as Group;
   const newMember = { id: newMemberId, name: profile?.name || "Nuevo miembro", avatar: "" };
-  const updated: Group = { ...group, members: [...group.members, newMember] };
+  const updated: Group = {
+    ...group,
+    members: [...group.members, newMember],
+    activity: withActivity(group, {
+      type: "member_joined",
+      actorId: newMemberId,
+      actorName: newMember.name,
+    }),
+  };
 
   await supabase.from("groups")
     .update({ data: updated, updated_at: new Date().toISOString() })

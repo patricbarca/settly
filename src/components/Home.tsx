@@ -40,7 +40,7 @@ export function Home() {
             <div className="glass rounded-3xl p-3 mb-4">
               <Logo size={54} />
             </div>
-            <h1 className="text-white font-display text-5xl font-extrabold tracking-tight">Settli<span className="text-[#7fe7e2]">A</span></h1>
+            <h1 className="text-white font-display text-5xl font-extrabold tracking-tight">Settl<span className="text-[#60A5FA]">iA</span></h1>
             <p className="text-white/85 text-base mt-2.5 max-w-md leading-relaxed">{t("login.tagline")}</p>
             <button
               onClick={() => setCreating(true)}

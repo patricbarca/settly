@@ -3,6 +3,7 @@ import type { Group, RecurringExpense, RecurrenceInterval } from "./types";
 import { supabase } from "./supabase";
 import { createSeed } from "./seed";
 import { uid } from "./format";
+import { withActivity } from "./activity";
 import {
   idbPutGroup,
   idbGetAllGroups,
@@ -231,7 +232,19 @@ export async function addGroup(
 }
 
 export function archiveGroup(id: string, value: boolean) {
-  const groups = state.groups.map((g) => (g.id === id ? { ...g, archived: value } : g));
+  const groups = state.groups.map((g) =>
+    g.id === id
+      ? {
+          ...g,
+          archived: value,
+          activity: withActivity(g, {
+            type: value ? "group_archived" : "group_unarchived",
+            actorId: g.meId,
+            actorName: g.members.find((m) => m.id === g.meId)?.name,
+          }),
+        }
+      : g
+  );
   state = { ...state, groups, activeId: value && state.activeId === id ? null : state.activeId };
   emit();
   const g = groups.find((g) => g.id === id);
@@ -261,7 +274,17 @@ export function updateGroup(id: string, fn: (g: Group) => Group) {
 }
 
 export function addRecurring(groupId: string, r: RecurringExpense) {
-  updateGroup(groupId, (g) => ({ ...g, recurring: [...(g.recurring ?? []), r] }));
+  updateGroup(groupId, (g) => ({
+    ...g,
+    recurring: [...(g.recurring ?? []), r],
+    activity: withActivity(g, {
+      type: "recurring_added",
+      actorId: g.meId,
+      actorName: g.members.find((m) => m.id === g.meId)?.name,
+      label: r.label,
+      amount: r.amount,
+    }),
+  }));
 }
 
 export function updateRecurring(groupId: string, id: string, patch: Partial<RecurringExpense>) {
