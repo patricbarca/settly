@@ -27,6 +27,21 @@ Deno.serve(async (req) => {
     if (!user) return json({ error: "unauthorized" }, 401);
     const uid = user.id;
 
+    // Antes de borrar la cuenta: transferir la propiedad de los grupos que
+    // tengan otros miembros (owner_id es ON DELETE CASCADE; si no, se borrarían
+    // para todos). Los grupos en solitario se eliminan en cascada.
+    const { data: owned } = await admin.from("groups").select("id").eq("owner_id", uid);
+    for (const g of owned ?? []) {
+      const { data: others } = await admin
+        .from("group_members")
+        .select("user_id")
+        .eq("group_id", g.id)
+        .neq("user_id", uid)
+        .limit(1);
+      const heir = others?.[0]?.user_id;
+      if (heir) await admin.from("groups").update({ owner_id: heir }).eq("id", g.id);
+    }
+
     // Borra datos asociados (lo que pueda existir; ignoramos errores por tabla).
     await admin.from("push_subscriptions").delete().eq("user_id", uid).catch(() => {});
     await admin.from("group_members").delete().eq("user_id", uid).catch(() => {});
