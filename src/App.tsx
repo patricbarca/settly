@@ -50,8 +50,13 @@ export default function App() {
   }, [phase, user]);
 
   useEffect(() => {
-    // Se muestra en cada inicio de sesión de la app (modo testeo).
-    if (phase === "authenticated" || phase === "guest") setShowOnboarding(true);
+    // El onboarding se muestra una sola vez (flag persistente). Se puede
+    // volver a ver con el botón "?" de la cabecera.
+    if (phase !== "authenticated" && phase !== "guest") return;
+    try {
+      if (localStorage.getItem("settly.onboarded")) return;
+    } catch {}
+    setShowOnboarding(true);
   }, [phase]);
 
   if (phase === "loading") {
@@ -73,6 +78,13 @@ export default function App() {
     <div className="min-h-full">
       <OfflineBanner />
       <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">
+        <button
+          onClick={() => setShowOnboarding(true)}
+          className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
+          title={t("onboard.replay")}
+        >
+          <Icon name="help" size={16} />
+        </button>
         <NotificationsBell />
         <button
           onClick={toggleTheme}
@@ -114,7 +126,12 @@ export default function App() {
       {showAccount && <AccountModal onClose={() => setShowAccount(false)} />}
 
       {showOnboarding && (
-        <OnboardingModal onDone={() => setShowOnboarding(false)} />
+        <OnboardingModal
+          onDone={() => {
+            try { localStorage.setItem("settly.onboarded", "1"); } catch {}
+            setShowOnboarding(false);
+          }}
+        />
       )}
 
       <footer className="max-w-2xl mx-auto px-4 text-center text-xs text-muted pb-10 leading-relaxed">

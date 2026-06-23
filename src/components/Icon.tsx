@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 
 export type IconName =
+  | "help"
   | "food"
   | "transport"
   | "home"
@@ -232,6 +233,14 @@ function glyph(name: IconName): ReactNode {
           <path d="M14 4h6v6" />
           <path d="M20 4l-9 9" />
           <path d="M19 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4" />
+        </>
+      );
+    case "help":
+      return (
+        <>
+          <circle cx="12" cy="12" r="9" />
+          <path d="M9.6 9.5a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2-2.4 3.6" />
+          <path d="M12 17.5h.01" />
         </>
       );
     case "sun":

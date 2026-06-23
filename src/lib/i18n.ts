@@ -114,6 +114,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "onboard.next": { es: "Siguiente →", en: "Next →" },
   "onboard.start": { es: "¡Empezar!", en: "Get started!" },
   "onboard.skip": { es: "Omitir", en: "Skip" },
+  "onboard.replay": { es: "Ver introducción", en: "View intro" },
 
   "onboard.demo.group1":   { es: "Viaje a París",    en: "Paris Trip" },
   "onboard.demo.group2":   { es: "Piso compartido",  en: "Shared Flat" },

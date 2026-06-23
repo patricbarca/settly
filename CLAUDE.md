@@ -76,7 +76,7 @@ SettliA (brand styled **Settl·iA**, the "iA" highlighted = AI) is a PWA for spl
 - **Three AI paths wired** (Edge Functions, keys server-side only), all on **Groq**: `parse-expense` (text→expense+category, `llama-3.1-8b-instant`), `scan-receipt` (vision, Llama 4 Scout), `transcribe` (Whisper). Interpret uses the LLM when Pro/quota, else the local regex parser. **`transcribe`/`parse-expense` deployed; `scan-receipt` ready to deploy** (reuses `STT_API_KEY`, no new secret).
 - **Voice→text**: Web Speech on Android/desktop; on iPhone records→**server STT** (Edge Function `transcribe` → Groq `whisper-large-v3-turbo`). Needs connection; offline → add manually. Language follows the ES/EN toggle. (Replaced the old in-browser Whisper, which failed on iPhone — `src/lib/whisper.ts` + `@huggingface/transformers` removed.)
 - **Categories** expanded 6→12 (added Groceries, Drinks, Travel, Health, Bills/Services, Gifts) with icons, i18n, and parser keywords.
-- **UI**: login top-aligned; onboarding shows every launch (testing) and is vertically centered.
+- **UI**: login top-aligned; onboarding shows **once** (localStorage `settly.onboarded`; skip/finish both set it) with a **replay "?" button** in the header. Final onboarding slide + the header Install button both render the device-aware `InstallGuide` (iOS steps / Android native prompt / standalone "installed").
 
 ### Earlier
 - iOS Safari glass corner artifacts fixed via `@supports (-webkit-touch-callout: none)` — disables backdrop-filter on iOS
