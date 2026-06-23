@@ -37,7 +37,7 @@ export function GroupView({ group }: { group: Group }) {
     try {
       const link = await createInviteLink(group);
       if (navigator.share) {
-        await navigator.share({ title: group.name, text: `Únete al grupo "${group.name}" en Settlia`, url: link });
+        await navigator.share({ title: group.name, text: `Únete al grupo "${group.name}" en SettliA`, url: link });
       } else {
         await navigator.clipboard.writeText(link);
         setCopied(true);
