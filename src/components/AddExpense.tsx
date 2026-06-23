@@ -32,6 +32,7 @@ export function AddExpense({ group }: { group: Group }) {
   const [scan, setScan] = useState(false);
   const [interpreting, setInterpreting] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
   const lang = useLang();
   // La voz va directa a la validación: transcribe → interpreta sin pulsar nada.
   const sp = useSpeech((tx) => {
@@ -65,6 +66,23 @@ export function AddExpense({ group }: { group: Group }) {
     const pays = r.payments ?? [];
     const paysSum = pays.reduce((a, b) => a + (Number(b.amount) || 0), 0);
     const useMulti = pays.length >= 2 && Math.abs(paysSum - (r.amount || 0)) < 0.01;
+    // #3 Suposiciones (deterministas, a partir del resultado) — se muestran
+    // sobre el borrador para dar contexto sin fricción.
+    const n = r.participantIds.length || group.members.length;
+    const payerName = group.members.find((m) => m.id === r.payerId)?.name ?? "?";
+    const payerPart =
+      pays.length >= 2
+        ? t("ai.multiPay")
+        : r.payerId === group.meId
+        ? t("ai.youPay")
+        : t("ai.paysName", { name: payerName });
+    const sumParts = [payerPart, t("ai.among", { n: String(n) })];
+    const perPerson =
+      /\bcada\s+un[oa]\b|\bc\/u\b|\bpor\s+cabeza\b|\bpor\s+persona\b|\bapiece\b|\bper\s+person\b|\bper\s+head\b|\beach\b(?!\s+(day|week|month|year|d[ií]a|semana|mes|a[ñn]o))/i.test(
+        src
+      );
+    if (perPerson && n > 0 && r.amount) sumParts.push(t("ai.each", { amt: money(r.amount / n, group.currency) }));
+    setAiSummary(sumParts.join(" · "));
     setDraft({
       label: r.label,
       amount: r.amount || "",
@@ -118,6 +136,7 @@ export function AddExpense({ group }: { group: Group }) {
   }
 
   function manual() {
+    setAiSummary(null);
     setDraft({
       label: "",
       amount: "",
@@ -191,6 +210,7 @@ export function AddExpense({ group }: { group: Group }) {
     setDraft(null);
     setText("");
     setExpenseType("one-time");
+    setAiSummary(null);
   }
 
   return (
@@ -259,11 +279,18 @@ export function AddExpense({ group }: { group: Group }) {
         <div className="mt-4 glass rounded-3xl p-4 anim-pop">
           <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{t("add.review")}</div>
 
+          {aiSummary && (
+            <div className="mb-3 -mt-1 flex items-start gap-1.5 text-[11px] text-muted">
+              <Icon name="sparkles" size={12} className="mt-0.5 shrink-0" style={{ color: "var(--teal)" }} />
+              <span><b className="font-semibold">{t("ai.assumed")}:</b> {aiSummary}</span>
+            </div>
+          )}
+
           <ExpenseForm
             group={group}
             initial={draft}
             onSave={save}
-            onCancel={() => { setDraft(null); setExpenseType("one-time"); }}
+            onCancel={() => { setDraft(null); setExpenseType("one-time"); setAiSummary(null); }}
             submitLabel={expenseType === "recurring" ? t("recur.save") : t("add.submit")}
           >
             {/* Recurring toggle — sits between category and save button */}

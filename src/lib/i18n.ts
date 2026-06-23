@@ -45,6 +45,12 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "login.tagline": { es: "Gastos en grupo, sin líos.", en: "Group expenses, no headaches." },
   "app.poweredAI": { es: "Impulsado por IA", en: "Powered by AI" },
+  "ai.assumed": { es: "Asumí", en: "Assumed" },
+  "ai.youPay": { es: "pagas tú", en: "you pay" },
+  "ai.paysName": { es: "paga {name}", en: "{name} pays" },
+  "ai.multiPay": { es: "varios pagadores", en: "multiple payers" },
+  "ai.among": { es: "entre {n}", en: "split {n} ways" },
+  "ai.each": { es: "{amt} c/u", en: "{amt} each" },
   "login.subtitle": { es: "Inicia sesión para guardar tus grupos y compartirlos.", en: "Sign in to save and share your groups." },
   "login.google": { es: "Continuar con Google", en: "Continue with Google" },
   "login.or": { es: "o", en: "or" },

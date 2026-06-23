@@ -60,7 +60,16 @@ Rules:
 - participantIds: who SHARES the cost — INDEPENDENT from who paid. Often the whole group even if only one or two people paid. If unclear, include ALL member ids.
 - category: best match from the allowed list; if none fits use "otros".
 - interval: "daily" | "weekly" | "monthly" | "yearly" if recurring, else null.
-- Match names loosely: nicknames and diminutives count (e.g. "Ale" -> "Alecita", "Pato" -> "Patricio"). Output member IDS, not names.`;
+- Match names loosely: nicknames and diminutives count (e.g. "Ale" -> "Alecita", "Pato" -> "Patricio"). Output member IDS, not names.
+
+Examples (sample roster — a: Ana, b: Luis, c: Me; "me"=c). Learn the behavior, then apply to the REAL members listed above:
+- "Cena 80" -> {"label":"Cena","amount":80,"payments":[{"memberId":"c","amount":80}],"participantIds":["a","b","c"],"category":"comida","interval":null}
+- "Cine 32 cada uno" -> {"label":"Cine","amount":96,"payments":[{"memberId":"c","amount":96}],"participantIds":["a","b","c"],"category":"ocio","interval":null}
+- "Pagó Ana 50 del súper" -> {"label":"Súper","amount":50,"payments":[{"memberId":"a","amount":50}],"participantIds":["a","b","c"],"category":"mercado","interval":null}
+- "Taxi, Ana 30 y yo 20" -> {"label":"Taxi","amount":50,"payments":[{"memberId":"a","amount":30},{"memberId":"c","amount":20}],"participantIds":["a","b","c"],"category":"transporte","interval":null}
+- "Netflix 15 mensual" -> {"label":"Netflix","amount":15,"payments":[{"memberId":"c","amount":15}],"participantIds":["a","b","c"],"category":"servicios","interval":"monthly"}
+- "Cena 100 menos Luis" -> {"label":"Cena","amount":100,"payments":[{"memberId":"c","amount":100}],"participantIds":["a","c"],"category":"comida","interval":null}
+- "¿qué tiempo hace?" -> {"label":"","amount":0,"payments":[],"participantIds":[],"category":"otros","interval":null}`;
 
     const res = await fetch(API_URL, {
       method: "POST",
@@ -92,7 +101,10 @@ Rules:
     // Saneamos la salida para que sea siempre usable, aunque el modelo se
     // desvíe: IDs válidos, categoría permitida, intervalo válido o null.
     const clean = sanitize(parsed, { memberIds, meId, categories: catArr });
-    return json(clean);
+    // "por persona": no fiamos la multiplicación al modelo pequeño; la forzamos
+    // en el servidor a partir del número de la nota × nº de participantes.
+    const final = enforcePerPerson(String(text), clean);
+    return json(final);
   } catch (e) {
     console.error(e);
     return json({ error: "internal" }, 500);
@@ -155,6 +167,40 @@ function sanitize(
     category,
     interval,
   };
+}
+
+// Si la nota expresa un importe POR PERSONA, recalcula el total = valor × nº de
+// participantes (el número se toma de la nota, el más cercano al marcador).
+function enforcePerPerson(
+  text: string,
+  clean: { amount: number; payerId: string; payments: { memberId: string; amount: number }[]; participantIds: string[] } & Record<string, unknown>
+) {
+  const marker =
+    /cada\s+un[oa]|c\/u|por\s+cabeza|por\s+persona|apiece|per\s+person|per\s+head|\beach\b(?!\s+(day|week|month|year|d[ií]a|semana|mes|a[ñn]o))/i.exec(
+      text
+    );
+  if (!marker) return clean;
+  const n = clean.participantIds.length || 1;
+
+  // Número de la nota más cercano al marcador "por persona".
+  const numRe = /\d+(?:[.,]\d+)?/g;
+  let best: number | null = null;
+  let bestDist = Infinity;
+  let m: RegExpExecArray | null;
+  while ((m = numRe.exec(text)) !== null) {
+    const val = Number(m[0].replace(/\.(?=\d{3}\b)/g, "").replace(",", "."));
+    if (!Number.isFinite(val)) continue;
+    const dist = Math.abs(m.index - marker.index);
+    if (dist < bestDist) { bestDist = dist; best = val; }
+  }
+  if (best == null) return clean;
+
+  const total = Math.round(best * n * 100) / 100;
+  let payments = clean.payments;
+  const sum = payments.reduce((a, b) => a + b.amount, 0);
+  // Si los pagos no cuadran con el nuevo total, asume un único pagador.
+  if (Math.abs(sum - total) > 0.01) payments = [{ memberId: clean.payerId, amount: total }];
+  return { ...clean, amount: total, payments };
 }
 
 function extractJson(text: string): Record<string, unknown> | null {
