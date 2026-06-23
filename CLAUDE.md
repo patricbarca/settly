@@ -92,8 +92,8 @@ SettliA (brand styled **Settl·iA**, the "iA" highlighted = AI) is a PWA for spl
 - CI deploys from `master` branch only (`.github/workflows/`)
 
 ## Pending / known issues
-- **Web Push not deployed yet** (blocks daily reminders): run `push_subscriptions.sql`, `supabase functions deploy send-push`, set `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT`. Then for reminders: `supabase functions deploy daily-reminders --no-verify-jwt`, `supabase secrets set CRON_SECRET=…`, and run `supabase/cron_daily_reminders.sql` (fill `<PROJECT_REF>` + `<CRON_SECRET>`). Cron schedule is UTC — for ~9am Sydney use `0 23 * * *`, for ~9am Spain use `0 8 * * *`.
-- **Reminder messages are Spanish-only** (no per-user language stored). Future: store user lang to localize push.
+- **Web Push not deployed yet** (blocks daily reminders): run `push_subscriptions.sql`, `supabase functions deploy send-push`, set `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT`. Then for reminders: `supabase functions deploy daily-reminders --no-verify-jwt`, `supabase secrets set CRON_SECRET=…`, and run `supabase/cron_daily_reminders.sql` (fill `<PROJECT_REF>` + `<CRON_SECRET>`). Cron is set to **`0 23 * * *` (≈9–10am Australia/Sydney)**.
+- **Daily reminders are bilingual (ES/EN):** `push_subscriptions.lang` stores each user's language (set on subscribe from `settly.lang`); `daily-reminders` localizes the message per subscription.
 - **Overall balance pills assume one currency** (first active group's); mixed-currency groups would total incorrectly.
 - **`PayMethodModal.tsx` is now orphaned** (editing moved to the profile). Safe to delete later.
 - **Edge Functions deploy manually**, not via CI — when you change `supabase/functions/*`, re-paste the single file in the Supabase dashboard editor and Deploy. The repo copy is just the source of truth.

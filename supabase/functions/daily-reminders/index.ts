@@ -88,6 +88,22 @@ function money(n: number, cur: string) {
   return `${cur}${Math.abs(n).toFixed(2)}`;
 }
 
+type Target = { kind: "add" | "settle"; group: string; amount?: number; currency?: string };
+
+// Mensaje localizado según el idioma del usuario (es/en).
+function buildBody(t: Target, lang: string): string {
+  const en = lang === "en";
+  if (t.kind === "add") {
+    return en
+      ? `${t.group}: add your expenses and mark you're done.`
+      : `${t.group}: agrega tus gastos y marca que ya terminaste.`;
+  }
+  const amt = money(t.amount ?? 0, t.currency ?? "");
+  return en
+    ? `${t.group}: you still owe ${amt}. Time to settle up.`
+    : `${t.group}: aún debes ${amt}. Salda tus cuentas.`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
@@ -102,8 +118,8 @@ Deno.serve(async (req) => {
     const { data: rows, error } = await admin.from("groups").select("id, data");
     if (error) return json({ error: error.message }, 500);
 
-    // userId -> mensaje a enviar (acumulamos por usuario entre grupos).
-    const messages = new Map<string, string>();
+    // userId -> qué recordarle (el texto se localiza al enviar, según su idioma).
+    const targets = new Map<string, Target>();
 
     for (const row of rows ?? []) {
       const g = row.data as Group;
@@ -127,7 +143,7 @@ Deno.serve(async (req) => {
         if ((g.expenses ?? []).length === 0) continue;
         for (const m of notReady) {
           const uid = userOf.get(m.id);
-          if (uid) messages.set(uid, `${g.name}: agrega tus gastos y marca que ya terminaste.`);
+          if (uid) targets.set(uid, { kind: "add", group: g.name });
         }
       } else {
         // Fase B: todos listos → recordar a quien aún debe pagar.
@@ -136,25 +152,26 @@ Deno.serve(async (req) => {
           const v = net[m.id] ?? 0;
           if (v < -0.01) {
             const uid = userOf.get(m.id);
-            if (uid) messages.set(uid, `${g.name}: aún debes ${money(v, g.currency)}. Salda tus cuentas.`);
+            if (uid) targets.set(uid, { kind: "settle", group: g.name, amount: v, currency: g.currency });
           }
         }
       }
     }
 
-    const userIds = [...messages.keys()];
+    const userIds = [...targets.keys()];
     if (userIds.length === 0) return json({ sent: 0, users: 0 });
 
     const { data: subs } = await admin
       .from("push_subscriptions")
-      .select("endpoint, user_id, subscription")
+      .select("endpoint, user_id, subscription, lang")
       .in("user_id", userIds);
 
     let sent = 0;
     await Promise.all(
-      (subs ?? []).map(async (s: { endpoint: string; user_id: string; subscription: unknown }) => {
-        const body = messages.get(s.user_id);
-        if (!body) return;
+      (subs ?? []).map(async (s: { endpoint: string; user_id: string; subscription: unknown; lang?: string }) => {
+        const tgt = targets.get(s.user_id);
+        if (!tgt) return;
+        const body = buildBody(tgt, s.lang ?? "es");
         const payload = JSON.stringify({ title: "SettliA", body, url: APP_URL });
         try {
           await webpush.sendNotification(s.subscription, payload);

@@ -23,11 +23,11 @@ select cron.unschedule('settlia-daily-reminders')
 where exists (select 1 from cron.job where jobname = 'settlia-daily-reminders');
 
 -- Programa el recordatorio diario.
--- '0 17 * * *' = todos los días a las 17:00 UTC. Ajusta la hora a tu zona
--- (p. ej. para ~10:00 en Australia/Sydney usa una hora UTC distinta).
+-- '0 23 * * *' = 23:00 UTC ≈ 9:00 AEST / 10:00 AEDT (Australia/Sydney).
+-- (pg_cron corre en UTC; Sídney no observa DST en invierno → ~9-10am todo el año.)
 select cron.schedule(
   'settlia-daily-reminders',
-  '0 17 * * *',
+  '0 23 * * *',
   $$
   select net.http_post(
     url     := 'https://<PROJECT_REF>.supabase.co/functions/v1/daily-reminders',

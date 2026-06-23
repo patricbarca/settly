@@ -49,8 +49,12 @@ export async function enablePush(): Promise<EnableResult> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return "error";
 
+    // Idioma del usuario (para localizar los recordatorios push diarios).
+    const lang =
+      typeof localStorage !== "undefined" && localStorage.getItem("settly.lang") === "en" ? "en" : "es";
+
     const { error } = await supabase.from("push_subscriptions").upsert(
-      { user_id: user.id, endpoint: sub.endpoint, subscription: sub.toJSON() },
+      { user_id: user.id, endpoint: sub.endpoint, subscription: sub.toJSON(), lang },
       { onConflict: "endpoint" }
     );
     if (error) return "error";
