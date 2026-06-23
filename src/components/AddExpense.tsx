@@ -283,7 +283,7 @@ export function AddExpense({ group }: { group: Group }) {
 
       {draft && (
         <div className="mt-4 glass rounded-3xl p-4 anim-pop">
-          <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{t("add.review")}</div>
+          <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{aiSummary ? t("add.review") : t("add.manualReview")}</div>
 
           {aiSummary && (
             <div className="mb-3 -mt-1 flex items-start gap-1.5 text-[11px] text-muted">

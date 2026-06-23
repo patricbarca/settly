@@ -230,6 +230,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "add.manual": { es: "Manual", en: "Manual" },
   "add.scan": { es: "Escanear", en: "Scan" },
   "add.review": { es: "Revisa y confirma", en: "Review and confirm" },
+  "add.manualReview": { es: "Agregar gasto", en: "Add expense" },
   "add.submit": { es: "Añadir gasto", en: "Add expense" },
   "add.dictate": { es: "Dictar", en: "Dictate" },
   "add.voiceOff": { es: "Voz no disponible en este navegador", en: "Voice not available in this browser" },
@@ -238,7 +239,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "add.micError": { es: "No se pudo acceder al micrófono. Revisa los permisos.", en: "Couldn't access the microphone. Check permissions." },
   "add.sttError": { es: "No se pudo transcribir. Revisa tu conexión e inténtalo de nuevo.", en: "Couldn't transcribe. Check your connection and try again." },
 
-  "form.concept": { es: "Concepto", en: "What for" },
+  "form.concept": { es: "Añade una descripción", en: "Add a description" },
   "form.paid": { es: "Pagó", en: "Paid" },
   "form.between": { es: "Entre", en: "Between" },
   "form.each": { es: "c/u", en: "each" },
