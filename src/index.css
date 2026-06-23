@@ -133,6 +133,13 @@ button:focus-visible, input:focus-visible, a:focus-visible, [role="button"]:focu
 * { scrollbar-width: thin; scrollbar-color: rgba(40, 40, 70, 0.22) transparent; }
 
 /* ===== hero liquid glass ===== */
+/* Acento "iA" del wordmark: azul brillante con halo oscuro para que destaque
+   sobre el degradado azul/lavanda del hero (si no, se confunde con el fondo). */
+.wm-ai {
+  color: #7DB8FF;
+  text-shadow: 0 1px 10px rgba(10, 18, 45, 0.6), 0 0 2px rgba(10, 18, 45, 0.5);
+}
+
 .hero {
   position: relative;
   overflow: hidden;

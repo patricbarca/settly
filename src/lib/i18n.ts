@@ -44,6 +44,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "app.signout": { es: "Salir", en: "Sign out" },
 
   "login.tagline": { es: "Gastos en grupo, sin líos.", en: "Group expenses, no headaches." },
+  "app.poweredAI": { es: "Impulsado por IA", en: "Powered by AI" },
   "login.subtitle": { es: "Inicia sesión para guardar tus grupos y compartirlos.", en: "Sign in to save and share your groups." },
   "login.google": { es: "Continuar con Google", en: "Continue with Google" },
   "login.or": { es: "o", en: "or" },

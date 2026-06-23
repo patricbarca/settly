@@ -40,8 +40,9 @@ export function Home() {
             <div className="glass rounded-3xl p-3 mb-4">
               <Logo size={54} />
             </div>
-            <h1 className="text-white font-display text-5xl font-extrabold tracking-tight">Settl<span className="text-[#60A5FA]">iA</span></h1>
+            <h1 className="text-white font-display text-5xl font-extrabold tracking-tight">Settl<span className="wm-ai">iA</span></h1>
             <p className="text-white/85 text-base mt-2.5 max-w-md leading-relaxed">{t("login.tagline")}</p>
+            <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/60 mt-1.5">{t("app.poweredAI")}</div>
             <button
               onClick={() => setCreating(true)}
               className="mt-5 rounded-full px-6 py-3 font-semibold hover-lift text-[#241C53] inline-flex items-center gap-1.5"
