@@ -6,7 +6,7 @@ export function Logo({ size = 40 }: { size?: number }) {
       src={cowLogo}
       width={size}
       height={size}
-      alt="cow.ai"
+      alt="Cow.ai"
       style={{ display: "block", borderRadius: size * 0.235 }}
     />
   );

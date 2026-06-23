@@ -2,12 +2,12 @@ import { useState } from "react";
 import type { Group } from "../lib/types";
 import { computeSettle } from "../lib/split";
 import { updateGroup } from "../lib/store";
-import { payLink, payClipboardText, memberPays } from "../lib/pay";
 import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { PayMethodModal } from "./PayMethodModal";
 import { MarkPaidModal } from "./MarkPaidModal";
+import { PaySheet } from "./PaySheet";
 
 export function Balances({ group }: { group: Group }) {
   const t = useT();
@@ -21,28 +21,8 @@ export function Balances({ group }: { group: Group }) {
 
   const [methodsOpen, setMethodsOpen] = useState(false);
   const [mark, setMark] = useState<{ from: string; to: string; amount: number } | null>(null);
+  const [paySheet, setPaySheet] = useState<{ to: string; amount: number } | null>(null);
 
-  function pay(toId: string, amount: number) {
-    const payee = member(toId);
-    const methods = memberPays(payee);
-    // Si algún método tiene enlace web (PayPal, etc.), abre el primero.
-    for (const m of methods) {
-      const link = payLink(m, amount);
-      if (link) {
-        window.open(link, "_blank", "noopener");
-        return;
-      }
-    }
-    // Si no, copia el primer método (PayID, transferencia, Bizum…).
-    if (methods.length) {
-      const txt = payClipboardText(methods[0]);
-      navigator.clipboard?.writeText(txt).catch(() => {});
-      alert(t("pay.copied", { v: txt }));
-      return;
-    }
-    alert(t("pay.noMethod", { name: payee?.name ?? "" }));
-    setMethodsOpen(true);
-  }
   const confirmS = (id: string) =>
     updateGroup(group.id, (g) => ({
       ...g,
@@ -139,7 +119,7 @@ export function Balances({ group }: { group: Group }) {
                 </div>
                 <div className="flex gap-2 mt-1.5 pl-8">
                   <button
-                    onClick={() => pay(tr.to, tr.amount)}
+                    onClick={() => setPaySheet({ to: tr.to, amount: tr.amount })}
                     className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift"
                     style={{ background: "var(--teal)" }}
                   >
@@ -152,11 +132,6 @@ export function Balances({ group }: { group: Group }) {
                     {t("pay.markPaid")}
                   </button>
                 </div>
-                {memberPays(member(tr.to)).map((pm, k) => (
-                  <div key={k} className="text-[11px] text-muted mt-1 pl-8">
-                    {t(`pay.label.${pm.type}`)} · <span className="font-mono">{payClipboardText(pm)}</span>
-                  </div>
-                ))}
               </div>
             ))}
 
@@ -206,6 +181,9 @@ export function Balances({ group }: { group: Group }) {
       </div>
 
       {methodsOpen && <PayMethodModal group={group} onClose={() => setMethodsOpen(false)} />}
+      {paySheet && (
+        <PaySheet group={group} to={paySheet.to} amount={paySheet.amount} onClose={() => setPaySheet(null)} />
+      )}
       {mark && (
         <MarkPaidModal
           group={group}

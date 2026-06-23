@@ -17,10 +17,10 @@ export default defineConfig({
       },
       includeAssets: ["icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"],
       manifest: {
-        name: "cow.ai",
-        short_name: "cow.ai",
+        name: "Cow.ai",
+        short_name: "Cow.ai",
         description: "Gastos en grupo, sin líos.",
-        theme_color: "#6e8b3a",
+        theme_color: "#0FA3A3",
         background_color: "#111111",
         display: "standalone",
         orientation: "portrait",

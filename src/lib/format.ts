@@ -1,6 +1,6 @@
 import { currencyOf } from "./currencies";
 
-const PALETTE = ["#6E8B3A", "#FF5A4D", "#5B5BF0", "#E8920C", "#E84393", "#0EA5E9"];
+const PALETTE = ["#0FA3A3", "#FF5A4D", "#5B5BF0", "#E8920C", "#E84393", "#0EA5E9"];
 
 export function money(n: number, code = "EUR"): string {
   const c = currencyOf(code);

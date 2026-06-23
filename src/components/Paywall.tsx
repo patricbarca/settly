@@ -45,7 +45,7 @@ export function Paywall({ onClose }: { onClose: () => void }) {
           <div className="inline-flex items-center gap-2">
             <span
               className="h-9 w-9 rounded-full flex items-center justify-center"
-              style={{ background: "rgba(110,139,58,0.15)", color: "var(--indigo)" }}
+              style={{ background: "rgba(91,91,240,0.15)", color: "var(--indigo)" }}
             >
               <Icon name="sparkles" size={18} />
             </span>

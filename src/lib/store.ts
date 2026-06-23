@@ -64,13 +64,34 @@ async function loadGroups(userId: string) {
     .in("id", ids)
     .order("created_at", { ascending: false });
 
-  const groups: Group[] = (rows ?? []).map((r) => ({
-    ...(r.data as Group),
-    id: r.id,
-    meId: meMap[r.id],
-  }));
+  const groups: Group[] = [];
+  const removedFrom: string[] = [];
+  for (const r of rows ?? []) {
+    const data = r.data as Group;
+    const meId = meMap[r.id];
+    // Si fui expulsado del grupo, ya no aparezco en members[] del JSON aunque
+    // mi fila de group_members siga existiendo (la RLS no deja que el admin la
+    // borre). Detectarlo aquí: ocultar el grupo, limpiar mi membresía y la caché.
+    const stillMember = meId != null && (data.members ?? []).some((m) => m.id === meId);
+    if (!stillMember) {
+      removedFrom.push(r.id);
+      continue;
+    }
+    groups.push({ ...data, id: r.id, meId });
+  }
 
-  state = { groups, activeId: state.activeId, loading: false };
+  for (const gid of removedFrom) {
+    // "Leave group" RLS permite borrar la propia fila (user_id = auth.uid()).
+    supabase.from("group_members").delete().eq("group_id", gid).eq("user_id", userId).then(() => {});
+    idbDeleteGroup(gid).catch(() => {});
+    idbClearFromOutbox([gid]).catch(() => {});
+  }
+
+  state = {
+    groups,
+    activeId: groups.some((g) => g.id === state.activeId) ? state.activeId : null,
+    loading: false,
+  };
   emit();
 
   for (const g of groups) idbPutGroup(g).catch(() => {});
