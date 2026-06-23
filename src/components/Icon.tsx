@@ -42,7 +42,8 @@ export type IconName =
   | "external"
   | "sparkles"
   | "bell"
-  | "lock";
+  | "lock"
+  | "chat";
 
 function glyph(name: IconName): ReactNode {
   switch (name) {
@@ -305,6 +306,13 @@ function glyph(name: IconName): ReactNode {
         <>
           <rect x="5" y="11" width="14" height="9" rx="2" />
           <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+        </>
+      );
+    case "chat":
+      return (
+        <>
+          <path d="M21 12a8 8 0 0 1-8 8H7l-4 3v-5.5A8 8 0 1 1 21 12z" />
+          <path d="M8 11h8M8 14.5h5" />
         </>
       );
     default:

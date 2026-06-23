@@ -38,6 +38,11 @@ export function useLang(): Lang {
   return useSyncExternalStore(subscribe, () => lang, () => lang);
 }
 
+/** Idioma actual fuera de un componente (p. ej. para adjuntarlo a un envío). */
+export function getLang(): Lang {
+  return lang;
+}
+
 const DICT: Record<string, { es: string; en: string }> = {
   "app.footer": { es: "SettliA · los datos se guardan en este navegador.", en: "SettliA · data is saved in this browser." },
   "app.resetDemo": { es: "Reiniciar demo", en: "Reset demo" },
@@ -472,6 +477,23 @@ const DICT: Record<string, { es: string; en: string }> = {
   "account.payHint": { es: "Se muestra al saldar deudas con el grupo.", en: "Shown when settling debts in a group." },
   "account.saved":   { es: "Guardado", en: "Saved" },
   "account.changePhoto": { es: "Cambiar foto", en: "Change photo" },
+
+  "feedback.entry":    { es: "Enviar comentarios", en: "Send feedback" },
+  "feedback.entrySub": { es: "Valora la app o reporta un problema", en: "Rate the app or report a problem" },
+  "feedback.title":    { es: "Comentarios", en: "Feedback" },
+  "feedback.tabRate":  { es: "Valorar", en: "Rate" },
+  "feedback.tabBug":   { es: "Reportar problema", en: "Report a problem" },
+  "feedback.rateHint": { es: "¿Qué te parece SettliA?", en: "How do you like SettliA?" },
+  "feedback.ratePlaceholder": { es: "¿Qué te gusta? ¿Qué mejorarías? (opcional)", en: "What do you like? What would you improve? (optional)" },
+  "feedback.bugHint":  { es: "Cuéntanos qué pasó", en: "Tell us what happened" },
+  "feedback.bugPlaceholder": { es: "¿Qué pasó? ¿Cómo lo reproducimos?", en: "What happened? How can we reproduce it?" },
+  "feedback.bugContext": { es: "Adjuntaremos datos técnicos (versión, dispositivo) para ayudarnos a depurar.", en: "We'll attach technical info (version, device) to help us debug." },
+  "feedback.send":     { es: "Enviar", en: "Send" },
+  "feedback.sending":  { es: "Enviando…", en: "Sending…" },
+  "feedback.thanks":   { es: "¡Gracias por tu comentario!", en: "Thanks for your feedback!" },
+  "feedback.thanksSub": { es: "Lo revisaremos pronto.", en: "We'll review it soon." },
+  "feedback.errorGeneric": { es: "No se pudo enviar. Inténtalo de nuevo.", en: "Couldn't send. Please try again." },
+  "feedback.errorSession": { es: "Inicia sesión para enviar comentarios.", en: "Sign in to send feedback." },
 
   "common.ok": { es: "Entendido", en: "Got it" },
 

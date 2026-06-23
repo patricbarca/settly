@@ -12,6 +12,7 @@ import { usePlan, FREE_AI_QUOTA } from "../lib/plan";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 import { Paywall } from "./Paywall";
+import { FeedbackModal } from "./FeedbackModal";
 
 const PAY_TYPES: PayType[] = ["payid", "bank", "paypal", "revolut", "wise", "bizum", "bunq", "other"];
 
@@ -21,6 +22,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const groups = useGroups();
   const plan = usePlan();
   const [showPaywall, setShowPaywall] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const myMember = groups.map((g) => g.members.find((m) => m.id === g.meId)).find(Boolean);
 
@@ -359,6 +361,21 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
+        {/* Enviar comentarios / reportar problema */}
+        <button
+          onClick={() => setShowFeedback(true)}
+          className="glass rounded-xl p-3 mb-6 w-full flex items-center gap-2 text-left hover-lift"
+        >
+          <span className="h-8 w-8 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(91,91,240,0.14)", color: "var(--indigo)" }}>
+            <Icon name="chat" size={16} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold">{t("feedback.entry")}</div>
+            <div className="text-xs text-muted">{t("feedback.entrySub")}</div>
+          </div>
+          <Icon name="chevron" size={16} className="text-muted shrink-0" />
+        </button>
+
         <div className="flex gap-2">
           <button
             onClick={save}
@@ -393,6 +410,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
+        {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
       </div>
     </Overlay>
   );
