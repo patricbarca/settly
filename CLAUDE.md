@@ -1,11 +1,15 @@
 # Settly — Claude Context
 
 ## What this app is
-Settly is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScript + Tailwind CSS v4. Deployed via GitHub Actions to GitHub Pages at `https://patricbarca.github.io/settly/`.
+SettliA (brand styled **Settl·iA**, the "iA" highlighted = AI) is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScript + Tailwind CSS v4. Deployed via GitHub Actions to GitHub Pages on the custom domain **`app.settlia.app`** (Vite `base: "/"`). The marketing landing is **`settlia.app`**.
 
-## Repos
-- **`patricbarca/settly`** — the main app (this repo). Branch `master` deploys to GitHub Pages automatically.
-- **`patricbarca/settly-landing`** — separate landing page. Plain HTML/CSS at the repo root (`index.html`, `styles.css`, `assets/`), no build step. GitHub Pages serves it via "Deploy from a branch" → `master` / root (the auto-generated `pages build and deployment` workflow). Both repos are in scope and pushed directly from Claude Code sessions.
+> **Rebrand history:** was "Settly", briefly "Cow.ai", now **SettliA** with Settly's original colors/logo (teal `#0FA3A3` / indigo `#5B5BF0`, two-circle+check mark). The pre-rebrand state is preserved on the `settly-original` branch of both repos.
+
+## Repos & domains
+- **`patricbarca/settly`** — the app. Branch `master` → GitHub Pages → **`app.settlia.app`** (CNAME in `public/CNAME`, `base: "/"`).
+- **`patricbarca/settly-landing`** — landing. Plain HTML/CSS at repo root, no build. "Deploy from a branch" → `master` / root → **`settlia.app`** (root `CNAME`).
+- **DNS (GoDaddy):** apex `settlia.app` → 4 A records to GitHub Pages (185.199.108–111.153); `app` → CNAME `patricbarca.github.io`; `www` → CNAME `settlia.app`.
+- **Auth note:** Supabase Site URL + Redirect URLs must include `https://app.settlia.app` (Google OAuth redirects via the Supabase callback, so Google Cloud needs no domain change).
 
 ## Key files
 - `src/index.css` — CSS variables, glass/glass-strong components, dark mode, animations
@@ -38,6 +42,16 @@ Settly is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScr
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Rebrand to SettliA + custom domain + settle/reminders
+- **Rebrand → SettliA** in both repos (logo + colors reverted to Settly's; `settly-original` branch keeps the old state). Wordmark: `Settl` + `iA` accent. In-app hero the `iA` uses `.wm-ai` (bright blue `#7DB8FF` + dark halo) so it doesn't blend into the hero gradient; landing uses `#2563EB` (nav) / `#60A5FA` (dark mockup). "Powered by AI" line under the tagline (`app.poweredAI`).
+- **Custom domain:** app on `app.settlia.app` (`base: "/"`, `public/CNAME`, manifest/`index.html`/`push-sw.js`/`fonts.css` paths all root-relative), landing on `settlia.app`.
+- **Activity log (separate from notifications):** `group.activity: ActivityEvent[]` (JSON, no SQL, realtime-synced). `src/lib/activity.ts` (`withActivity`, `buildActivity`). Includes your OWN actions + more event types (group/member/expense/payment/ready/recurring/scan). The bell opens a full-screen view with a **Notificaciones | Actividad** segmented toggle. Notifications badge moved OUTSIDE the `.glass` button (it was clipped by `overflow:hidden`).
+- **Settle-up by role (`Balances.tsx`):** "Group balances" stacked above "To settle up" (was 2-col). **Pay** button only for the debtor (`from === me`); **Mark paid** only for the creditor (`to === me`) and it now creates a `confirmed` settlement directly (MarkPaidModal reworded to "confirm received"). Removed the payment-methods editor from Balances (`PayMethodModal` now orphaned) — pay methods are edited **only** in the profile (`AccountModal`); `PaySheet` still shows them read-only when paying.
+- **Home overall balance pills:** above the groups list, aggregated across active groups — `T:` total spent (your share), `↓` total you owe (red), `↑` total you're owed (green). Assumes one currency (uses first group's).
+- **Parser "per person":** "X cada uno / c/u / each / por persona" → total = X × participants. In both `parse.ts` (local) and the `parse-expense` LLM prompt.
+- **"Added everything" status** (`ReadyToSettle`): mark you're done + see everyone's status. The manual **Remind** button was removed (reminders are now automatic/daily); non-ready members show a "Pending" label.
+- **Daily reminders (code ready, NOT deployed):** `supabase/functions/daily-reminders/index.ts` (cron-triggered push: phase A = nudge those not "ready" if the group has expenses; phase B = once all ready, nudge debtors until settled) + `supabase/cron_daily_reminders.sql` (pg_cron + pg_net, daily). Protected by `CRON_SECRET`; reuses VAPID + `push_subscriptions`. **Requires Web Push deployed first** (see Pending).
+
 ### AI live on Groq + receipt scanning (PRs #34–#37)
 - **All three AI functions deployed on Groq** (one key, `STT_API_KEY`): `transcribe` (Whisper turbo), `parse-expense` (`llama-3.1-8b-instant`), `scan-receipt` (`llama-4-scout`). Deployed manually via the Supabase dashboard editor (single-file paste); Edge Functions do **not** deploy via CI.
 - **`parse-expense`**: forces JSON, server-side **sanitize** (valid member IDs, allowed category, valid interval), matches **nicknames/diminutives** ("Ale"→"Alecita"), and a hardened system prompt (note is untrusted data, never instructions; non-expense → amount 0).
@@ -78,6 +92,10 @@ Settly is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScr
 - CI deploys from `master` branch only (`.github/workflows/`)
 
 ## Pending / known issues
+- **Web Push not deployed yet** (blocks daily reminders): run `push_subscriptions.sql`, `supabase functions deploy send-push`, set `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT`. Then for reminders: `supabase functions deploy daily-reminders --no-verify-jwt`, `supabase secrets set CRON_SECRET=…`, and run `supabase/cron_daily_reminders.sql` (fill `<PROJECT_REF>` + `<CRON_SECRET>`). Cron schedule is UTC — for ~9am Sydney use `0 23 * * *`, for ~9am Spain use `0 8 * * *`.
+- **Reminder messages are Spanish-only** (no per-user language stored). Future: store user lang to localize push.
+- **Overall balance pills assume one currency** (first active group's); mixed-currency groups would total incorrectly.
+- **`PayMethodModal.tsx` is now orphaned** (editing moved to the profile). Safe to delete later.
 - **Edge Functions deploy manually**, not via CI — when you change `supabase/functions/*`, re-paste the single file in the Supabase dashboard editor and Deploy. The repo copy is just the source of truth.
 - **`delete-account` Edge Function** (RGPD/stores) needs deploying (service-role; deletes push subs + memberships + profile + auth user). Called from `auth.deleteAccount()`, wired to a "Delete account" danger button in `AccountModal`.
 - **Legal pages** live in the landing repo (`privacy.html`, `terms.html`, bilingual, linked in footer). Update the contact email + get a lawyer review before ads.

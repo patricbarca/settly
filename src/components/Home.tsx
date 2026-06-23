@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useGroups, setActiveGroup, archiveGroup } from "../lib/store";
-import { computeSettle } from "../lib/split";
+import { computeSettle, shareFor } from "../lib/split";
 import { groupSettleScore } from "../lib/gamification";
 import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -28,6 +28,22 @@ export function Home() {
   const hasExpense = active.some((g) => g.expenses.length > 0);
   const hasSettlement = active.some((g) => (g.settlements ?? []).some((s) => s.status === "confirmed"));
   const allDone = hasGroup && hasExpense && hasSettlement;
+
+  // Balance global de todos los grupos activos. Asume una sola moneda (la del
+  // primer grupo); con monedas mixtas el total sería orientativo.
+  const overallCur = active[0]?.currency ?? "$";
+  let spent = 0;
+  let owe = 0;
+  let owed = 0;
+  for (const g of active) {
+    const ids = g.members.map((m) => m.id);
+    for (const e of g.expenses) spent += shareFor(e, ids)[g.meId] || 0;
+    const { net } = computeSettle(g.members, g.expenses, g.settlements ?? []);
+    const mine = net[g.meId] || 0;
+    if (mine > 0.01) owed += mine;
+    else if (mine < -0.01) owe += -mine;
+  }
+  const showOverall = active.length > 0 && spent > 0.01;
 
   return (
     <div className="max-w-2xl mx-auto px-4 pb-10">
@@ -102,6 +118,30 @@ export function Home() {
             title={t("onboard.step3t")}
             desc={t("onboard.step3d")}
           />
+        </div>
+      )}
+
+      {/* Balance global (todos los grupos): gastado (T), debo (↓), me deben (↑) */}
+      {showOverall && (
+        <div className="mt-6">
+          <p className="text-xs font-semibold text-muted px-1 uppercase tracking-wide mb-2">{t("home.overall")}</p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="glass rounded-full px-3.5 py-1.5 text-sm font-mono font-bold">
+              T: {money(spent, overallCur)}
+            </span>
+            <span
+              className="rounded-full px-3.5 py-1.5 text-sm font-mono font-bold"
+              style={{ background: "rgba(209,68,68,0.12)", color: "#D14444" }}
+            >
+              ↓ {money(owe, overallCur)}
+            </span>
+            <span
+              className="rounded-full px-3.5 py-1.5 text-sm font-mono font-bold"
+              style={{ background: "rgba(10,139,94,0.12)", color: "#0A8B5E" }}
+            >
+              ↑ {money(owed, overallCur)}
+            </span>
+          </div>
         </div>
       )}
 

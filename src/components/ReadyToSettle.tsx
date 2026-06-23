@@ -1,4 +1,4 @@
-import type { Group, Member } from "../lib/types";
+import type { Group } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { withActivity } from "../lib/activity";
 import { personColor, memberInitials } from "../lib/format";
@@ -26,11 +26,6 @@ export function ReadyToSettle({ group }: { group: Group }) {
       };
     });
   }
-  function remind(m: Member) {
-    // DEMO: aviso local. El push/email real necesita backend (Supabase + notificaciones).
-    alert(t("ready.reminded", { name: m.name }));
-  }
-
   return (
     <section className="glass rounded-3xl p-5">
       <div className="text-xs uppercase tracking-widest font-mono text-muted">{t("ready.title")}</div>
@@ -56,12 +51,9 @@ export function ReadyToSettle({ group }: { group: Group }) {
                   <Icon name="check" size={14} /> {t("ready.done")}
                 </span>
               ) : (
-                <button
-                  onClick={() => remind(m)}
-                  className="ml-auto glass rounded-full px-3 py-1 text-xs hover-lift text-muted"
-                >
-                  {t("ready.remind")}
-                </button>
+                <span className="ml-auto text-xs inline-flex items-center gap-1 text-muted">
+                  <Icon name="clock" size={13} /> {t("ready.pending")}
+                </span>
               )}
             </div>
           );
