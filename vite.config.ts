@@ -3,7 +3,16 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
+// Sello de build para saber qué versión está desplegada (útil con la caché del
+// PWA en iOS). En CI usa el commit; en local, "dev".
+const BUILD_ID =
+  (new Date().toISOString().slice(0, 16).replace("T", " ")) +
+  (process.env.GITHUB_SHA ? ` · ${process.env.GITHUB_SHA.slice(0, 7)}` : " · dev");
+
 export default defineConfig({
+  define: {
+    __BUILD_ID__: JSON.stringify(BUILD_ID),
+  },
   plugins: [
     react(),
     tailwindcss(),

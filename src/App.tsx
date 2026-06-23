@@ -128,6 +128,7 @@ export default function App() {
         ) : (
           t("app.footerCloud")
         )}
+        <div className="mt-1.5 opacity-50 font-mono text-[10px]">v {__BUILD_ID__}</div>
       </footer>
     </div>
   );
