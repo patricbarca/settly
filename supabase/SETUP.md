@@ -8,7 +8,7 @@ Edge Functions — cosas que requieren tus cuentas.
 Sustituye en toda la guía:
 - `TU-PROYECTO` → la referencia de tu proyecto Supabase (la parte de
   `https://TU-PROYECTO.supabase.co`).
-- URL del sitio: `https://patricbarca.github.io/settly/`
+- URL del sitio: `https://app.settlia.app/`
 
 ---
 
@@ -34,9 +34,9 @@ no requieren nada más.
 - OTP expiry: 3600
 
 **Authentication → URL Configuration**
-- *Site URL*: `https://patricbarca.github.io/settly/`
-- *Redirect URLs*: añade `https://patricbarca.github.io/settly/`
-  (y `http://localhost:5173/settly/` si pruebas en local)
+- *Site URL*: `https://app.settlia.app/`
+- *Redirect URLs*: añade `https://app.settlia.app/`
+  (y `http://localhost:5174/` si pruebas en local)
 
 Con esto, "crear cuenta" ya funciona: el usuario mete email → recibe un código →
 lo introduce → cuenta creada (`signInEmail`/`verifyOtp` en `src/lib/auth.ts`).
@@ -49,7 +49,7 @@ lo introduce → cuenta creada (`signInEmail`/`verifyOtp` en `src/lib/auth.ts`).
 3. **APIs & Services → Credentials → Create credentials → OAuth client ID**
    - Application type: **Web application**
    - *Authorized JavaScript origins*:
-     - `https://patricbarca.github.io`
+     - `https://app.settlia.app`
      - `https://TU-PROYECTO.supabase.co`
    - *Authorized redirect URIs*:
      - `https://TU-PROYECTO.supabase.co/auth/v1/callback`
@@ -61,8 +61,8 @@ lo introduce → cuenta creada (`signInEmail`/`verifyOtp` en `src/lib/auth.ts`).
 
 Listo: el botón "Continuar con Google" (`signInGoogle`) ya funciona.
 
-> Nota: el `redirectTo` de la app es `window.location.origin + BASE_URL`
-> (= `https://patricbarca.github.io/settly/`), por eso debe estar en *Redirect URLs*.
+> Nota: el `redirectTo` de la app es `window.location.origin + BASE_URL` (BASE_URL = `/`)
+> (= `https://app.settlia.app/`), por eso debe estar en *Redirect URLs*.
 
 ---
 
@@ -104,6 +104,33 @@ supabase secrets set STT_MODEL=whisper-large-v3-turbo
 
 Mientras no esté desplegada, en iPhone el dictado simplemente no transcribe
 (sin error visible); en Android/escritorio funciona igual.
+
+---
+
+## 4b. Web Push, recordatorios diarios y borrar cuenta (Fase 2)
+
+```bash
+# 1) Web Push
+#    SQL Editor: ejecuta supabase/push_subscriptions.sql  (incluye columna lang)
+supabase functions deploy send-push
+supabase secrets set VAPID_PUBLIC_KEY=...  VAPID_PRIVATE_KEY=...  VAPID_SUBJECT=mailto:hola@settlia.app
+#    (genera el par con: npx web-push generate-vapid-keys; la pública ya está en src/lib/push.ts)
+
+# 2) Recordatorios diarios (requiere lo anterior)
+supabase functions deploy daily-reminders --no-verify-jwt
+supabase secrets set CRON_SECRET=<algo-largo-y-secreto>
+#    SQL Editor: supabase/cron_daily_reminders.sql  (rellena <PROJECT_REF> y <CRON_SECRET>; cron 0 23 * * * = ~9-10am Sídney)
+
+# 3) Borrar cuenta (RGPD + requisito de tiendas)
+supabase functions deploy delete-account
+
+# 4) Re-deploy de parse-expense (para "por persona" forzado + few-shot)
+supabase functions deploy parse-expense
+```
+
+> iOS: el push solo llega si el usuario instaló la PWA (16.4+) y aceptó
+> notificaciones (toggle en Cuenta). Los mensajes de recordatorio son bilingües
+> (se localizan con `push_subscriptions.lang`).
 
 ---
 
