@@ -42,7 +42,7 @@ export function Balances({ group }: { group: Group }) {
         <span className="font-mono font-bold">{money(total, group.currency)}</span>
       </div>
 
-      <div className="grid sm:grid-cols-2 gap-3">
+      <div className="space-y-3">
       {/* Saldos por persona */}
       <div className="glass rounded-3xl p-5">
         <div className="text-xs uppercase tracking-widest font-mono text-muted">{t("bal.title")}</div>
