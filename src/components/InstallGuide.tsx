@@ -34,13 +34,15 @@ export function InstallGuide({ dark = false }: { dark?: boolean }) {
     clearInstallPrompt();
   }
 
-  if (installed) {
-    return (
-      <div className="inline-flex items-center gap-2 justify-center font-semibold" style={{ color: fg }}>
-        <Icon name="check" size={18} style={{ color: "#0A8B5E" }} /> {t("install.installed")}
-      </div>
-    );
-  }
+  // Indicador de "ya instalada" (no oculta los pasos: se muestran igual como guía).
+  const installedBadge = installed ? (
+    <div className="flex justify-center mb-3">
+      <span className="inline-flex items-center gap-1.5 font-semibold text-sm rounded-full px-3 py-1"
+        style={{ background: dark ? "rgba(155,246,201,0.18)" : "rgba(10,139,94,0.12)", color: dark ? "#9bf6c9" : "#0A8B5E" }}>
+        <Icon name="check" size={15} /> {t("install.installed")}
+      </span>
+    </div>
+  ) : null;
 
   if (ios) {
     const steps: React.ReactNode[] = [
@@ -50,6 +52,7 @@ export function InstallGuide({ dark = false }: { dark?: boolean }) {
     ];
     return (
       <div className="w-full max-w-xs mx-auto">
+        {installedBadge}
         <div className="rounded-2xl p-4 space-y-2.5" style={{ background: cardBg }}>
           {steps.map((s, i) => (
             <div key={i} className="flex items-start gap-2.5 text-sm" style={{ color: fg }}>
@@ -68,6 +71,7 @@ export function InstallGuide({ dark = false }: { dark?: boolean }) {
   // Android / escritorio
   return (
     <div className="w-full max-w-xs mx-auto text-center">
+      {installedBadge}
       {prompt && (
         <button onClick={install}
           className="w-full rounded-full py-3.5 font-bold hover-lift inline-flex items-center justify-center gap-2"
