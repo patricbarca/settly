@@ -230,7 +230,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "add.manual": { es: "Manual", en: "Manual" },
   "add.scan": { es: "Escanear", en: "Scan" },
   "add.review": { es: "Revisa y confirma", en: "Review and confirm" },
-  "add.manualReview": { es: "Agregar gasto", en: "Add expense" },
+  "add.manualReview": { es: "Ingresar gasto", en: "Enter expense" },
   "add.submit": { es: "Añadir gasto", en: "Add expense" },
   "add.dictate": { es: "Dictar", en: "Dictate" },
   "add.voiceOff": { es: "Voz no disponible en este navegador", en: "Voice not available in this browser" },

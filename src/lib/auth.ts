@@ -149,7 +149,26 @@ export function signInGuest() {
 export async function setProfileName(name: string) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
-  await supabase.from("profiles").upsert({ id: session.user.id, name: name.trim() });
+  const n = name.trim();
+  if (!n) return;
+  const uid = session.user.id;
+
+  // El perfil ya existe (lo crea el trigger handle_new_user o el primer login),
+  // así que un UPDATE directo es lo más fiable (solo usa la política UPDATE).
+  const { error: updErr } = await supabase
+    .from("profiles")
+    .update({ name: n })
+    .eq("id", uid);
+  if (updErr) {
+    // Fallback por si la fila aún no existiera.
+    const { error: upErr } = await supabase.from("profiles").upsert({ id: uid, name: n });
+    if (upErr) console.error("[auth] no se pudo guardar el nombre:", upErr.message);
+  }
+
+  // Mantén el nombre también en los metadatos de Auth, como respaldo en caso de
+  // que la lectura del perfil falle (fromSession recurre a user_metadata).
+  await supabase.auth.updateUser({ data: { name: n, full_name: n } }).catch(() => {});
+
   await fromSession(session);
 }
 
