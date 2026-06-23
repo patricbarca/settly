@@ -473,7 +473,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "pro.section":  { es: "Suscripción", en: "Subscription" },
   "pro.planFree": { es: "Plan Free", en: "Free plan" },
   "pro.planPro":  { es: "Plan Pro", en: "Pro plan" },
-  "pro.freeHint": { es: "{n} escaneos con IA al mes", en: "{n} AI scans per month" },
+  "pro.freeHint": { es: "{n} usos de IA al mes de cada tipo: escaneo, voz y texto", en: "{n} AI uses/month each: scan, voice & text" },
   "pro.proHint":  { es: "IA ilimitada y funciones Pro", en: "Unlimited AI and Pro features" },
   "pro.manage":   { es: "Gestionar", en: "Manage" },
 

@@ -10,7 +10,7 @@ import { CATEGORIES } from "../lib/types";
 import { useSpeech } from "../lib/speech";
 import { uid, money } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
-import { usePlan, useAIRemaining, consumeAI, FREE_AI_QUOTA } from "../lib/plan";
+import { usePlan, useAIRemaining, aiRemaining, consumeAI, FREE_AI_QUOTA, type AIKind } from "../lib/plan";
 import { Icon } from "./Icon";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 import { ScanReceiptModal } from "./ScanReceiptModal";
@@ -23,7 +23,9 @@ export function AddExpense({ group }: { group: Group }) {
   const t = useT();
   const plan = usePlan();
   const pro = plan === "pro";
-  const aiLeft = useAIRemaining();
+  const scanLeft = useAIRemaining("scan");
+  const voiceLeft = useAIRemaining("voice");
+  const textLeft = useAIRemaining("text");
   const [text, setText] = useState("");
   const [draft, setDraft] = useState<ExpenseDraft | null>(null);
   const [expenseType, setExpenseType] = useState<ExpenseType>("one-time");
@@ -39,12 +41,12 @@ export function AddExpense({ group }: { group: Group }) {
     const t = tx.trim();
     if (!t) return;
     setText(t);
-    interpret(t);
+    interpret(t, "voice");
   }, lang);
 
   function openScan() {
-    // Receipt scan is the AI feature gated by the freemium quota.
-    if (pro || consumeAI()) setScan(true);
+    // Escaneo de recibo: cuota propia de IA (3/mes en free).
+    if (pro || consumeAI("scan")) setScan(true);
     else setShowPaywall(true);
   }
 
@@ -53,13 +55,13 @@ export function AddExpense({ group }: { group: Group }) {
     setExpenseType((e) => (e === "recurring" ? "one-time" : "recurring"));
   }
 
-  async function interpret(override?: string) {
+  async function interpret(override?: string, kind: AIKind = "text") {
     const src = (override ?? text).trim();
     if (!src || interpreting) return;
     setInterpreting(true);
     // Con Pro o cupo disponible, usa el LLM (función parse-expense). Si no hay
     // cupo, falla o no está desplegado, cae al parser local de regex (gratis).
-    let r: ParsedExpense | null = await tryAI(src);
+    let r: ParsedExpense | null = await tryAI(src, kind);
     if (!r) r = parseExpense(src, group.members, group.meId);
     // Varios pagadores: solo si la IA devolvió ≥2 y los importes cuadran con
     // el total (si no, dejamos un único pagador para no crear un borrador roto).
@@ -105,8 +107,8 @@ export function AddExpense({ group }: { group: Group }) {
     setInterpreting(false);
   }
 
-  async function tryAI(src: string): Promise<ParsedExpense | null> {
-    if (!pro && aiLeft <= 0) return null;
+  async function tryAI(src: string, kind: AIKind): Promise<ParsedExpense | null> {
+    if (!pro && aiRemaining(kind) <= 0) return null;
     try {
       const ai = await parseExpenseAI(
         src,
@@ -120,7 +122,7 @@ export function AddExpense({ group }: { group: Group }) {
       const payments = (ai.payments || [])
         .filter((p) => ids.has(p.memberId) && Number(p.amount) > 0)
         .map((p) => ({ memberId: p.memberId, amount: Number(p.amount) }));
-      if (!pro) consumeAI();
+      if (!pro) consumeAI(kind);
       return {
         label: ai.label || "",
         amount: ai.amount || 0,
@@ -232,6 +234,7 @@ export function AddExpense({ group }: { group: Group }) {
           style={{ background: "var(--teal)" }}
         >
           <Icon name="sparkles" size={16} /> {interpreting ? "…" : t("add.add")}
+          {!pro && !interpreting && <span className="text-[9px] font-mono opacity-80">{textLeft}/{FREE_AI_QUOTA}</span>}
         </button>
       </div>
       {(sp.listening || sp.busy) && (
@@ -254,7 +257,10 @@ export function AddExpense({ group }: { group: Group }) {
           style={sp.listening ? { background: "#D14444", color: "#fff" } : undefined}
         >
           <Icon name="mic" size={18} />
-          {t("add.voice")}
+          <span className="inline-flex items-center gap-1">
+            {t("add.voice")}
+            {!pro && !sp.listening && <span className="text-[9px] font-mono opacity-70">{voiceLeft}/{FREE_AI_QUOTA}</span>}
+          </span>
         </button>
         <button
           onClick={openScan}
@@ -263,7 +269,7 @@ export function AddExpense({ group }: { group: Group }) {
           <Icon name="camera" size={18} />
           <span className="inline-flex items-center gap-1">
             {t("add.scan")}
-            {!pro && <span className="text-[9px] font-mono opacity-70">{aiLeft}/{FREE_AI_QUOTA}</span>}
+            {!pro && <span className="text-[9px] font-mono opacity-70">{scanLeft}/{FREE_AI_QUOTA}</span>}
           </span>
         </button>
         <button
