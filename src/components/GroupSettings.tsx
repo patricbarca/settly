@@ -19,6 +19,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
   const [name, setName] = useState(group.name);
   const [currency, setCurrency] = useState(() => resolveToCode(group.currency));
   const [kind, setKind] = useState<GroupKind>(group.kind ?? "trip");
+  const [simplify, setSimplify] = useState(group.simplifyDebts !== false);
   const [saved, setSaved] = useState(false);
 
   const { net } = computeSettle(group.members, group.expenses, group.settlements ?? []);
@@ -37,13 +38,14 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
   const dirty =
     name.trim() !== group.name ||
     currency !== resolveToCode(group.currency) ||
-    kind !== (group.kind ?? "trip");
+    kind !== (group.kind ?? "trip") ||
+    simplify !== (group.simplifyDebts !== false);
 
   function save() {
     const n = name.trim();
     const c = currency.trim();
     if (!n || !c) return;
-    updateGroup(group.id, (g) => ({ ...g, name: n, currency: c, kind }));
+    updateGroup(group.id, (g) => ({ ...g, name: n, currency: c, kind, simplifyDebts: simplify }));
     setSaved(true);
     setTimeout(() => { setSaved(false); onClose(); }, 800);
   }
@@ -146,6 +148,29 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
               );
             })}
           </div>
+        </div>
+
+        {/* Payment mode */}
+        <div className="mb-5">
+          <label className="text-xs font-semibold text-muted">{t("settings.payMode")}</label>
+          <div className="grid grid-cols-2 gap-2 mt-1.5">
+            {[true, false].map((s) => {
+              const on = simplify === s;
+              return (
+                <button
+                  key={String(s)}
+                  onClick={() => setSimplify(s)}
+                  className={`rounded-2xl p-2.5 text-sm font-semibold text-center hover-lift ${on ? "" : "glass"}`}
+                  style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                >
+                  {t(s ? "settings.paySimple" : "settings.payDirect")}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-muted mt-1.5">
+            {t(simplify ? "settings.payModeSimpleHint" : "settings.payModeDirectHint")}
+          </p>
         </div>
 
         {/* Members */}

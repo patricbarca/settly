@@ -51,6 +51,7 @@ SettliA (brand styled **Settl·iA**, the "iA" highlighted = AI) is a PWA for spl
 - **Parser "per person":** "X cada uno / c/u / each / por persona" → total = X × participants. In both `parse.ts` (local) and the `parse-expense` LLM prompt.
 - **"Added everything" status** (`ReadyToSettle`): mark you're done + see everyone's status. The manual **Remind** button was removed (reminders are now automatic/daily); non-ready members show a "Pending" label.
 - **Daily reminders (code ready, NOT deployed):** `supabase/functions/daily-reminders/index.ts` (cron-triggered push: phase A = nudge those not "ready" if the group has expenses; phase B = once all ready, nudge debtors until settled) + `supabase/cron_daily_reminders.sql` (pg_cron + pg_net, daily). Protected by `CRON_SECRET`; reuses VAPID + `push_subscriptions`. **Requires Web Push deployed first** (see Pending).
+- **Payment mode (`Group.simplifyDebts`, default true):** Balances picks `directTransfers()` (pay whoever fronted each expense) when `simplifyDebts === false`, else `computeSettle`'s minimal transfers. Toggle in GroupSettings (Simplificado/Directo). Free for everyone.
 - **Group kind (`Group.kind: "trip" | "home"`, default trip):** chosen on create + editable in settings. **"home"** (household/ongoing) hides the "I added everything" (`ReadyToSettle`) block — shows a "continuous accounts" note instead — and in `daily-reminders` skips phase A and only nudges debtors **weekly (Mondays UTC)**. **"trip"** = current behavior.
 
 ### AI live on Groq + receipt scanning (PRs #34–#37)

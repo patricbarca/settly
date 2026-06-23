@@ -456,6 +456,11 @@ const DICT: Record<string, { es: string; en: string }> = {
   "settings.custom":        { es: "Otra", en: "Other" },
   "settings.currencyOther": { es: "Otra moneda (CHF, kr, ₹…)", en: "Other currency (CHF, kr, ₹…)" },
   "settings.members":  { es: "Miembros", en: "Members" },
+  "settings.payMode": { es: "Modo de pago", en: "Payment mode" },
+  "settings.paySimple": { es: "Simplificado", en: "Simplified" },
+  "settings.payDirect": { es: "Directo", en: "Direct" },
+  "settings.payModeSimpleHint": { es: "Mínimas transferencias. Puede pedirte pagar a alguien con quien no compartiste gastos.", en: "Fewest transfers. May ask you to pay someone you didn't share expenses with." },
+  "settings.payModeDirectHint": { es: "Pagas a quien puso el dinero de cada gasto. Más pagos, pero más claro.", en: "You pay whoever fronted each expense. More payments, but clearer." },
   "settings.saved":    { es: "Guardado", en: "Saved" },
 
   "account.title":   { es: "Mi cuenta", en: "My account" },

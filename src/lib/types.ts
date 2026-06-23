@@ -139,6 +139,9 @@ export interface Group {
   name: string;
   currency: string; // símbolo, ej. "€"
   kind?: GroupKind; // por defecto "trip" si falta
+  /** true/undefined = pagos simplificados (mínimas transferencias);
+   *  false = pagos directos (pagas a quien puso el dinero de cada gasto). */
+  simplifyDebts?: boolean;
   meId: string; // quién soy yo
   members: Member[];
   expenses: Expense[];

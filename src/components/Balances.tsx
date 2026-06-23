@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Group } from "../lib/types";
-import { computeSettle } from "../lib/split";
+import { computeSettle, directTransfers } from "../lib/split";
 import { updateGroup } from "../lib/store";
 import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -11,7 +11,12 @@ import { PaySheet } from "./PaySheet";
 export function Balances({ group }: { group: Group }) {
   const t = useT();
   const settlements = group.settlements ?? [];
-  const { paid, net, transfers } = computeSettle(group.members, group.expenses, settlements);
+  const { paid, net, transfers: minTransfers } = computeSettle(group.members, group.expenses, settlements);
+  // Modo de pago: simplificado (mínimas transferencias) por defecto, o directo.
+  const transfers =
+    group.simplifyDebts === false
+      ? directTransfers(group.members, group.expenses, settlements)
+      : minTransfers;
   const total = group.expenses.reduce((s, e) => s + e.amount, 0);
   const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
   const member = (id: string) => group.members.find((m) => m.id === id);
