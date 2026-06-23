@@ -45,9 +45,9 @@ export function MarkPaidModal({
           to,
           amount: Math.round(amount * 100) / 100,
           date: new Date().toISOString().slice(0, 10),
-          // Lo confirma quien cobra → queda saldado directamente (es la autoridad
-          // que da fe de haber recibido el dinero).
-          status: "confirmed",
+          // Lo marca el deudor ("ya pagué") → queda PENDIENTE hasta que quien
+          // cobra lo confirme o lo rechace.
+          status: "pending",
           proof,
         },
       ],

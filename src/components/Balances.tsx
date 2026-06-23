@@ -17,6 +17,11 @@ export function Balances({ group }: { group: Group }) {
   const member = (id: string) => group.members.find((m) => m.id === id);
   const pending = settlements.filter((s) => s.status === "pending");
   const confirmed = settlements.filter((s) => s.status === "confirmed");
+  // ¿Hay ya un pago pendiente para esta transferencia (deudor→acreedor)?
+  const pendingFor = (from: string, to: string) =>
+    pending.find((s) => s.from === from && s.to === to);
+  // Pagos pendientes que ME toca confirmar (soy quien cobra).
+  const toConfirm = pending.filter((s) => s.to === group.meId);
 
   const [mark, setMark] = useState<{ from: string; to: string; amount: number } | null>(null);
   const [paySheet, setPaySheet] = useState<{ to: string; amount: number } | null>(null);
@@ -107,36 +112,40 @@ export function Balances({ group }: { group: Group }) {
                   <b>{name(tr.to)}</b>
                   <span className="font-mono font-bold ml-auto">{money(tr.amount, group.currency)}</span>
                 </div>
-                {(tr.from === group.meId || tr.to === group.meId) && (
-                  <div className="flex gap-2 mt-1.5 pl-8">
-                    {/* Solo quien debe pagar ve "Pagar" */}
-                    {tr.from === group.meId && (
-                      <button
-                        onClick={() => setPaySheet({ to: tr.to, amount: tr.amount })}
-                        className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift"
-                        style={{ background: "var(--teal)" }}
-                      >
-                        {t("pay.pay")}
-                      </button>
-                    )}
-                    {/* Solo quien cobra confirma el pago recibido */}
-                    {tr.to === group.meId && (
-                      <button
-                        onClick={() => setMark({ from: tr.from, to: tr.to, amount: tr.amount })}
-                        className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted"
-                      >
-                        {t("pay.markPaid")}
-                      </button>
+                {/* Solo el DEUDOR ve "Pagar" y "Marcar pagado". Si ya marcó, queda
+                    a la espera de que el acreedor confirme. */}
+                {tr.from === group.meId && (
+                  <div className="flex gap-2 mt-1.5 pl-8 items-center">
+                    {pendingFor(tr.from, tr.to) ? (
+                      <span className="text-xs text-muted inline-flex items-center gap-1">
+                        <Icon name="clock" size={13} /> {t("pay.awaiting")}
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => setPaySheet({ to: tr.to, amount: tr.amount })}
+                          className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift"
+                          style={{ background: "var(--teal)" }}
+                        >
+                          {t("pay.pay")}
+                        </button>
+                        <button
+                          onClick={() => setMark({ from: tr.from, to: tr.to, amount: tr.amount })}
+                          className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted"
+                        >
+                          {t("pay.markPaid")}
+                        </button>
+                      </>
                     )}
                   </div>
                 )}
               </div>
             ))}
 
-            {pending.length > 0 && (
+            {toConfirm.length > 0 && (
               <div className="pt-1">
                 <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1">{t("pay.pending")}</div>
-                {pending.map((s) => (
+                {toConfirm.map((s) => (
                   <div key={s.id} className="glass rounded-xl p-2.5 mb-1.5">
                     <div className="text-sm flex items-start gap-2">
                       <Icon name="clock" size={15} className="mt-0.5 shrink-0 text-muted" />
