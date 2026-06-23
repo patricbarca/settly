@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Group } from "../lib/types";
+import type { Group, GroupKind } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
@@ -18,6 +18,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
 
   const [name, setName] = useState(group.name);
   const [currency, setCurrency] = useState(() => resolveToCode(group.currency));
+  const [kind, setKind] = useState<GroupKind>(group.kind ?? "trip");
   const [saved, setSaved] = useState(false);
 
   const { net } = computeSettle(group.members, group.expenses, group.settlements ?? []);
@@ -33,13 +34,16 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
     referenced.add(s.to);
   });
 
-  const dirty = name.trim() !== group.name || currency !== resolveToCode(group.currency);
+  const dirty =
+    name.trim() !== group.name ||
+    currency !== resolveToCode(group.currency) ||
+    kind !== (group.kind ?? "trip");
 
   function save() {
     const n = name.trim();
     const c = currency.trim();
     if (!n || !c) return;
-    updateGroup(group.id, (g) => ({ ...g, name: n, currency: c }));
+    updateGroup(group.id, (g) => ({ ...g, name: n, currency: c, kind }));
     setSaved(true);
     setTimeout(() => { setSaved(false); onClose(); }, 800);
   }
@@ -119,6 +123,29 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Group kind */}
+        <div className="mb-5">
+          <label className="text-xs font-semibold text-muted">{t("create.kind")}</label>
+          <div className="grid grid-cols-2 gap-2 mt-1.5">
+            {(["trip", "home"] as GroupKind[]).map((k) => {
+              const on = kind === k;
+              return (
+                <button
+                  key={k}
+                  onClick={() => setKind(k)}
+                  className={`rounded-2xl p-2.5 text-left hover-lift ${on ? "" : "glass"}`}
+                  style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                >
+                  <div className="flex items-center gap-1.5 text-sm font-semibold">
+                    <Icon name={k === "home" ? "home" : "plane"} size={14} />
+                    {t(k === "home" ? "create.kindHome" : "create.kindTrip")}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Members */}

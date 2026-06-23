@@ -129,10 +129,16 @@ export interface ActivityEvent {
   toName?: string; // destinatario (pago / miembro afectado)
 }
 
+/** Tipo de grupo:
+ *  - "trip": puntual (viaje/evento). Tiene "he agregado todo" + cierre/saldo.
+ *  - "home": continuo (casa/piso). Sin "he agregado todo"; cuentas siempre vivas. */
+export type GroupKind = "trip" | "home";
+
 export interface Group {
   id: string;
   name: string;
   currency: string; // símbolo, ej. "€"
+  kind?: GroupKind; // por defecto "trip" si falta
   meId: string; // quién soy yo
   members: Member[];
   expenses: Expense[];

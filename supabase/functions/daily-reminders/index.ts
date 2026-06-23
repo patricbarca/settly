@@ -46,6 +46,7 @@ interface Settlement { from: string; to: string; amount: number; status: string 
 interface Group {
   name: string;
   currency: string;
+  kind?: "trip" | "home";
   members: Member[];
   expenses: Expense[];
   settlements?: Settlement[];
@@ -134,6 +135,22 @@ Deno.serve(async (req) => {
         .eq("group_id", row.id);
       const userOf = new Map<string, string>();
       for (const r of gm ?? []) if (r.member_id && r.user_id) userOf.set(r.member_id, r.user_id);
+
+      if (g.kind === "home") {
+        // Casa/continuo: sin "he agregado todo". Solo recordamos a los deudores
+        // y de forma SEMANAL (lunes UTC), para no agobiar con cuentas que nunca
+        // "terminan".
+        if (new Date().getUTCDay() !== 1) continue; // 1 = lunes
+        const net = netByMember(g);
+        for (const m of members) {
+          const v = net[m.id] ?? 0;
+          if (v < -0.01) {
+            const uid = userOf.get(m.id);
+            if (uid) targets.set(uid, { kind: "settle", group: g.name, amount: v, currency: g.currency });
+          }
+        }
+        continue;
+      }
 
       const ready = g.ready ?? [];
       const notReady = members.filter((m) => !ready.includes(m.id));

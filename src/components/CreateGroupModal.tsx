@@ -6,7 +6,7 @@ import { useUser } from "../lib/auth";
 import { getNetwork, type Contact } from "../lib/contacts";
 import { useT, useLang } from "../lib/i18n";
 import { CURRENCIES, localCurrencyName } from "../lib/currencies";
-import type { Group } from "../lib/types";
+import type { Group, GroupKind } from "../lib/types";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 
@@ -17,6 +17,7 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
   const user = useUser();
   const [name, setName] = useState("");
   const [currency, setCurrency] = useState("USD");
+  const [kind, setKind] = useState<GroupKind>("trip");
   const [network, setNetwork] = useState<Contact[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -48,6 +49,7 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
       id: uid(),
       name: name.trim(),
       currency,
+      kind,
       meId,
       members: [me, ...others],
       expenses: [],
@@ -81,6 +83,31 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
               placeholder={t("create.namePh")}
               className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1"
             />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-muted">{t("create.kind")}</label>
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              {(["trip", "home"] as GroupKind[]).map((k) => {
+                const on = kind === k;
+                return (
+                  <button
+                    key={k}
+                    onClick={() => setKind(k)}
+                    className={`rounded-2xl p-3 text-left hover-lift ${on ? "" : "glass"}`}
+                    style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                  >
+                    <div className="flex items-center gap-1.5 text-sm font-semibold">
+                      <Icon name={k === "home" ? "home" : "plane"} size={15} />
+                      {t(k === "home" ? "create.kindHome" : "create.kindTrip")}
+                    </div>
+                    <div className="text-[11px] mt-0.5" style={{ opacity: 0.7 }}>
+                      {t(k === "home" ? "create.kindHomeDesc" : "create.kindTripDesc")}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div>

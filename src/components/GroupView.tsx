@@ -133,7 +133,16 @@ export function GroupView({ group }: { group: Group }) {
       {tab === "balances" && (
         <div className="space-y-4 anim-up">
           <Balances group={group} />
-          <ReadyToSettle group={group} />
+          {group.kind === "home" ? (
+            <div className="glass rounded-3xl p-5">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Icon name="home" size={15} className="text-muted" /> {t("home.continuousTitle")}
+              </div>
+              <p className="text-sm text-muted mt-1">{t("home.continuousDesc")}</p>
+            </div>
+          ) : (
+            <ReadyToSettle group={group} />
+          )}
         </div>
       )}
       {tab === "stats" && (
