@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useT } from "../lib/i18n";
 import { Logo } from "./Logo";
 import { InstallGuide } from "./InstallGuide";
+import { InstallDemoAnim } from "./InstallDemoAnim";
 
 // ── Injected CSS keyframes ───────────────────────────────────────────────────
 const ANIM = `
@@ -391,7 +392,7 @@ const SLIDES = [
   { gradient: "linear-gradient(160deg, #2a0a3d 0%, #7c3aed 100%)", Animation: SlideTypeAnim, titleKey: "onboard.sTypeT", descKey: "onboard.sTypeD" },
   { gradient: "linear-gradient(160deg, #032014 0%, #059669 100%)", Animation: Slide5Anim, titleKey: "onboard.s5t", descKey: "onboard.s5d" },
   { gradient: "linear-gradient(160deg, #160836 0%, #6d28d9 100%)", Animation: Slide6Anim, titleKey: "onboard.s6t", descKey: "onboard.s6d" },
-  { gradient: "linear-gradient(160deg, #061a33 0%, #0e7490 100%)", Animation: () => <InstallGuide dark />, titleKey: "install.guideTitle", descKey: "install.guideDesc" },
+  { gradient: "linear-gradient(160deg, #061a33 0%, #0e7490 100%)", Animation: InstallDemoAnim, titleKey: "install.guideTitle", descKey: "install.guideDesc", guide: true },
 ];
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -465,6 +466,11 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
           <p className="text-center text-sm leading-relaxed mb-5 max-w-xs mx-auto" style={{ color: "rgba(255,255,255,0.65)" }}>
             {t(slide.descKey)}
           </p>
+          {"guide" in slide && slide.guide && (
+            <div className="mb-5">
+              <InstallGuide dark />
+            </div>
+          )}
           <button onClick={next} className="w-full rounded-full py-4 font-bold text-base hover-lift"
             style={{ background: "rgba(255,255,255,0.95)", color: "#120d36" }}>
             {isLast ? t("onboard.start") : t("onboard.next")}

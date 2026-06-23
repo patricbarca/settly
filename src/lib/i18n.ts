@@ -509,6 +509,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "install.iosS2": { es: "Elige «Añadir a pantalla de inicio»", en: "Choose “Add to Home Screen”" },
   "install.iosS3": { es: "Toca «Añadir»", en: "Tap “Add”" },
   "install.menuHint": { es: "O desde el menú del navegador (⋮) elige «Instalar app».", en: "Or from the browser menu (⋮) choose “Install app”." },
+  "install.demoAdd": { es: "Añadir a inicio", en: "Add to Home Screen" },
 
   "pro.active": { es: "Activo", en: "Active" },
 
