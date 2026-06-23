@@ -510,6 +510,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "install.iosS3": { es: "Toca «Añadir»", en: "Tap “Add”" },
   "install.menuHint": { es: "O desde el menú del navegador (⋮) elige «Instalar app».", en: "Or from the browser menu (⋮) choose “Install app”." },
   "install.demoAdd": { es: "Añadir a inicio", en: "Add to Home Screen" },
+  "install.demoShare": { es: "Compartir", en: "Share" },
 
   "pro.active": { es: "Activo", en: "Active" },
 

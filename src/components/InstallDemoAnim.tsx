@@ -1,24 +1,35 @@
-// Demo animada del proceso de instalación de la PWA: muestra un "móvil" donde
-// se toca Compartir → "Añadir a inicio" → el icono salta a la pantalla de
-// inicio, en bucle. Pensada sobre todo para iOS (no hay API de instalación),
-// pero sirve de guía visual universal. CSS keyframes autocontenidos.
+// Demo animada del proceso de instalación de la PWA en iOS/Safari. Muestra el
+// flujo real del Safari nuevo: tocar «•••» (abajo a la derecha) → aparece el
+// menú con «Compartir» → se abre la hoja con «Añadir a inicio» → el icono salta
+// a la pantalla de inicio, en bucle. CSS keyframes autocontenidos.
 import { Logo } from "./Logo";
 import { useT } from "../lib/i18n";
 
 const CSS = `
-@keyframes idemo-browser { 0%,57%{opacity:1} 63%,100%{opacity:0} }
-@keyframes idemo-home    { 0%,57%{opacity:0} 63%,100%{opacity:1} }
-@keyframes idemo-sheet   { 0%,22%{transform:translateY(112%)} 30%,100%{transform:translateY(0)} }
-@keyframes idemo-tapShare{ 0%,5%{opacity:0;transform:scale(.4)} 9%{opacity:.65;transform:scale(.5)} 20%{opacity:0;transform:scale(2.6)} 100%{opacity:0} }
-@keyframes idemo-tapAdd  { 0%,37%{opacity:0;transform:scale(.4)} 41%{opacity:.65;transform:scale(.5)} 53%{opacity:0;transform:scale(2.6)} 100%{opacity:0} }
-@keyframes idemo-addHl   { 0%,36%{background:transparent} 42%,54%{background:rgba(96,165,250,.28)} 58%,100%{background:transparent} }
-@keyframes idemo-pop     { 0%,66%{opacity:0;transform:scale(.3)} 74%{opacity:1;transform:scale(1.14)} 81%,100%{opacity:1;transform:scale(1)} }
-@keyframes idemo-label   { 0%,70%{opacity:0} 80%,100%{opacity:1} }
+@keyframes idemo-browser { 0%,68%{opacity:1} 74%,100%{opacity:0} }
+@keyframes idemo-home    { 0%,68%{opacity:0} 74%,100%{opacity:1} }
+@keyframes idemo-menu    { 0%,14%{opacity:0;transform:translateY(8px) scale(.96)} 19%,37%{opacity:1;transform:translateY(0) scale(1)} 41%,100%{opacity:0;transform:translateY(8px) scale(.96)} }
+@keyframes idemo-sheet   { 0%,39%{transform:translateY(118%)} 47%,100%{transform:translateY(0)} }
+@keyframes idemo-tapMore { 0%,3%{opacity:0;transform:scale(.4)} 8%{opacity:.65;transform:scale(.5)} 16%{opacity:0;transform:scale(2.4)} 100%{opacity:0} }
+@keyframes idemo-tapShare{ 0%,24%{opacity:0;transform:scale(.4)} 28%{opacity:.65;transform:scale(.5)} 36%{opacity:0;transform:scale(2.4)} 100%{opacity:0} }
+@keyframes idemo-tapAdd  { 0%,51%{opacity:0;transform:scale(.4)} 55%{opacity:.65;transform:scale(.5)} 63%{opacity:0;transform:scale(2.4)} 100%{opacity:0} }
+@keyframes idemo-shareHl { 0%,23%{background:transparent} 28%,36%{background:rgba(96,165,250,.28)} 40%,100%{background:transparent} }
+@keyframes idemo-addHl   { 0%,50%{background:transparent} 55%,64%{background:rgba(96,165,250,.28)} 68%,100%{background:transparent} }
+@keyframes idemo-pop     { 0%,72%{opacity:0;transform:scale(.3)} 80%{opacity:1;transform:scale(1.14)} 86%,100%{opacity:1;transform:scale(1)} }
+@keyframes idemo-label   { 0%,76%{opacity:0} 84%,100%{opacity:1} }
 `;
+
+function ShareGlyph({ size = 13 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3v12" /><path d="M8 7l4-4 4 4" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+    </svg>
+  );
+}
 
 export function InstallDemoAnim({ scale = 1.5 }: { scale?: number }) {
   const t = useT();
-  const D = "8s";
+  const D = "10s";
   const grid = Array.from({ length: 8 });
   const W = 152, H = 224;
 
@@ -50,20 +61,46 @@ export function InstallDemoAnim({ scale = 1.5 }: { scale?: number }) {
                 <div key={i} style={{ height: 22, borderRadius: 8, background: "rgba(255,255,255,.7)", boxShadow: "0 6px 16px -12px rgba(58,58,90,.5)" }} />
               ))}
             </div>
-            {/* barra inferior con botón Compartir (iOS) */}
-            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "7px 0 9px", gap: 26, background: "rgba(255,255,255,.5)" }}>
-              <span style={{ position: "relative", display: "inline-flex" }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 3v12" /><path d="M8 7l4-4 4 4" /><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
-                </svg>
-                {/* tap ripple en Compartir */}
-                <span style={{ position: "absolute", inset: -6, borderRadius: "50%", border: "2px solid #60A5FA",
-                  animation: `idemo-tapShare ${D} ease-out infinite` }} />
+
+            {/* barra inferior estilo Safari: atrás · URL · recargar · ••• */}
+            <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "6px 7px 8px", background: "rgba(255,255,255,.55)" }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3a3f4a" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M15 18l-6-6 6-6" /></svg>
+              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,.92)", borderRadius: 8, padding: "4px 6px" }}>
+                <span style={{ fontSize: 8, fontWeight: 600, color: "#1a1c22" }}>app.settlia.app</span>
+              </div>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#3a3f4a" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7" /><path d="M21 3v5h-5" /></svg>
+              {/* botón ••• (más) */}
+              <span style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center", width: 18, height: 18 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#3a3f4a"><circle cx="5" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="19" cy="12" r="2" /></svg>
+                <span style={{ position: "absolute", inset: -4, borderRadius: "50%", border: "2px solid #60A5FA",
+                  animation: `idemo-tapMore ${D} ease-out infinite` }} />
               </span>
-              <span style={{ width: 16, height: 2, background: "#9aa0ac", borderRadius: 2, opacity: .5 }} />
             </div>
 
-            {/* hoja de Compartir que sube */}
+            {/* menú emergente del ••• (con "Compartir") */}
+            <div style={{
+              position: "absolute", right: 6, bottom: 40, width: 114, borderRadius: 12, padding: 4,
+              background: "rgba(255,255,255,.98)", boxShadow: "0 12px 32px -10px rgba(0,0,0,.4)",
+              animation: `idemo-menu ${D} cubic-bezier(.4,1.2,.5,1) infinite`,
+            }}>
+              {/* fila Compartir (resaltada) */}
+              <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 6, borderRadius: 8, padding: "5px 7px",
+                animation: `idemo-shareHl ${D} ease-in-out infinite` }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: "#1a1c22" }}>{t("install.demoShare")}</span>
+                <span style={{ marginLeft: "auto", display: "inline-flex" }}><ShareGlyph /></span>
+                <span style={{ position: "absolute", left: "50%", top: "50%", width: 18, height: 18, marginLeft: -9, marginTop: -9, borderRadius: "50%",
+                  border: "2px solid #60A5FA", animation: `idemo-tapShare ${D} ease-out infinite` }} />
+              </div>
+              {/* filas atenuadas */}
+              {[0, 1].map((i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 7px", opacity: .45 }}>
+                  <span style={{ width: 54, height: 7, borderRadius: 4, background: "#dfe3ea" }} />
+                  <span style={{ marginLeft: "auto", width: 13, height: 13, borderRadius: 4, background: "#dfe3ea" }} />
+                </div>
+              ))}
+            </div>
+
+            {/* hoja de Compartir que sube (con "Añadir a inicio") */}
             <div style={{
               position: "absolute", left: 8, right: 8, bottom: 8, borderRadius: 16, padding: 9,
               background: "rgba(255,255,255,.97)", boxShadow: "0 -10px 30px -16px rgba(0,0,0,.4)",
