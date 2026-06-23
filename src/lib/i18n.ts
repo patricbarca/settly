@@ -318,6 +318,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "pay.confirmReceived": { es: "Confirmar recepción", en: "Confirm received" },
   "pay.reject": { es: "Rechazar", en: "Reject" },
   "pay.history": { es: "Pagos saldados", en: "Settled payments" },
+  "pay.undo": { es: "Deshacer", en: "Undo" },
   "pay.copied": { es: "Copiado: {v} — pégalo en tu app de pago.", en: "Copied: {v} — paste it in your payment app." },
   "pay.copy": { es: "Copiar", en: "Copy" },
   "pay.copied.short": { es: "Copiado", en: "Copied" },

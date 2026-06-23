@@ -189,7 +189,14 @@ export function Balances({ group }: { group: Group }) {
               .map((s) => (
                 <div key={s.id} className="text-xs text-muted flex items-center gap-1.5 py-0.5">
                   <Icon name="check" size={13} style={{ color: "#0A8B5E" }} />
-                  {t("pay.saysPaid", { from: name(s.from), amt: money(s.amount, group.currency), to: name(s.to) })}
+                  <span className="min-w-0">
+                    {t("pay.saysPaid", { from: name(s.from), amt: money(s.amount, group.currency), to: name(s.to) })}
+                  </span>
+                  {(s.from === group.meId || s.to === group.meId) && (
+                    <button onClick={() => rejectS(s.id)} className="lk lk-danger ml-auto shrink-0">
+                      {t("pay.undo")}
+                    </button>
+                  )}
                 </div>
               ))}
           </div>
