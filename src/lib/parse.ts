@@ -72,6 +72,15 @@ export function parseExpense(
     if (payer) participants = [payer, ...participants];
   }
 
+  // "cada uno / c/u / por cabeza / each / apiece" → el monto es POR PERSONA:
+  // el total = monto × nº de participantes. ("each day/week/..." es recurrencia,
+  // no por persona, así que lo excluimos.)
+  const perPerson =
+    /\bcada\s+un[oa]\b|\bc\/u\b|\bpor\s+cabeza\b|\bpor\s+persona\b|\bapiece\b|\bper\s+person\b|\bper\s+head\b|\beach\b(?!\s+(day|week|month|year|d[ií]a|semana|mes|a[ñn]o))/i.test(
+      t
+    );
+  const finalAmount = perPerson && participants.length > 0 ? amount * participants.length : amount;
+
   // Categoría.
   let category: Category = "otros";
   for (const [re, cat] of CAT_KW) {
@@ -89,7 +98,8 @@ export function parseExpense(
   let label = text
     .replace(/\d+(?:[.,]\d+)?\s*(€|eur|euros?|\$|usd|aud|gbp|cad|chf|mxn|brl|cop|ars|jpy|cny)?\b/gi, " ")
     .replace(names, " ")
-    .replace(/\b(con|y|e|pagu[eé]|pag[oó]|entre|todos|todas|grupo|yo|de|del|la|el|los|las|un|una|para|por|all|everyone|all of us|nosotros|daily|weekly|monthly|yearly|diario|diaria|semanal|mensual|anual|cada d[ií]a|cada semana|cada mes|cada a[ñn]o|annual|annually|every|per|each|month|months|week|weeks|year|years|day|days|mes|semana|a[ñn]o)\b/gi, " ")
+    .replace(/\bc\/u\b/gi, " ")
+    .replace(/\b(con|y|e|pagu[eé]|pag[oó]|entre|todos|todas|grupo|yo|de|del|la|el|los|las|un|una|para|por|cabeza|persona|apiece|all|everyone|all of us|nosotros|daily|weekly|monthly|yearly|diario|diaria|semanal|mensual|anual|cada d[ií]a|cada semana|cada mes|cada a[ñn]o|cada un[oa]|annual|annually|every|per|each|month|months|week|weeks|year|years|day|days|mes|semana|a[ñn]o)\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
   label = label.split(/\s+/).slice(0, 5).join(" ");
@@ -97,7 +107,7 @@ export function parseExpense(
 
   return {
     label,
-    amount,
+    amount: finalAmount,
     payerId,
     participantIds: participants.map((p) => p.id),
     category,

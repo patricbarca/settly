@@ -55,6 +55,7 @@ Return a JSON object with exactly these keys:
 
 Rules:
 - amount: numeric TOTAL only (no currency symbol; use a dot for decimals).
+- PER-PERSON amounts: if the note states the amount PER PERSON ("X each", "X cada uno", "X c/u", "X por cabeza", "X por persona", "X apiece"), then the TOTAL amount = that number multiplied by the number of participantIds. Example: "Cinema 12 each" with 4 participants -> amount 48.
 - payments: who actually PAID and how much. One entry per payer; the amounts MUST sum to the total amount. If paid evenly between payers, divide the total. If unclear who paid, use a single entry: [{"memberId":"${meId}","amount":<total>}].
 - participantIds: who SHARES the cost — INDEPENDENT from who paid. Often the whole group even if only one or two people paid. If unclear, include ALL member ids.
 - category: best match from the allowed list; if none fits use "otros".
