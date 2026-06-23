@@ -39,6 +39,42 @@ export function Balances({ group }: { group: Group }) {
 
   return (
     <section className="space-y-3">
+      {/* Pagos por confirmar (los ve quien cobra). Arriba del todo para que no
+          se pierda: alguien marcó que te pagó y falta tu confirmación. */}
+      {toConfirm.length > 0 && (
+        <div
+          className="rounded-3xl p-4"
+          style={{ background: "rgba(232,146,12,0.12)", border: "1px solid rgba(232,146,12,0.35)" }}
+        >
+          <div className="text-xs uppercase tracking-widest font-mono mb-2" style={{ color: "#B5730A" }}>
+            {t("pay.toConfirmTitle")}
+          </div>
+          <div className="space-y-2">
+            {toConfirm.map((s) => (
+              <div key={s.id} className="glass rounded-2xl p-3">
+                <div className="text-sm flex items-start gap-2">
+                  <Icon name="clock" size={15} className="mt-0.5 shrink-0 text-muted" />
+                  <span>{t("pay.saysPaid", { from: name(s.from), amt: money(s.amount, group.currency), to: name(s.to) })}</span>
+                </div>
+                {s.proof && <img src={s.proof} alt="" className="max-h-24 rounded-lg mt-1.5" />}
+                <div className="flex gap-2 mt-2 items-center">
+                  <button
+                    onClick={() => confirmS(s.id)}
+                    className="rounded-full px-3 py-1.5 text-xs font-semibold text-white"
+                    style={{ background: "#0A8B5E" }}
+                  >
+                    {t("pay.confirmReceived")}
+                  </button>
+                  <button onClick={() => rejectS(s.id)} className="lk lk-danger text-xs">
+                    {t("pay.reject")}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Total pill */}
       <div className="glass rounded-3xl px-4 py-3 flex items-center justify-between">
         <span className="text-sm font-semibold text-muted">{t("bal.totalSpent")}</span>
@@ -141,33 +177,6 @@ export function Balances({ group }: { group: Group }) {
                 )}
               </div>
             ))}
-
-            {toConfirm.length > 0 && (
-              <div className="pt-1">
-                <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1">{t("pay.pending")}</div>
-                {toConfirm.map((s) => (
-                  <div key={s.id} className="glass rounded-xl p-2.5 mb-1.5">
-                    <div className="text-sm flex items-start gap-2">
-                      <Icon name="clock" size={15} className="mt-0.5 shrink-0 text-muted" />
-                      <span>{t("pay.saysPaid", { from: name(s.from), amt: money(s.amount, group.currency), to: name(s.to) })}</span>
-                    </div>
-                    {s.proof && <img src={s.proof} alt="" className="max-h-20 rounded-lg mt-1.5" />}
-                    <div className="flex gap-2 mt-2 items-center">
-                      <button
-                        onClick={() => confirmS(s.id)}
-                        className="rounded-full px-3 py-1 text-xs font-semibold text-white"
-                        style={{ background: "#0A8B5E" }}
-                      >
-                        {t("pay.confirmReceived")}
-                      </button>
-                      <button onClick={() => rejectS(s.id)} className="lk lk-danger text-xs">
-                        {t("pay.reject")}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
 

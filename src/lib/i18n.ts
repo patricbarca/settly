@@ -313,6 +313,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "pay.confirmPay": { es: "Marcar pagado", en: "Mark as paid" },
   "pay.awaiting": { es: "Esperando confirmación", en: "Awaiting confirmation" },
   "pay.pending": { es: "Pendiente de confirmar", en: "Pending confirmation" },
+  "pay.toConfirmTitle": { es: "Pagos por confirmar", en: "Payments to confirm" },
   "pay.saysPaid": { es: "{from} pagó {amt} a {to}", en: "{from} paid {amt} to {to}" },
   "pay.confirmReceived": { es: "Confirmar recepción", en: "Confirm received" },
   "pay.reject": { es: "Rechazar", en: "Reject" },
