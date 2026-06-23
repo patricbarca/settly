@@ -501,6 +501,13 @@ const DICT: Record<string, { es: string; en: string }> = {
   "install.iosShare": { es: "Compartir", en: "Share" },
   "install.iosStep2": { es: "y luego", en: "then" },
   "install.iosAdd":   { es: "Añadir a pantalla de inicio", en: "Add to Home Screen" },
+  "install.guideTitle": { es: "Instálala en tu inicio", en: "Add it to your home screen" },
+  "install.guideDesc": { es: "Ábrela como una app: a un toque, sin navegador y con notificaciones.", en: "Open it like an app: one tap, no browser, with notifications." },
+  "install.installed": { es: "Ya está instalada ✓", en: "Already installed ✓" },
+  "install.iosS1": { es: "Toca Compartir abajo en Safari", en: "Tap Share at the bottom in Safari" },
+  "install.iosS2": { es: "Elige «Añadir a pantalla de inicio»", en: "Choose “Add to Home Screen”" },
+  "install.iosS3": { es: "Toca «Añadir»", en: "Tap “Add”" },
+  "install.menuHint": { es: "O desde el menú del navegador (⋮) elige «Instalar app».", en: "Or from the browser menu (⋮) choose “Install app”." },
 
   "pro.active": { es: "Activo", en: "Active" },
 

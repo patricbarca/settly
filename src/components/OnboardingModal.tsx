@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useT } from "../lib/i18n";
 import { Logo } from "./Logo";
+import { InstallGuide } from "./InstallGuide";
 
 // ── Injected CSS keyframes ───────────────────────────────────────────────────
 const ANIM = `
@@ -390,6 +391,7 @@ const SLIDES = [
   { gradient: "linear-gradient(160deg, #2a0a3d 0%, #7c3aed 100%)", Animation: SlideTypeAnim, titleKey: "onboard.sTypeT", descKey: "onboard.sTypeD" },
   { gradient: "linear-gradient(160deg, #032014 0%, #059669 100%)", Animation: Slide5Anim, titleKey: "onboard.s5t", descKey: "onboard.s5d" },
   { gradient: "linear-gradient(160deg, #160836 0%, #6d28d9 100%)", Animation: Slide6Anim, titleKey: "onboard.s6t", descKey: "onboard.s6d" },
+  { gradient: "linear-gradient(160deg, #061a33 0%, #0e7490 100%)", Animation: () => <InstallGuide dark />, titleKey: "install.guideTitle", descKey: "install.guideDesc" },
 ];
 
 // ── Main component ────────────────────────────────────────────────────────────
