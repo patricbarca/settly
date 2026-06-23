@@ -11,7 +11,7 @@ export default defineConfig({
       registerType: "autoUpdate",
       workbox: {
         globPatterns: ["**/*.{js,css,html,woff2}"],
-        navigateFallback: "/settly/index.html",
+        navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api/],
         importScripts: ["push-sw.js"],
       },
@@ -24,8 +24,8 @@ export default defineConfig({
         background_color: "#111111",
         display: "standalone",
         orientation: "portrait",
-        start_url: "/settly/",
-        scope: "/settly/",
+        start_url: "/",
+        scope: "/",
         icons: [
           {
             src: "icons/icon-192.png",
@@ -43,6 +43,6 @@ export default defineConfig({
       },
     }),
   ],
-  base: "/settly/",
+  base: "/",
   server: { port: 5174 },
 });
