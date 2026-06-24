@@ -57,9 +57,9 @@ Deno.serve(async (req) => {
       .in("user_id", userIds);
 
     const payload = JSON.stringify({
-      title: title || "Settly",
+      title: title || "SettliA",
       body: body || "",
-      url: url || "/settly/",
+      url: url || "/",
     });
 
     let sent = 0;
