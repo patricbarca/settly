@@ -1,6 +1,6 @@
 import { useState, useMemo, type ChangeEvent } from "react";
 import type { PayType, PayMethod } from "../lib/types";
-import { useUser, setProfileName, setProfileAvatar, deleteAccount } from "../lib/auth";
+import { useUser, setProfileName, setProfileAvatar, setProfileExtra, deleteAccount } from "../lib/auth";
 import { useAllGroups, updateMyMember } from "../lib/store";
 import { fileToAvatarDataUrl } from "../lib/image";
 import { personColor, memberInitials } from "../lib/format";
@@ -41,11 +41,13 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
     }
   }
   const richestPays = Object.values(payByType);
+  // Fuente única = profiles (user.*). Si aún está vacío (no migrado), se cae al
+  // valor combinado de los grupos, y al guardar se sube a profiles.
   const myMember = {
-    initials: firstNonEmpty((m) => m.initials),
-    country: firstNonEmpty((m) => m.country),
-    phone: firstNonEmpty((m) => m.phone),
-    pays: richestPays,
+    initials: user?.initials || firstNonEmpty((m) => m.initials),
+    country: user?.country || firstNonEmpty((m) => m.country),
+    phone: user?.phone || firstNonEmpty((m) => m.phone),
+    pays: user?.pays?.length ? user.pays : richestPays,
   };
 
   const lang = useLang();
@@ -138,13 +140,23 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
       })
       .filter((p): p is PayMethod => p !== null);
 
-    // Una sola escritura para no perder datos por persistencias desordenadas.
+    const normPhone = phone.trim() ? normalizePhone(phone, country || undefined) : "";
+
+    // Fuente única: guarda los datos del perfil en la tabla profiles.
+    await setProfileExtra({
+      country: country || "",
+      phone: normPhone,
+      initials: inits.trim(),
+      pays,
+    });
+
+    // Reflejo en los grupos para que los demás vean tu nombre/avatar/iniciales/pagos.
     updateMyMember({
       ...(n && n !== user!.name ? { name: n } : {}),
       ...(avatar !== (user!.avatar ?? "") ? { avatar } : {}),
       initials: inits.trim() || undefined,
       country: country || undefined,
-      phone: phone.trim() ? normalizePhone(phone, country || undefined) : undefined,
+      phone: normPhone || undefined,
       pays,
       pay: pays[0], // compat. hacia atrás
     });

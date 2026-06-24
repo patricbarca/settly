@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { uid } from "./format";
+import type { PayMethod } from "./types";
 
 export type User = {
   id: string;
@@ -9,6 +10,10 @@ export type User = {
   email?: string;
   phone?: string;
   avatar: string;
+  /** Datos de perfil (fuente única en la tabla profiles). */
+  country?: string;
+  initials?: string;
+  pays?: PayMethod[];
   provider: "email" | "google" | "guest";
 };
 
@@ -39,11 +44,27 @@ function sub(l: () => void) {
 async function fromSession(session: Session) {
   const au = session.user;
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("name, phone, phone_verified, avatar")
-    .eq("id", au.id)
-    .single();
+  // Intenta leer también los campos nuevos (country/initials/pays). Si las
+  // columnas aún no existen (SQL no aplicado), recurre al select básico para no
+  // romper el login en ese intervalo.
+  let profile: any = null;
+  {
+    const full = await supabase
+      .from("profiles")
+      .select("name, phone, phone_verified, avatar, country, initials, pays")
+      .eq("id", au.id)
+      .single();
+    if (full.error) {
+      const basic = await supabase
+        .from("profiles")
+        .select("name, phone, phone_verified, avatar")
+        .eq("id", au.id)
+        .single();
+      profile = basic.data;
+    } else {
+      profile = full.data;
+    }
+  }
 
   // Avatar: foto guardada en el perfil, o por defecto la de Google.
   const googleAvatar = au.user_metadata?.avatar_url || "";
@@ -79,6 +100,9 @@ async function fromSession(session: Session) {
     email: au.email,
     phone: profile?.phone || undefined,
     avatar,
+    country: (profile?.country as string) || undefined,
+    initials: (profile?.initials as string) || undefined,
+    pays: Array.isArray(profile?.pays) ? (profile!.pays as PayMethod[]) : [],
     provider: (au.app_metadata?.provider as User["provider"]) ?? "email",
   };
 
@@ -178,6 +202,29 @@ export async function setProfileAvatar(dataUrl: string) {
   await supabase.from("profiles").update({ avatar: dataUrl }).eq("id", session.user.id);
   if (state.user) {
     state = { ...state, user: { ...state.user, avatar: dataUrl } };
+    emit();
+  }
+}
+
+/** Guarda los datos de perfil (fuente única) en la tabla profiles. */
+export async function setProfileExtra(patch: {
+  country?: string;
+  phone?: string;
+  initials?: string;
+  pays?: PayMethod[];
+}) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return;
+  const row: Record<string, unknown> = {};
+  if (patch.country !== undefined) row.country = patch.country;
+  if (patch.phone !== undefined) row.phone = patch.phone;
+  if (patch.initials !== undefined) row.initials = patch.initials;
+  if (patch.pays !== undefined) row.pays = patch.pays;
+  if (Object.keys(row).length === 0) return;
+  const { error } = await supabase.from("profiles").update(row).eq("id", session.user.id);
+  if (error) console.error("[auth] setProfileExtra:", error.message);
+  if (state.user) {
+    state = { ...state, user: { ...state.user, ...patch } };
     emit();
   }
 }
