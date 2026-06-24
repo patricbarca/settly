@@ -41,6 +41,7 @@ type Tab = "notifications" | "activity";
 export function NotificationsBell() {
   const t = useT();
   const lang = useLang();
+  const groups = useGroups();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("notifications");
   const [seen, setSeen] = useState<Set<string>>(() => loadSeen());
@@ -58,8 +59,6 @@ export function NotificationsBell() {
       saveSeen(s);
     }
   }
-
-  const groups = useGroups();
 
   function notifMessage(n: FeedItem): string {
     const amt = n.amount != null ? money(n.amount, n.currency) : "";
