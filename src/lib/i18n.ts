@@ -293,6 +293,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "exp.shares": { es: "Reparto", en: "Split" },
   "exp.review": { es: "Solicitar revisión", en: "Request review" },
   "exp.requestDelete": { es: "Pedir eliminar", en: "Request delete" },
+  "exp.deletePending": { es: "Eliminación pendiente", en: "Delete pending" },
+  "exp.deletePendingHint": { es: "Esperando que quien lo creó apruebe la eliminación.", en: "Waiting for the creator to approve the deletion." },
   "exp.reviewed": { es: "Revisado", en: "Reviewed" },
   "exp.inReview": { es: "En revisión", en: "Under review" },
 

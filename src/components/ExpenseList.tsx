@@ -37,9 +37,10 @@ export function ExpenseList({ group }: { group: Group }) {
 
   function requestDelete(id: string) {
     const exp = group.expenses.find((e) => e.id === id);
-    if (!exp) return;
+    if (!exp || exp.deleteRequested) return;
     updateGroup(group.id, (g) => ({
       ...g,
+      expenses: g.expenses.map((e) => (e.id === id ? { ...e, deleteRequested: true } : e)),
       notifications: withNotif(g, {
         type: "delete_requested",
         actorId: group.meId,
@@ -221,6 +222,13 @@ export function ExpenseList({ group }: { group: Group }) {
                       >
                         <Icon name="trash" size={13} /> {t("common.delete")}
                       </button>
+                    ) : e.deleteRequested ? (
+                      <span
+                        className="glass rounded-full px-3 py-1 text-xs text-muted inline-flex items-center gap-1 opacity-70"
+                        title={t("exp.deletePendingHint")}
+                      >
+                        <Icon name="clock" size={13} /> {t("exp.deletePending")}
+                      </span>
                     ) : (
                       <button
                         onClick={() => requestDelete(e.id)}
