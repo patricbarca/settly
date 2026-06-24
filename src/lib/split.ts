@@ -88,6 +88,20 @@ export function computeSettle(
   return { paid, owed, net, transfers };
 }
 
+/** ¿Hay pagos en marcha pero la deuda aún NO está totalmente saldada?
+ *  Se usa para impedir eliminar gastos cuando ya hubo un pago parcial:
+ *  borrar un gasto entonces distorsionaría los saldos sobre los que se pagó. */
+export function hasUnsettledPayments(
+  members: Member[],
+  expenses: Expense[],
+  settlements: Settlement[] = []
+): boolean {
+  const anyPayment = settlements.some((s) => s.status === "confirmed" || s.status === "pending");
+  if (!anyPayment) return false;
+  // Aún queda deuda por saldar (transferencias pendientes tras pagos confirmados).
+  return computeSettle(members, expenses, settlements).transfers.length > 0;
+}
+
 /** Pagos DIRECTOS: cada participante paga a quien realmente puso el dinero de
  *  cada gasto (sin re-enrutar entre desconocidos como hace la simplificación).
  *  Devuelve las transferencias ya neteadas por pareja. */

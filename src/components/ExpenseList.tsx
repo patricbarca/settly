@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Group } from "../lib/types";
 import { catOf } from "../lib/types";
 import { updateGroup } from "../lib/store";
-import { shareFor } from "../lib/split";
+import { shareFor, hasUnsettledPayments } from "../lib/split";
 import { money, fmtDate, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -16,6 +16,9 @@ import { notifyGroup } from "../lib/push";
 export function ExpenseList({ group }: { group: Group }) {
   const t = useT();
   const ids = group.members.map((m) => m.id);
+  // Si ya hubo pagos parciales y la deuda no está saldada, no se puede eliminar
+  // ningún gasto (borrarlo distorsionaría los saldos sobre los que se pagó).
+  const deletesLocked = hasUnsettledPayments(group.members, group.expenses, group.settlements ?? []);
   const [editId, setEditId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
@@ -248,7 +251,15 @@ export function ExpenseList({ group }: { group: Group }) {
                         <Icon name="flag" size={13} /> {t("exp.reviewRequested")} <Icon name="close" size={12} />
                       </button>
                     )}
-                    {e.createdBy && e.createdBy !== group.meId ? (
+                    {deletesLocked ? (
+                      // Hay pagos parciales sin saldar: no se puede eliminar nada.
+                      <span
+                        className="glass rounded-full px-3 py-1 text-xs text-muted inline-flex items-center gap-1 opacity-70"
+                        title={t("exp.deleteLockedHint")}
+                      >
+                        <Icon name="lock" size={13} /> {t("exp.deleteLocked")}
+                      </span>
+                    ) : e.createdBy && e.createdBy !== group.meId ? (
                       // No soy el creador: puedo pedir que lo elimine, o ver que ya lo pedí.
                       e.deleteRequested ? (
                         <button
