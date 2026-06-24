@@ -72,6 +72,10 @@ export interface Expense {
   /** multiple payers: who paid how much */
   payments?: { memberId: string; amount: number }[];
   reviewRequested?: boolean;
+  /** Abonos de un PRÉSTAMO (categoría "prestamos"): el deudor va devolviendo de
+   *  a poco. Pendiente = amount − Σ repayments. El préstamo no se puede eliminar
+   *  hasta saldarlo, y los abonos reducen el saldo del grupo. */
+  repayments?: { id: string; amount: number; date: string }[];
   /** se pidió borrar el gasto; espera la aprobación del creador. */
   deleteRequested?: boolean;
   /** memberId de quien añadió el gasto (para el botón "Revisado"). */
