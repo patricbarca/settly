@@ -132,8 +132,12 @@ Deno.serve(async (req) => {
   try {
     if (!VAPID_PRIVATE || !SERVICE_ROLE) return json({ error: "not_configured" }, 503);
     // Solo el cron (o quien tenga el secreto) puede dispararlo.
-    const auth = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
+    const auth = (req.headers.get("Authorization") ?? "").replace("Bearer ", "").trim();
     if (!CRON_SECRET || auth !== CRON_SECRET) return json({ error: "unauthorized" }, 401);
+
+    // body opcional: { "force": true } salta el filtro de hora local (para probar).
+    let force = false;
+    try { const b = await req.json(); force = !!(b && b.force); } catch { /* sin body */ }
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
@@ -209,10 +213,10 @@ Deno.serve(async (req) => {
         const tgt = targets.get(s.user_id);
         if (!tgt) return;
         const tz = s.tz || "UTC";
-        // Solo enviamos cuando en SU zona horaria son las ~10am.
-        if (localHour(tz) !== REMINDER_HOUR) return;
+        // Solo enviamos cuando en SU zona horaria son las ~10am (salvo force).
+        if (!force && localHour(tz) !== REMINDER_HOUR) return;
         // Grupos "home" = recordatorio semanal (su lunes local).
-        if (tgt.weekly && !isLocalMonday(tz)) return;
+        if (!force && tgt.weekly && !isLocalMonday(tz)) return;
         const body = buildBody(tgt, s.lang ?? "es");
         const payload = JSON.stringify({ title: "SettliA", body, url: APP_URL });
         try {
