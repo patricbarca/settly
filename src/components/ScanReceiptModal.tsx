@@ -21,6 +21,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
   const [preview, setPreview] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [scanError, setScanError] = useState(false);
+  const [label, setLabel] = useState("");
   const [tip, setTip] = useState<number | string>("");
   const [payerId, setPayerId] = useState(group.meId);
   const [category, setCategory] = useState<Category>("comida");
@@ -38,9 +39,11 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
       // datos de ejemplo, que confundían al parecer un ticket real).
       try {
         const res = await scanReceipt(file);
+        if (res.description) setLabel(res.description);
+        if (res.category) setCategory(res.category);
         const rows = res.items.length
           ? res.items.map((s) => ({ id: uid(), name: s.name, price: s.price, who: new Set(allIds) }))
-          : [{ id: uid(), name: "", price: "" as number | string, who: new Set(allIds) }];
+          : [{ id: uid(), name: res.description || "", price: res.total || ("" as number | string), who: new Set(allIds) }];
         setItems(rows);
       } catch {
         setScanError(true);
@@ -97,7 +100,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
       expenses: [
         {
           id: uid(),
-          label: "Ticket",
+          label: label.trim() || "Ticket",
           amount: Math.round(total * 100) / 100,
           payerId,
           participantIds: participants,
@@ -112,14 +115,14 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         type: "expense_added",
         actorId: group.meId,
         actorName: meName,
-        label: "Ticket",
+        label: label.trim() || "Ticket",
         amount: Math.round(total * 100) / 100,
       }),
       activity: withActivity(g, {
         type: "scan_used",
         actorId: group.meId,
         actorName: meName,
-        label: "Ticket",
+        label: label.trim() || "Ticket",
         amount: Math.round(total * 100) / 100,
       }),
     }));
@@ -177,6 +180,15 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
                 {t("scan.error")}
               </div>
             )}
+            <div>
+              <label className="text-xs font-semibold text-muted">{t("form.label")}</label>
+              <input
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="Ticket"
+                className="glass rounded-xl px-3 py-2 text-sm w-full mt-1"
+              />
+            </div>
             <div className="text-xs font-semibold text-muted">{t("scan.items")}</div>
             <div className="glass rounded-3xl p-3 space-y-3">
               {items.map((it, idx) => (

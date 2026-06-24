@@ -43,7 +43,13 @@ export async function parseExpenseAI(
 }
 
 export type ScannedItem = { name: string; price: number };
-export type ScanResult = { items: ScannedItem[]; currency?: string };
+export type ScanResult = {
+  description: string;
+  total: number;
+  category: Category;
+  items: ScannedItem[];
+  currency?: string;
+};
 
 /** Lee una imagen de ticket vía la función `scan-receipt` (modelo de visión).
  *  La foto se redimensiona/comprime antes de enviarla (ver fileToScanImage). */
@@ -58,6 +64,9 @@ export async function scanReceipt(file: File): Promise<ScanResult> {
   }
   const res = data as ScanResult;
   return {
+    description: String(res.description ?? "").trim(),
+    total: Number(res.total) || 0,
+    category: res.category || "otros",
     items: (res.items || [])
       .map((it) => ({ name: String(it.name ?? "").trim(), price: Number(it.price) || 0 }))
       .filter((it) => it.name || it.price),

@@ -27,11 +27,16 @@ const API_URL =
 const MODEL =
   Deno.env.get("AI_VISION_MODEL") ?? "meta-llama/llama-4-scout-17b-16e-instruct";
 
-const PROMPT = `You are a receipt parser. Read this receipt image and extract the
-purchased line items. Respond with ONLY a JSON object, no prose, no markdown:
-{"items":[{"name":"...","price":0.00}],"currency":"EUR"}
-Rules: amounts as numbers (dot decimal); exclude subtotal/total/tax/tip/change
-lines; keep item names short; if you can't read it, return {"items":[]}.`;
+const PROMPT = `You are a receipt/document parser. Read this image — it may be a restaurant bill, utility bill (electricity, water, gas), bank statement, invoice, or any other receipt — and extract the key fields. Respond with ONLY a JSON object, no prose, no markdown:
+{"description":"...","total":0.00,"category":"...","items":[{"name":"...","price":0.00}],"currency":"EUR"}
+
+Rules:
+- description: short label for the expense (e.g. "Electricity bill", "Dinner at Trattoria", "Internet invoice"). Max 60 chars.
+- total: the final amount due/paid as a number (dot decimal). Use the TOTAL or AMOUNT DUE line, not subtotal.
+- category: one of exactly these values — comida, mercado, bebidas, transporte, viajes, alojamiento, ocio, compras, salud, servicios, regalos, otros. Pick the most fitting one (servicios for utilities/bills/invoices, comida for restaurants, etc.)
+- items: array of individual line items if the receipt is itemized (restaurant, supermarket). For non-itemized receipts (utility bills, invoices) return an empty array [].
+- currency: ISO 4217 code detected from the receipt (EUR, USD, GBP, ARS, CLP, COP, MXN…). Default EUR.
+- If you cannot read the image at all, return: {"description":"","total":0,"category":"otros","items":[],"currency":"EUR"}`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -80,12 +85,24 @@ Deno.serve(async (req) => {
     const parsed = extractJson(text);
     if (!parsed) return json({ error: "parse", raw: text }, 422);
 
-    return json({ items: sanitizeItems(parsed.items), currency: parsed.currency });
+    return json({
+      description: String(parsed.description ?? "").trim().slice(0, 60),
+      total: Number(parsed.total) || 0,
+      category: sanitizeCategory(parsed.category),
+      items: sanitizeItems(parsed.items),
+      currency: parsed.currency,
+    });
   } catch (e) {
     console.error(e);
     return json({ error: "internal" }, 500);
   }
 });
+
+const VALID_CATEGORIES = ["comida","mercado","bebidas","transporte","viajes","alojamiento","ocio","compras","salud","servicios","regalos","otros"];
+function sanitizeCategory(cat: unknown): string {
+  const s = String(cat ?? "").trim().toLowerCase();
+  return VALID_CATEGORIES.includes(s) ? s : "otros";
+}
 
 function sanitizeItems(items: unknown): { name: string; price: number }[] {
   if (!Array.isArray(items)) return [];
