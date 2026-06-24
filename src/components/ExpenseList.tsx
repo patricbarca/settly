@@ -1,8 +1,8 @@
 import { useState } from "react";
-import type { Group, Expense } from "../lib/types";
+import type { Group } from "../lib/types";
 import { catOf } from "../lib/types";
-import { updateGroup, addLoanRepayment, removeLoanRepayment } from "../lib/store";
-import { shareFor, loanRepaid, loanOutstanding } from "../lib/split";
+import { updateGroup } from "../lib/store";
+import { shareFor } from "../lib/split";
 import { money, fmtDate, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -217,8 +217,6 @@ export function ExpenseList({ group }: { group: Group }) {
                     ))}
                   </div>
 
-                  {e.category === "prestamos" && <LoanPanel group={group} e={e} />}
-
                   <div className="flex gap-2 mt-3 flex-wrap">
                     <button
                       onClick={() => setEditId(e.id)}
@@ -251,16 +249,7 @@ export function ExpenseList({ group }: { group: Group }) {
                         <Icon name="flag" size={13} /> {t("exp.reviewRequested")} <Icon name="close" size={12} />
                       </button>
                     )}
-                    {e.category === "prestamos" && loanOutstanding(e) > 0.01 ? (
-                      // Un préstamo no se puede eliminar hasta saldarlo (devolución
-                      // completa). El resto de gastos se eliminan normalmente.
-                      <span
-                        className="glass rounded-full px-3 py-1 text-xs text-muted inline-flex items-center gap-1 opacity-70"
-                        title={t("exp.deleteLockedHint")}
-                      >
-                        <Icon name="lock" size={13} /> {t("exp.deleteLocked")}
-                      </span>
-                    ) : e.createdBy && e.createdBy !== group.meId ? (
+                    {e.createdBy && e.createdBy !== group.meId ? (
                       // No soy el creador: puedo pedir que lo elimine, o ver que ya lo pedí.
                       e.deleteRequested ? (
                         <button
@@ -334,77 +323,5 @@ export function ExpenseList({ group }: { group: Group }) {
         </Overlay>
       )}
     </section>
-  );
-}
-
-/** Panel de un préstamo: prestado / devuelto / pendiente, lista de abonos y
- *  registro de un nuevo abono parcial. */
-function LoanPanel({ group, e }: { group: Group; e: Expense }) {
-  const t = useT();
-  const repaid = loanRepaid(e);
-  const outstanding = loanOutstanding(e);
-  const [amt, setAmt] = useState("");
-  const v = Number(amt);
-
-  function add() {
-    if (!(v > 0)) return;
-    addLoanRepayment(group.id, e.id, Math.min(v, outstanding));
-    setAmt("");
-  }
-
-  return (
-    <div className="mt-3 rounded-xl p-3" style={{ background: "var(--surface-soft)" }}>
-      <div className="flex items-center justify-between text-[11px] text-muted mb-1.5">
-        <span>{t("loan.lent")}: <b className="font-mono">{money(e.amount, group.currency)}</b></span>
-        <span>{t("loan.repaid")}: <b className="font-mono">{money(repaid, group.currency)}</b></span>
-      </div>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-semibold">{t("loan.outstanding")}</span>
-        <span className="font-mono font-bold" style={{ color: outstanding > 0.01 ? "var(--coral)" : "#0A8B5E" }}>
-          {money(outstanding, group.currency)}
-        </span>
-      </div>
-
-      {(e.repayments ?? []).length > 0 && (
-        <div className="space-y-0.5 mb-2">
-          {(e.repayments ?? []).map((r) => (
-            <div key={r.id} className="flex items-center justify-between text-xs text-muted">
-              <span>{t("loan.payment")} · {fmtDate(r.date)}</span>
-              <span className="flex items-center gap-2">
-                <span className="font-mono">{money(r.amount, group.currency)}</span>
-                <button onClick={() => removeLoanRepayment(group.id, e.id, r.id)} className="lk lk-danger">
-                  {t("loan.undo")}
-                </button>
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {outstanding > 0.01 ? (
-        <div className="flex gap-2">
-          <input
-            value={amt}
-            onChange={(ev) => setAmt(ev.target.value)}
-            onKeyDown={(ev) => ev.key === "Enter" && add()}
-            inputMode="decimal"
-            placeholder={t("loan.amountPh")}
-            className="glass rounded-lg px-3 py-1.5 text-sm flex-1 min-w-0 font-mono"
-          />
-          <button
-            onClick={add}
-            disabled={!(v > 0)}
-            className="rounded-lg px-3 py-1.5 text-xs font-semibold text-white hover-lift disabled:opacity-40 shrink-0"
-            style={{ background: "var(--teal)" }}
-          >
-            {t("loan.addPayment")}
-          </button>
-        </div>
-      ) : (
-        <div className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: "#0A8B5E" }}>
-          <Icon name="check" size={13} /> {t("loan.settled")}
-        </div>
-      )}
-    </div>
   );
 }

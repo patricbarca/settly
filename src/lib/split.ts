@@ -1,19 +1,5 @@
 import type { Expense, Member, Settlement } from "./types";
 
-/** Total devuelto de un préstamo (suma de abonos). */
-export function loanRepaid(e: Expense): number {
-  return Math.round((e.repayments ?? []).reduce((s, r) => s + Number(r.amount || 0), 0) * 100) / 100;
-}
-/** Saldo pendiente de un préstamo (lo que falta por devolver). */
-export function loanOutstanding(e: Expense): number {
-  return Math.max(0, Math.round((Number(e.amount || 0) - loanRepaid(e)) * 100) / 100);
-}
-/** Deudor de un préstamo 1-a-1 = el participante que no es el prestamista. */
-export function loanBorrower(e: Expense, memberIds: string[]): string | undefined {
-  const pool = e.participantIds?.length ? e.participantIds : memberIds;
-  return pool.find((id) => id !== e.payerId);
-}
-
 /** Cuánto le toca a cada miembro de un gasto concreto. */
 export function shareFor(e: Expense, memberIds: string[]): Record<string, number> {
   const owed: Record<string, number> = {};
@@ -66,18 +52,6 @@ export function computeSettle(
     }
     const sh = shareFor(e, ids);
     ids.forEach((id) => (owed[id] += sh[id] || 0));
-
-    // Abonos de un préstamo: el deudor va devolviendo al prestamista (payerId).
-    // Cuenta como que el deudor pagó esa parte (igual que un settlement).
-    if (e.category === "prestamos" && e.repayments?.length) {
-      const lender = e.payerId;
-      const borrower = (e.participantIds?.length ? e.participantIds : ids).find((id) => id !== lender);
-      if (borrower && paid[borrower] != null && owed[lender] != null) {
-        const rp = e.repayments.reduce((s, r) => s + Number(r.amount || 0), 0);
-        paid[borrower] += rp;
-        owed[lender] += rp;
-      }
-    }
   }
 
   // un pago confirmado: 'from' salda su deuda con 'to'
@@ -112,20 +86,6 @@ export function computeSettle(
   }
 
   return { paid, owed, net, transfers };
-}
-
-/** ¿Hay pagos en marcha pero la deuda aún NO está totalmente saldada?
- *  Se usa para impedir eliminar gastos cuando ya hubo un pago parcial:
- *  borrar un gasto entonces distorsionaría los saldos sobre los que se pagó. */
-export function hasUnsettledPayments(
-  members: Member[],
-  expenses: Expense[],
-  settlements: Settlement[] = []
-): boolean {
-  const anyPayment = settlements.some((s) => s.status === "confirmed" || s.status === "pending");
-  if (!anyPayment) return false;
-  // Aún queda deuda por saldar (transferencias pendientes tras pagos confirmados).
-  return computeSettle(members, expenses, settlements).transfers.length > 0;
 }
 
 /** Pagos DIRECTOS: cada participante paga a quien realmente puso el dinero de

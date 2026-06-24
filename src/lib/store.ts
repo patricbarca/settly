@@ -347,42 +347,6 @@ export function updateGroup(id: string, fn: (g: Group) => Group) {
   if (g) persist(g);
 }
 
-/** Registra un abono de un préstamo (devolución parcial del deudor). */
-export function addLoanRepayment(groupId: string, expenseId: string, amount: number) {
-  if (!(amount > 0)) return;
-  const today = new Date().toISOString().slice(0, 10);
-  updateGroup(groupId, (g) => {
-    const exp = g.expenses.find((e) => e.id === expenseId);
-    return {
-      ...g,
-      expenses: g.expenses.map((e) =>
-        e.id === expenseId
-          ? { ...e, repayments: [...(e.repayments ?? []), { id: uid(), amount, date: today }] }
-          : e
-      ),
-      activity: withActivity(g, {
-        type: "payment_made",
-        actorId: g.meId,
-        actorName: g.members.find((m) => m.id === g.meId)?.name,
-        label: exp?.label,
-        amount,
-      }),
-    };
-  });
-}
-
-/** Deshace un abono concreto de un préstamo. */
-export function removeLoanRepayment(groupId: string, expenseId: string, repaymentId: string) {
-  updateGroup(groupId, (g) => ({
-    ...g,
-    expenses: g.expenses.map((e) =>
-      e.id === expenseId
-        ? { ...e, repayments: (e.repayments ?? []).filter((r) => r.id !== repaymentId) }
-        : e
-    ),
-  }));
-}
-
 export function addRecurring(groupId: string, r: RecurringExpense) {
   updateGroup(groupId, (g) => ({
     ...g,
