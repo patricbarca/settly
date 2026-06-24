@@ -405,6 +405,22 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
   const slide = SLIDES[step];
   const isLast = step === SLIDES.length - 1;
 
+  // La barra de estado (status bar / barra del navegador) se tiñe con el meta
+  // theme-color. Mientras dura el onboarding, lo igualamos al color superior de
+  // cada slide para que la franja de arriba coincida con el fondo. Al cerrar,
+  // restauramos el color original de la app.
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (!meta) return;
+    const original = meta.getAttribute("content");
+    return () => { if (original !== null) meta.setAttribute("content", original); };
+  }, []);
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const top = slide.gradient.match(/#[0-9a-fA-F]{3,8}/)?.[0];
+    if (meta && top) meta.setAttribute("content", top);
+  }, [slide]);
+
   function next() { step < SLIDES.length - 1 ? setStep(s => s + 1) : onDone(); }
   function prev() { if (step > 0) setStep(s => s - 1); }
 
