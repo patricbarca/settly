@@ -25,6 +25,10 @@ export function ExpenseList({ group }: { group: Group }) {
     updateGroup(group.id, (g) => ({
       ...g,
       expenses: g.expenses.filter((e) => e.id !== id),
+      // Limpia cualquier aviso de "eliminación solicitada" de este gasto.
+      notifications: (g.notifications ?? []).filter(
+        (n) => !(n.type === "delete_requested" && n.expenseId === id)
+      ),
       activity: withActivity(g, {
         type: "expense_deleted",
         actorId: group.meId,
@@ -215,26 +219,39 @@ export function ExpenseList({ group }: { group: Group }) {
                         <Icon name="check" size={13} /> {t("exp.reviewed")}
                       </button>
                     ) : null}
-                    {!e.createdBy || e.createdBy === group.meId ? (
+                    {e.createdBy && e.createdBy !== group.meId ? (
+                      // No soy el creador: puedo pedir que lo elimine, o ver que ya lo pedí.
+                      e.deleteRequested ? (
+                        <span
+                          className="glass rounded-full px-3 py-1 text-xs text-muted inline-flex items-center gap-1 opacity-70"
+                          title={t("exp.deletePendingHint")}
+                        >
+                          <Icon name="clock" size={13} /> {t("exp.deletePending")}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => requestDelete(e.id)}
+                          className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted inline-flex items-center gap-1"
+                        >
+                          <Icon name="trash" size={13} /> {t("exp.requestDelete")}
+                        </button>
+                      )
+                    ) : e.deleteRequested ? (
+                      // Soy el creador (o gasto sin autor) y alguien pidió eliminarlo:
+                      // el botón se resalta para aprobar la eliminación (como "Revisado").
+                      <button
+                        onClick={() => remove(e.id)}
+                        className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift inline-flex items-center gap-1"
+                        style={{ background: "var(--coral)" }}
+                      >
+                        <Icon name="trash" size={13} /> {t("exp.deleteApprove")}
+                      </button>
+                    ) : (
                       <button
                         onClick={() => remove(e.id)}
                         className="glass rounded-full px-3 py-1 text-xs hover-lift lk-danger text-muted inline-flex items-center gap-1"
                       >
                         <Icon name="trash" size={13} /> {t("common.delete")}
-                      </button>
-                    ) : e.deleteRequested ? (
-                      <span
-                        className="glass rounded-full px-3 py-1 text-xs text-muted inline-flex items-center gap-1 opacity-70"
-                        title={t("exp.deletePendingHint")}
-                      >
-                        <Icon name="clock" size={13} /> {t("exp.deletePending")}
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => requestDelete(e.id)}
-                        className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted inline-flex items-center gap-1"
-                      >
-                        <Icon name="trash" size={13} /> {t("exp.requestDelete")}
                       </button>
                     )}
                   </div>
