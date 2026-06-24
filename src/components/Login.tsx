@@ -131,7 +131,7 @@ export function Login() {
           <span className="blob b2" />
           <span className="blob b3" />
           <div className="relative z-10 flex flex-col items-center text-center py-2">
-            <div className="glass rounded-3xl p-3 mb-3">
+            <div className="mb-3">
               <Logo size={48} />
             </div>
             <h1 className="text-white font-display text-4xl font-extrabold">Settl<span className="wm-ai">iA</span></h1>

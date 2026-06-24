@@ -144,6 +144,7 @@ button:focus-visible, input:focus-visible, a:focus-visible, [role="button"]:focu
   position: relative;
   overflow: hidden;
   border-radius: 28px;
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
   padding: 22px 22px 24px;
   isolation: isolate;
   background:
