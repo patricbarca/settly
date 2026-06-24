@@ -31,7 +31,8 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ **Comunidades nicho** — pisos compartidos, estudiantes/Erasmus, viajeros, expats (AUD → Australia).
 - ⬜ **Contenido corto** (TikTok/Reels): "lo dices y la IA reparte".
 - ⬜ **Product Hunt / Hacker News** launch.
-- ⬜ **SEO landing** + métricas privacy-friendly (Plausible/Umami).
+- 🔧 **SEO landing** — ✅ hecho lo técnico (`sitemap.xml`, `robots.txt`, JSON-LD `SoftwareApplication`/`FAQPage`/`BlogPosting`, title/description con keywords). **Falta:** enviar sitemap a **Google Search Console** + Bing Webmaster, **páginas comparativa** ("vs Splitwise", "alternativa a Splitwise en Australia"), más artículos de blog (clusters long-tail), y conseguir **backlinks** (Product Hunt, AlternativeTo, Reddit, comunidades). Métricas privacy-friendly (Plausible/Umami).
+- ⬜ **Link de pago / split sin registro (estilo BillBoss)** — el amigo abre un enlace y ve su parte + datos de pago **sin instalar ni registrarse**. Hoy hay que crear cuenta para unirse a un grupo = fricción. Evaluar un flujo ligero de "pagar por link" para gastos puntuales.
 
 ## Fase 3 — Google Play (~25 USD único)
 - ⬜ Empaquetar **TWA** (Bubblewrap / PWABuilder) + `assetlinks.json`.
@@ -47,6 +48,10 @@ Bloquean lanzamiento serio / publicación en stores.
 ## Fase 5 — Monetización
 - ⬜ **Stripe** (web) para Pro. Definir límites free vs Pro.
 - ⚠️ **Reglas de tiendas:** vender bienes digitales *dentro* de la app → comisión 15-30% (IAP). Mantener el pago de Pro **por web/códigos**, no dentro de la app iOS.
+
+### Pagos automáticos (opcional, evaluar a futuro)
+- **Modelo A — "mostrar y confirmar" (actual, 0 comisión):** mostramos PayID/banco del que cobra; la persona paga desde su banco (Osko/PayID = instantáneo y gratis en AU) y se confirma. Sin licencia ni custodia de dinero. **Recomendado para esta etapa.**
+- **Modelo B — pago automático real (mueve dinero, siempre con comisión):** en AU lo más barato es **PayTo/NPP** vía **Monoova / Azupay / Zai** (céntimos por transferencia, no %); tarjeta (Stripe ~1.7%+30c) mata los splits pequeños. Implica cumplimiento (AFSL propia o apoyarse en el proveedor, KYC/AML). Solo cuando haya volumen que lo justifique.
 
 ## Deuda técnica / limpieza
 - ⬜ Borrar `PayMethodModal.tsx` (huérfano; edición de métodos solo en perfil).
