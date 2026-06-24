@@ -26,8 +26,30 @@ const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const VAPID_PUBLIC = Deno.env.get("VAPID_PUBLIC_KEY") ?? "";
 const VAPID_PRIVATE = Deno.env.get("VAPID_PRIVATE_KEY") ?? "";
 const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT") ?? "mailto:hola@settlia.app";
-const CRON_SECRET = Deno.env.get("CRON_SECRET") ?? "";
+const CRON_SECRET = (Deno.env.get("CRON_SECRET") ?? "").trim();
 const APP_URL = Deno.env.get("APP_URL") ?? "https://app.settlia.app/";
+// Hora local (0–23) a la que enviar el recordatorio. El cron corre cada hora y
+// solo enviamos a quien en SU zona horaria sea esta hora.
+const REMINDER_HOUR = Number(Deno.env.get("REMINDER_HOUR") ?? "10");
+
+// Hora local (0–23) en una zona IANA. Si la zona es inválida, usa UTC.
+function localHour(tz: string): number {
+  try {
+    return Number(
+      new Intl.DateTimeFormat("en-US", { timeZone: tz, hour: "numeric", hourCycle: "h23" }).format(new Date())
+    );
+  } catch {
+    return new Date().getUTCHours();
+  }
+}
+// ¿Es lunes en esa zona? (para grupos "home", recordatorio semanal).
+function isLocalMonday(tz: string): boolean {
+  try {
+    return new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short" }).format(new Date()) === "Mon";
+  } catch {
+    return new Date().getUTCDay() === 1;
+  }
+}
 
 if (VAPID_PUBLIC && VAPID_PRIVATE) {
   webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
@@ -89,7 +111,7 @@ function money(n: number, cur: string) {
   return `${cur}${Math.abs(n).toFixed(2)}`;
 }
 
-type Target = { kind: "add" | "settle"; group: string; amount?: number; currency?: string };
+type Target = { kind: "add" | "settle"; group: string; amount?: number; currency?: string; weekly?: boolean };
 
 // Mensaje localizado según el idioma del usuario (es/en).
 function buildBody(t: Target, lang: string): string {
@@ -138,15 +160,13 @@ Deno.serve(async (req) => {
 
       if (g.kind === "home") {
         // Casa/continuo: sin "he agregado todo". Solo recordamos a los deudores
-        // y de forma SEMANAL (lunes UTC), para no agobiar con cuentas que nunca
-        // "terminan".
-        if (new Date().getUTCDay() !== 1) continue; // 1 = lunes
+        // y de forma SEMANAL (el filtro de "lunes local" se aplica al enviar).
         const net = netByMember(g);
         for (const m of members) {
           const v = net[m.id] ?? 0;
           if (v < -0.01) {
             const uid = userOf.get(m.id);
-            if (uid) targets.set(uid, { kind: "settle", group: g.name, amount: v, currency: g.currency });
+            if (uid) targets.set(uid, { kind: "settle", group: g.name, amount: v, currency: g.currency, weekly: true });
           }
         }
         continue;
@@ -180,14 +200,19 @@ Deno.serve(async (req) => {
 
     const { data: subs } = await admin
       .from("push_subscriptions")
-      .select("endpoint, user_id, subscription, lang")
+      .select("endpoint, user_id, subscription, lang, tz")
       .in("user_id", userIds);
 
     let sent = 0;
     await Promise.all(
-      (subs ?? []).map(async (s: { endpoint: string; user_id: string; subscription: unknown; lang?: string }) => {
+      (subs ?? []).map(async (s: { endpoint: string; user_id: string; subscription: unknown; lang?: string; tz?: string }) => {
         const tgt = targets.get(s.user_id);
         if (!tgt) return;
+        const tz = s.tz || "UTC";
+        // Solo enviamos cuando en SU zona horaria son las ~10am.
+        if (localHour(tz) !== REMINDER_HOUR) return;
+        // Grupos "home" = recordatorio semanal (su lunes local).
+        if (tgt.weekly && !isLocalMonday(tz)) return;
         const body = buildBody(tgt, s.lang ?? "es");
         const payload = JSON.stringify({ title: "SettliA", body, url: APP_URL });
         try {

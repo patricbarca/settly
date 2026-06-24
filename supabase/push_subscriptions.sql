@@ -10,6 +10,8 @@ create table if not exists push_subscriptions (
 
 -- Idioma del usuario para localizar los recordatorios (idempotente si la tabla ya existía).
 alter table push_subscriptions add column if not exists lang text not null default 'es';
+-- Zona horaria IANA del usuario (para enviar el recordatorio a su 10am local).
+alter table push_subscriptions add column if not exists tz text not null default 'UTC';
 
 alter table push_subscriptions enable row level security;
 

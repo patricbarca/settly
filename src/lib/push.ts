@@ -3,6 +3,7 @@
 // La clave pública VAPID es pública (puede ir en el cliente); la privada vive
 // SOLO como secreto en Supabase.
 import { supabase } from "./supabase";
+import { getTimezone } from "./tz";
 
 export const VAPID_PUBLIC_KEY =
   "BBa5q9Dhy7vbGUwphnV126eKilbL3Sq7G5J4JxnlnDGEgFFRk-VCel5HWepNoNfvRJa0n-EFrXpGTHPeI8m0mU8";
@@ -53,8 +54,11 @@ export async function enablePush(): Promise<EnableResult> {
     const lang =
       typeof localStorage !== "undefined" && localStorage.getItem("settly.lang") === "en" ? "en" : "es";
 
+    // Zona horaria del usuario (para enviar los recordatorios a su 10am local).
+    const tz = getTimezone();
+
     const { error } = await supabase.from("push_subscriptions").upsert(
-      { user_id: user.id, endpoint: sub.endpoint, subscription: sub.toJSON(), lang },
+      { user_id: user.id, endpoint: sub.endpoint, subscription: sub.toJSON(), lang, tz },
       { onConflict: "endpoint" }
     );
     if (error) return "error";

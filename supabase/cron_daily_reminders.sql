@@ -22,12 +22,12 @@ create extension if not exists pg_net;
 select cron.unschedule('settlia-daily-reminders')
 where exists (select 1 from cron.job where jobname = 'settlia-daily-reminders');
 
--- Programa el recordatorio diario.
--- '0 23 * * *' = 23:00 UTC ≈ 9:00 AEST / 10:00 AEDT (Australia/Sydney).
--- (pg_cron corre en UTC; Sídney no observa DST en invierno → ~9-10am todo el año.)
+-- Corre CADA HORA. La función envía a cada usuario solo cuando en SU zona
+-- horaria son las ~10am (la zona se guarda por usuario en push_subscriptions.tz).
+-- Por eso ahora el schedule es horario, no una hora fija UTC.
 select cron.schedule(
   'settlia-daily-reminders',
-  '0 23 * * *',
+  '0 * * * *',
   $$
   select net.http_post(
     url     := 'https://<PROJECT_REF>.supabase.co/functions/v1/daily-reminders',
