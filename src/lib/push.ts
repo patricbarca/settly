@@ -57,7 +57,10 @@ export async function enablePush(): Promise<EnableResult> {
       { user_id: user.id, endpoint: sub.endpoint, subscription: sub.toJSON(), lang },
       { onConflict: "endpoint" }
     );
-    if (error) return "error";
+    if (error) {
+      console.error("[push] upsert failed:", error.code, error.message);
+      return "error";
+    }
 
     localStorage.setItem("settly.push", "1");
     return "ok";
