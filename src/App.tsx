@@ -15,6 +15,8 @@ import { OnboardingModal } from "./components/OnboardingModal";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { AccountModal } from "./components/AccountModal";
 import { NotificationsBell } from "./components/NotificationsBell";
+import { FeedbackModal } from "./components/FeedbackModal";
+import { registerAppOpen, shouldShowFeedbackPrompt, markFeedbackPromptShown } from "./lib/feedbackPrompt";
 
 export default function App() {
   const user = useUser();
@@ -25,6 +27,7 @@ export default function App() {
   const group = useActiveGroup();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -57,6 +60,22 @@ export default function App() {
       if (localStorage.getItem("settly.onboarded")) return;
     } catch {}
     setShowOnboarding(true);
+  }, [phase]);
+
+  useEffect(() => {
+    // Recordatorio automático de feedback (~1 vez por semana). Solo para
+    // usuarios autenticados (los invitados no pueden persistir), tras varias
+    // aperturas y sin chocar con el onboarding.
+    if (phase !== "authenticated") return;
+    registerAppOpen();
+    let onboarded = false;
+    try { onboarded = !!localStorage.getItem("settly.onboarded"); } catch {}
+    if (!onboarded || !shouldShowFeedbackPrompt()) return;
+    const id = setTimeout(() => {
+      markFeedbackPromptShown();
+      setShowFeedback(true);
+    }, 2000);
+    return () => clearTimeout(id);
   }, [phase]);
 
   if (phase === "loading") {
@@ -124,6 +143,8 @@ export default function App() {
       {group ? <GroupView group={group} /> : <Home />}
 
       {showAccount && <AccountModal onClose={() => setShowAccount(false)} />}
+
+      {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
 
       {showOnboarding && (
         <OnboardingModal
