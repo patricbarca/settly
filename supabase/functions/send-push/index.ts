@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     const payload = JSON.stringify({
       title: title || "Settly",
       body: body || "",
-      url: url || "/settly/",
+      url: url || "/",
     });
 
     let sent = 0;
