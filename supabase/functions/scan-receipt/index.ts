@@ -33,7 +33,7 @@ const PROMPT = `You are a receipt/document parser. Read this image — it may be
 Rules:
 - description: short label for the expense (e.g. "Electricity bill", "Dinner at Trattoria", "Internet invoice"). Max 60 chars.
 - total: the final amount due/paid as a number (dot decimal). Use the TOTAL or AMOUNT DUE line, not subtotal.
-- category: one of exactly these values — comida, mercado, bebidas, transporte, viajes, alojamiento, ocio, compras, salud, servicios, regalos, otros. Pick the most fitting one (servicios for utilities/bills/invoices, comida for restaurants, etc.)
+- category: one of exactly these values — comida, mercado, bebidas, transporte, viajes, alojamiento, ocio, compras, salud, servicios, suscripciones, seguros, regalos, otros. Pick the most fitting one (servicios for utilities/bills/invoices, comida for restaurants, suscripciones for Netflix/Spotify/memberships, seguros for any insurance, etc.)
 - items: array of individual line items if the receipt is itemized (restaurant, supermarket). For non-itemized receipts (utility bills, invoices) return an empty array [].
 - currency: ISO 4217 code detected from the receipt (EUR, USD, GBP, ARS, CLP, COP, MXN…). Default EUR.
 - If you cannot read the image at all, return: {"description":"","total":0,"category":"otros","items":[],"currency":"EUR"}`;
@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
   }
 });
 
-const VALID_CATEGORIES = ["comida","mercado","bebidas","transporte","viajes","alojamiento","ocio","compras","salud","servicios","regalos","otros"];
+const VALID_CATEGORIES = ["comida","mercado","bebidas","transporte","viajes","alojamiento","ocio","compras","salud","servicios","suscripciones","seguros","regalos","otros"];
 function sanitizeCategory(cat: unknown): string {
   const s = String(cat ?? "").trim().toLowerCase();
   return VALID_CATEGORIES.includes(s) ? s : "otros";

@@ -181,7 +181,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
               </div>
             )}
             <div>
-              <label className="text-xs font-semibold text-muted">{t("form.label")}</label>
+              <label className="text-xs font-semibold text-muted">{t("scan.label")}</label>
               <input
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
@@ -256,22 +256,24 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
               </div>
             </div>
 
-            <div className="glass rounded-3xl p-3 flex items-center justify-between">
-              <div>
-                <div className="text-sm font-medium">{t("scan.tip")}</div>
-                <div className="text-[11px] text-muted">{t("scan.tipNote")}</div>
+            {category === "comida" && (
+              <div className="glass rounded-3xl p-3 flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium">{t("scan.tip")}</div>
+                  <div className="text-[11px] text-muted">{t("scan.tipNote")}</div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <input
+                    value={tip}
+                    onChange={(e) => setTip(e.target.value)}
+                    inputMode="decimal"
+                    placeholder="0"
+                    className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
+                  />
+                  <span className="text-muted text-sm">{currencySymbol(group.currency)}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
-                <input
-                  value={tip}
-                  onChange={(e) => setTip(e.target.value)}
-                  inputMode="decimal"
-                  placeholder="0"
-                  className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
-                />
-                <span className="text-muted text-sm">{currencySymbol(group.currency)}</span>
-              </div>
-            </div>
+            )}
 
             <div className="glass rounded-3xl p-3">
               {group.members.map((m) => (

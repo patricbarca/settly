@@ -271,6 +271,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "cat.compras": { es: "Compras", en: "Shopping" },
   "cat.salud": { es: "Salud", en: "Health" },
   "cat.servicios": { es: "Servicios", en: "Bills & utilities" },
+  "cat.suscripciones": { es: "Suscripciones", en: "Memberships" },
+  "cat.seguros": { es: "Seguros", en: "Insurance" },
   "cat.regalos": { es: "Regalos", en: "Gifts" },
   "cat.otros": { es: "Otros", en: "Other" },
 
@@ -300,6 +302,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "create.peoplePh": { es: "Tú, Ale, Cote, Javi", en: "You, Ale, Cote, Javi" },
 
   "scan.title": { es: "Escanear ticket", en: "Scan receipt" },
+  "scan.label": { es: "Descripción", en: "Description" },
   "scan.pick": { es: "Sube o haz una foto del ticket. Marca quién consumió cada cosa y SettliA reparte.", en: "Upload or snap a photo of the receipt. Mark who had what and SettliA splits it." },
   "scan.choose": { es: "Elegir o hacer foto", en: "Choose or take photo" },
   "scan.camera": { es: "Hacer foto", en: "Take photo" },

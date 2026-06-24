@@ -9,6 +9,8 @@ export type Category =
   | "compras"
   | "salud"
   | "servicios"
+  | "suscripciones"
+  | "seguros"
   | "regalos"
   | "otros";
 
@@ -167,6 +169,8 @@ export const CATEGORIES: { id: Category; icon: IconName }[] = [
   { id: "compras", icon: "shopping" },
   { id: "salud", icon: "health" },
   { id: "servicios", icon: "bolt" },
+  { id: "suscripciones", icon: "repeat" },
+  { id: "seguros", icon: "lock" },
   { id: "regalos", icon: "gift" },
   { id: "otros", icon: "other" },
 ];
