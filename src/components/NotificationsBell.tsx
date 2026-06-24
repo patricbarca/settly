@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
-import { useGroups } from "../lib/store";
+import { useGroups, updateGroup } from "../lib/store";
 import { buildFeed, loadSeen, saveSeen, type FeedItem } from "../lib/notifications";
 import { buildActivity, type ActivityItem } from "../lib/activity";
 import type { ActivityType } from "../lib/types";
 import { money } from "../lib/format";
+import { withActivity } from "../lib/activity";
 import { useT, useLang } from "../lib/i18n";
 import { Icon, type IconName } from "./Icon";
 
@@ -40,7 +41,6 @@ type Tab = "notifications" | "activity";
 export function NotificationsBell() {
   const t = useT();
   const lang = useLang();
-  const groups = useGroups();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("notifications");
   const [seen, setSeen] = useState<Set<string>>(() => loadSeen());
@@ -59,13 +59,36 @@ export function NotificationsBell() {
     }
   }
 
+  const groups = useGroups();
+
   function notifMessage(n: FeedItem): string {
     const amt = n.amount != null ? money(n.amount, n.currency) : "";
     if (n.type === "expense_added")
       return t("notif.expense_added", { name: n.actorName ?? "?", label: n.label ?? "", amt });
     if (n.type === "payment_made")
       return t("notif.payment_made", { name: n.actorName ?? "?", amt, to: n.toName ?? "?" });
+    if (n.type === "delete_requested")
+      return t("notif.delete_requested", { name: n.actorName ?? "?", label: n.label ?? "" });
     return t("notif.review_requested", { label: n.label ?? "" });
+  }
+
+  function approveDelete(n: FeedItem) {
+    if (!n.expenseId) return;
+    const g = groups.find((g) => g.id === n.groupId);
+    if (!g) return;
+    const exp = g.expenses.find((e) => e.id === n.expenseId);
+    updateGroup(n.groupId, (gr) => ({
+      ...gr,
+      expenses: gr.expenses.filter((e) => e.id !== n.expenseId),
+      notifications: (gr.notifications ?? []).filter((notif) => notif.id !== n.id),
+      activity: withActivity(gr, {
+        type: "expense_deleted",
+        actorId: gr.meId,
+        actorName: gr.members.find((m) => m.id === gr.meId)?.name ?? "?",
+        label: exp?.label,
+        amount: exp?.amount,
+      }),
+    }));
   }
 
   function activityMessage(a: ActivityItem): string {
@@ -143,7 +166,7 @@ export function NotificationsBell() {
                           style={{ background: "var(--glass)" }}
                         >
                           <Icon
-                            name={n.type === "payment_made" ? "card" : n.type === "review_requested" ? "flag" : "plus"}
+                            name={n.type === "payment_made" ? "card" : n.type === "review_requested" ? "flag" : n.type === "delete_requested" ? "trash" : "plus"}
                             size={16}
                           />
                         </span>
@@ -152,6 +175,15 @@ export function NotificationsBell() {
                           <div className="text-[11px] text-muted mt-0.5">
                             {t("notif.in", { group: n.groupName })} · {relTime(n.ts, lang)}
                           </div>
+                          {n.type === "delete_requested" && n.expenseId && (
+                            <button
+                              onClick={() => approveDelete(n)}
+                              className="mt-2 rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift inline-flex items-center gap-1"
+                              style={{ background: "var(--coral)" }}
+                            >
+                              <Icon name="trash" size={12} /> {t("notif.delete_approve")}
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}

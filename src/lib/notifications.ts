@@ -23,6 +23,7 @@ export function buildFeed(groups: Group[]): FeedItem[] {
   for (const g of groups) {
     for (const n of g.notifications ?? []) {
       if (n.actorId && n.actorId === g.meId) continue; // no me notifico a mí mismo
+      if (n.type === "delete_requested" && n.toId !== g.meId) continue; // solo al creador
       items.push({ ...n, groupId: g.id, groupName: g.name, currency: g.currency });
     }
   }

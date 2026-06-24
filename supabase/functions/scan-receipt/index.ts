@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
   }
 });
 
-const VALID_CATEGORIES = ["comida","mercado","bebidas","transporte","viajes","alojamiento","ocio","compras","salud","servicios","suscripciones","seguros","regalos","otros"];
+const VALID_CATEGORIES = ["comida","mercado","bebidas","transporte","viajes","alojamiento","ocio","compras","salud","servicios","suscripciones","seguros","prestamos","regalos","otros"];
 function sanitizeCategory(cat: unknown): string {
   const s = String(cat ?? "").trim().toLowerCase();
   return VALID_CATEGORIES.includes(s) ? s : "otros";

@@ -11,6 +11,7 @@ export type Category =
   | "servicios"
   | "suscripciones"
   | "seguros"
+  | "prestamos"
   | "regalos"
   | "otros";
 
@@ -85,7 +86,7 @@ export interface Settlement {
   proof?: string; // dataURL del comprobante (opcional)
 }
 
-export type NotificationType = "expense_added" | "payment_made" | "review_requested";
+export type NotificationType = "expense_added" | "payment_made" | "review_requested" | "delete_requested";
 
 export interface AppNotification {
   id: string;
@@ -95,9 +96,11 @@ export interface AppNotification {
    *  anónimos (solicitud de revisión) para preservar el anonimato. */
   actorId?: string;
   actorName?: string; // denormalizado para mostrar
-  toName?: string; // destinatario del pago
-  label?: string; // etiqueta del gasto
+  toId?: string;      // destinatario específico (delete_requested → el creador)
+  toName?: string;    // destinatario del pago
+  label?: string;     // etiqueta del gasto
   amount?: number;
+  expenseId?: string; // para delete_requested
 }
 
 /** Registro de actividad (log). A diferencia de las notificaciones, incluye
@@ -171,6 +174,7 @@ export const CATEGORIES: { id: Category; icon: IconName }[] = [
   { id: "servicios", icon: "bolt" },
   { id: "suscripciones", icon: "repeat" },
   { id: "seguros", icon: "lock" },
+  { id: "prestamos", icon: "balance" },
   { id: "regalos", icon: "gift" },
   { id: "otros", icon: "other" },
 ];

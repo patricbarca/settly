@@ -34,6 +34,38 @@ export function ExpenseList({ group }: { group: Group }) {
       }),
     }));
   }
+
+  function requestDelete(id: string) {
+    const exp = group.expenses.find((e) => e.id === id);
+    if (!exp) return;
+    updateGroup(group.id, (g) => ({
+      ...g,
+      notifications: withNotif(g, {
+        type: "delete_requested",
+        actorId: group.meId,
+        actorName: name(group.meId),
+        toId: exp.createdBy,
+        label: exp.label,
+        expenseId: id,
+      }),
+    }));
+  }
+
+  function approveDelete(expenseId: string, notifId: string) {
+    const exp = group.expenses.find((e) => e.id === expenseId);
+    updateGroup(group.id, (g) => ({
+      ...g,
+      expenses: g.expenses.filter((e) => e.id !== expenseId),
+      notifications: (g.notifications ?? []).filter((n) => n.id !== notifId),
+      activity: withActivity(g, {
+        type: "expense_deleted",
+        actorId: group.meId,
+        actorName: name(group.meId),
+        label: exp?.label,
+        amount: exp?.amount,
+      }),
+    }));
+  }
   function requestReview(id: string) {
     const exp = group.expenses.find((e) => e.id === id);
     if (!exp) return;
@@ -182,12 +214,21 @@ export function ExpenseList({ group }: { group: Group }) {
                         <Icon name="check" size={13} /> {t("exp.reviewed")}
                       </button>
                     ) : null}
-                    <button
-                      onClick={() => remove(e.id)}
-                      className="glass rounded-full px-3 py-1 text-xs hover-lift lk-danger text-muted inline-flex items-center gap-1"
-                    >
-                      <Icon name="trash" size={13} /> {t("common.delete")}
-                    </button>
+                    {!e.createdBy || e.createdBy === group.meId ? (
+                      <button
+                        onClick={() => remove(e.id)}
+                        className="glass rounded-full px-3 py-1 text-xs hover-lift lk-danger text-muted inline-flex items-center gap-1"
+                      >
+                        <Icon name="trash" size={13} /> {t("common.delete")}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => requestDelete(e.id)}
+                        className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted inline-flex items-center gap-1"
+                      >
+                        <Icon name="trash" size={13} /> {t("exp.requestDelete")}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

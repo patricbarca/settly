@@ -273,6 +273,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "cat.servicios": { es: "Servicios", en: "Bills & utilities" },
   "cat.suscripciones": { es: "Suscripciones", en: "Memberships" },
   "cat.seguros": { es: "Seguros", en: "Insurance" },
+  "cat.prestamos": { es: "Préstamos", en: "Loans" },
   "cat.regalos": { es: "Regalos", en: "Gifts" },
   "cat.otros": { es: "Otros", en: "Other" },
 
@@ -291,6 +292,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "exp.edit": { es: "Editar gasto", en: "Edit expense" },
   "exp.shares": { es: "Reparto", en: "Split" },
   "exp.review": { es: "Solicitar revisión", en: "Request review" },
+  "exp.requestDelete": { es: "Pedir eliminar", en: "Request delete" },
   "exp.reviewed": { es: "Revisado", en: "Reviewed" },
   "exp.inReview": { es: "En revisión", en: "Under review" },
 
@@ -358,8 +360,10 @@ const DICT: Record<string, { es: string; en: string }> = {
   "notif.empty": { es: "Sin novedades por ahora.", en: "Nothing new yet." },
   "notif.expense_added": { es: "{name} añadió «{label}» ({amt})", en: "{name} added “{label}” ({amt})" },
   "notif.payment_made": { es: "{name} pagó {amt} a {to}", en: "{name} paid {amt} to {to}" },
-  "notif.review_requested": { es: "Alguien pidió revisar «{label}»", en: "Someone requested a review of “{label}”" },
-  "notif.in": { es: "en {group}", en: "in {group}" },
+  “notif.review_requested”: { es: “Alguien pidió revisar «{label}»”, en: “Someone requested a review of “{label}”” },
+  “notif.delete_requested”: { es: “{name} solicita eliminar «{label}»”, en: “{name} is requesting to delete “{label}”” },
+  “notif.delete_approve”: { es: “Eliminar”, en: “Delete” },
+  “notif.in”: { es: “en {group}”, en: “in {group}” },
 
   // Apartado "Actividad" (log completo, incluye lo que haces tú)
   "feed.notifications": { es: "Notificaciones", en: "Notifications" },
