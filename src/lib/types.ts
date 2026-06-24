@@ -150,6 +150,12 @@ export interface Group {
    *  false = pagos directos (pagas a quien puso el dinero de cada gasto). */
   simplifyDebts?: boolean;
   meId: string; // quién soy yo
+  /** userId del creador/dueño (solo él puede eliminar el grupo). Se rellena al
+   *  cargar desde la columna owner_id; no forma parte real del JSON. */
+  ownerId?: string;
+  /** ISO de borrado lógico: el grupo está en la papelera (recuperable 7 días).
+   *  Pasado el plazo, el dueño lo elimina definitivamente. Viaja en el JSON. */
+  deletedAt?: string;
   members: Member[];
   expenses: Expense[];
   settlements?: Settlement[];

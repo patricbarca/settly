@@ -191,6 +191,9 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "group.back": { es: "Mis grupos", en: "My groups" },
   "group.delete": { es: "Eliminar grupo", en: "Delete group" },
+  "group.leave": { es: "Salir del grupo", en: "Leave group" },
+  "group.deleteRecoverWarn": { es: "Se moverá a la papelera y podrás recuperarlo durante 7 días. Después se elimina para siempre.", en: "It moves to the trash and you can recover it for 7 days. After that it's deleted forever." },
+  "group.leaveWarn": { es: "Saldrás del grupo: dejará de aparecer en tu lista y tus balances. No afecta a los demás.", en: "You'll leave the group: it stops showing in your list and balances. It doesn't affect others." },
   "group.archive": { es: "Archivar", en: "Archive" },
   "tab.expenses": { es: "Gastos", en: "Expenses" },
   "tab.balances": { es: "Saldos", en: "Balances" },
@@ -207,6 +210,10 @@ const DICT: Record<string, { es: string; en: string }> = {
   "stats.topExpenses": { es: "Gastos más grandes", en: "Biggest expenses" },
   "home.archived": { es: "Archivados", en: "Archived" },
   "home.restore": { es: "Restaurar", en: "Restore" },
+  "home.trash": { es: "Papelera", en: "Trash" },
+  "home.trashDays": { es: "Quedan {n} días para recuperarlo", en: "{n} days left to recover" },
+  "home.recover": { es: "Recuperar", en: "Recover" },
+  "home.deleteForever": { es: "Eliminar definitivamente", en: "Delete forever" },
   "group.deleteQ": { es: "¿Eliminar “{name}”?", en: "Delete “{name}”?" },
   "group.deleteWarn": { es: "Se borrarán sus gastos. No se puede deshacer.", en: "Its expenses will be deleted. This can't be undone." },
 

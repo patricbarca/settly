@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import type { Group } from "../lib/types";
-import { setActiveGroup, deleteGroup, archiveGroup, processRecurring } from "../lib/store";
+import { setActiveGroup, archiveGroup, processRecurring } from "../lib/store";
 import { createInviteLink } from "../lib/invite";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
-import { Overlay } from "./Overlay";
 import { Hero } from "./Hero";
 import { Members } from "./Members";
 import { AddExpense } from "./AddExpense";
@@ -22,7 +21,6 @@ type Tab = "expenses" | "balances" | "stats" | "achievements";
 
 export function GroupView({ group }: { group: Group }) {
   const t = useT();
-  const [confirmDel, setConfirmDel] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showUsers, setShowUsers] = useState(false);
   const [tab, setTab] = useState<Tab>("expenses");
@@ -78,9 +76,6 @@ export function GroupView({ group }: { group: Group }) {
           </button>
           <button onClick={() => archiveGroup(group.id, true)} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift" title={t("group.archive")}>
             <Icon name="archive" size={15} />
-          </button>
-          <button onClick={() => setConfirmDel(true)} className="glass rounded-full h-8 w-8 flex items-center justify-center hover-lift" title={t("group.delete")} style={{ color: "#D14444" }}>
-            <Icon name="trash" size={15} />
           </button>
         </div>
       </div>
@@ -160,29 +155,6 @@ export function GroupView({ group }: { group: Group }) {
       {showUsers && <UsersModal group={group} onClose={() => setShowUsers(false)} />}
       {showSettings && <GroupSettings group={group} onClose={() => setShowSettings(false)} />}
 
-      {confirmDel && (
-        <Overlay onClose={() => setConfirmDel(false)}>
-          <div className="glass-strong rounded-3xl w-full max-w-sm p-6 anim-pop text-center" onClick={(e) => e.stopPropagation()}>
-            <div className="h-12 w-12 rounded-2xl flex items-center justify-center mx-auto mb-2" style={{ background: "#D1444418", color: "#D14444" }}>
-              <Icon name="trash" size={22} />
-            </div>
-            <h3 className="font-display text-xl font-bold">{t("group.deleteQ", { name: group.name })}</h3>
-            <p className="text-sm text-muted mt-1">{t("group.deleteWarn")}</p>
-            <div className="flex gap-2 mt-4 justify-center">
-              <button onClick={() => setConfirmDel(false)} className="glass rounded-full px-5 py-2.5 text-muted hover-lift">
-                {t("common.cancel")}
-              </button>
-              <button
-                onClick={() => deleteGroup(group.id)}
-                className="rounded-full px-5 py-2.5 text-white font-medium hover-lift"
-                style={{ background: "#D14444" }}
-              >
-                {t("common.delete")}
-              </button>
-            </div>
-          </div>
-        </Overlay>
-      )}
     </div>
   );
 }

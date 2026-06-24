@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useGroups, setActiveGroup, archiveGroup } from "../lib/store";
+import { useGroups, useTrashedGroups, setActiveGroup, archiveGroup, recoverGroup, purgeGroup } from "../lib/store";
 import { computeSettle, shareFor } from "../lib/split";
 import { groupSettleScore } from "../lib/gamification";
 import { money, personColor, memberInitials } from "../lib/format";
@@ -19,6 +19,8 @@ export function Home() {
   const plan = usePlan();
   const [creating, setCreating] = useState(false);
   const [showArch, setShowArch] = useState(false);
+  const [showTrash, setShowTrash] = useState(false);
+  const trashed = useTrashedGroups();
   const [showPaywall, setShowPaywall] = useState(false);
   const [paywallReason, setPaywallReason] = useState<string | undefined>(undefined);
 
@@ -253,6 +255,50 @@ export function Home() {
                       className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted shrink-0"
                     >
                       {t("home.restore")}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {trashed.length > 0 && (
+        <div className="mt-6">
+          <button
+            onClick={() => setShowTrash((v) => !v)}
+            className="lk text-sm font-medium inline-flex items-center gap-1"
+          >
+            <Icon name="chevron" size={14} style={{ transform: showTrash ? "rotate(180deg)" : "none" }} />
+            {t("home.trash")} ({trashed.length})
+          </button>
+          {showTrash && (
+            <div className="space-y-1.5 mt-2">
+              {trashed.map((g) => {
+                const daysLeft = Math.max(
+                  0,
+                  7 - Math.floor((Date.now() - new Date(g.deletedAt!).getTime()) / 86400000)
+                );
+                return (
+                  <div key={g.id} className="glass rounded-3xl p-3 flex items-center gap-2" style={{ opacity: 0.8 }}>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold truncate">{g.name}</div>
+                      <div className="text-xs text-muted">{t("home.trashDays", { n: String(daysLeft) })}</div>
+                    </div>
+                    <button
+                      onClick={() => recoverGroup(g.id)}
+                      className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted shrink-0"
+                    >
+                      {t("home.recover")}
+                    </button>
+                    <button
+                      onClick={() => purgeGroup(g.id)}
+                      className="rounded-full px-3 py-1 text-xs hover-lift shrink-0"
+                      style={{ color: "var(--coral)" }}
+                      title={t("home.deleteForever")}
+                    >
+                      <Icon name="trash" size={13} />
                     </button>
                   </div>
                 );

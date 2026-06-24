@@ -23,7 +23,20 @@ let isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
 
 const listeners = new Set<() => void>();
 
+// Vistas derivadas memoizadas (referencia estable para useSyncExternalStore):
+// `activeGroups` = no borrados; `trashedGroups` = en la papelera y míos (dueño).
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+let activeGroups: Group[] = [];
+let trashedGroups: Group[] = [];
+function recompute() {
+  activeGroups = state.groups.filter((g) => !g.deletedAt);
+  trashedGroups = state.groups.filter(
+    (g) => g.deletedAt && (g.ownerId === currentUserId || !g.ownerId)
+  );
+}
+
 function emit() {
+  recompute();
   listeners.forEach((l) => l());
 }
 
@@ -61,7 +74,7 @@ async function loadGroups(userId: string) {
 
   const { data: rows } = await supabase
     .from("groups")
-    .select("id, data, created_at")
+    .select("id, data, created_at, owner_id")
     .in("id", ids)
     .order("created_at", { ascending: false });
 
@@ -78,7 +91,15 @@ async function loadGroups(userId: string) {
       removedFrom.push(r.id);
       continue;
     }
-    groups.push({ ...data, id: r.id, meId });
+    const g: Group = { ...data, id: r.id, meId, ownerId: r.owner_id as string };
+    // Papelera: si el dueño lo borró hace más de 7 días, se elimina para siempre.
+    if (g.deletedAt && r.owner_id === userId && Date.now() - new Date(g.deletedAt).getTime() > WEEK_MS) {
+      supabase.from("groups").delete().eq("id", r.id).then(() => {});
+      idbDeleteGroup(r.id).catch(() => {});
+      idbClearFromOutbox([r.id]).catch(() => {});
+      continue;
+    }
+    groups.push(g);
   }
 
   for (const gid of removedFrom) {
@@ -179,15 +200,20 @@ supabase.auth.onAuthStateChange((_event, session) => {
 });
 
 export function useGroups(): Group[] {
-  return useSyncExternalStore(sub, () => state.groups, () => state.groups);
+  return useSyncExternalStore(sub, () => activeGroups, () => activeGroups);
+}
+
+/** Grupos en la papelera que puedo gestionar (soy el dueño). */
+export function useTrashedGroups(): Group[] {
+  return useSyncExternalStore(sub, () => trashedGroups, () => trashedGroups);
 }
 
 export function useActiveGroup(): Group | undefined {
-  return useSyncExternalStore(
-    sub,
-    () => state.groups.find((g) => g.id === state.activeId),
-    () => state.groups.find((g) => g.id === state.activeId)
-  );
+  const find = () => {
+    const g = state.groups.find((g) => g.id === state.activeId);
+    return g && !g.deletedAt ? g : undefined;
+  };
+  return useSyncExternalStore(sub, find, find);
 }
 
 export function useGroupsLoading(): boolean {
@@ -251,7 +277,32 @@ export function archiveGroup(id: string, value: boolean) {
   if (g) persist(g);
 }
 
+/** Borrado lógico (solo el dueño): el grupo va a la papelera, recuperable 7
+ *  días. Se sincroniza (deletedAt viaja en el JSON), así desaparece para todos. */
 export function deleteGroup(id: string) {
+  const now = new Date().toISOString();
+  const groups = state.groups.map((g) => (g.id === id ? { ...g, deletedAt: now } : g));
+  state = { ...state, groups, activeId: state.activeId === id ? null : state.activeId };
+  emit();
+  const g = groups.find((g) => g.id === id);
+  if (g) persist(g);
+}
+
+/** Recupera un grupo de la papelera dentro del plazo (solo el dueño). */
+export function recoverGroup(id: string) {
+  const groups = state.groups.map((g) => {
+    if (g.id !== id) return g;
+    const { deletedAt: _omit, ...rest } = g;
+    return rest as Group;
+  });
+  state = { ...state, groups };
+  emit();
+  const g = groups.find((g) => g.id === id);
+  if (g) persist(g);
+}
+
+/** Elimina el grupo para SIEMPRE (solo el dueño). */
+export function purgeGroup(id: string) {
   state = {
     ...state,
     groups: state.groups.filter((g) => g.id !== id),
@@ -262,7 +313,24 @@ export function deleteGroup(id: string) {
   idbClearFromOutbox([id]).catch(() => {});
   if (!currentUserId) return;
   supabase.from("groups").delete().eq("id", id)
-    .then(({ error }) => { if (error) console.error("deleteGroup:", error); });
+    .then(({ error }) => { if (error) console.error("purgeGroup:", error); });
+}
+
+/** Salir de un grupo (para quien NO es el dueño): elimina solo tu membresía,
+ *  el grupo desaparece de tu lista y balances sin afectar a los demás. */
+export function leaveGroup(id: string) {
+  const userId = currentUserId;
+  state = {
+    ...state,
+    groups: state.groups.filter((g) => g.id !== id),
+    activeId: state.activeId === id ? null : state.activeId,
+  };
+  emit();
+  idbDeleteGroup(id).catch(() => {});
+  idbClearFromOutbox([id]).catch(() => {});
+  if (!userId) return;
+  supabase.from("group_members").delete().eq("group_id", id).eq("user_id", userId)
+    .then(({ error }) => { if (error) console.error("leaveGroup:", error); });
 }
 
 export function updateGroup(id: string, fn: (g: Group) => Group) {

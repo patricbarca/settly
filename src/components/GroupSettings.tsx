@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Group, GroupKind } from "../lib/types";
-import { updateGroup } from "../lib/store";
+import { updateGroup, deleteGroup, leaveGroup } from "../lib/store";
+import { useUser } from "../lib/auth";
 import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
 import { money, personColor, memberInitials } from "../lib/format";
@@ -21,6 +22,17 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
   const [kind, setKind] = useState<GroupKind>(group.kind ?? "trip");
   const [simplify, setSimplify] = useState(group.simplifyDebts !== false);
   const [saved, setSaved] = useState(false);
+  const [confirmDanger, setConfirmDanger] = useState(false);
+
+  const user = useUser();
+  // Dueño = creador del grupo (o grupo local sin owner, p. ej. invitado).
+  const isOwner = !group.ownerId || group.ownerId === user?.id;
+
+  function deleteOrLeave() {
+    if (isOwner) deleteGroup(group.id);
+    else leaveGroup(group.id);
+    onClose();
+  }
 
   const { net } = computeSettle(group.members, group.expenses, group.settlements ?? []);
 
@@ -225,6 +237,41 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
         >
           {saved ? `✓ ${t("settings.saved")}` : t("common.save")}
         </button>
+
+        {/* Zona de riesgo: eliminar (dueño) o salir (miembro) */}
+        <div className="mt-6 pt-4" style={{ borderTop: "1px solid var(--line)" }}>
+          {!confirmDanger ? (
+            <button
+              onClick={() => setConfirmDanger(true)}
+              className="text-sm font-semibold hover-lift inline-flex items-center gap-1.5"
+              style={{ color: "var(--coral)" }}
+            >
+              <Icon name={isOwner ? "trash" : "power"} size={14} />
+              {isOwner ? t("group.delete") : t("group.leave")}
+            </button>
+          ) : (
+            <div className="anim-up">
+              <p className="text-xs mb-2" style={{ color: "var(--coral)" }}>
+                {isOwner ? t("group.deleteRecoverWarn") : t("group.leaveWarn")}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConfirmDanger(false)}
+                  className="rounded-full px-4 py-2 text-sm glass text-muted hover-lift"
+                >
+                  {t("common.cancel")}
+                </button>
+                <button
+                  onClick={deleteOrLeave}
+                  className="rounded-full px-4 py-2 text-sm font-semibold text-white hover-lift"
+                  style={{ background: "var(--coral)" }}
+                >
+                  {isOwner ? t("group.delete") : t("group.leave")}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </Overlay>
   );
