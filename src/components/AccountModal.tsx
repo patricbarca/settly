@@ -8,6 +8,7 @@ import { enablePush, disablePush, isPushEnabled, pushSupported } from "../lib/pu
 import { memberPays } from "../lib/pay";
 import { countryList, dialCode, isValidPhone, normalizePhone } from "../lib/countries";
 import { useT, useLang } from "../lib/i18n";
+import { useTimezonePref, setTimezone, resolveTz, TIMEZONES } from "../lib/tz";
 import { usePlan, FREE_AI_QUOTA } from "../lib/plan";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -27,6 +28,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const myMember = groups.map((g) => g.members.find((m) => m.id === g.meId)).find(Boolean);
 
   const lang = useLang();
+  const tzPref = useTimezonePref();
   const countries = useMemo(() => countryList(lang), [lang]);
   const [name, setName] = useState(user?.name ?? "");
   const [inits, setInits] = useState(myMember?.initials ?? "");
@@ -329,6 +331,22 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
               className="glass rounded-xl px-3 py-2.5 text-sm w-full"
             />
           )}
+        </div>
+
+        {/* Zona horaria */}
+        <div className="mb-6">
+          <label className="text-xs font-semibold text-muted">{t("account.timezone")}</label>
+          <select
+            value={tzPref}
+            onChange={(e) => setTimezone(e.target.value)}
+            className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1"
+          >
+            <option value="auto">{t("account.timezoneAuto")} — {resolveTz("auto")}</option>
+            {TIMEZONES.map((z) => (
+              <option key={z} value={z}>{z.replace(/_/g, " ")}</option>
+            ))}
+          </select>
+          <p className="text-[11px] text-muted mt-1">{t("account.timezoneHint")}</p>
         </div>
 
         {/* Push notifications */}

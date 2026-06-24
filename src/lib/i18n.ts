@@ -517,6 +517,11 @@ const DICT: Record<string, { es: string; en: string }> = {
   "feedback.errorSession": { es: "Inicia sesión para enviar comentarios.", en: "Sign in to send feedback." },
 
   "common.ok": { es: "Entendido", en: "Got it" },
+  "common.you": { es: "tú", en: "you" },
+
+  "account.timezone": { es: "Zona horaria", en: "Time zone" },
+  "account.timezoneAuto": { es: "Automática (dispositivo)", en: "Automatic (device)" },
+  "account.timezoneHint": { es: "Las fechas de notificaciones y actividad se muestran en esta zona.", en: "Notification and activity dates are shown in this zone." },
 
   "pro.upgrade":  { es: "Mejorar a Pro", en: "Upgrade to Pro" },
   "pro.badge":    { es: "Pro", en: "Pro" },

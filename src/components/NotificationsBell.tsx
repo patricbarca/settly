@@ -5,16 +5,26 @@ import { buildActivity, type ActivityItem } from "../lib/activity";
 import type { ActivityType } from "../lib/types";
 import { money } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
+import { useTimezone, dayKey, dayLabel, timeLabel } from "../lib/tz";
 import { Icon, type IconName } from "./Icon";
 
-function relTime(ts: string, lang: "es" | "en") {
-  const diff = Date.now() - new Date(ts).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1) return lang === "es" ? "ahora" : "now";
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  return `${Math.floor(h / 24)}d`;
+/** Agrupa items (ya ordenados desc por ts) por día en la zona del usuario. */
+function groupByDay<T extends { ts: string }>(
+  arr: T[],
+  tz: string,
+  lang: "es" | "en"
+): { key: string; label: string; items: T[] }[] {
+  const out: { key: string; label: string; items: T[] }[] = [];
+  for (const it of arr) {
+    const key = dayKey(it.ts, tz);
+    let g = out[out.length - 1];
+    if (!g || g.key !== key) {
+      g = { key, label: dayLabel(it.ts, tz, lang), items: [] };
+      out.push(g);
+    }
+    g.items.push(it);
+  }
+  return out;
 }
 
 const ACTIVITY_ICON: Record<ActivityType, IconName> = {
@@ -40,6 +50,7 @@ type Tab = "notifications" | "activity";
 export function NotificationsBell() {
   const t = useT();
   const lang = useLang();
+  const tz = useTimezone();
   const groups = useGroups();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("notifications");
@@ -61,10 +72,15 @@ export function NotificationsBell() {
 
   function notifMessage(n: FeedItem): string {
     const amt = n.amount != null ? money(n.amount, n.currency) : "";
+    // Si el destinatario soy yo, muestro "MiNombre (tú)".
+    const g = groups.find((x) => x.id === n.groupId);
+    const toIsMe = !!g && !!n.toId && n.toId === g.meId;
+    const myName = g?.members.find((m) => m.id === g.meId)?.name ?? "";
+    const toDisplay = toIsMe ? `${myName} (${t("common.you")})` : n.toName ?? "?";
     if (n.type === "expense_added")
       return t("notif.expense_added", { name: n.actorName ?? "?", label: n.label ?? "", amt });
     if (n.type === "payment_made")
-      return t("notif.payment_made", { name: n.actorName ?? "?", amt, to: n.toName ?? "?" });
+      return t("notif.payment_made", { name: n.actorName ?? "?", amt, to: toDisplay });
     if (n.type === "delete_requested")
       return t("notif.delete_requested", { name: n.actorName ?? "?", label: n.label ?? "" });
     return t("notif.review_requested", { label: n.label ?? "" });
@@ -138,49 +154,59 @@ export function NotificationsBell() {
                 items.length === 0 ? (
                   <div className="glass rounded-3xl p-10 text-center text-muted mt-2">{t("notif.empty")}</div>
                 ) : (
-                  <div className="space-y-1.5">
-                    {items.map((n) => (
-                      <div key={n.id} className="glass rounded-2xl flex gap-3 items-start px-4 py-3">
-                        <span
-                          className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-muted"
-                          style={{ background: "var(--glass)" }}
-                        >
-                          <Icon
-                            name={n.type === "payment_made" ? "card" : n.type === "review_requested" ? "flag" : n.type === "delete_requested" ? "trash" : "plus"}
-                            size={16}
-                          />
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm leading-snug">{notifMessage(n)}</div>
-                          <div className="text-[11px] text-muted mt-0.5">
-                            {t("notif.in", { group: n.groupName })} · {relTime(n.ts, lang)}
+                  groupByDay(items, tz, lang).map((day) => (
+                    <div key={day.key} className="mb-3">
+                      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted mb-1.5 px-1">{day.label}</div>
+                      <div className="space-y-1.5">
+                        {day.items.map((n) => (
+                          <div key={n.id} className="glass rounded-2xl flex gap-3 items-start px-4 py-3">
+                            <span
+                              className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-muted"
+                              style={{ background: "var(--glass)" }}
+                            >
+                              <Icon
+                                name={n.type === "payment_made" ? "card" : n.type === "review_requested" ? "flag" : n.type === "delete_requested" ? "trash" : "plus"}
+                                size={16}
+                              />
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm leading-snug">{notifMessage(n)}</div>
+                              <div className="text-[11px] text-muted mt-0.5">
+                                {t("notif.in", { group: n.groupName })} · {timeLabel(n.ts, tz, lang)}
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))
                 )
               ) : activity.length === 0 ? (
                 <div className="glass rounded-3xl p-10 text-center text-muted mt-2">{t("activity.empty")}</div>
               ) : (
-                <div className="space-y-1.5">
-                  {activity.map((a) => (
-                    <div key={a.id} className="glass rounded-2xl flex gap-3 items-start px-4 py-3">
-                      <span
-                        className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-muted"
-                        style={a.mine ? { background: "color-mix(in srgb, var(--teal) 18%, transparent)", color: "var(--teal)" } : { background: "var(--glass)" }}
-                      >
-                        <Icon name={ACTIVITY_ICON[a.type] ?? "bolt"} size={16} />
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm leading-snug">{activityMessage(a)}</div>
-                        <div className="text-[11px] text-muted mt-0.5">
-                          {t("notif.in", { group: a.groupName })} · {relTime(a.ts, lang)}
+                groupByDay(activity, tz, lang).map((day) => (
+                  <div key={day.key} className="mb-3">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-muted mb-1.5 px-1">{day.label}</div>
+                    <div className="space-y-1.5">
+                      {day.items.map((a) => (
+                        <div key={a.id} className="glass rounded-2xl flex gap-3 items-start px-4 py-3">
+                          <span
+                            className="h-9 w-9 rounded-full flex items-center justify-center shrink-0 text-muted"
+                            style={a.mine ? { background: "color-mix(in srgb, var(--teal) 18%, transparent)", color: "var(--teal)" } : { background: "var(--glass)" }}
+                          >
+                            <Icon name={ACTIVITY_ICON[a.type] ?? "bolt"} size={16} />
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm leading-snug">{activityMessage(a)}</div>
+                            <div className="text-[11px] text-muted mt-0.5">
+                              {t("notif.in", { group: a.groupName })} · {timeLabel(a.ts, tz, lang)}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ))
               )}
             </div>
           </div>
