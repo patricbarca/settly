@@ -1,7 +1,7 @@
 import { useState, useMemo, type ChangeEvent } from "react";
 import type { PayType, PayMethod } from "../lib/types";
 import { useUser, setProfileName, setProfileAvatar, deleteAccount } from "../lib/auth";
-import { useGroups, updateMyMember } from "../lib/store";
+import { useAllGroups, updateMyMember } from "../lib/store";
 import { fileToAvatarDataUrl } from "../lib/image";
 import { personColor, memberInitials } from "../lib/format";
 import { enablePush, disablePush, isPushEnabled, pushSupported } from "../lib/push";
@@ -20,12 +20,33 @@ const PAY_TYPES: PayType[] = ["payid", "bank", "paypal", "revolut", "wise", "biz
 export function AccountModal({ onClose }: { onClose: () => void }) {
   const t = useT();
   const user = useUser();
-  const groups = useGroups();
+  const groups = useAllGroups();
   const plan = usePlan();
   const [showPaywall, setShowPaywall] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
 
-  const myMember = groups.map((g) => g.members.find((m) => m.id === g.meId)).find(Boolean);
+  // Combina tus datos de TODOS los grupos (activos + papelera + archivados):
+  // por cada campo toma el primer valor no vacío, para no perder nada aunque el
+  // grupo que los tenía esté en la papelera.
+  const myMembers = groups
+    .map((g) => g.members.find((m) => m.id === g.meId))
+    .filter((m): m is NonNullable<typeof m> => !!m);
+  const firstNonEmpty = (get: (m: (typeof myMembers)[number]) => string | undefined) =>
+    myMembers.map(get).find((v) => v != null && v !== "") ?? "";
+  // Métodos de pago: combinados por tipo (primer valor no vacío de cada tipo).
+  const payByType: Record<string, PayMethod> = {};
+  for (const m of myMembers) {
+    for (const p of memberPays(m)) {
+      if (p.value && !payByType[p.type]) payByType[p.type] = p;
+    }
+  }
+  const richestPays = Object.values(payByType);
+  const myMember = {
+    initials: firstNonEmpty((m) => m.initials),
+    country: firstNonEmpty((m) => m.country),
+    phone: firstNonEmpty((m) => m.phone),
+    pays: richestPays,
+  };
 
   const lang = useLang();
   const tzPref = useTimezonePref();

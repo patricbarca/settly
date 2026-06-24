@@ -203,6 +203,12 @@ export function useGroups(): Group[] {
   return useSyncExternalStore(sub, () => activeGroups, () => activeGroups);
 }
 
+/** TODOS los grupos (activos + papelera + archivados). Para leer datos del
+ *  perfil del usuario sin perderlos cuando un grupo está en la papelera. */
+export function useAllGroups(): Group[] {
+  return useSyncExternalStore(sub, () => state.groups, () => state.groups);
+}
+
 /** Grupos en la papelera que puedo gestionar (soy el dueño). */
 export function useTrashedGroups(): Group[] {
   return useSyncExternalStore(sub, () => trashedGroups, () => trashedGroups);
