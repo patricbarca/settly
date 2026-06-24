@@ -57,7 +57,7 @@ Rules:
 - amount: numeric TOTAL only (no currency symbol; use a dot for decimals).
 - PER-PERSON amounts: if the note states the amount PER PERSON ("X each", "X cada uno", "X c/u", "X por cabeza", "X por persona", "X apiece"), then the TOTAL amount = that number multiplied by the number of participantIds. Example: "Cinema 12 each" with 4 participants -> amount 48.
 - payments: who actually PAID and how much. One entry per payer; the amounts MUST sum to the total amount. If paid evenly between payers, divide the total. If unclear who paid, use a single entry: [{"memberId":"${meId}","amount":<total>}].
-- participantIds: who SHARES the cost — INDEPENDENT from who paid. Often the whole group even if only one or two people paid. If unclear, include ALL member ids.
+- participantIds: who SHARES the cost — INDEPENDENT from who paid. DEFAULT = the WHOLE group (ALL member ids). Only use a subset when the note EXPLICITLY limits who shares (e.g. "only Ana and me", "except Luis", "menos Luis"). Naming who PAID never limits who shares. When in doubt, include ALL member ids.
 - category: best match from the allowed list; if none fits use "otros".
 - interval: "daily" | "weekly" | "monthly" | "yearly" if recurring, else null.
 - Match names loosely: nicknames and diminutives count (e.g. "Ale" -> "Alecita", "Pato" -> "Patricio"). Output member IDS, not names.
@@ -101,6 +101,10 @@ Examples (sample roster — a: Ana, b: Luis, c: Me; "me"=c). Learn the behavior,
     // Saneamos la salida para que sea siempre usable, aunque el modelo se
     // desvíe: IDs válidos, categoría permitida, intervalo válido o null.
     const clean = sanitize(parsed, { memberIds, meId, categories: catArr });
+    // Reparto por defecto = TODO el grupo. El modelo pequeño a veces estrecha el
+    // reparto sin motivo (p. ej. "asado 100" -> solo el pagador). Si la nota NO
+    // nombra a otros miembros y no dice "solo yo", repartimos entre todos.
+    applyDefaultSplit(String(text), clean, memberArr, memberIds, meId);
     // "por persona": no fiamos la multiplicación al modelo pequeño; la forzamos
     // en el servidor a partir del número de la nota × nº de participantes.
     const final = enforcePerPerson(String(text), clean);
@@ -167,6 +171,45 @@ function sanitize(
     category,
     interval,
   };
+}
+
+// ¿La nota menciona a algún OTRO miembro (por nombre o primer nombre)?
+function mentionsOtherMembers(
+  text: string,
+  members: { id: string; name: string }[],
+  meId: string
+): boolean {
+  const t = text.toLowerCase();
+  return members.some((m) => {
+    if (m.id === meId) return false;
+    const name = (m.name || "").toLowerCase().trim();
+    if (!name) return false;
+    const first = name.split(/\s+/)[0];
+    return t.includes(name) || (first.length >= 2 && new RegExp(`\\b${escapeRe(first)}`, "i").test(t));
+  });
+}
+function escapeRe(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Reparto por defecto: si la nota no limita quién comparte, reparte entre TODOS.
+function applyDefaultSplit(
+  text: string,
+  clean: { participantIds: string[] } & Record<string, unknown>,
+  members: { id: string; name: string }[],
+  memberIds: string[],
+  meId: string
+) {
+  const onlyMe =
+    /(\b(solo|s[oó]lo|just)\s+(yo|me|m[ií])\b)|(\bpara\s+m[ií]\b)|(\bonly\s+me\b)|(\bfor\s+me\b)/i.test(text);
+  if (onlyMe) {
+    clean.participantIds = [meId];
+    return;
+  }
+  // Si NO nombra a otros miembros, el reparto es de todo el grupo.
+  if (!mentionsOtherMembers(text, members, meId)) {
+    clean.participantIds = [...memberIds];
+  }
 }
 
 // Si la nota expresa un importe POR PERSONA, recalcula el total = valor × nº de
