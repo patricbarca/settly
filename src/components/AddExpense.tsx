@@ -225,7 +225,7 @@ export function AddExpense({ group }: { group: Group }) {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && interpret()}
           placeholder={t("add.placeholder")}
-          className="glass rounded-2xl px-4 py-3 text-sm flex-1"
+          className="glass rounded-2xl px-4 py-3 text-sm flex-1 min-w-0"
         />
         <button
           onClick={() => interpret()}

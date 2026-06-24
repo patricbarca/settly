@@ -221,9 +221,9 @@ export function ExpenseForm({
           value={f.label}
           onChange={(e) => up("label", e.target.value)}
           placeholder={t("form.concept")}
-          className="glass rounded-xl px-3 py-2.5 text-sm flex-1"
+          className="glass rounded-xl px-3 py-2.5 text-sm flex-1 min-w-0"
         />
-        <div className="glass rounded-xl px-3 py-2.5 flex items-center gap-1 w-32 shrink-0">
+        <div className="glass rounded-xl px-3 py-2.5 flex items-center gap-1 w-28 shrink-0">
           <input
             value={f.amount}
             onChange={(e) => changeAmount(e.target.value)}
@@ -270,7 +270,7 @@ export function ExpenseForm({
             {group.members.map((m) => (
               <div key={m.id} className="flex items-center gap-2">
                 <Avatar name={m.name} avatar={m.avatar} size={24} />
-                <span className="text-sm flex-1">{m.name}</span>
+                <span className="text-sm flex-1 min-w-0 truncate">{m.name}</span>
                 <div className="glass rounded-lg px-2 py-1 flex items-center gap-1 w-28 shrink-0">
                   <input
                     value={f.payments[m.id] ?? ""}
@@ -361,7 +361,7 @@ export function ExpenseForm({
               return (
                 <div key={id} className="flex items-center gap-2">
                   <Avatar name={member.name} avatar={member.avatar} size={20} />
-                  <span className="text-sm flex-1">{member.name}</span>
+                  <span className="text-sm flex-1 min-w-0 truncate">{member.name}</span>
                   {f.splitMode === "shares" && impliedAmt !== null && (
                     <span className="text-xs text-muted font-mono">
                       {money(impliedAmt, group.currency)}
