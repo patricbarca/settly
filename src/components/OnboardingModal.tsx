@@ -384,15 +384,18 @@ function SlideTypeAnim() {
 }
 
 // ── Slide config ─────────────────────────────────────────────────────────────
+// Todos los slides comparten el MISMO color arriba (#0b0a1f) para que la barra
+// de estado de iOS —que no se actualiza por slide— coincida siempre con el top.
+// El color característico de cada slide entra a partir del ~18%.
 const SLIDES = [
-  { gradient: "linear-gradient(160deg, #120d36 0%, #3d2fa0 100%)", Animation: Slide1Anim, titleKey: "onboard.s1t", descKey: "onboard.s1d" },
-  { gradient: "linear-gradient(160deg, #082a28 0%, #0a7060 100%)", Animation: Slide2Anim, titleKey: "onboard.s2t", descKey: "onboard.s2d" },
-  { gradient: "linear-gradient(160deg, #3d1005 0%, #c2410c 100%)", Animation: Slide3Anim, titleKey: "onboard.s3t", descKey: "onboard.s3d" },
-  { gradient: "linear-gradient(160deg, #08153d 0%, #0369a1 100%)", Animation: Slide4Anim, titleKey: "onboard.s4t", descKey: "onboard.s4d" },
-  { gradient: "linear-gradient(160deg, #2a0a3d 0%, #7c3aed 100%)", Animation: SlideTypeAnim, titleKey: "onboard.sTypeT", descKey: "onboard.sTypeD" },
-  { gradient: "linear-gradient(160deg, #032014 0%, #059669 100%)", Animation: Slide5Anim, titleKey: "onboard.s5t", descKey: "onboard.s5d" },
-  { gradient: "linear-gradient(160deg, #160836 0%, #6d28d9 100%)", Animation: Slide6Anim, titleKey: "onboard.s6t", descKey: "onboard.s6d" },
-  { gradient: "linear-gradient(160deg, #061a33 0%, #0e7490 100%)", Animation: InstallDemoAnim, titleKey: "install.guideTitle", descKey: "install.guideDesc", guide: true },
+  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #120d36 18%, #3d2fa0 100%)", Animation: Slide1Anim, titleKey: "onboard.s1t", descKey: "onboard.s1d" },
+  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #082a28 18%, #0a7060 100%)", Animation: Slide2Anim, titleKey: "onboard.s2t", descKey: "onboard.s2d" },
+  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #3d1005 18%, #c2410c 100%)", Animation: Slide3Anim, titleKey: "onboard.s3t", descKey: "onboard.s3d" },
+  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #08153d 18%, #0369a1 100%)", Animation: Slide4Anim, titleKey: "onboard.s4t", descKey: "onboard.s4d" },
+  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #2a0a3d 18%, #7c3aed 100%)", Animation: SlideTypeAnim, titleKey: "onboard.sTypeT", descKey: "onboard.sTypeD" },
+  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #032014 18%, #059669 100%)", Animation: Slide5Anim, titleKey: "onboard.s5t", descKey: "onboard.s5d" },
+  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #160836 18%, #6d28d9 100%)", Animation: Slide6Anim, titleKey: "onboard.s6t", descKey: "onboard.s6d" },
+  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #061a33 18%, #0e7490 100%)", Animation: InstallDemoAnim, titleKey: "install.guideTitle", descKey: "install.guideDesc", guide: true },
 ];
 
 // ── Main component ────────────────────────────────────────────────────────────
