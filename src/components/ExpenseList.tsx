@@ -77,8 +77,9 @@ export function ExpenseList({ group }: { group: Group }) {
     updateGroup(group.id, (g) => ({
       ...g,
       expenses: g.expenses.map((e) => (e.id === id ? { ...e, reviewRequested: true } : e)),
-      // Solicitud de revisión: anónima (sin actorId) por diseño.
-      notifications: withNotif(g, { type: "review_requested", label: exp.label }),
+      // Solicitud de revisión: anónima (sin actorId) por diseño. Guardamos
+      // expenseId para poder cancelarla después con precisión.
+      notifications: withNotif(g, { type: "review_requested", label: exp.label, expenseId: id }),
       // En el log sí registramos quién la pidió (es tu propia actividad).
       activity: withActivity(g, {
         type: "review_requested",
@@ -94,6 +95,25 @@ export function ExpenseList({ group }: { group: Group }) {
     updateGroup(group.id, (g) => ({
       ...g,
       expenses: g.expenses.map((e) => (e.id === id ? { ...e, reviewRequested: false } : e)),
+    }));
+  }
+  // Cancelar una solicitud propia (la pulsé por error): quita el flag y el aviso.
+  function cancelReview(id: string) {
+    updateGroup(group.id, (g) => ({
+      ...g,
+      expenses: g.expenses.map((e) => (e.id === id ? { ...e, reviewRequested: false } : e)),
+      notifications: (g.notifications ?? []).filter(
+        (n) => !(n.type === "review_requested" && n.expenseId === id)
+      ),
+    }));
+  }
+  function cancelDelete(id: string) {
+    updateGroup(group.id, (g) => ({
+      ...g,
+      expenses: g.expenses.map((e) => (e.id === id ? { ...e, deleteRequested: false } : e)),
+      notifications: (g.notifications ?? []).filter(
+        (n) => !(n.type === "delete_requested" && n.expenseId === id)
+      ),
     }));
   }
   function saveEdit(id: string, d: ExpenseDraft) {
@@ -218,16 +238,27 @@ export function ExpenseList({ group }: { group: Group }) {
                       >
                         <Icon name="check" size={13} /> {t("exp.reviewed")}
                       </button>
-                    ) : null}
+                    ) : (
+                      <button
+                        onClick={() => cancelReview(e.id)}
+                        title={t("exp.tapToCancel")}
+                        className="rounded-full px-3 py-1 text-xs font-semibold hover-lift inline-flex items-center gap-1"
+                        style={{ background: "rgba(232,146,12,0.16)", color: "var(--amber)" }}
+                      >
+                        <Icon name="flag" size={13} /> {t("exp.reviewRequested")} <Icon name="close" size={12} />
+                      </button>
+                    )}
                     {e.createdBy && e.createdBy !== group.meId ? (
                       // No soy el creador: puedo pedir que lo elimine, o ver que ya lo pedí.
                       e.deleteRequested ? (
-                        <span
-                          className="glass rounded-full px-3 py-1 text-xs text-muted inline-flex items-center gap-1 opacity-70"
-                          title={t("exp.deletePendingHint")}
+                        <button
+                          onClick={() => cancelDelete(e.id)}
+                          title={t("exp.tapToCancel")}
+                          className="rounded-full px-3 py-1 text-xs font-semibold hover-lift inline-flex items-center gap-1"
+                          style={{ background: "rgba(232,146,12,0.16)", color: "var(--amber)" }}
                         >
-                          <Icon name="clock" size={13} /> {t("exp.deletePending")}
-                        </span>
+                          <Icon name="clock" size={13} /> {t("exp.deletePending")} <Icon name="close" size={12} />
+                        </button>
                       ) : (
                         <button
                           onClick={() => requestDelete(e.id)}

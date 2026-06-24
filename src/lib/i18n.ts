@@ -292,6 +292,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "exp.edit": { es: "Editar gasto", en: "Edit expense" },
   "exp.shares": { es: "Reparto", en: "Split" },
   "exp.review": { es: "Solicitar revisión", en: "Request review" },
+  "exp.reviewRequested": { es: "Revisión solicitada", en: "Review requested" },
+  "exp.tapToCancel": { es: "Toca para cancelar la solicitud", en: "Tap to cancel the request" },
   "exp.requestDelete": { es: "Pedir eliminar", en: "Request delete" },
   "exp.deletePending": { es: "Eliminación pendiente", en: "Delete pending" },
   "exp.deleteApprove": { es: "Eliminar (solicitado)", en: "Delete (requested)" },
