@@ -305,7 +305,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "exp.deletePending": { es: "Eliminación pendiente", en: "Delete pending" },
   "exp.deleteApprove": { es: "Eliminar (solicitado)", en: "Delete (requested)" },
   "exp.deleteLocked": { es: "No se puede eliminar", en: "Can't delete" },
-  "exp.deleteLockedHint": { es: "Hay pagos parciales sin saldar. Completa o cancela la deuda antes de eliminar gastos.", en: "There are unsettled partial payments. Settle or cancel the debt before deleting expenses." },
+  "exp.deleteLockedHint": { es: "Préstamo con pagos pendientes. No se puede eliminar hasta saldar la deuda.", en: "Loan with pending payments. Can't be deleted until the debt is settled." },
   "exp.deletePendingHint": { es: "Esperando que quien lo creó apruebe la eliminación.", en: "Waiting for the creator to approve the deletion." },
   "exp.reviewed": { es: "Revisado", en: "Reviewed" },
   "exp.inReview": { es: "En revisión", en: "Under review" },

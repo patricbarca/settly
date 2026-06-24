@@ -16,8 +16,9 @@ import { notifyGroup } from "../lib/push";
 export function ExpenseList({ group }: { group: Group }) {
   const t = useT();
   const ids = group.members.map((m) => m.id);
-  // Si ya hubo pagos parciales y la deuda no está saldada, no se puede eliminar
-  // ningún gasto (borrarlo distorsionaría los saldos sobre los que se pagó).
+  // ¿El grupo tiene pagos parciales sin saldar? Se usa SOLO para bloquear el
+  // borrado de gastos de la categoría "Préstamos" (un préstamo no se puede
+  // eliminar hasta saldarlo). Los demás gastos se eliminan normalmente.
   const deletesLocked = hasUnsettledPayments(group.members, group.expenses, group.settlements ?? []);
   const [editId, setEditId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -251,8 +252,9 @@ export function ExpenseList({ group }: { group: Group }) {
                         <Icon name="flag" size={13} /> {t("exp.reviewRequested")} <Icon name="close" size={12} />
                       </button>
                     )}
-                    {deletesLocked ? (
-                      // Hay pagos parciales sin saldar: no se puede eliminar nada.
+                    {deletesLocked && e.category === "prestamos" ? (
+                      // Solo los PRÉSTAMOS se bloquean mientras haya deuda sin saldar.
+                      // El resto de gastos se pueden eliminar normalmente.
                       <span
                         className="glass rounded-full px-3 py-1 text-xs text-muted inline-flex items-center gap-1 opacity-70"
                         title={t("exp.deleteLockedHint")}
