@@ -119,7 +119,7 @@ Mientras no esté desplegada, en iPhone el dictado simplemente no transcribe
 # 1) Web Push
 #    SQL Editor: ejecuta supabase/push_subscriptions.sql  (incluye columna lang)
 supabase functions deploy send-push
-supabase secrets set VAPID_PUBLIC_KEY=...  VAPID_PRIVATE_KEY=...  VAPID_SUBJECT=mailto:hola@settlia.app
+supabase secrets set VAPID_PUBLIC_KEY=...  VAPID_PRIVATE_KEY=...  VAPID_SUBJECT=mailto:hello@settlia.app
 #    (genera el par con: npx web-push generate-vapid-keys; la pública ya está en src/lib/push.ts)
 
 # 2) Recordatorios diarios (requiere lo anterior)

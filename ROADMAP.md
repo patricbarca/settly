@@ -16,7 +16,7 @@ Bloquean lanzamiento serio / publicación en stores.
 - ✅ **`scan-receipt`** — desplegado, escaneo de tickets funcionando (Groq Llama 4 Scout).
 - ✅ **Supabase Auth** — Site URL + Redirect URLs en `https://app.settlia.app`; origen Google OAuth añadido.
 - ⬜ **Deploy `delete-account`** — borrar cuenta (requisito de App Store/Play + RGPD). Código listo y cableado (`auth.deleteAccount()` + botón en `AccountModal`); solo falta `supabase functions deploy delete-account`. Sin secretos nuevos (usa `SUPABASE_SERVICE_ROLE_KEY`).
-- ⬜ **Correo de dominio** (`hola@settlia.app`) — crear el buzón/redirección en GoDaddy. Las páginas legales (`privacy.html`/`terms.html`) y el `VAPID_SUBJECT` por defecto ya apuntan a esa dirección; nada que cambiar en código. Opcional: fijar el secret `VAPID_SUBJECT=mailto:hola@settlia.app` explícitamente.
+- ⬜ **Correo de dominio** (`hello@settlia.app`) — crear el buzón/redirección en GoDaddy. Las páginas legales (`privacy.html`/`terms.html`) y el `VAPID_SUBJECT` por defecto ya apuntan a esa dirección; nada que cambiar en código. Opcional: fijar el secret `VAPID_SUBJECT=mailto:hello@settlia.app` explícitamente.
 
 ## Fase 1 — Producto (UX / robustez)
 - ⬜ **Recibos en Supabase Storage** (evidencia) — bucket privado + ruta con `groupId` + URL firmada; subir comprobantes de pago y tickets escaneados. Migrar los `proof` base64 viejos.
