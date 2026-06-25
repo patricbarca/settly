@@ -372,7 +372,20 @@ export function updateRecurring(groupId: string, id: string, patch: Partial<Recu
 }
 
 export function deleteRecurring(groupId: string, id: string) {
-  updateGroup(groupId, (g) => ({ ...g, recurring: (g.recurring ?? []).filter((r) => r.id !== id) }));
+  updateGroup(groupId, (g) => {
+    const r = (g.recurring ?? []).find((x) => x.id === id);
+    return {
+      ...g,
+      recurring: (g.recurring ?? []).filter((x) => x.id !== id),
+      activity: withActivity(g, {
+        type: "recurring_deleted",
+        actorId: g.meId,
+        actorName: g.members.find((m) => m.id === g.meId)?.name,
+        label: r?.label,
+        amount: r?.amount,
+      }),
+    };
+  });
 }
 
 function advanceDate(date: string, interval: RecurrenceInterval): string {

@@ -43,6 +43,7 @@ const ACTIVITY_ICON: Record<ActivityType, IconName> = {
   review_requested: "flag",
   recurring_added: "repeat",
   recurring_generated: "repeat",
+  recurring_deleted: "trash",
   scan_used: "sparkles",
 };
 

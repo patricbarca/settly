@@ -8,6 +8,7 @@ import { useSpeech } from "../lib/speech";
 import { useT, useLang } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
+import { ConfirmModal } from "./ConfirmModal";
 
 const INTERVALS: RecurrenceInterval[] = ["daily", "weekly", "monthly", "yearly"];
 
@@ -148,6 +149,8 @@ export function RecurringList({ group }: { group: Group }) {
   const t = useT();
   const [showAdd, setShowAdd] = useState(false);
   const [expanded, setExpanded] = useState(true);
+  // Recurrente pendiente de confirmar su eliminación.
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const recurring = group.recurring ?? [];
 
   const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
@@ -262,7 +265,7 @@ export function RecurringList({ group }: { group: Group }) {
                       <Icon name={r.active ? "pause" : "play"} size={12} />
                     </button>
                     <button
-                      onClick={() => deleteRecurring(group.id, r.id)}
+                      onClick={() => setConfirmId(r.id)}
                       className="glass rounded-full h-7 w-7 flex items-center justify-center hover-lift lk-danger text-muted"
                       title={t("common.delete")}
                     >
@@ -277,6 +280,17 @@ export function RecurringList({ group }: { group: Group }) {
       </section>
 
       {showAdd && <RecurringModal group={group} onClose={() => setShowAdd(false)} />}
+
+      {confirmId && (
+        <ConfirmModal
+          title={t("recur.confirmDeleteTitle")}
+          message={t("recur.confirmDeleteMsg", {
+            label: recurring.find((x) => x.id === confirmId)?.label ?? "",
+          })}
+          onConfirm={() => deleteRecurring(group.id, confirmId)}
+          onClose={() => setConfirmId(null)}
+        />
+      )}
     </>
   );
 }

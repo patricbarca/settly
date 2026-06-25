@@ -44,10 +44,13 @@ export type IconName =
   | "bell"
   | "lock"
   | "chat"
+  | "filter"
   | "doc";
 
 function glyph(name: IconName): ReactNode {
   switch (name) {
+    case "filter":
+      return <path d="M3 5h18l-7 8v6l-4 2v-8z" />;
     case "food":
       return (
         <>

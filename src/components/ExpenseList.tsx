@@ -1,12 +1,14 @@
-import { useState } from "react";
-import type { Group } from "../lib/types";
+import { useState, useMemo } from "react";
+import type { Group, Category } from "../lib/types";
 import { catOf } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { shareFor } from "../lib/split";
 import { money, fmtDate, memberLabels } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { useT, useLang } from "../lib/i18n";
+import { monthKey, monthsWithExpenses, monthLabel } from "../lib/report";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
+import { ConfirmModal } from "./ConfirmModal";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 import { RecurringList } from "./RecurringList";
 import { withNotif } from "../lib/notifications";
@@ -15,12 +17,52 @@ import { notifyGroup } from "../lib/push";
 
 export function ExpenseList({ group }: { group: Group }) {
   const t = useT();
+  const lang = useLang();
   const ids = group.members.map((m) => m.id);
   const [editId, setEditId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  // Gasto pendiente de confirmar su eliminación (evita borrados accidentales).
+  const [confirmId, setConfirmId] = useState<string | null>(null);
   const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
   // Iniciales + color únicos por grupo (evita que dos personas se vean iguales).
   const labels = memberLabels(group.members);
+
+  // Filtros de la sección de gastos: por persona, categoría y mes.
+  const [showFilters, setShowFilters] = useState(false);
+  const [fPerson, setFPerson] = useState<string | null>(null);
+  const [fCat, setFCat] = useState<Category | null>(null);
+  const [fMonth, setFMonth] = useState<string | null>(null);
+  const activeFilters = (fPerson ? 1 : 0) + (fCat ? 1 : 0) + (fMonth ? 1 : 0);
+
+  // Opciones disponibles, derivadas de los gastos existentes.
+  const catOptions = useMemo(() => {
+    const set = new Set<Category>();
+    for (const e of group.expenses) set.add(e.category);
+    return [...set];
+  }, [group.expenses]);
+  const monthOptions = useMemo(() => monthsWithExpenses(group), [group]);
+
+  // Una persona "participa" en un gasto si paga o comparte el coste.
+  function involves(e: Group["expenses"][number], pid: string): boolean {
+    const parts = e.participantIds.length ? e.participantIds : ids;
+    return (
+      e.payerId === pid ||
+      parts.includes(pid) ||
+      !!e.payments?.some((p) => p.memberId === pid)
+    );
+  }
+  const visible = group.expenses.filter(
+    (e) =>
+      (!fPerson || involves(e, fPerson)) &&
+      (!fCat || e.category === fCat) &&
+      (!fMonth || monthKey(e.date) === fMonth)
+  );
+
+  function clearFilters() {
+    setFPerson(null);
+    setFCat(null);
+    setFMonth(null);
+  }
 
   function remove(id: string) {
     const exp = group.expenses.find((e) => e.id === id);
@@ -151,11 +193,112 @@ export function ExpenseList({ group }: { group: Group }) {
 
   return (
     <section className="space-y-2">
-      <h3 className="font-display text-lg font-bold px-1">{t("exp.title")}</h3>
+      <div className="flex items-center justify-between px-1">
+        <h3 className="font-display text-lg font-bold">{t("exp.title")}</h3>
+        {group.expenses.length > 0 && (
+          <button
+            onClick={() => setShowFilters((v) => !v)}
+            className="glass rounded-full px-3 py-1 text-xs hover-lift inline-flex items-center gap-1.5"
+            style={activeFilters ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+          >
+            <Icon name="filter" size={13} />
+            {t("filter.title")}
+            {activeFilters > 0 && (
+              <span className="min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold bg-white/25 inline-flex items-center justify-center">
+                {activeFilters}
+              </span>
+            )}
+          </button>
+        )}
+      </div>
       <RecurringList group={group} />
+
+      {showFilters && group.expenses.length > 0 && (
+        <div className="glass rounded-3xl p-3 space-y-3 anim-pop">
+          {/* Persona */}
+          <div>
+            <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">{t("filter.person")}</div>
+            <div className="flex gap-1.5 flex-wrap">
+              {group.members.map((m) => {
+                const on = fPerson === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => setFPerson(on ? null : m.id)}
+                    className={`rounded-full pl-1 pr-3 py-1 text-xs font-medium inline-flex items-center gap-1.5 ${on ? "" : "glass text-muted"}`}
+                    style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                  >
+                    <span
+                      className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-semibold"
+                      style={{ background: (labels[m.id]?.color ?? "#888") + "22", color: labels[m.id]?.color ?? "#888" }}
+                    >
+                      {labels[m.id]?.label ?? "?"}
+                    </span>
+                    {m.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {/* Categoría */}
+          {catOptions.length > 1 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">{t("filter.category")}</div>
+              <div className="flex gap-1.5 flex-wrap">
+                {catOptions.map((cat) => {
+                  const on = fCat === cat;
+                  const c = catOf(cat);
+                  return (
+                    <button
+                      key={cat}
+                      onClick={() => setFCat(on ? null : cat)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium inline-flex items-center gap-1.5 ${on ? "" : "glass text-muted"}`}
+                      style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                    >
+                      <Icon name={c.icon} size={13} /> {t(`cat.${cat}`)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {/* Mes */}
+          {monthOptions.length > 1 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">{t("filter.month")}</div>
+              <div className="flex gap-1.5 flex-wrap">
+                {monthOptions.map((mk) => {
+                  const on = fMonth === mk;
+                  return (
+                    <button
+                      key={mk}
+                      onClick={() => setFMonth(on ? null : mk)}
+                      className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${on ? "" : "glass text-muted"}`}
+                      style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                    >
+                      {monthLabel(mk, lang)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {activeFilters > 0 && (
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[11px] text-muted">{t("filter.count", { n: visible.length, total: group.expenses.length })}</span>
+              <button onClick={clearFilters} className="text-xs font-medium lk" style={{ color: "var(--teal)" }}>
+                {t("filter.clear")}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {group.expenses.length === 0 ? (
         <div className="glass rounded-3xl p-10 text-center text-muted">{t("exp.empty")}</div>
-      ) : group.expenses.map((e) => {
+      ) : visible.length === 0 ? (
+        <div className="glass rounded-3xl p-10 text-center text-muted">{t("filter.none")}</div>
+      ) : visible.map((e) => {
         const c = catOf(e.category);
         const open = openId === e.id;
         const shares = shareFor(e, ids);
@@ -297,7 +440,7 @@ export function ExpenseList({ group }: { group: Group }) {
                       // Soy el creador (o gasto sin autor) y alguien pidió eliminarlo:
                       // el botón se resalta para aprobar la eliminación (como "Revisado").
                       <button
-                        onClick={() => remove(e.id)}
+                        onClick={() => setConfirmId(e.id)}
                         className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift inline-flex items-center gap-1"
                         style={{ background: "var(--coral)" }}
                       >
@@ -305,7 +448,7 @@ export function ExpenseList({ group }: { group: Group }) {
                       </button>
                     ) : (
                       <button
-                        onClick={() => remove(e.id)}
+                        onClick={() => setConfirmId(e.id)}
                         className="glass rounded-full px-3 py-1 text-xs hover-lift lk-danger text-muted inline-flex items-center gap-1"
                       >
                         <Icon name="trash" size={13} /> {t("common.delete")}
@@ -318,6 +461,17 @@ export function ExpenseList({ group }: { group: Group }) {
           </div>
         );
       })}
+
+      {confirmId && (
+        <ConfirmModal
+          title={t("exp.confirmDeleteTitle")}
+          message={t("exp.confirmDeleteMsg", {
+            label: group.expenses.find((x) => x.id === confirmId)?.label ?? "",
+          })}
+          onConfirm={() => remove(confirmId)}
+          onClose={() => setConfirmId(null)}
+        />
+      )}
 
       {editing && (
         <Overlay onClose={() => setEditId(null)}>

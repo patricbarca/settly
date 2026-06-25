@@ -124,6 +124,7 @@ export type ActivityType =
   | "review_requested"
   | "recurring_added"
   | "recurring_generated"
+  | "recurring_deleted"
   | "scan_used";
 
 export interface ActivityEvent {
