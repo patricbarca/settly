@@ -164,3 +164,24 @@ button:focus-visible, input:focus-visible, a:focus-visible, [role="button"]:focu
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }
+
+/* Impresión de reportes (Descargar PDF = imprimir → guardar como PDF).
+   Solo se imprime #report-print; el resto se oculta. Forzamos colores claros
+   para que salga bien aunque la app esté en modo oscuro. */
+@media print {
+  @page { margin: 14mm; }
+  body * { visibility: hidden !important; }
+  #report-print, #report-print * { visibility: visible !important; }
+  #report-print {
+    position: absolute; left: 0; top: 0; width: 100%;
+    padding: 0; overflow: visible !important;
+    background: #fff !important; color: #111 !important;
+  }
+  #report-print .text-muted { color: #555 !important; }
+  #report-print .glass, #report-print .glass-strong {
+    background: #fff !important; box-shadow: none !important;
+    border: 1px solid #e5e7eb !important; backdrop-filter: none !important;
+    border-radius: 14px !important; break-inside: avoid;
+  }
+  .no-print { display: none !important; }
+}

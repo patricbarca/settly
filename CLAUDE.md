@@ -42,6 +42,10 @@ SettliA (brand styled **Settl·iA**, the "iA" highlighted = AI) is a PWA for spl
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Reports (Pro) + expense polish
+- **Reportes exportables (Pro):** botón "doc" en la cabecera de GroupView → `ReportModal` (pantalla completa, gateado con Paywall si no eres Pro). Filtrable **por mes** (chips: "Todo el histórico" + cada mes con gastos). Muestra cabecera con marca, totales, saldos por persona, liquidación, detalle de gastos y pagos realizados. **Descargar PDF** = `window.print()` con CSS `@media print` (solo imprime `#report-print`, fuerza colores claros) → "Guardar como PDF". **Descargar CSV** = multi-sección (BOM para acentos en Excel). Lógica en `src/lib/report.ts` (reutiliza `computeSettle`/`directTransfers`); icono `doc` añadido a `Icon.tsx`. Cero dependencias nuevas, offline.
+- **Gastos:** la fila colapsada muestra burbujas con las iniciales de los participantes (sin abrir el gasto). Pagos confirmados ya **no se pueden deshacer** (se quitó el botón "Deshacer" en `Balances`; rechazar un pago *pendiente* sigue existiendo). Notificaciones/actividad: `payment_made` ahora lleva `toId`, así el destinatario aparece como "TuNombre (tú/you)" cuando eres tú.
+
 ### Rebrand to SettliA + custom domain + settle/reminders
 - **Rebrand → SettliA** in both repos (logo + colors reverted to Settly's; `settly-original` branch keeps the old state). Wordmark: `Settl` + `iA` accent. In-app hero the `iA` uses `.wm-ai` (bright blue `#7DB8FF` + dark halo) so it doesn't blend into the hero gradient; landing uses `#2563EB` (nav) / `#60A5FA` (dark mockup). "Powered by AI" line under the tagline (`app.poweredAI`).
 - **Custom domain:** app on `app.settlia.app` (`base: "/"`, `public/CNAME`, manifest/`index.html`/`push-sw.js`/`fonts.css` paths all root-relative), landing on `settlia.app`.

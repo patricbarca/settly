@@ -16,6 +16,9 @@ import { ExpenseList } from "./ExpenseList";
 import { Analytics } from "./Analytics";
 import { GroupSettings } from "./GroupSettings";
 import { UsersModal } from "./UsersModal";
+import { ReportModal } from "./ReportModal";
+import { Paywall } from "./Paywall";
+import { isPro } from "../lib/plan";
 
 type Tab = "expenses" | "balances" | "stats" | "achievements";
 
@@ -23,9 +26,16 @@ export function GroupView({ group }: { group: Group }) {
   const t = useT();
   const [showSettings, setShowSettings] = useState(false);
   const [showUsers, setShowUsers] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [paywall, setPaywall] = useState(false);
   const [tab, setTab] = useState<Tab>("expenses");
   const [copied, setCopied] = useState(false);
   const [inviteError, setInviteError] = useState(false);
+
+  function openReport() {
+    if (isPro()) setShowReport(true);
+    else setPaywall(true);
+  }
 
   useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); }, [group.id]);
   useEffect(() => { processRecurring(group.id); }, [group.id]);
@@ -70,6 +80,9 @@ export function GroupView({ group }: { group: Group }) {
         <div className="flex items-center gap-1.5">
           <button onClick={() => setShowUsers(true)} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift" title={t("users.title")}>
             <Icon name="users" size={15} />
+          </button>
+          <button onClick={openReport} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift" title={t("report.title")}>
+            <Icon name="doc" size={15} />
           </button>
           <button onClick={() => setShowSettings(true)} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift" title={t("settings.title")}>
             <Icon name="settings" size={15} />
@@ -154,6 +167,8 @@ export function GroupView({ group }: { group: Group }) {
 
       {showUsers && <UsersModal group={group} onClose={() => setShowUsers(false)} />}
       {showSettings && <GroupSettings group={group} onClose={() => setShowSettings(false)} />}
+      {showReport && <ReportModal group={group} onClose={() => setShowReport(false)} />}
+      {paywall && <Paywall onClose={() => setPaywall(false)} reason={t("report.proReason")} />}
 
     </div>
   );
