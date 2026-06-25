@@ -135,11 +135,11 @@ export function ExpenseList({ group }: { group: Group }) {
       // Solicitud de revisión: anónima (sin actorId) por diseño. Guardamos
       // expenseId para poder cancelarla después con precisión.
       notifications: withNotif(g, { type: "review_requested", label: exp.label, expenseId: id }),
-      // En el log sí registramos quién la pidió (es tu propia actividad).
+      // La solicitud de revisión es ANÓNIMA: en el log tampoco guardamos quién
+      // la pidió (ni actorId ni actorName), igual que en la notificación. Así
+      // se muestra como "Alguien pidió revisar «…»" para todos.
       activity: withActivity(g, {
         type: "review_requested",
-        actorId: group.meId,
-        actorName: name(group.meId),
         label: exp.label,
       }),
     }));
