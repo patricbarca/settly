@@ -313,7 +313,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "recur.confirmDeleteMsg": { es: "El gasto recurrente «{label}» dejará de generarse. Esta acción no se puede deshacer.", en: "The recurring expense “{label}” will stop generating. This can't be undone." },
 
   "filter.title": { es: "Filtros", en: "Filters" },
-  "filter.person": { es: "Persona", en: "Person" },
+  "filter.payer": { es: "Pagador", en: "Payer" },
+  "filter.participant": { es: "Participante", en: "Participant" },
   "filter.category": { es: "Categoría", en: "Category" },
   "filter.month": { es: "Mes", en: "Month" },
   "filter.all": { es: "Todos", en: "All" },

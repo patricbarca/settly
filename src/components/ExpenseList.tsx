@@ -27,14 +27,32 @@ export function ExpenseList({ group }: { group: Group }) {
   // Iniciales + color únicos por grupo (evita que dos personas se vean iguales).
   const labels = memberLabels(group.members);
 
-  // Filtros de la sección de gastos: por persona, categoría y mes.
+  // Filtros de la sección de gastos: por pagador, participante, categoría y mes.
   const [showFilters, setShowFilters] = useState(false);
-  const [fPerson, setFPerson] = useState<string | null>(null);
+  const [fPayer, setFPayer] = useState<string | null>(null);
+  const [fPart, setFPart] = useState<string | null>(null);
   const [fCat, setFCat] = useState<Category | null>(null);
   const [fMonth, setFMonth] = useState<string | null>(null);
-  const activeFilters = (fPerson ? 1 : 0) + (fCat ? 1 : 0) + (fMonth ? 1 : 0);
+  const activeFilters = (fPayer ? 1 : 0) + (fPart ? 1 : 0) + (fCat ? 1 : 0) + (fMonth ? 1 : 0);
+
+  // ¿Quién pagó este gasto? (incluye multi-pagador). ¿Quién comparte el coste?
+  function paidBy(e: Group["expenses"][number], pid: string): boolean {
+    return e.payerId === pid || !!e.payments?.some((p) => p.memberId === pid);
+  }
+  function sharedBy(e: Group["expenses"][number], pid: string): boolean {
+    const parts = e.participantIds.length ? e.participantIds : ids;
+    return parts.includes(pid);
+  }
 
   // Opciones disponibles, derivadas de los gastos existentes.
+  const payerOptions = useMemo(
+    () => group.members.filter((m) => group.expenses.some((e) => paidBy(e, m.id))),
+    [group.members, group.expenses]
+  );
+  const partOptions = useMemo(
+    () => group.members.filter((m) => group.expenses.some((e) => sharedBy(e, m.id))),
+    [group.members, group.expenses]
+  );
   const catOptions = useMemo(() => {
     const set = new Set<Category>();
     for (const e of group.expenses) set.add(e.category);
@@ -42,24 +60,17 @@ export function ExpenseList({ group }: { group: Group }) {
   }, [group.expenses]);
   const monthOptions = useMemo(() => monthsWithExpenses(group), [group]);
 
-  // Una persona "participa" en un gasto si paga o comparte el coste.
-  function involves(e: Group["expenses"][number], pid: string): boolean {
-    const parts = e.participantIds.length ? e.participantIds : ids;
-    return (
-      e.payerId === pid ||
-      parts.includes(pid) ||
-      !!e.payments?.some((p) => p.memberId === pid)
-    );
-  }
   const visible = group.expenses.filter(
     (e) =>
-      (!fPerson || involves(e, fPerson)) &&
+      (!fPayer || paidBy(e, fPayer)) &&
+      (!fPart || sharedBy(e, fPart)) &&
       (!fCat || e.category === fCat) &&
       (!fMonth || monthKey(e.date) === fMonth)
   );
 
   function clearFilters() {
-    setFPerson(null);
+    setFPayer(null);
+    setFPart(null);
     setFCat(null);
     setFMonth(null);
   }
@@ -215,31 +226,60 @@ export function ExpenseList({ group }: { group: Group }) {
 
       {showFilters && group.expenses.length > 0 && (
         <div className="glass rounded-3xl p-3 space-y-3 anim-pop">
-          {/* Persona */}
-          <div>
-            <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">{t("filter.person")}</div>
-            <div className="flex gap-1.5 flex-wrap">
-              {group.members.map((m) => {
-                const on = fPerson === m.id;
-                return (
-                  <button
-                    key={m.id}
-                    onClick={() => setFPerson(on ? null : m.id)}
-                    className={`rounded-full pl-1 pr-3 py-1 text-xs font-medium inline-flex items-center gap-1.5 ${on ? "" : "glass text-muted"}`}
-                    style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
-                  >
-                    <span
-                      className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-semibold"
-                      style={{ background: (labels[m.id]?.color ?? "#888") + "22", color: labels[m.id]?.color ?? "#888" }}
+          {/* Pagador: en qué gastos puso el dinero (lo que le deben) */}
+          {payerOptions.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">{t("filter.payer")}</div>
+              <div className="flex gap-1.5 flex-wrap">
+                {payerOptions.map((m) => {
+                  const on = fPayer === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => setFPayer(on ? null : m.id)}
+                      className={`rounded-full pl-1 pr-3 py-1 text-xs font-medium inline-flex items-center gap-1.5 ${on ? "" : "glass text-muted"}`}
+                      style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
                     >
-                      {labels[m.id]?.label ?? "?"}
-                    </span>
-                    {m.name}
-                  </button>
-                );
-              })}
+                      <span
+                        className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-semibold"
+                        style={{ background: (labels[m.id]?.color ?? "#888") + "22", color: labels[m.id]?.color ?? "#888" }}
+                      >
+                        {labels[m.id]?.label ?? "?"}
+                      </span>
+                      {m.name}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
+          {/* Participante: en qué gastos comparte el coste (lo que tiene que pagar) */}
+          {partOptions.length > 0 && (
+            <div>
+              <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">{t("filter.participant")}</div>
+              <div className="flex gap-1.5 flex-wrap">
+                {partOptions.map((m) => {
+                  const on = fPart === m.id;
+                  return (
+                    <button
+                      key={m.id}
+                      onClick={() => setFPart(on ? null : m.id)}
+                      className={`rounded-full pl-1 pr-3 py-1 text-xs font-medium inline-flex items-center gap-1.5 ${on ? "" : "glass text-muted"}`}
+                      style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                    >
+                      <span
+                        className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-semibold"
+                        style={{ background: (labels[m.id]?.color ?? "#888") + "22", color: labels[m.id]?.color ?? "#888" }}
+                      >
+                        {labels[m.id]?.label ?? "?"}
+                      </span>
+                      {m.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {/* Categoría */}
           {catOptions.length > 1 && (
             <div>
