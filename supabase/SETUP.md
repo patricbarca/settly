@@ -69,20 +69,26 @@ Listo: el botón "Continuar con Google" (`signInGoogle`) ya funciona.
 ## 3. Escaneo de tickets (IA de visión)
 
 Necesita un backend con la clave (no puede ir en el cliente). Usa la Edge
-Function `scan-receipt` (Claude Haiku 4.5 por defecto, ~0,4 céntimos/escaneo).
+Function `scan-receipt`, **en Groq** (modelo `meta-llama/llama-4-scout-17b-16e-instruct`
+por defecto, ~0,025 céntimos/escaneo). **Reutiliza la misma `STT_API_KEY`** que
+`transcribe`/`parse-expense` — no necesita ninguna clave nueva.
 
 ```bash
 # requiere la CLI de Supabase y haber hecho: supabase link --project-ref TU-PROYECTO
 supabase functions deploy scan-receipt
-supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
+# STT_API_KEY ya debería estar configurada (la usan transcribe y parse-expense).
+# Si no lo está: supabase secrets set STT_API_KEY=<clave Groq>
 ```
 
 Opcional (cambiar de modelo/proveedor sin tocar código):
 ```bash
-supabase secrets set AI_VISION_MODEL=claude-haiku-4-5   # o claude-sonnet-4-6, etc.
+supabase secrets set AI_VISION_MODEL=meta-llama/llama-4-scout-17b-16e-instruct
+# o apuntar a otro proveedor de visión:
+supabase secrets set AI_VISION_API_URL=...  AI_VISION_API_KEY=...
 ```
 
-Mientras no esté desplegada, el escaneo **cae a un demo** (no rompe la app).
+Mientras no esté desplegada, el escaneo muestra un error real (ya no cae a un
+demo) y deja la fila en blanco para añadir a mano.
 
 ---
 
@@ -146,6 +152,7 @@ supabase functions deploy parse-expense
 ---
 
 ## Costes orientativos (fase beta)
-- Escaneo (Claude Haiku 4.5): ~$0.004/escaneo → 1.000 escaneos ≈ $4.
-- Voz (Whisper whisper-1): ~$0.006/min → una frase de 3 s ≈ $0.0003.
+- Escaneo (Groq Llama 4 Scout): ~$0.00025/escaneo → 1.000 escaneos ≈ $0.25.
+- Texto→gasto (Groq llama-3.1-8b-instant): ~$0.00002/parseo.
+- Voz (Groq whisper-large-v3-turbo): ~$0.003/min → una frase de 3 s ≈ $0.00015.
 - Auth, invite links y planes/códigos: incluidos en Supabase (sin coste extra).
