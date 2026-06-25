@@ -10,13 +10,13 @@ Leyenda: ✅ hecho · 🔧 código listo, falta desplegar · ⬜ por hacer
 ## Fase 0 — Cerrar pendientes técnicos (antes de tiendas)
 Bloquean lanzamiento serio / publicación en stores.
 
-- 🔧 **Web Push** — `push_subscriptions.sql` (incluye `lang`) + `supabase functions deploy send-push` + secrets `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT`.
-- 🔧 **Recordatorios diarios** — `supabase functions deploy daily-reminders --no-verify-jwt` + `CRON_SECRET` + `cron_daily_reminders.sql` (Sídney `0 23 * * *`).
-- 🔧 **Re-deploy `parse-expense`** — para activar "por persona" forzado en servidor + few-shot.
-- 🔧 **Deploy `scan-receipt`** — si aún no está desplegada.
-- 🔧 **Deploy `delete-account`** — borrar cuenta (requisito de App Store/Play + RGPD).
-- ⬜ **Correo de dominio** (`hola@settlia.app`) → actualizar `VAPID_SUBJECT` y el email de contacto en `privacy.html`/`terms.html`.
-- ⬜ **Supabase Auth** — Site URL + Redirect URLs → `https://app.settlia.app`; Google OAuth: añadir el origen.
+- ✅ **Web Push** — desplegado (`send-push` + `push_subscriptions` + VAPID).
+- ✅ **Recordatorios diarios** — desplegados (`daily-reminders` + `CRON_SECRET` + cron).
+- ✅ **`parse-expense`** — desplegado con "por persona" forzado + few-shot.
+- ✅ **`scan-receipt`** — desplegado, escaneo de tickets funcionando (Groq Llama 4 Scout).
+- ✅ **Supabase Auth** — Site URL + Redirect URLs en `https://app.settlia.app`; origen Google OAuth añadido.
+- ⬜ **Deploy `delete-account`** — borrar cuenta (requisito de App Store/Play + RGPD). Código listo y cableado (`auth.deleteAccount()` + botón en `AccountModal`); solo falta `supabase functions deploy delete-account`. Sin secretos nuevos (usa `SUPABASE_SERVICE_ROLE_KEY`).
+- ⬜ **Correo de dominio** (`hola@settlia.app`) — crear el buzón/redirección en GoDaddy. Las páginas legales (`privacy.html`/`terms.html`) y el `VAPID_SUBJECT` por defecto ya apuntan a esa dirección; nada que cambiar en código. Opcional: fijar el secret `VAPID_SUBJECT=mailto:hola@settlia.app` explícitamente.
 
 ## Fase 1 — Producto (UX / robustez)
 - ⬜ **Recibos en Supabase Storage** (evidencia) — bucket privado + ruta con `groupId` + URL firmada; subir comprobantes de pago y tickets escaneados. Migrar los `proof` base64 viejos.
