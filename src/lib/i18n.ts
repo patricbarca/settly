@@ -374,6 +374,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "notif.payment_made": { es: "{name} pagó {amt} a {to}", en: "{name} paid {amt} to {to}" },
   "notif.review_requested": { es: "Alguien pidió revisar «{label}»", en: "Someone requested a review of “{label}”" },
   "notif.delete_requested": { es: "{name} solicita eliminar «{label}»", en: "{name} is requesting to delete “{label}”" },
+  "notif.recurring_generated": { es: "Gasto recurrente «{label}» ({amt}) · paga {payer}", en: "Recurring expense “{label}” ({amt}) · {payer} pays" },
   "notif.delete_approve": { es: "Eliminar", en: "Delete" },
   "notif.in": { es: "en {group}", en: "in {group}" },
 
@@ -397,6 +398,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "activity.unmarked_ready": { es: "{name} ya no está listo", en: "{name} is no longer ready" },
   "activity.review_requested": { es: "{name} pidió revisar «{label}»", en: "{name} requested a review of “{label}”" },
   "activity.recurring_added": { es: "{name} creó un gasto recurrente «{label}» ({amt})", en: "{name} added a recurring expense “{label}” ({amt})" },
+  "activity.recurring_generated": { es: "Gasto recurrente «{label}» ({amt}) generado · paga {to}", en: "Recurring expense “{label}” ({amt}) generated · {to} pays" },
   "activity.scan_used": { es: "{name} escaneó un ticket con IA ({amt})", en: "{name} scanned a receipt with AI ({amt})" },
   "pay.bank.bsb": { es: "BSB", en: "BSB" },
   "pay.bank.account": { es: "Número de cuenta", en: "Account number" },
@@ -608,11 +610,15 @@ const DICT: Record<string, { es: string; en: string }> = {
   "code.err.network":   { es: "Error de conexión, prueba otra vez", en: "Connection error, try again" },
 };
 
+/** Traductor sin hook (para usar fuera de componentes, p. ej. en el store).
+ *  Por defecto usa el idioma activo; se le puede pasar otro. */
+export function tr(key: string, params?: Record<string, string | number>, l: Lang = getLang()): string {
+  let s = DICT[key]?.[l] ?? key;
+  if (params) for (const k in params) s = s.replace(new RegExp(`\\{${k}\\}`, "g"), String(params[k]));
+  return s;
+}
+
 export function useT() {
   const l = useLang();
-  return (key: string, params?: Record<string, string | number>) => {
-    let s = DICT[key]?.[l] ?? key;
-    if (params) for (const k in params) s = s.replace(new RegExp(`\\{${k}\\}`, "g"), String(params[k]));
-    return s;
-  };
+  return (key: string, params?: Record<string, string | number>) => tr(key, params, l);
 }

@@ -42,6 +42,7 @@ const ACTIVITY_ICON: Record<ActivityType, IconName> = {
   unmarked_ready: "clock",
   review_requested: "flag",
   recurring_added: "repeat",
+  recurring_generated: "repeat",
   scan_used: "sparkles",
 };
 
@@ -83,6 +84,8 @@ export function NotificationsBell() {
       return t("notif.payment_made", { name: n.actorName ?? "?", amt, to: toDisplay });
     if (n.type === "delete_requested")
       return t("notif.delete_requested", { name: n.actorName ?? "?", label: n.label ?? "" });
+    if (n.type === "recurring_generated")
+      return t("notif.recurring_generated", { label: n.label ?? "", amt, payer: n.toName ?? "?" });
     return t("notif.review_requested", { label: n.label ?? "" });
   }
 
@@ -170,7 +173,7 @@ export function NotificationsBell() {
                               style={{ background: "var(--glass)" }}
                             >
                               <Icon
-                                name={n.type === "payment_made" ? "card" : n.type === "review_requested" ? "flag" : n.type === "delete_requested" ? "trash" : "plus"}
+                                name={n.type === "payment_made" ? "card" : n.type === "review_requested" ? "flag" : n.type === "delete_requested" ? "trash" : n.type === "recurring_generated" ? "repeat" : "plus"}
                                 size={16}
                               />
                             </span>

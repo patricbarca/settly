@@ -88,7 +88,7 @@ export interface Settlement {
   proof?: string; // dataURL del comprobante (opcional)
 }
 
-export type NotificationType = "expense_added" | "payment_made" | "review_requested" | "delete_requested";
+export type NotificationType = "expense_added" | "payment_made" | "review_requested" | "delete_requested" | "recurring_generated";
 
 export interface AppNotification {
   id: string;
@@ -123,6 +123,7 @@ export type ActivityType =
   | "unmarked_ready"
   | "review_requested"
   | "recurring_added"
+  | "recurring_generated"
   | "scan_used";
 
 export interface ActivityEvent {

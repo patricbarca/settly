@@ -2,8 +2,11 @@ import { useSyncExternalStore } from "react";
 import type { Group, RecurringExpense, RecurrenceInterval } from "./types";
 import { supabase } from "./supabase";
 import { createSeed } from "./seed";
-import { uid } from "./format";
-import { withActivity } from "./activity";
+import { uid, money } from "./format";
+import { withActivity, makeActivity } from "./activity";
+import { makeNotif } from "./notifications";
+import { notifyGroup } from "./push";
+import { tr } from "./i18n";
 import {
   idbPutGroup,
   idbGetAllGroups,
@@ -383,9 +386,15 @@ function advanceDate(date: string, interval: RecurrenceInterval): string {
 
 export function processRecurring(groupId: string) {
   const today = new Date().toISOString().slice(0, 10);
+  // Reglas que generaron ≥1 gasto en esta pasada → push tras persistir (a los
+  // demás miembros; quien dispara la generación está en la app y ya ve la
+  // notificación in-app, así que no necesita push).
+  const pushed: { label: string; amount: number; payerName: string; currency: string }[] = [];
   updateGroup(groupId, (g) => {
     if (!g.recurring?.some((r) => r.active && r.nextDate <= today)) return g;
     let newExpenses = [...g.expenses];
+    let notifications = g.notifications ?? [];
+    let activity = g.activity ?? [];
     const updatedRecurring = g.recurring.map((r) => {
       if (!r.active || r.nextDate > today) return r;
       let nextDate = r.nextDate;
@@ -405,10 +414,33 @@ export function processRecurring(groupId: string) {
         nextDate = advanceDate(nextDate, r.interval);
         count++;
       }
+      if (count > 0) {
+        // Una sola entrada por regla aunque haya varios ciclos de recuperación.
+        // Sin actorId → la ven TODOS (pagador + participantes), incluido quien
+        // disparó la generación (buildFeed solo oculta las de actorId === yo).
+        const payerName = g.members.find((m) => m.id === r.payerId)?.name ?? "?";
+        notifications = [
+          ...notifications,
+          makeNotif({ type: "recurring_generated", label: r.label, amount: r.amount, toId: r.payerId, toName: payerName }),
+        ].slice(-100);
+        activity = [
+          ...activity,
+          makeActivity({ type: "recurring_generated", label: r.label, amount: r.amount, toId: r.payerId, toName: payerName }),
+        ].slice(-200);
+        pushed.push({ label: r.label, amount: r.amount, payerName, currency: g.currency });
+      }
       return { ...r, nextDate };
     });
-    return { ...g, expenses: newExpenses, recurring: updatedRecurring };
+    return { ...g, expenses: newExpenses, recurring: updatedRecurring, notifications, activity };
   });
+  const groupName = state.groups.find((g) => g.id === groupId)?.name ?? "SettliA";
+  for (const p of pushed) {
+    notifyGroup(
+      groupId,
+      groupName,
+      tr("notif.recurring_generated", { label: p.label, amt: money(p.amount, p.currency), payer: p.payerName })
+    );
+  }
 }
 
 export function updateMyMember(patch: Partial<import("./types").Member>) {
