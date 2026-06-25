@@ -189,12 +189,12 @@ export function ExpenseList({ group }: { group: Group }) {
                 {/* Burbujas con las iniciales de quienes participan en el gasto,
                     visibles sin abrirlo. */}
                 {participants.length > 0 && (
-                  <div className="flex items-center mt-1.5">
+                  <div className="flex items-center flex-wrap gap-1 mt-1.5">
                     {participants.slice(0, 7).map((id) => (
                       <span
                         key={id}
                         title={name(id)}
-                        className="h-5 w-5 -mr-1.5 rounded-full flex items-center justify-center text-[8px] font-semibold"
+                        className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-semibold"
                         style={{
                           background: (labels[id]?.color ?? "#888") + "22",
                           color: labels[id]?.color ?? "#888",
@@ -205,7 +205,7 @@ export function ExpenseList({ group }: { group: Group }) {
                       </span>
                     ))}
                     {participants.length > 7 && (
-                      <span className="text-[10px] text-muted ml-2.5">+{participants.length - 7}</span>
+                      <span className="text-[10px] text-muted ml-0.5">+{participants.length - 7}</span>
                     )}
                   </div>
                 )}

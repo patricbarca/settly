@@ -195,7 +195,7 @@ export function Home() {
                 <div className="text-xs text-muted mt-0.5">
                   {t("home.meta", { p: g.members.length, amt: money(total, g.currency), e: g.expenses.length })}
                 </div>
-                <div className="flex -space-x-2 mt-2">
+                <div className="flex flex-wrap gap-1 mt-2">
                   {g.members.slice(0, 5).map((m) => (
                     <span
                       key={m.id}
