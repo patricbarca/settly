@@ -194,6 +194,9 @@ export function RecurringList({ group }: { group: Group }) {
           <div className="border-t divide-y" style={{ borderColor: "var(--line)" }}>
             {recurring.map((r) => {
               const payer = group.members.find((m) => m.id === r.payerId);
+              const participants = r.participantIds.length
+                ? r.participantIds
+                : group.members.map((m) => m.id);
               return (
                 <div key={r.id} className="px-4 py-3 flex items-center gap-3" style={{ opacity: r.active ? 1 : 0.5 }}>
                   <div className="flex-1 min-w-0">
@@ -221,25 +224,27 @@ export function RecurringList({ group }: { group: Group }) {
                         ? <span>{t("recur.next", { date: r.nextDate })}</span>
                         : <span>{t("recur.paused")}</span>}
                     </div>
-                    {r.participantIds.length > 0 && (
-                      <div className="text-xs text-muted mt-1 flex items-center gap-1.5 flex-wrap">
-                        <span className="shrink-0">{t("form.between")}:</span>
-                        <div className="flex items-center gap-1 flex-wrap">
-                          {r.participantIds.map((pid) => {
-                            const p = group.members.find((m) => m.id === pid);
-                            if (!p) return null;
-                            return (
-                              <span
-                                key={pid}
-                                className="h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold"
-                                style={{ background: personColor(p.name) + "22", color: personColor(p.name) }}
-                                title={p.name}
-                              >
-                                {memberInitials(p)}
-                              </span>
-                            );
-                          })}
-                        </div>
+                    {/* Burbujas con las iniciales de quienes participan, igual
+                        que en la fila de un gasto normal (ExpenseList). */}
+                    {participants.length > 0 && (
+                      <div className="flex items-center mt-1.5">
+                        {participants.slice(0, 7).map((pid) => (
+                          <span
+                            key={pid}
+                            title={name(pid)}
+                            className="h-5 w-5 -mr-1.5 rounded-full flex items-center justify-center text-[8px] font-semibold"
+                            style={{
+                              background: personColor(name(pid)) + "22",
+                              color: personColor(name(pid)),
+                              boxShadow: "0 0 0 1.5px var(--surface)",
+                            }}
+                          >
+                            {memberInitials(group.members.find((m) => m.id === pid) ?? { name: name(pid) })}
+                          </span>
+                        ))}
+                        {participants.length > 7 && (
+                          <span className="text-[10px] text-muted ml-2.5">+{participants.length - 7}</span>
+                        )}
                       </div>
                     )}
                   </div>
