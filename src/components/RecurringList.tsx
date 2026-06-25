@@ -221,6 +221,27 @@ export function RecurringList({ group }: { group: Group }) {
                         ? <span>{t("recur.next", { date: r.nextDate })}</span>
                         : <span>{t("recur.paused")}</span>}
                     </div>
+                    {r.participantIds.length > 0 && (
+                      <div className="text-xs text-muted mt-1 flex items-center gap-1.5 flex-wrap">
+                        <span className="shrink-0">{t("form.between")}:</span>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {r.participantIds.map((pid) => {
+                            const p = group.members.find((m) => m.id === pid);
+                            if (!p) return null;
+                            return (
+                              <span
+                                key={pid}
+                                className="h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold"
+                                style={{ background: personColor(p.name) + "22", color: personColor(p.name) }}
+                                title={p.name}
+                              >
+                                {memberInitials(p)}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="font-mono font-semibold text-sm shrink-0">
                     {r.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} {group.currency}
