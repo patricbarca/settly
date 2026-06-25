@@ -41,6 +41,62 @@ export function memberInitials(m: { initials?: string; name: string }): string {
 
 export const uid = () => Math.random().toString(36).slice(2, 9);
 
+/** Etiquetas de iniciales ÚNICAS dentro de un grupo, cada una con un color
+ *  distinto, para que nunca haya dos personas indistinguibles en los avatares.
+ *  - Respeta las iniciales personalizadas (`Member.initials`).
+ *  - Si dos personas comparten las iniciales derivadas del nombre, las alarga
+ *    con más letras del nombre (Patric→"PA", Paula→"PAU") hasta diferenciarlas.
+ *  - Si los nombres son idénticos (dos "Patrick"), salen prefijos de distinta
+ *    longitud ("PA"/"PAT") y, como último recurso, un sufijo numérico; además
+ *    el color garantizado distinto los separa visualmente. */
+export function memberLabels(
+  members: { id: string; initials?: string; name: string }[]
+): Record<string, { label: string; color: string }> {
+  const out: Record<string, { label: string; color: string }> = {};
+  const base: Record<string, string> = {};
+  for (const m of members) base[m.id] = memberInitials(m);
+
+  const counts: Record<string, number> = {};
+  for (const id in base) counts[base[id]] = (counts[base[id]] ?? 0) + 1;
+
+  // 1) Iniciales únicas. Primero reservamos las que ya son únicas o las
+  //    personalizadas (no se tocan); luego alargamos las que colisionan.
+  const usedLabels = new Set<string>();
+  for (const m of members) {
+    if (counts[base[m.id]] === 1 || m.initials?.trim()) {
+      out[m.id] = { label: base[m.id], color: "" };
+      usedLabels.add(base[m.id]);
+    }
+  }
+  for (const m of members) {
+    if (out[m.id]) continue;
+    const clean = m.name.replace(/\s+/g, "");
+    let label = base[m.id];
+    for (let n = 2; n <= clean.length; n++) {
+      label = clean.slice(0, n).toUpperCase();
+      if (!usedLabels.has(label)) break;
+    }
+    // Nombres idénticos / sin más letras → sufijo numérico.
+    if (usedLabels.has(label)) {
+      const root = label;
+      let i = 2;
+      while (usedLabels.has(label)) label = root + i++;
+    }
+    out[m.id] = { label, color: "" };
+    usedLabels.add(label);
+  }
+
+  // 2) Color distinto dentro del grupo (con >6 miembros se permite repetir).
+  const usedColors = new Set<string>();
+  for (const m of members) {
+    let color = personColor(m.name);
+    if (usedColors.has(color)) color = PALETTE.find((c) => !usedColors.has(c)) ?? color;
+    usedColors.add(color);
+    out[m.id].color = color;
+  }
+  return out;
+}
+
 export function fmtDate(iso: string): string {
   if (!iso) return "";
   return new Date(iso + "T00:00:00").toLocaleDateString("es-ES", {

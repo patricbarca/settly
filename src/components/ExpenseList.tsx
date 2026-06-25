@@ -3,7 +3,7 @@ import type { Group } from "../lib/types";
 import { catOf } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { shareFor } from "../lib/split";
-import { money, fmtDate, personColor, memberInitials } from "../lib/format";
+import { money, fmtDate, memberLabels } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -19,6 +19,8 @@ export function ExpenseList({ group }: { group: Group }) {
   const [editId, setEditId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
+  // Iniciales + color únicos por grupo (evita que dos personas se vean iguales).
+  const labels = memberLabels(group.members);
 
   function remove(id: string) {
     const exp = group.expenses.find((e) => e.id === id);
@@ -194,12 +196,12 @@ export function ExpenseList({ group }: { group: Group }) {
                         title={name(id)}
                         className="h-5 w-5 -mr-1.5 rounded-full flex items-center justify-center text-[8px] font-semibold"
                         style={{
-                          background: personColor(name(id)) + "22",
-                          color: personColor(name(id)),
+                          background: (labels[id]?.color ?? "#888") + "22",
+                          color: labels[id]?.color ?? "#888",
                           boxShadow: "0 0 0 1.5px var(--surface)",
                         }}
                       >
-                        {memberInitials(group.members.find((m) => m.id === id) ?? { name: name(id) })}
+                        {labels[id]?.label ?? "?"}
                       </span>
                     ))}
                     {participants.length > 7 && (
@@ -229,9 +231,9 @@ export function ExpenseList({ group }: { group: Group }) {
                         <span className="flex items-center gap-2">
                           <span
                             className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-semibold"
-                            style={{ background: personColor(name(id)) + "22" }}
+                            style={{ background: (labels[id]?.color ?? "#888") + "22", color: labels[id]?.color ?? "#888" }}
                           >
-                            {memberInitials(group.members.find((m) => m.id === id) ?? { name: name(id) })}
+                            {labels[id]?.label ?? "?"}
                           </span>
                           {name(id)}
                         </span>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Group, RecurrenceInterval } from "../lib/types";
 import { addRecurring, updateRecurring, deleteRecurring } from "../lib/store";
 import { draftToExpenseFields, ExpenseForm, type ExpenseDraft } from "./ExpenseForm";
-import { uid, personColor, memberInitials } from "../lib/format";
+import { uid, memberLabels } from "../lib/format";
 import { parseExpense } from "../lib/parse";
 import { useSpeech } from "../lib/speech";
 import { useT, useLang } from "../lib/i18n";
@@ -151,6 +151,8 @@ export function RecurringList({ group }: { group: Group }) {
   const recurring = group.recurring ?? [];
 
   const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
+  // Iniciales + color únicos por grupo (evita que dos personas se vean iguales).
+  const labels = memberLabels(group.members);
 
   // Recurring expenses are now created via the toggle in the add form,
   // so the empty-state hint pill is hidden — only show the list when items exist.
@@ -213,9 +215,9 @@ export function RecurringList({ group }: { group: Group }) {
                       {payer && (
                         <span
                           className="h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold"
-                          style={{ background: personColor(payer.name) + "22" }}
+                          style={{ background: labels[payer.id].color + "22", color: labels[payer.id].color }}
                         >
-                          {memberInitials(payer)}
+                          {labels[payer.id].label}
                         </span>
                       )}
                       <span>{name(r.payerId)}</span>
@@ -234,12 +236,12 @@ export function RecurringList({ group }: { group: Group }) {
                             title={name(pid)}
                             className="h-5 w-5 -mr-1.5 rounded-full flex items-center justify-center text-[8px] font-semibold"
                             style={{
-                              background: personColor(name(pid)) + "22",
-                              color: personColor(name(pid)),
+                              background: (labels[pid]?.color ?? "#888") + "22",
+                              color: labels[pid]?.color ?? "#888",
                               boxShadow: "0 0 0 1.5px var(--surface)",
                             }}
                           >
-                            {memberInitials(group.members.find((m) => m.id === pid) ?? { name: name(pid) })}
+                            {labels[pid]?.label ?? "?"}
                           </span>
                         ))}
                         {participants.length > 7 && (
