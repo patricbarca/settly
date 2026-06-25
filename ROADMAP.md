@@ -20,7 +20,7 @@ Bloquean lanzamiento serio / publicación en stores.
 
 ## Fase 1 — Producto (UX / robustez)
 - ⬜ **Recibos en Supabase Storage** (evidencia) — bucket privado + ruta con `groupId` + URL firmada; subir comprobantes de pago y tickets escaneados. Migrar los `proof` base64 viejos.
-- ⬜ **Recurrentes → eventos** — registrar cada ocurrencia generada en Actividad (y opcional Notificaciones).
+- ✅ **Recurrentes → eventos** — `processRecurring` registra cada pasada en Actividad + Notificaciones + push (`recurring_generated`).
 - ⬜ **Recurrentes por servidor** (opcional) — cron que materialice las ocurrencias aunque nadie abra el grupo.
 - ⬜ **Parser avanzado** — splits desiguales / porcentajes; glosario por grupo (apodos, comercios); pregunta de confirmación solo si hay ambigüedad.
 - ⬜ **Multi-moneda** en las pills de balance global (hoy asume una sola).
