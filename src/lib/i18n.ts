@@ -295,7 +295,7 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "exp.title": { es: "Gastos", en: "Expenses" },
   "exp.empty": { es: "Aún no hay gastos. Añade el primero arriba.", en: "No expenses yet. Add the first one above." },
-  "exp.meta": { es: "{payer} pagó · entre {n} · {date}", en: "{payer} paid · among {n} · {date}" },
+  "exp.meta": { es: "{payer} pagó · {date}", en: "{payer} paid · {date}" },
   "exp.edit": { es: "Editar gasto", en: "Edit expense" },
   "exp.shares": { es: "Reparto", en: "Split" },
   "exp.review": { es: "Solicitar revisión", en: "Request review" },

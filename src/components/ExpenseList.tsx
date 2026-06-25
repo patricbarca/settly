@@ -368,13 +368,13 @@ export function ExpenseList({ group }: { group: Group }) {
                 </div>
                 <div className="text-[11px] text-muted leading-tight mt-0.5 flex items-center gap-1.5">
                   <span className="truncate">
-                    {t("exp.meta", { payer: payerDisplay, n: participants.length, date: fmtDate(e.date) })}
+                    {t("exp.meta", { payer: payerDisplay, date: fmtDate(e.date) })}
                   </span>
                   {/* Burbujas con las iniciales de quienes participan, en la
                       misma línea que el meta para ocupar menos espacio. */}
                   {participants.length > 0 && (
                     <span className="flex items-center gap-0.5 shrink-0">
-                      {participants.slice(0, 6).map((id) => (
+                      {participants.slice(0, 5).map((id) => (
                         <span
                           key={id}
                           title={name(id)}
@@ -387,8 +387,8 @@ export function ExpenseList({ group }: { group: Group }) {
                           {labels[id]?.label ?? "?"}
                         </span>
                       ))}
-                      {participants.length > 6 && (
-                        <span className="text-[10px] text-muted">+{participants.length - 6}</span>
+                      {participants.length > 5 && (
+                        <span className="text-[10px] text-muted font-semibold">+{participants.length - 5}</span>
                       )}
                     </span>
                   )}
