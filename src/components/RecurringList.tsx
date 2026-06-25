@@ -148,7 +148,7 @@ function RecurringModal({ group, onClose }: { group: Group; onClose: () => void 
 export function RecurringList({ group }: { group: Group }) {
   const t = useT();
   const [showAdd, setShowAdd] = useState(false);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   // Recurrente pendiente de confirmar su eliminación.
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const recurring = group.recurring ?? [];

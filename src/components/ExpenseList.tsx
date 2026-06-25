@@ -203,7 +203,7 @@ export function ExpenseList({ group }: { group: Group }) {
   const editing = editId ? group.expenses.find((x) => x.id === editId) : null;
 
   return (
-    <section className="space-y-2">
+    <section className="space-y-1.5">
       <div className="flex items-center justify-between px-1">
         <h3 className="font-display text-lg font-bold">{t("exp.title")}</h3>
         {group.expenses.length > 0 && (
@@ -349,13 +349,13 @@ export function ExpenseList({ group }: { group: Group }) {
           ? e.payments.map((p) => name(p.memberId)).join(", ")
           : name(e.payerId);
         return (
-          <div key={e.id} className="glass rounded-3xl overflow-hidden hover-lift">
-            <div className="p-3 flex items-center gap-3 cursor-pointer" onClick={() => setOpenId(open ? null : e.id)}>
-              <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 surface-soft text-[color:var(--ink)]">
-                <Icon name={c.icon} size={20} />
+          <div key={e.id} className="glass rounded-2xl overflow-hidden hover-lift">
+            <div className="px-3 py-2 flex items-center gap-2.5 cursor-pointer" onClick={() => setOpenId(open ? null : e.id)}>
+              <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 surface-soft text-[color:var(--ink)]">
+                <Icon name={c.icon} size={17} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-semibold truncate flex items-center gap-2">
+                <div className="font-semibold truncate flex items-center gap-2 text-[15px] leading-tight">
                   {e.label}
                   {e.reviewRequested && (
                     <span
@@ -366,38 +366,39 @@ export function ExpenseList({ group }: { group: Group }) {
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-muted">
-                  {t("exp.meta", { payer: payerDisplay, n: participants.length, date: fmtDate(e.date) })}
+                <div className="text-[11px] text-muted leading-tight mt-0.5 flex items-center gap-1.5">
+                  <span className="truncate">
+                    {t("exp.meta", { payer: payerDisplay, n: participants.length, date: fmtDate(e.date) })}
+                  </span>
+                  {/* Burbujas con las iniciales de quienes participan, en la
+                      misma línea que el meta para ocupar menos espacio. */}
+                  {participants.length > 0 && (
+                    <span className="flex items-center gap-0.5 shrink-0">
+                      {participants.slice(0, 6).map((id) => (
+                        <span
+                          key={id}
+                          title={name(id)}
+                          className="h-4 w-4 rounded-full flex items-center justify-center text-[7px] font-semibold"
+                          style={{
+                            background: (labels[id]?.color ?? "#888") + "22",
+                            color: labels[id]?.color ?? "#888",
+                          }}
+                        >
+                          {labels[id]?.label ?? "?"}
+                        </span>
+                      ))}
+                      {participants.length > 6 && (
+                        <span className="text-[10px] text-muted">+{participants.length - 6}</span>
+                      )}
+                    </span>
+                  )}
                 </div>
-                {/* Burbujas con las iniciales de quienes participan en el gasto,
-                    visibles sin abrirlo. */}
-                {participants.length > 0 && (
-                  <div className="flex items-center flex-wrap gap-1 mt-1.5">
-                    {participants.slice(0, 7).map((id) => (
-                      <span
-                        key={id}
-                        title={name(id)}
-                        className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-semibold"
-                        style={{
-                          background: (labels[id]?.color ?? "#888") + "22",
-                          color: labels[id]?.color ?? "#888",
-                          boxShadow: "0 0 0 1.5px var(--surface)",
-                        }}
-                      >
-                        {labels[id]?.label ?? "?"}
-                      </span>
-                    ))}
-                    {participants.length > 7 && (
-                      <span className="text-[10px] text-muted ml-0.5">+{participants.length - 7}</span>
-                    )}
-                  </div>
-                )}
               </div>
               <div className="text-right shrink-0 flex items-center gap-1.5">
-                <span className="font-mono font-bold">{money(e.amount, group.currency)}</span>
+                <span className="font-mono font-bold text-sm">{money(e.amount, group.currency)}</span>
                 <Icon
                   name="chevron"
-                  size={16}
+                  size={15}
                   className="text-muted transition-transform"
                   style={{ transform: open ? "rotate(180deg)" : "none" }}
                 />
