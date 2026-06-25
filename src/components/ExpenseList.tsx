@@ -184,6 +184,29 @@ export function ExpenseList({ group }: { group: Group }) {
                 <div className="text-xs text-muted">
                   {t("exp.meta", { payer: payerDisplay, n: participants.length, date: fmtDate(e.date) })}
                 </div>
+                {/* Burbujas con las iniciales de quienes participan en el gasto,
+                    visibles sin abrirlo. */}
+                {participants.length > 0 && (
+                  <div className="flex items-center mt-1.5">
+                    {participants.slice(0, 7).map((id) => (
+                      <span
+                        key={id}
+                        title={name(id)}
+                        className="h-5 w-5 -mr-1.5 rounded-full flex items-center justify-center text-[8px] font-semibold"
+                        style={{
+                          background: personColor(name(id)) + "22",
+                          color: personColor(name(id)),
+                          boxShadow: "0 0 0 1.5px var(--surface)",
+                        }}
+                      >
+                        {memberInitials(group.members.find((m) => m.id === id) ?? { name: name(id) })}
+                      </span>
+                    ))}
+                    {participants.length > 7 && (
+                      <span className="text-[10px] text-muted ml-2.5">+{participants.length - 7}</span>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="text-right shrink-0 flex items-center gap-1.5">
                 <span className="font-mono font-bold">{money(e.amount, group.currency)}</span>

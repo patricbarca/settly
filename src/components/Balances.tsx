@@ -197,11 +197,6 @@ export function Balances({ group }: { group: Group }) {
                   <span className="min-w-0">
                     {t("pay.saysPaid", { from: name(s.from), amt: money(s.amount, group.currency), to: name(s.to) })}
                   </span>
-                  {(s.from === group.meId || s.to === group.meId) && (
-                    <button onClick={() => rejectS(s.id)} className="lk lk-danger ml-auto shrink-0">
-                      {t("pay.undo")}
-                    </button>
-                  )}
                 </div>
               ))}
           </div>

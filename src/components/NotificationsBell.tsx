@@ -90,11 +90,16 @@ export function NotificationsBell() {
   function activityMessage(a: ActivityItem): string {
     const name = a.mine ? t("activity.you") : a.actorName || t("activity.someone");
     const amt = a.amount != null ? money(a.amount, a.currency) : "";
+    // Si el destinatario soy yo, muestro "MiNombre (tú)".
+    const g = groups.find((x) => x.id === a.groupId);
+    const toIsMe = !!g && !!a.toId && a.toId === g.meId;
+    const myName = g?.members.find((m) => m.id === g.meId)?.name ?? "";
+    const toDisplay = toIsMe ? `${myName} (${t("common.you")})` : a.toName ?? "?";
     return t(`activity.${a.type}` as any, {
       name,
       label: a.label ?? "",
       amt,
-      to: a.toName ?? "?",
+      to: toDisplay,
     });
   }
 

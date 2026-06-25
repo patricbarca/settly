@@ -133,6 +133,7 @@ export interface ActivityEvent {
   actorName?: string; // denormalizado para mostrar
   label?: string; // gasto / nombre de miembro / nombre de grupo
   amount?: number;
+  toId?: string;   // id del destinatario (para mostrar "(tú)" si soy yo)
   toName?: string; // destinatario (pago / miembro afectado)
 }
 
