@@ -15,8 +15,10 @@ Bloquean lanzamiento serio / publicación en stores.
 - ✅ **`parse-expense`** — desplegado con "por persona" forzado + few-shot.
 - ✅ **`scan-receipt`** — desplegado, escaneo de tickets funcionando (Groq Llama 4 Scout).
 - ✅ **Supabase Auth** — Site URL + Redirect URLs en `https://app.settlia.app`; origen Google OAuth añadido.
-- ⬜ **Deploy `delete-account`** — borrar cuenta (requisito de App Store/Play + RGPD). Código listo y cableado (`auth.deleteAccount()` + botón en `AccountModal`); solo falta `supabase functions deploy delete-account`. Sin secretos nuevos (usa `SUPABASE_SERVICE_ROLE_KEY`).
-- ⬜ **Correo de dominio** (`hello@settlia.app`) — crear el buzón/redirección en GoDaddy. Las páginas legales (`privacy.html`/`terms.html`) y el `VAPID_SUBJECT` por defecto ya apuntan a esa dirección; nada que cambiar en código. Opcional: fijar el secret `VAPID_SUBJECT=mailto:hello@settlia.app` explícitamente.
+- ✅ **Deploy `delete-account`** — desplegada y verificada (borra perfil, membresías, push subs, entitlements y la cuenta de auth; limpia dependientes antes de `deleteUser` y transfiere propiedad de grupos compartidos).
+- ✅ **Correo de dominio** (`hello@settlia.app`) — recibiendo vía **Cloudflare Email Routing** (catch-all → `settlia.app@gmail.com`); nameservers movidos a Cloudflare. Páginas legales y `VAPID_SUBJECT` apuntan a `hello@settlia.app`. (Envío saliente vía SMTP queda opcional para más adelante.)
+
+> **Fase 0 cerrada.** Nota: al mover los nameservers a Cloudflare, el DNS ya está allí — facilita la migración de hosting a Cloudflare Pages (Fase 2).
 
 ## Fase 1 — Producto (UX / robustez)
 - ⬜ **Recibos en Supabase Storage** (evidencia) — bucket privado + ruta con `groupId` + URL firmada; subir comprobantes de pago y tickets escaneados. Migrar los `proof` base64 viejos.
