@@ -35,36 +35,53 @@ Deno.serve(async (req) => {
     const uid = user.id;
 
     // Antes de borrar la cuenta: transferir la propiedad de los grupos que
-    // tengan otros miembros (owner_id es ON DELETE CASCADE; si no, se borrarían
-    // para todos). Los grupos en solitario se eliminan en cascada.
-    const { data: owned } = await admin.from("groups").select("id").eq("owner_id", uid);
-    for (const g of owned ?? []) {
-      const { data: others } = await admin
-        .from("group_members")
-        .select("user_id")
-        .eq("group_id", g.id)
-        .neq("user_id", uid)
-        .limit(1);
-      const heir = others?.[0]?.user_id;
-      if (heir) await admin.from("groups").update({ owner_id: heir }).eq("id", g.id);
+    // tengan otros miembros (si no, se borrarían para todos por el cascade del
+    // owner). Los grupos en solitario se eliminan en cascada. Best-effort: si
+    // algo falla aquí, no abortamos el borrado.
+    try {
+      const { data: owned } = await admin.from("groups").select("id").eq("owner_id", uid);
+      for (const g of owned ?? []) {
+        const { data: others } = await admin
+          .from("group_members")
+          .select("user_id")
+          .eq("group_id", g.id)
+          .neq("user_id", uid)
+          .limit(1);
+        const heir = others?.[0]?.user_id;
+        if (heir) await admin.from("groups").update({ owner_id: heir }).eq("id", g.id);
+      }
+    } catch (e) {
+      console.error("ownership transfer", e);
     }
 
-    // Borra datos asociados (lo que pueda existir; ignoramos errores por tabla).
-    await admin.from("push_subscriptions").delete().eq("user_id", uid).catch(() => {});
-    await admin.from("group_members").delete().eq("user_id", uid).catch(() => {});
-    await admin.from("profiles").delete().eq("id", uid).catch(() => {});
+    // Borra TODAS las filas que referencian al usuario antes de eliminar la
+    // cuenta. Hacerlo explícito evita que `deleteUser` falle si alguna FK en la
+    // BD no tiene ON DELETE CASCADE (causa típica del error 500). Best-effort
+    // por tabla: ignoramos errores (tabla inexistente / columna distinta).
+    const del = (table: string, col: string) =>
+      admin.from(table).delete().eq(col, uid).then(() => {}, () => {});
+    await Promise.all([
+      del("push_subscriptions", "user_id"),
+      del("group_members", "user_id"),
+      del("invite_links", "created_by"),
+      del("entitlements", "user_id"),
+      del("code_redemptions", "user_id"),
+      del("feedback", "user_id"),
+      del("profiles", "id"),
+      del("profiles", "user_id"),
+    ]);
 
     // Borra la cuenta de auth.
     const { error } = await admin.auth.admin.deleteUser(uid);
     if (error) {
       console.error("deleteUser", error);
-      return json({ error: "delete_failed" }, 500);
+      return json({ error: "delete_failed", detail: error.message }, 500);
     }
 
     return json({ ok: true });
   } catch (e) {
     console.error(e);
-    return json({ error: "internal" }, 500);
+    return json({ error: "internal", detail: String((e as Error)?.message ?? e) }, 500);
   }
 });
 
