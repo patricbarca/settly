@@ -7,6 +7,7 @@ import { uid, personColor, initials, memberInitials, money } from "../lib/format
 import { useT } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
 import { getNetwork, type Contact } from "../lib/contacts";
+import { useHiddenContacts } from "../lib/hiddenContacts";
 import { createInviteLink } from "../lib/invite";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -36,9 +37,10 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
       .then(({ data }) => setExistingIds(new Set((data ?? []).map((r) => r.user_id))));
   }, [group.id]);
 
+  const { hidden } = useHiddenContacts();
   const q = query.trim().toLowerCase();
   const suggestions = network
-    .filter((c) => !existingIds.has(c.userId))
+    .filter((c) => !existingIds.has(c.userId) && !hidden.has(c.userId))
     .filter((c) => !q || c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
 
   const referenced = new Set<string>();

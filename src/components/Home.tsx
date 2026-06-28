@@ -9,15 +9,19 @@ import { Logo } from "./Logo";
 import { Icon } from "./Icon";
 import { SettleRing } from "./SettleRing";
 import { CreateGroupModal } from "./CreateGroupModal";
+import { ContactsView } from "./ContactsView";
 import { InstallButton } from "./InstallButton";
 import { Paywall } from "./Paywall";
 import type { Group } from "../lib/types";
+
+type HomeTab = "groups" | "contacts";
 
 export function Home() {
   const t = useT();
   const groups = useGroups();
   const plan = usePlan();
   const [creating, setCreating] = useState(false);
+  const [tab, setTab] = useState<HomeTab>("groups");
   const [showArch, setShowArch] = useState(false);
   const [showTrash, setShowTrash] = useState(false);
   const trashed = useTrashedGroups();
@@ -108,6 +112,29 @@ export function Home() {
         )}
       </div>
 
+      {/* Toggle Grupos | Contactos */}
+      <div className="glass rounded-full p-1 flex mt-6">
+        {(["groups", "contacts"] as HomeTab[]).map((tb) => {
+          const on = tab === tb;
+          return (
+            <button
+              key={tb}
+              onClick={() => setTab(tb)}
+              className="flex-1 rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+              style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : { color: "var(--muted)" }}
+            >
+              {t(tb === "groups" ? "home.tabGroups" : "home.tabContacts")}
+            </button>
+          );
+        })}
+      </div>
+
+      {tab === "contacts" ? (
+        <div className="mt-4">
+          <ContactsView />
+        </div>
+      ) : (
+      <>
       {/* Getting started checklist — shows until all 3 steps done */}
       {!allDone && (
         <div className="space-y-2 mt-6">
@@ -306,6 +333,8 @@ export function Home() {
             </div>
           )}
         </div>
+      )}
+      </>
       )}
 
       {creating && <CreateGroupModal onClose={() => setCreating(false)} />}

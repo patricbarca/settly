@@ -4,6 +4,7 @@ import { makeActivity } from "../lib/activity";
 import { uid, personColor, initials } from "../lib/format";
 import { useUser } from "../lib/auth";
 import { getNetwork, type Contact } from "../lib/contacts";
+import { useHiddenContacts } from "../lib/hiddenContacts";
 import { useT, useLang } from "../lib/i18n";
 import { CURRENCIES, localCurrencyName } from "../lib/currencies";
 import type { Group, GroupKind } from "../lib/types";
@@ -26,13 +27,13 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
     getNetwork().then(setNetwork).catch(() => {});
   }, []);
 
-  // Personas sugeridas filtradas por la búsqueda (por nombre o email).
+  // Personas sugeridas: tu red menos los contactos ocultos, filtradas por la
+  // búsqueda (por nombre o email).
+  const { hidden } = useHiddenContacts();
   const q = query.trim().toLowerCase();
-  const filtered = q
-    ? network.filter(
-        (c) => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q)
-      )
-    : network;
+  const filtered = network
+    .filter((c) => !hidden.has(c.userId))
+    .filter((c) => !q || c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
 
   function toggle(id: string) {
     setSelected((prev) => {
