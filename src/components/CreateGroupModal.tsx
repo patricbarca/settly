@@ -26,9 +26,13 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
     getNetwork().then(setNetwork).catch(() => {});
   }, []);
 
-  // Personas sugeridas filtradas por la búsqueda (por nombre).
+  // Personas sugeridas filtradas por la búsqueda (por nombre o email).
   const q = query.trim().toLowerCase();
-  const filtered = q ? network.filter((c) => c.name.toLowerCase().includes(q)) : network;
+  const filtered = q
+    ? network.filter(
+        (c) => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q)
+      )
+    : network;
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -188,7 +192,10 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
                           {initials(c.name)}
                         </span>
                       )}
-                      <span className="text-sm flex-1 truncate">{c.name}</span>
+                      <span className="flex-1 min-w-0">
+                        <span className="text-sm block truncate">{c.name}</span>
+                        {c.email && <span className="text-[11px] text-muted block truncate">{c.email}</span>}
+                      </span>
                       <span
                         className="h-5 w-5 rounded-full flex items-center justify-center shrink-0"
                         style={{

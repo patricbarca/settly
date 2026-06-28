@@ -2,7 +2,7 @@
 // para añadir miembros al crear un grupo (solo usuarios reales, no texto libre).
 import { supabase } from "./supabase";
 
-export type Contact = { userId: string; name: string; avatar: string };
+export type Contact = { userId: string; name: string; avatar: string; email: string };
 
 export async function getNetwork(): Promise<Contact[]> {
   try {
@@ -28,17 +28,18 @@ export async function getNetwork(): Promise<Contact[]> {
 
     const { data: profs, error } = await supabase
       .from("profiles")
-      .select("id, name, avatar")
+      .select("id, name, avatar, email")
       .in("id", ids);
     if (error) {
-      // Columna avatar aún no creada: reintenta sin ella.
+      // Columna avatar/email aún no creada: reintenta solo con lo básico.
       const { data: p2 } = await supabase.from("profiles").select("id, name").in("id", ids);
-      return (p2 ?? []).map((p) => ({ userId: p.id, name: p.name || "Usuario", avatar: "" }));
+      return (p2 ?? []).map((p) => ({ userId: p.id, name: p.name || "Usuario", avatar: "", email: "" }));
     }
     return (profs ?? []).map((p) => ({
       userId: p.id,
       name: p.name || "Usuario",
       avatar: p.avatar || "",
+      email: p.email || "",
     }));
   } catch {
     return [];
