@@ -310,6 +310,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "exp.meta": { es: "{payer} pagó · {date}", en: "{payer} paid · {date}" },
   "exp.edit": { es: "Editar gasto", en: "Edit expense" },
   "exp.shares": { es: "Reparto", en: "Split" },
+  "exp.itemsBreakdown": { es: "Desglose por ítem", en: "Item breakdown" },
+  "exp.perPerson": { es: "Total por persona", en: "Per person" },
   "exp.review": { es: "Solicitar revisión", en: "Request review" },
   "exp.reviewRequested": { es: "Revisión solicitada", en: "Review requested" },
   "exp.tapToCancel": { es: "Toca para cancelar la solicitud", en: "Tap to cancel the request" },

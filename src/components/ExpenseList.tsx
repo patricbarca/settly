@@ -441,7 +441,52 @@ export function ExpenseList({ group }: { group: Group }) {
             {open && (
               <div className="px-3 pb-3 anim-pop">
                 <div className="glass rounded-xl p-3">
-                  <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">{t("exp.shares")}</div>
+                  {/* Desglose por ítem/plato (solo gastos repartidos por línea) */}
+                  {e.items?.length ? (
+                    <div className="mb-3">
+                      <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">{t("exp.itemsBreakdown")}</div>
+                      <div className="space-y-2">
+                        {e.items.map((it, i) => {
+                          const who = it.participantIds?.length ? it.participantIds : ids;
+                          return (
+                            <div key={i}>
+                              <div className="flex items-center justify-between text-sm">
+                                <span className="truncate pr-2">{it.name || "—"}</span>
+                                <span className="font-mono shrink-0">{money(it.price, group.currency)}</span>
+                              </div>
+                              <div className="flex items-center flex-wrap gap-1 mt-0.5">
+                                {who.map((id) => (
+                                  <span
+                                    key={id}
+                                    title={name(id)}
+                                    className="h-4 w-4 rounded-full flex items-center justify-center text-[7px] font-semibold"
+                                    style={{ background: (labels[id]?.color ?? "#888") + "22", color: labels[id]?.color ?? "#888" }}
+                                  >
+                                    {labels[id]?.label ?? "?"}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {e.fees?.map((f, i) => (
+                          <div key={`fee${i}`} className="flex items-center justify-between text-sm text-muted">
+                            <span className="truncate pr-2">{f.name || t("scan.feeName")}</span>
+                            <span className="font-mono shrink-0">{money(f.amount, group.currency)}</span>
+                          </div>
+                        ))}
+                        {!!e.tip && (
+                          <div className="flex items-center justify-between text-sm text-muted">
+                            <span>{t("scan.tip")}</span>
+                            <span className="font-mono shrink-0">{money(e.tip, group.currency)}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                  <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">
+                    {e.items?.length ? t("exp.perPerson") : t("exp.shares")}
+                  </div>
                   <div className="space-y-1">
                     {participants.map((id) => (
                       <div key={id} className="flex items-center justify-between text-sm">
