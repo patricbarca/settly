@@ -42,12 +42,17 @@ export async function parseExpenseAI(
   return res;
 }
 
-export type ScannedItem = { name: string; price: number };
+export type ScannedItem = { name: string; qty: number; unitPrice: number; price: number };
+export type ScanFee = { name: string; amount: number };
+export type ScanTax = { amount: number; rate: number; included: boolean };
 export type ScanResult = {
   description: string;
+  subtotal: number;
   total: number;
   category: Category;
   items: ScannedItem[];
+  fees: ScanFee[];
+  tax: ScanTax;
   currency?: string;
 };
 
@@ -65,11 +70,27 @@ export async function scanReceipt(file: File): Promise<ScanResult> {
   const res = data as ScanResult;
   return {
     description: String(res.description ?? "").trim(),
+    subtotal: Number(res.subtotal) || 0,
     total: Number(res.total) || 0,
     category: res.category || "otros",
     items: (res.items || [])
-      .map((it) => ({ name: String(it.name ?? "").trim(), price: Number(it.price) || 0 }))
+      .map((it) => {
+        const price = Number(it.price) || 0;
+        let qty = Math.round(Number(it.qty));
+        if (!Number.isFinite(qty) || qty < 1) qty = 1;
+        let unitPrice = Number(it.unitPrice) || 0;
+        if (!unitPrice && qty > 0) unitPrice = Math.round((price / qty) * 100) / 100;
+        return { name: String(it.name ?? "").trim(), qty, unitPrice, price };
+      })
       .filter((it) => it.name || it.price),
+    fees: (res.fees || [])
+      .map((f) => ({ name: String(f.name ?? "").trim(), amount: Number(f.amount) || 0 }))
+      .filter((f) => Math.abs(f.amount) > 0.0001),
+    tax: {
+      amount: Number(res.tax?.amount) || 0,
+      rate: Number(res.tax?.rate) || 0,
+      included: res.tax?.included !== false,
+    },
     currency: res.currency,
   };
 }

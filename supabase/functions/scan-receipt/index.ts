@@ -1,6 +1,6 @@
 // ============================================================
 // Settly – Edge Function: scan-receipt
-// Lee un ticket con un modelo de visión y devuelve sus líneas.
+// Lee un ticket con un modelo de visión y devuelve sus líneas + recargos + tax.
 //
 // Usa una API compatible con OpenAI (chat completions con imagen). Por defecto
 // apunta a Groq con Llama 4 Scout (multimodal), reutilizando la misma clave que
@@ -17,7 +17,14 @@
 //   AI_VISION_API_URL  (def. https://api.groq.com/openai/v1/chat/completions)
 //   AI_VISION_MODEL    (def. meta-llama/llama-4-scout-17b-16e-instruct)
 // ============================================================
-import { corsHeaders } from "../_shared/cors.ts";
+
+// CORS inline (sin import de ../_shared) para poder pegar este único archivo
+// en el editor del dashboard de Supabase.
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 const API_KEY =
   Deno.env.get("AI_VISION_API_KEY") ?? Deno.env.get("STT_API_KEY") ?? "";
@@ -27,16 +34,23 @@ const API_URL =
 const MODEL =
   Deno.env.get("AI_VISION_MODEL") ?? "meta-llama/llama-4-scout-17b-16e-instruct";
 
-const PROMPT = `You are a receipt/document parser. Read this image — it may be a restaurant bill, utility bill (electricity, water, gas), bank statement, invoice, or any other receipt — and extract the key fields. Respond with ONLY a JSON object, no prose, no markdown:
-{"description":"...","total":0.00,"category":"...","items":[{"name":"...","price":0.00}],"currency":"EUR"}
+const PROMPT = `You are a receipt/document parser. Read this image (restaurant bill, café, supermarket, utility/phone bill, invoice, etc.) and extract the fields. Respond with ONLY a JSON object, no prose, no markdown:
+{"description":"...","subtotal":0.00,"total":0.00,"category":"...","currency":"AUD","items":[{"name":"...","qty":1,"unitPrice":0.00,"price":0.00}],"fees":[{"name":"...","amount":0.00}],"tax":{"amount":0.00,"rate":0,"included":true}}
 
 Rules:
-- description: short label for the expense (e.g. "Electricity bill", "Dinner at Trattoria", "Internet invoice"). Max 60 chars.
-- total: the final amount due/paid as a number (dot decimal). Use the TOTAL or AMOUNT DUE line, not subtotal.
-- category: one of exactly these values — comida, mercado, bebidas, transporte, viajes, alojamiento, ocio, compras, salud, servicios, suscripciones, seguros, regalos, otros. Pick the most fitting one (servicios for utilities/bills/invoices, comida for restaurants, suscripciones for Netflix/Spotify/memberships, seguros for any insurance, etc.)
-- items: array of individual line items if the receipt is itemized (restaurant, supermarket). For non-itemized receipts (utility bills, invoices) return an empty array [].
-- currency: ISO 4217 code detected from the receipt (EUR, USD, GBP, ARS, CLP, COP, MXN…). Default EUR.
-- If you cannot read the image at all, return: {"description":"","total":0,"category":"otros","items":[],"currency":"EUR"}`;
+- description: short label for the expense (e.g. "Dinner at Bunny Beans", "Electricity bill"). Max 60 chars.
+- items: ONE entry per LINE ITEM that has its OWN price printed in the price column.
+  - qty: the quantity of that line. Detect it from "x 2", a leading "2 ...", or from "($X each)" vs the line total. Default 1.
+  - unitPrice: price for a SINGLE unit if shown (e.g. "$6.80 each" / "($23.90 each)"). If not shown, use price/qty.
+  - price: the LINE TOTAL printed on the right (for the whole quantity).
+  - CRITICAL: DO NOT create items for modifiers/options/sub-lines that are INCLUDED in an item's price and have NO price in the right price column — e.g. "Fresh Fruit", "Medium, Lacfree", "Scrambled", "Chorizo", "(... each)", size/extras. Ignore them, or append to the parent item's name. Only emit lines that carry a real price on the right.
+  - For non-itemized receipts (utility/invoice) return [].
+- fees: extra charges added ON TOP of the items — surcharge, service charge, card/payment surcharge, delivery, weekend/public-holiday surcharge. Each {name, amount}. Do NOT put tax, tip, subtotal or total in fees.
+- tax: the tax/GST/VAT line if present — {amount, rate (percent as a number), included (true if the tax is already inside the total, e.g. "10% Tax Included")}. If no tax is shown use {"amount":0,"rate":0,"included":true}.
+- subtotal: items subtotal before fees/tax. total: the FINAL amount paid.
+- category: one of exactly these — comida, mercado, bebidas, transporte, viajes, alojamiento, ocio, compras, salud, servicios, suscripciones, seguros, regalos, otros.
+- currency: ISO 4217 code detected (AUD, USD, EUR, GBP, ARS, CLP, COP, MXN…). Default EUR.
+- If you cannot read the image at all: {"description":"","subtotal":0,"total":0,"category":"otros","currency":"EUR","items":[],"fees":[],"tax":{"amount":0,"rate":0,"included":true}}`;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -56,11 +70,8 @@ Deno.serve(async (req) => {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        // Sin response_format json_object: en los modelos de visión de Groq el
-        // modo JSON estricto falla con json_validate_failed si la generación no
-        // es perfecta. El prompt ya pide "solo JSON" y extractJson lo recupera.
         model: MODEL,
-        max_tokens: 1024,
+        max_tokens: 1500,
         temperature: 0,
         messages: [
           {
@@ -87,9 +98,12 @@ Deno.serve(async (req) => {
 
     return json({
       description: String(parsed.description ?? "").trim().slice(0, 60),
+      subtotal: Number(parsed.subtotal) || 0,
       total: Number(parsed.total) || 0,
       category: sanitizeCategory(parsed.category),
       items: sanitizeItems(parsed.items),
+      fees: sanitizeFees(parsed.fees),
+      tax: sanitizeTax(parsed.tax),
       currency: parsed.currency,
     });
   } catch (e) {
@@ -104,18 +118,43 @@ function sanitizeCategory(cat: unknown): string {
   return VALID_CATEGORIES.includes(s) ? s : "otros";
 }
 
-function sanitizeItems(items: unknown): { name: string; price: number }[] {
+function num(v: unknown): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function sanitizeItems(items: unknown): { name: string; qty: number; unitPrice: number; price: number }[] {
   if (!Array.isArray(items)) return [];
   return items
     .map((it) => {
-      const name = String((it as { name?: unknown })?.name ?? "").trim();
-      const price = Number((it as { price?: unknown })?.price);
-      return { name, price: Number.isFinite(price) ? price : 0 };
+      const o = (it ?? {}) as { name?: unknown; qty?: unknown; unitPrice?: unknown; price?: unknown };
+      const name = String(o.name ?? "").trim();
+      let qty = Math.round(num(o.qty));
+      if (!Number.isFinite(qty) || qty < 1) qty = 1;
+      const price = num(o.price);
+      let unitPrice = num(o.unitPrice);
+      if (!unitPrice && qty > 0) unitPrice = Math.round((price / qty) * 100) / 100;
+      return { name, qty, unitPrice, price };
     })
     .filter((it) => it.name || it.price);
 }
 
-function extractJson(text: string): { items?: unknown[]; currency?: string } | null {
+function sanitizeFees(fees: unknown): { name: string; amount: number }[] {
+  if (!Array.isArray(fees)) return [];
+  return fees
+    .map((f) => {
+      const o = (f ?? {}) as { name?: unknown; amount?: unknown };
+      return { name: String(o.name ?? "").trim(), amount: num(o.amount) };
+    })
+    .filter((f) => Math.abs(f.amount) > 0.0001);
+}
+
+function sanitizeTax(tax: unknown): { amount: number; rate: number; included: boolean } {
+  const o = (tax ?? {}) as { amount?: unknown; rate?: unknown; included?: unknown };
+  return { amount: num(o.amount), rate: num(o.rate), included: o.included !== false };
+}
+
+function extractJson(text: string): Record<string, unknown> | null {
   const m = text.match(/\{[\s\S]*\}/);
   if (!m) return null;
   try {

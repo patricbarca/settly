@@ -1,7 +1,7 @@
 import { useState, type ChangeEvent } from "react";
 import type { Group, Category } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
-import { scanReceipt } from "../lib/ai";
+import { scanReceipt, type ScanTax } from "../lib/ai";
 import { updateGroup } from "../lib/store";
 import { withNotif } from "../lib/notifications";
 import { withActivity } from "../lib/activity";
@@ -13,6 +13,9 @@ import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 
 type Item = { id: string; name: string; price: number | string; who: Set<string> };
+type Fee = { id: string; name: string; amount: number | string };
+
+const r2 = (n: number) => Math.round(n * 100) / 100;
 
 export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: () => void }) {
   const t = useT();
@@ -20,6 +23,8 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
   const [stage, setStage] = useState<"pick" | "analyzing" | "review">("pick");
   const [preview, setPreview] = useState<string | null>(null);
   const [items, setItems] = useState<Item[]>([]);
+  const [fees, setFees] = useState<Fee[]>([]);
+  const [tax, setTax] = useState<ScanTax | null>(null);
   const [scanError, setScanError] = useState(false);
   const [label, setLabel] = useState("");
   const [tip, setTip] = useState<number | string>("");
@@ -34,20 +39,39 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
       setPreview(String(reader.result));
       setStage("analyzing");
       setScanError(false);
-      // Lectura real con un modelo de visión (Edge Function `scan-receipt`).
-      // Si falla, avisamos y dejamos una fila vacía para añadir a mano (sin
-      // datos de ejemplo, que confundían al parecer un ticket real).
       try {
         const res = await scanReceipt(file);
         if (res.description) setLabel(res.description);
         if (res.category) setCategory(res.category);
-        const rows = res.items.length
-          ? res.items.map((s) => ({ id: uid(), name: s.name, price: s.price, who: new Set(allIds) }))
-          : [{ id: uid(), name: res.description || "", price: res.total || ("" as number | string), who: new Set(allIds) }];
-        setItems(rows);
+
+        // Expandir cantidades: un "x2" se separa en filas individuales para poder
+        // asignar cada unidad a personas distintas. El resto del importe por
+        // redondeo va a la última unidad.
+        const rows: Item[] = [];
+        for (const s of res.items) {
+          const q = Math.max(1, s.qty || 1);
+          if (q > 1 && s.price > 0) {
+            const unit = r2(s.unitPrice || s.price / q);
+            for (let i = 0; i < q; i++) {
+              const price = i === q - 1 ? r2(s.price - unit * (q - 1)) : unit;
+              rows.push({ id: uid(), name: s.name, price, who: new Set(allIds) });
+            }
+          } else {
+            rows.push({ id: uid(), name: s.name, price: s.price, who: new Set(allIds) });
+          }
+        }
+        setItems(
+          rows.length
+            ? rows
+            : [{ id: uid(), name: res.description || "", price: res.total || ("" as number | string), who: new Set(allIds) }]
+        );
+        setFees((res.fees || []).map((f) => ({ id: uid(), name: f.name, amount: f.amount })));
+        setTax(res.tax && (res.tax.amount > 0 || res.tax.rate > 0) ? res.tax : null);
       } catch {
         setScanError(true);
         setItems([{ id: uid(), name: "", price: "" as number | string, who: new Set(allIds) }]);
+        setFees([]);
+        setTax(null);
       }
       setStage("review");
     };
@@ -70,20 +94,48 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
   const addItem = () =>
     setItems((arr) => [...arr, { id: uid(), name: "", price: "", who: new Set(allIds) }]);
   const removeItem = (itemId: string) => setItems((arr) => arr.filter((it) => it.id !== itemId));
+  // Divide una fila en dos mitades iguales (para "x2" no detectados): así puedes
+  // asignar cada mitad a personas distintas.
+  function splitItem(itemId: string) {
+    setItems((arr) => {
+      const idx = arr.findIndex((it) => it.id === itemId);
+      if (idx < 0) return arr;
+      const it = arr[idx];
+      const p = Number(it.price) || 0;
+      const half = r2(p / 2);
+      const a: Item = { ...it, id: uid(), price: half, who: new Set(it.who) };
+      const b: Item = { ...it, id: uid(), price: r2(p - half), who: new Set(it.who) };
+      return [...arr.slice(0, idx), a, b, ...arr.slice(idx + 1)];
+    });
+  }
 
+  // Recargos editables.
+  const setFee = (id: string, patch: Partial<Fee>) =>
+    setFees((arr) => arr.map((f) => (f.id === id ? { ...f, ...patch } : f)));
+  const addFee = () => setFees((arr) => [...arr, { id: uid(), name: "", amount: "" }]);
+  const removeFee = (id: string) => setFees((arr) => arr.filter((f) => f.id !== id));
+
+  // --- Cálculo del reparto ---
   const itemsTotal = items.reduce((s, it) => s + (Number(it.price) || 0), 0);
+  const feesTotal = fees.reduce((s, f) => s + (Number(f.amount) || 0), 0);
   const tipNum = Number(tip) || 0;
-  const total = itemsTotal + tipNum;
+  const total = r2(itemsTotal + feesTotal + tipNum);
+
   const splits: Record<string, number> = {};
   allIds.forEach((id) => (splits[id] = 0));
+  // 1) Coste de los ítems, dividido entre quienes los consumieron.
   items.forEach((it) => {
     const who = [...it.who];
     if (!who.length) return;
     const per = (Number(it.price) || 0) / who.length;
     who.forEach((id) => (splits[id] += per));
   });
-  // La propina se reparte solo entre quienes consumieron algo del ticket.
   const itemParticipants = allIds.filter((id) => splits[id] > 0.001);
+  // 2) Recargos (surcharge): PROPORCIONAL a lo que consumió cada uno.
+  if (feesTotal > 0 && itemsTotal > 0) {
+    itemParticipants.forEach((id) => (splits[id] += feesTotal * (splits[id] / itemsTotal)));
+  }
+  // 3) Propina: PARTES IGUALES entre quienes consumieron algo.
   if (tipNum > 0 && itemParticipants.length) {
     const perTip = tipNum / itemParticipants.length;
     itemParticipants.forEach((id) => (splits[id] += perTip));
@@ -93,7 +145,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
   function save() {
     if (total <= 0 || participants.length === 0) return;
     const rounded: Record<string, number> = {};
-    allIds.forEach((id) => (rounded[id] = Math.round(splits[id] * 100) / 100));
+    allIds.forEach((id) => (rounded[id] = r2(splits[id])));
     const meName = group.members.find((m) => m.id === group.meId)?.name ?? "?";
     updateGroup(group.id, (g) => ({
       ...g,
@@ -101,7 +153,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         {
           id: uid(),
           label: label.trim() || "Ticket",
-          amount: Math.round(total * 100) / 100,
+          amount: total,
           payerId,
           participantIds: participants,
           category,
@@ -116,23 +168,25 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         actorId: group.meId,
         actorName: meName,
         label: label.trim() || "Ticket",
-        amount: Math.round(total * 100) / 100,
+        amount: total,
       }),
       activity: withActivity(g, {
         type: "scan_used",
         actorId: group.meId,
         actorName: meName,
         label: label.trim() || "Ticket",
-        amount: Math.round(total * 100) / 100,
+        amount: total,
       }),
     }));
     notifyGroup(
       group.id,
       group.name,
-      t("notif.expense_added", { name: meName, label: "Ticket", amt: money(Math.round(total * 100) / 100, group.currency) })
+      t("notif.expense_added", { name: meName, label: "Ticket", amt: money(total, group.currency) })
     );
     onClose();
   }
+
+  const cur = currencySymbol(group.currency);
 
   return (
     <Overlay onClose={onClose}>
@@ -189,6 +243,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
                 className="glass rounded-xl px-3 py-2 text-sm w-full mt-1"
               />
             </div>
+
             <div className="text-xs font-semibold text-muted">{t("scan.items")}</div>
             <div className="glass rounded-3xl p-3 space-y-3">
               {items.map((it, idx) => (
@@ -207,7 +262,10 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
                       placeholder="0"
                       className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
                     />
-                    <span className="text-muted text-sm">{currencySymbol(group.currency)}</span>
+                    <span className="text-muted text-sm">{cur}</span>
+                    <button onClick={() => splitItem(it.id)} className="lk flex items-center text-muted" title={t("scan.splitRow")}>
+                      <Icon name="copy" size={14} />
+                    </button>
                     <button onClick={() => removeItem(it.id)} className="lk lk-danger flex items-center">
                       <Icon name="close" size={14} />
                     </button>
@@ -235,6 +293,41 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
               <button onClick={addItem} className="lk text-sm inline-flex items-center gap-1">
                 <Icon name="plus" size={13} /> {t("scan.addItem")}
               </button>
+            </div>
+
+            {/* Recargos (surcharge): se reparten proporcional al consumo */}
+            <div className="glass rounded-3xl p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-semibold text-muted">{t("scan.fees")}</div>
+                <button onClick={addFee} className="lk text-xs inline-flex items-center gap-1">
+                  <Icon name="plus" size={12} /> {t("scan.addFee")}
+                </button>
+              </div>
+              {fees.length === 0 ? (
+                <div className="text-[11px] text-muted">{t("scan.feesNote")}</div>
+              ) : (
+                fees.map((f) => (
+                  <div key={f.id} className="flex items-center gap-2">
+                    <input
+                      value={f.name}
+                      onChange={(e) => setFee(f.id, { name: e.target.value })}
+                      placeholder={t("scan.feeName")}
+                      className="bg-transparent text-sm flex-1 px-1"
+                    />
+                    <input
+                      value={f.amount}
+                      onChange={(e) => setFee(f.id, { amount: e.target.value })}
+                      inputMode="decimal"
+                      placeholder="0"
+                      className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
+                    />
+                    <span className="text-muted text-sm">{cur}</span>
+                    <button onClick={() => removeFee(f.id)} className="lk lk-danger flex items-center">
+                      <Icon name="close" size={14} />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-2">
@@ -270,7 +363,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
                     placeholder="0"
                     className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
                   />
-                  <span className="text-muted text-sm">{currencySymbol(group.currency)}</span>
+                  <span className="text-muted text-sm">{cur}</span>
                 </div>
               </div>
             )}
@@ -284,6 +377,12 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
               ))}
             </div>
 
+            {/* Impuesto incluido (solo informativo: ya está dentro del total) */}
+            {tax && (
+              <div className="text-[11px] text-muted">
+                {t("scan.taxIncluded", { rate: String(tax.rate || 0), amt: money(tax.amount, group.currency) })}
+              </div>
+            )}
             <div className="text-xs text-muted">{t("scan.total")}: {money(total, group.currency)}</div>
             <p className="text-[11px] text-muted leading-relaxed">{t("scan.aiNote")}</p>
 
