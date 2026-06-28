@@ -21,7 +21,7 @@ Bloquean lanzamiento serio / publicación en stores.
 > **Fase 0 cerrada.** Nota: al mover los nameservers a Cloudflare, el DNS ya está allí — facilita la migración de hosting a Cloudflare Pages (Fase 2).
 
 ## Fase 1 — Producto (UX / robustez)
-- ⬜ **Recibos en Supabase Storage** (evidencia) — bucket privado + ruta con `groupId` + URL firmada; subir comprobantes de pago y tickets escaneados. Migrar los `proof` base64 viejos.
+- 🔧 **Recibos en Supabase Storage** (evidencia) — **tickets escaneados YA** (`src/lib/storage.ts`, bucket privado `receipts`, URL firmada, `Expense.receiptPath`, `ReceiptButton`; **falta correr `migrate_v5_receipts_storage.sql`**). Pendiente: extender a **comprobantes de pago** (hoy base64 en `settlement.proof`), **migrar los `proof` base64 viejos**, y **mostrar el recibo en el reporte** (miniatura embebida en el PDF; CSV = sí/no).
 - ✅ **Recurrentes → eventos** — `processRecurring` registra cada pasada en Actividad + Notificaciones + push (`recurring_generated`).
 - ⬜ **Recurrentes por servidor** (opcional) — cron que materialice las ocurrencias aunque nadie abra el grupo.
 - ⬜ **Parser avanzado** — splits desiguales / porcentajes; glosario por grupo (apodos, comercios); pregunta de confirmación solo si hay ambigüedad.
