@@ -328,6 +328,9 @@ const DICT: Record<string, { es: string; en: string }> = {
   "create.people": { es: "Personas", en: "People" },
   "create.peopleHint": { es: "(separadas por coma · la 1ª eres tú)", en: "(comma-separated · the 1st is you)" },
   "create.peoplePh": { es: "Tú, Ale, Cote, Javi", en: "You, Ale, Cote, Javi" },
+  "create.searchPeople": { es: "Buscar personas…", en: "Search people…" },
+  "create.peopleSelected": { es: "{n} seleccionados", en: "{n} selected" },
+  "create.noMatches": { es: "Nadie coincide con la búsqueda.", en: "No one matches your search." },
 
   "scan.title": { es: "Escanear ticket", en: "Scan receipt" },
   "scan.label": { es: "Descripción", en: "Description" },

@@ -45,12 +45,20 @@ export type IconName =
   | "lock"
   | "chat"
   | "filter"
+  | "search"
   | "doc";
 
 function glyph(name: IconName): ReactNode {
   switch (name) {
     case "filter":
       return <path d="M3 5h18l-7 8v6l-4 2v-8z" />;
+    case "search":
+      return (
+        <>
+          <circle cx="11" cy="11" r="7" />
+          <path d="M16.5 16.5L21 21" />
+        </>
+      );
     case "food":
       return (
         <>

@@ -20,10 +20,15 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
   const [kind, setKind] = useState<GroupKind>("trip");
   const [network, setNetwork] = useState<Contact[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     getNetwork().then(setNetwork).catch(() => {});
   }, []);
+
+  // Personas sugeridas filtradas por la búsqueda (por nombre).
+  const q = query.trim().toLowerCase();
+  const filtered = q ? network.filter((c) => c.name.toLowerCase().includes(q)) : network;
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -129,9 +134,42 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
               se muestra nada: a otros los invitas con un link tras crear el grupo. */}
           {network.length > 0 && (
             <div>
-              <label className="text-xs font-semibold text-muted">{t("create.people")}</label>
-              <div className="glass rounded-2xl p-1.5 mt-1 max-h-52 overflow-y-auto space-y-1">
-                {network.map((c) => {
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-muted">{t("create.people")}</label>
+                {selected.size > 0 && (
+                  <span className="text-[11px] text-muted">{t("create.peopleSelected", { n: selected.size })}</span>
+                )}
+              </div>
+
+              {/* Buscador de personas sugeridas */}
+              <div className="relative mt-1">
+                <Icon
+                  name="search"
+                  size={15}
+                  className="text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t("create.searchPeople")}
+                  className="glass rounded-xl pl-9 pr-8 py-2.5 text-sm w-full"
+                />
+                {query && (
+                  <button
+                    onClick={() => setQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover-lift"
+                    title={t("common.cancel")}
+                  >
+                    <Icon name="close" size={14} />
+                  </button>
+                )}
+              </div>
+
+              {filtered.length === 0 ? (
+                <div className="text-xs text-muted text-center py-4">{t("create.noMatches")}</div>
+              ) : (
+              <div className="glass rounded-2xl p-1.5 mt-1.5 max-h-52 overflow-y-auto space-y-1">
+                {filtered.map((c) => {
                   const on = selected.has(c.userId);
                   return (
                     <button
@@ -165,6 +203,7 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
                   );
                 })}
               </div>
+              )}
             </div>
           )}
         </div>
