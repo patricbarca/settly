@@ -133,11 +133,24 @@ CREATE POLICY "Owner delete groups" ON groups FOR DELETE
   USING (auth.uid() = owner_id);
 
 -- Miembros
+-- Helper SECURITY DEFINER: ¿soy miembro de este grupo? Evita la recursión de RLS
+-- al consultar group_members dentro de su propia política (ver migrate_v4).
+CREATE OR REPLACE FUNCTION public.is_member_of(gid text)
+RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE SET search_path = public AS $$
+  SELECT EXISTS (SELECT 1 FROM group_members WHERE group_id = gid AND user_id = auth.uid());
+$$;
+GRANT EXECUTE ON FUNCTION public.is_member_of(text) TO authenticated;
+
 DROP POLICY IF EXISTS "View own memberships" ON group_members;
+DROP POLICY IF EXISTS "View co-members"      ON group_members;
 DROP POLICY IF EXISTS "Join group"           ON group_members;
 DROP POLICY IF EXISTS "Leave group"          ON group_members;
 CREATE POLICY "View own memberships" ON group_members FOR SELECT
   USING (user_id = auth.uid());
+-- Leer co-miembros de tus grupos (para "Tu red"/sugeridos). Se combina con la
+-- anterior vía OR; no afecta INSERT/DELETE.
+CREATE POLICY "View co-members" ON group_members FOR SELECT
+  USING (public.is_member_of(group_id));
 CREATE POLICY "Join group" ON group_members FOR INSERT
   WITH CHECK (
     (user_id = auth.uid()
