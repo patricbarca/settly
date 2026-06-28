@@ -17,30 +17,54 @@ export async function getNetwork(): Promise<Contact[]> {
     const groupIds = (mine ?? []).map((m) => m.group_id);
     if (!groupIds.length) return [];
 
-    // Otros usuarios en esos grupos.
+    // Metadatos de esos grupos: para ordenar por actividad reciente y excluir
+    // los archivados / en papelera (solo sugerimos grupos activos).
+    const { data: groupsMeta } = await supabase
+      .from("groups")
+      .select("id, updated_at, data")
+      .in("id", groupIds);
+    const recencyByGroup = new Map<string, number>();
+    const activeGroupIds: string[] = [];
+    for (const g of groupsMeta ?? []) {
+      const d = (g.data ?? {}) as { archived?: boolean; deletedAt?: string };
+      if (d.archived || d.deletedAt) continue;
+      activeGroupIds.push(g.id);
+      recencyByGroup.set(g.id, g.updated_at ? new Date(g.updated_at).getTime() : 0);
+    }
+    if (!activeGroupIds.length) return [];
+
+    // Otros usuarios en esos grupos (con group_id para puntuar por recencia).
     const { data: others } = await supabase
       .from("group_members")
-      .select("user_id")
-      .in("group_id", groupIds)
+      .select("user_id, group_id")
+      .in("group_id", activeGroupIds)
       .neq("user_id", user.id);
-    const ids = [...new Set((others ?? []).map((o) => o.user_id))];
+    // Para cada usuario, su recencia = el grupo activo compartido más reciente.
+    const recencyByUser = new Map<string, number>();
+    for (const o of others ?? []) {
+      const ts = recencyByGroup.get(o.group_id) ?? 0;
+      if (ts > (recencyByUser.get(o.user_id) ?? -1)) recencyByUser.set(o.user_id, ts);
+    }
+    const ids = [...recencyByUser.keys()];
     if (!ids.length) return [];
 
     const { data: profs, error } = await supabase
       .from("profiles")
       .select("id, name, avatar, email")
       .in("id", ids);
-    if (error) {
-      // Columna avatar/email aún no creada: reintenta solo con lo básico.
-      const { data: p2 } = await supabase.from("profiles").select("id, name").in("id", ids);
-      return (p2 ?? []).map((p) => ({ userId: p.id, name: p.name || "Usuario", avatar: "", email: "" }));
-    }
-    return (profs ?? []).map((p) => ({
+    const rows: { id: string; name?: string; avatar?: string; email?: string }[] = error
+      ? ((await supabase.from("profiles").select("id, name").in("id", ids)).data ?? [])
+      : (profs ?? []);
+    const contacts: Contact[] = rows.map((p) => ({
       userId: p.id,
       name: p.name || "Usuario",
       avatar: p.avatar || "",
       email: p.email || "",
     }));
+    // Ordena por grupo activo compartido más reciente (desc) → los de arriba son
+    // sugerencias directas para hacer click.
+    contacts.sort((a, b) => (recencyByUser.get(b.userId) ?? 0) - (recencyByUser.get(a.userId) ?? 0));
+    return contacts;
   } catch {
     return [];
   }

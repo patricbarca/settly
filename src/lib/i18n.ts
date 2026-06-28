@@ -227,6 +227,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "members.found": { es: "Usuario encontrado: {name}", en: "User found: {name}" },
   "members.addConfirm": { es: "Añadir al grupo", en: "Add to group" },
   "members.notFound": { es: "No hay cuenta con ese email/teléfono. Puedes invitarlos por link o añadirlos sin cuenta.", en: "No account found. You can invite them by link or add them without an account." },
+  "members.notFoundInvite": { es: "No hay ninguna cuenta con ese email/teléfono. Invítalos por link: al crear su cuenta se unirán al grupo.", en: "No account with that email/phone. Invite them by link — they'll join the group once they create an account." },
   "members.addManual": { es: "Añadir sin cuenta", en: "Add without account" },
   "members.manualHint": { es: "Esta persona no necesita tener SettliA instalado.", en: "This person doesn't need to have SettliA installed." },
   "members.backSearch": { es: "← Buscar por email/teléfono", en: "← Search by email/phone" },

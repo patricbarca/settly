@@ -10,13 +10,14 @@ import { createInviteLink } from "../lib/invite";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 
-type AddMode = "idle" | "search" | "found" | "notfound" | "manual";
+// Solo se pueden añadir usuarios YA registrados (búsqueda por email/teléfono) o
+// invitar por link. No hay alta "manual" de personas sin cuenta.
+type AddMode = "idle" | "search" | "found" | "notfound";
 
 export function UsersModal({ group, onClose }: { group: Group; onClose: () => void }) {
   const t = useT();
   const [addMode, setAddMode] = useState<AddMode>("idle");
   const [query, setQuery] = useState("");
-  const [manualName, setManualName] = useState("");
   const [foundUser, setFoundUser] = useState<{ id: string; name: string } | null>(null);
   const [searching, setSearching] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
@@ -37,7 +38,6 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
   function reset() {
     setAddMode("idle");
     setQuery("");
-    setManualName("");
     setFoundUser(null);
     setSearching(false);
   }
@@ -84,22 +84,6 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
       user_id: foundUser.id,
       member_id: memberId,
     });
-    reset();
-  }
-
-  function addManual() {
-    const n = manualName.trim();
-    if (!n) return;
-    updateGroup(group.id, (g) => ({
-      ...g,
-      members: [...g.members, { id: uid(), name: n, avatar: "" }],
-      activity: withActivity(g, {
-        type: "member_added",
-        actorId: g.meId,
-        actorName: g.members.find((m) => m.id === g.meId)?.name,
-        label: n,
-      }),
-    }));
     reset();
   }
 
@@ -230,8 +214,6 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
                   </button>
                 </div>
                 <div className="flex gap-2 mt-2">
-                  <button onClick={() => setAddMode("manual")} className="lk text-xs">{t("members.addManual")}</button>
-                  <span className="text-muted text-xs">·</span>
                   <button onClick={reset} className="lk text-xs text-muted">{t("common.cancel")}</button>
                 </div>
               </>
@@ -249,35 +231,14 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
             )}
             {addMode === "notfound" && (
               <>
-                <p className="text-sm text-muted mb-3">{t("members.notFound")}</p>
+                <p className="text-sm text-muted mb-3">{t("members.notFoundInvite")}</p>
                 <div className="flex gap-2 flex-wrap">
-                  <button onClick={() => setAddMode("manual")} className="glass rounded-full px-4 py-2 text-sm text-muted hover-lift">{t("members.addManual")}</button>
+                  <button onClick={() => { reset(); copyInvite(); }} className="glass-strong rounded-full px-4 py-2 text-sm font-medium hover-lift" style={{ color: "var(--teal)" }}>
+                    <span className="inline-flex items-center gap-1.5"><Icon name="copy" size={14} /> {t("group.shareBtn")}</span>
+                  </button>
+                  <button onClick={() => setAddMode("search")} className="glass rounded-full px-4 py-2 text-sm text-muted hover-lift">{t("members.backSearch")}</button>
                   <button onClick={reset} className="lk text-sm text-muted">{t("common.cancel")}</button>
                 </div>
-              </>
-            )}
-            {addMode === "manual" && (
-              <>
-                <p className="text-xs text-muted mb-2">{t("members.manualHint")}</p>
-                <div className="flex gap-2">
-                  <input
-                    autoFocus
-                    value={manualName}
-                    onChange={(e) => setManualName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && addManual()}
-                    placeholder={t("members.name")}
-                    className="glass rounded-xl px-3 py-2 text-sm flex-1"
-                  />
-                  <button
-                    onClick={addManual}
-                    disabled={!manualName.trim()}
-                    className="glass-strong rounded-xl px-3 py-2 text-sm font-medium hover-lift disabled:opacity-50"
-                    style={{ color: "var(--teal)" }}
-                  >
-                    <Icon name="check" size={16} />
-                  </button>
-                </div>
-                <button onClick={() => setAddMode("search")} className="lk text-xs mt-2 text-muted">{t("members.backSearch")}</button>
               </>
             )}
           </div>
