@@ -10,6 +10,7 @@ import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 import { ConfirmModal } from "./ConfirmModal";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
+import { ItemizedExpenseEditor, type ItemizedResult } from "./ItemizedExpenseEditor";
 import { RecurringList } from "./RecurringList";
 import { withNotif } from "../lib/notifications";
 import { withActivity } from "../lib/activity";
@@ -195,6 +196,37 @@ export function ExpenseList({ group }: { group: Group }) {
         actorName: name(group.meId),
         label: d.label.trim(),
         amount: Number(d.amount) || 0,
+      }),
+    }));
+    setEditId(null);
+  }
+  // Guardar la edición de un gasto repartido por ítem (editor por plato).
+  function saveItemizedEdit(id: string, r: ItemizedResult) {
+    updateGroup(group.id, (g) => ({
+      ...g,
+      expenses: g.expenses.map((e) =>
+        e.id === id
+          ? {
+              ...e,
+              label: r.label,
+              amount: r.amount,
+              payerId: r.payerId,
+              payments: undefined,
+              participantIds: r.participantIds,
+              category: r.category,
+              splits: r.splits,
+              items: r.items,
+              fees: r.fees,
+              tip: r.tip,
+            }
+          : e
+      ),
+      activity: withActivity(g, {
+        type: "expense_edited",
+        actorId: group.meId,
+        actorName: name(group.meId),
+        label: r.label,
+        amount: r.amount,
       }),
     }));
     setEditId(null);
@@ -521,6 +553,23 @@ export function ExpenseList({ group }: { group: Group }) {
             onClick={(ev) => ev.stopPropagation()}
           >
             <h3 className="font-display text-xl font-bold mb-3">{t("exp.edit")}</h3>
+            {editing.items?.length ? (
+              // Gasto repartido por ítem/plato → editor por ítem (igual que se ingresó).
+              <ItemizedExpenseEditor
+                group={group}
+                initial={{
+                  label: editing.label,
+                  items: editing.items,
+                  fees: editing.fees,
+                  tip: editing.tip,
+                  payerId: editing.payerId,
+                  category: editing.category,
+                }}
+                submitLabel={t("exp.edit")}
+                onSubmit={(r) => saveItemizedEdit(editing.id, r)}
+                onCancel={() => setEditId(null)}
+              />
+            ) : (
             <ExpenseForm
               group={group}
               initial={{
@@ -539,6 +588,7 @@ export function ExpenseList({ group }: { group: Group }) {
               onSave={(d) => saveEdit(editing.id, d)}
               onCancel={() => setEditId(null)}
             />
+            )}
           </div>
         </Overlay>
       )}

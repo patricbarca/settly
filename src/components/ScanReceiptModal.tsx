@@ -1,19 +1,15 @@
 import { useState, type ChangeEvent } from "react";
-import type { Group, Category } from "../lib/types";
-import { CATEGORIES } from "../lib/types";
+import type { Group, Category, ExpenseItem } from "../lib/types";
 import { scanReceipt, type ScanTax } from "../lib/ai";
 import { updateGroup } from "../lib/store";
 import { withNotif } from "../lib/notifications";
 import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
-import { uid, money, personColor, memberInitials } from "../lib/format";
-import { currencySymbol } from "../lib/currencies";
+import { uid, money } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
-
-type Item = { id: string; name: string; price: number | string; who: Set<string> };
-type Fee = { id: string; name: string; amount: number | string };
+import { ItemizedExpenseEditor, type ItemizedInitial, type ItemizedResult } from "./ItemizedExpenseEditor";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -22,14 +18,9 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
   const allIds = group.members.map((m) => m.id);
   const [stage, setStage] = useState<"pick" | "analyzing" | "review">("pick");
   const [preview, setPreview] = useState<string | null>(null);
-  const [items, setItems] = useState<Item[]>([]);
-  const [fees, setFees] = useState<Fee[]>([]);
-  const [tax, setTax] = useState<ScanTax | null>(null);
   const [scanError, setScanError] = useState(false);
-  const [label, setLabel] = useState("");
-  const [tip, setTip] = useState<number | string>("");
-  const [payerId, setPayerId] = useState(group.meId);
-  const [category, setCategory] = useState<Category>("comida");
+  const [initial, setInitial] = useState<ItemizedInitial>({});
+  const [tax, setTax] = useState<ScanTax | null>(null);
 
   function onFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -41,36 +32,30 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
       setScanError(false);
       try {
         const res = await scanReceipt(file);
-        if (res.description) setLabel(res.description);
-        if (res.category) setCategory(res.category);
-
-        // Expandir cantidades: un "x2" se separa en filas individuales para poder
-        // asignar cada unidad a personas distintas. El resto del importe por
-        // redondeo va a la última unidad.
-        const rows: Item[] = [];
+        // Expandir cantidades: un "x2" se separa en líneas individuales.
+        const itemRows: ExpenseItem[] = [];
         for (const s of res.items) {
           const q = Math.max(1, s.qty || 1);
           if (q > 1 && s.price > 0) {
             const unit = r2(s.unitPrice || s.price / q);
             for (let i = 0; i < q; i++) {
               const price = i === q - 1 ? r2(s.price - unit * (q - 1)) : unit;
-              rows.push({ id: uid(), name: s.name, price, who: new Set(allIds) });
+              itemRows.push({ name: s.name, price, participantIds: allIds });
             }
           } else {
-            rows.push({ id: uid(), name: s.name, price: s.price, who: new Set(allIds) });
+            itemRows.push({ name: s.name, price: s.price, participantIds: allIds });
           }
         }
-        setItems(
-          rows.length
-            ? rows
-            : [{ id: uid(), name: res.description || "", price: res.total || ("" as number | string), who: new Set(allIds) }]
-        );
-        setFees((res.fees || []).map((f) => ({ id: uid(), name: f.name, amount: f.amount })));
+        setInitial({
+          label: res.description || "",
+          category: res.category || "comida",
+          items: itemRows.length ? itemRows : [{ name: res.description || "", price: res.total || 0, participantIds: allIds }],
+          fees: res.fees || [],
+        });
         setTax(res.tax && (res.tax.amount > 0 || res.tax.rate > 0) ? res.tax : null);
       } catch {
         setScanError(true);
-        setItems([{ id: uid(), name: "", price: "" as number | string, who: new Set(allIds) }]);
-        setFees([]);
+        setInitial({ items: [{ name: "", price: 0, participantIds: allIds }], category: "comida" });
         setTax(null);
       }
       setStage("review");
@@ -78,87 +63,23 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     reader.readAsDataURL(file);
   }
 
-  function toggle(itemId: string, mid: string) {
-    setItems((arr) =>
-      arr.map((it) => {
-        if (it.id !== itemId) return it;
-        const who = new Set(it.who);
-        if (who.has(mid)) who.delete(mid);
-        else who.add(mid);
-        return { ...it, who };
-      })
-    );
-  }
-  const setItem = (itemId: string, patch: Partial<Item>) =>
-    setItems((arr) => arr.map((it) => (it.id === itemId ? { ...it, ...patch } : it)));
-  const addItem = () =>
-    setItems((arr) => [...arr, { id: uid(), name: "", price: "", who: new Set(allIds) }]);
-  const removeItem = (itemId: string) => setItems((arr) => arr.filter((it) => it.id !== itemId));
-  // Divide una fila en dos mitades iguales (para "x2" no detectados): así puedes
-  // asignar cada mitad a personas distintas.
-  function splitItem(itemId: string) {
-    setItems((arr) => {
-      const idx = arr.findIndex((it) => it.id === itemId);
-      if (idx < 0) return arr;
-      const it = arr[idx];
-      const p = Number(it.price) || 0;
-      const half = r2(p / 2);
-      const a: Item = { ...it, id: uid(), price: half, who: new Set(it.who) };
-      const b: Item = { ...it, id: uid(), price: r2(p - half), who: new Set(it.who) };
-      return [...arr.slice(0, idx), a, b, ...arr.slice(idx + 1)];
-    });
-  }
-
-  // Recargos editables.
-  const setFee = (id: string, patch: Partial<Fee>) =>
-    setFees((arr) => arr.map((f) => (f.id === id ? { ...f, ...patch } : f)));
-  const addFee = () => setFees((arr) => [...arr, { id: uid(), name: "", amount: "" }]);
-  const removeFee = (id: string) => setFees((arr) => arr.filter((f) => f.id !== id));
-
-  // --- Cálculo del reparto ---
-  const itemsTotal = items.reduce((s, it) => s + (Number(it.price) || 0), 0);
-  const feesTotal = fees.reduce((s, f) => s + (Number(f.amount) || 0), 0);
-  const tipNum = Number(tip) || 0;
-  const total = r2(itemsTotal + feesTotal + tipNum);
-
-  const splits: Record<string, number> = {};
-  allIds.forEach((id) => (splits[id] = 0));
-  // 1) Coste de los ítems, dividido entre quienes los consumieron.
-  items.forEach((it) => {
-    const who = [...it.who];
-    if (!who.length) return;
-    const per = (Number(it.price) || 0) / who.length;
-    who.forEach((id) => (splits[id] += per));
-  });
-  const itemParticipants = allIds.filter((id) => splits[id] > 0.001);
-  // 2) Recargos (surcharge): PROPORCIONAL a lo que consumió cada uno.
-  if (feesTotal > 0 && itemsTotal > 0) {
-    itemParticipants.forEach((id) => (splits[id] += feesTotal * (splits[id] / itemsTotal)));
-  }
-  // 3) Propina: PARTES IGUALES entre quienes consumieron algo.
-  if (tipNum > 0 && itemParticipants.length) {
-    const perTip = tipNum / itemParticipants.length;
-    itemParticipants.forEach((id) => (splits[id] += perTip));
-  }
-  const participants = allIds.filter((id) => splits[id] > 0.001);
-
-  function save() {
-    if (total <= 0 || participants.length === 0) return;
-    const rounded: Record<string, number> = {};
-    allIds.forEach((id) => (rounded[id] = r2(splits[id])));
+  function save(r: ItemizedResult) {
     const meName = group.members.find((m) => m.id === group.meId)?.name ?? "?";
     updateGroup(group.id, (g) => ({
       ...g,
       expenses: [
         {
           id: uid(),
-          label: label.trim() || "Ticket",
-          amount: total,
-          payerId,
-          participantIds: participants,
-          category,
+          label: r.label,
+          amount: r.amount,
+          payerId: r.payerId,
+          participantIds: r.participantIds,
+          category: r.category,
           date: new Date().toISOString().slice(0, 10),
-          splits: rounded,
+          splits: r.splits,
+          items: r.items,
+          fees: r.fees,
+          tip: r.tip,
           createdBy: group.meId,
         },
         ...g.expenses,
@@ -167,26 +88,24 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         type: "expense_added",
         actorId: group.meId,
         actorName: meName,
-        label: label.trim() || "Ticket",
-        amount: total,
+        label: r.label,
+        amount: r.amount,
       }),
       activity: withActivity(g, {
         type: "scan_used",
         actorId: group.meId,
         actorName: meName,
-        label: label.trim() || "Ticket",
-        amount: total,
+        label: r.label,
+        amount: r.amount,
       }),
     }));
     notifyGroup(
       group.id,
       group.name,
-      t("notif.expense_added", { name: meName, label: "Ticket", amt: money(total, group.currency) })
+      t("notif.expense_added", { name: meName, label: "Ticket", amt: money(r.amount, group.currency) })
     );
     onClose();
   }
-
-  const cur = currencySymbol(group.currency);
 
   return (
     <Overlay onClose={onClose}>
@@ -225,172 +144,18 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         )}
 
         {stage === "review" && (
-          <div className="space-y-3">
-            {scanError && (
-              <div
-                className="rounded-2xl px-4 py-3 text-sm"
-                style={{ background: "rgba(255,90,77,.12)", color: "var(--coral)", border: "1px solid rgba(255,90,77,.3)" }}
-              >
-                {t("scan.error")}
-              </div>
-            )}
-            <div>
-              <label className="text-xs font-semibold text-muted">{t("scan.label")}</label>
-              <input
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-                placeholder="Ticket"
-                className="glass rounded-xl px-3 py-2 text-sm w-full mt-1"
-              />
-            </div>
-
-            <div className="text-xs font-semibold text-muted">{t("scan.items")}</div>
-            <div className="glass rounded-3xl p-3 space-y-3">
-              {items.map((it, idx) => (
-                <div key={it.id} className={idx < items.length - 1 ? "pb-3 border-b border-black/5" : ""}>
-                  <div className="flex items-center gap-2">
-                    <input
-                      value={it.name}
-                      onChange={(e) => setItem(it.id, { name: e.target.value })}
-                      placeholder="—"
-                      className="bg-transparent text-sm flex-1 px-1"
-                    />
-                    <input
-                      value={it.price}
-                      onChange={(e) => setItem(it.id, { price: e.target.value })}
-                      inputMode="decimal"
-                      placeholder="0"
-                      className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
-                    />
-                    <span className="text-muted text-sm">{cur}</span>
-                    <button onClick={() => splitItem(it.id)} className="lk flex items-center text-muted" title={t("scan.splitRow")}>
-                      <Icon name="copy" size={14} />
-                    </button>
-                    <button onClick={() => removeItem(it.id)} className="lk lk-danger flex items-center">
-                      <Icon name="close" size={14} />
-                    </button>
-                  </div>
-                  <div className="flex gap-1 flex-wrap mt-2">
-                    {group.members.map((m) => {
-                      const on = it.who.has(m.id);
-                      return (
-                        <button
-                          key={m.id}
-                          onClick={() => toggle(it.id, m.id)}
-                          className={`rounded-full pl-0.5 pr-2.5 py-0.5 text-xs flex items-center gap-1 border ${on ? "surface" : "glass"}`}
-                          style={{ borderColor: on ? personColor(m.name) : "transparent", opacity: on ? 1 : 0.5 }}
-                        >
-                          <span className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-semibold" style={{ background: personColor(m.name) + "22" }}>
-                            {memberInitials(m)}
-                          </span>
-                          {m.name}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-              <button onClick={addItem} className="lk text-sm inline-flex items-center gap-1">
-                <Icon name="plus" size={13} /> {t("scan.addItem")}
-              </button>
-            </div>
-
-            {/* Recargos (surcharge): se reparten proporcional al consumo */}
-            <div className="glass rounded-3xl p-3 space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="text-xs font-semibold text-muted">{t("scan.fees")}</div>
-                <button onClick={addFee} className="lk text-xs inline-flex items-center gap-1">
-                  <Icon name="plus" size={12} /> {t("scan.addFee")}
-                </button>
-              </div>
-              {fees.length === 0 ? (
-                <div className="text-[11px] text-muted">{t("scan.feesNote")}</div>
-              ) : (
-                fees.map((f) => (
-                  <div key={f.id} className="flex items-center gap-2">
-                    <input
-                      value={f.name}
-                      onChange={(e) => setFee(f.id, { name: e.target.value })}
-                      placeholder={t("scan.feeName")}
-                      className="bg-transparent text-sm flex-1 px-1"
-                    />
-                    <input
-                      value={f.amount}
-                      onChange={(e) => setFee(f.id, { amount: e.target.value })}
-                      inputMode="decimal"
-                      placeholder="0"
-                      className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
-                    />
-                    <span className="text-muted text-sm">{cur}</span>
-                    <button onClick={() => removeFee(f.id)} className="lk lk-danger flex items-center">
-                      <Icon name="close" size={14} />
-                    </button>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs font-semibold text-muted">{t("form.paid")}</label>
-                <select value={payerId} onChange={(e) => setPayerId(e.target.value)} className="glass rounded-xl px-3 py-2 text-sm w-full mt-1">
-                  {group.members.map((m) => (
-                    <option key={m.id} value={m.id}>{m.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-semibold text-muted">{t("form.category")}</label>
-                <select value={category} onChange={(e) => setCategory(e.target.value as Category)} className="glass rounded-xl px-3 py-2 text-sm w-full mt-1">
-                  {CATEGORIES.map((c) => (
-                    <option key={c.id} value={c.id}>{t(`cat.${c.id}`)}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {category === "comida" && (
-              <div className="glass rounded-3xl p-3 flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-medium">{t("scan.tip")}</div>
-                  <div className="text-[11px] text-muted">{t("scan.tipNote")}</div>
-                </div>
-                <div className="flex items-center gap-1">
-                  <input
-                    value={tip}
-                    onChange={(e) => setTip(e.target.value)}
-                    inputMode="decimal"
-                    placeholder="0"
-                    className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
-                  />
-                  <span className="text-muted text-sm">{cur}</span>
-                </div>
-              </div>
-            )}
-
-            <div className="glass rounded-3xl p-3">
-              {group.members.map((m) => (
-                <div key={m.id} className="flex items-center justify-between text-sm py-0.5">
-                  <span>{m.name}</span>
-                  <span className="font-mono font-bold">{money(splits[m.id] || 0, group.currency)}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Impuesto incluido (solo informativo: ya está dentro del total) */}
-            {tax && (
-              <div className="text-[11px] text-muted">
-                {t("scan.taxIncluded", { rate: String(tax.rate || 0), amt: money(tax.amount, group.currency) })}
-              </div>
-            )}
-            <div className="text-xs text-muted">{t("scan.total")}: {money(total, group.currency)}</div>
-            <p className="text-[11px] text-muted leading-relaxed">{t("scan.aiNote")}</p>
-
-            <div className="flex gap-2">
-              <button onClick={save} className="glass-strong rounded-full px-5 py-2.5 font-medium hover-lift">{t("scan.save")}</button>
-              <button onClick={onClose} className="glass rounded-full px-5 py-2.5 text-muted hover-lift">{t("common.cancel")}</button>
-            </div>
-          </div>
+          <>
+            <p className="text-[11px] text-muted leading-relaxed mb-3">{t("scan.aiNote")}</p>
+            <ItemizedExpenseEditor
+              group={group}
+              initial={initial}
+              taxInfo={tax}
+              banner={scanError ? t("scan.error") : undefined}
+              submitLabel={t("scan.save")}
+              onSubmit={save}
+              onCancel={onClose}
+            />
+          </>
         )}
       </div>
     </Overlay>

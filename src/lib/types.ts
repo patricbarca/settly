@@ -76,6 +76,20 @@ export interface Expense {
   deleteRequested?: boolean;
   /** memberId de quien añadió el gasto (para el botón "Revisado"). */
   createdBy?: string;
+  /** Desglose por ítem/plato (gastos escaneados o repartidos por línea). Si
+   *  existe, el gasto se edita con el editor por ítem en vez del de totales. */
+  items?: ExpenseItem[];
+  /** Recargos del ticket (surcharge), repartidos proporcional al consumo. */
+  fees?: { name: string; amount: number }[];
+  /** Propina, repartida en partes iguales entre quienes consumieron. */
+  tip?: number;
+}
+
+/** Una línea de un gasto repartido por ítem: precio + quiénes lo comparten. */
+export interface ExpenseItem {
+  name: string;
+  price: number;
+  participantIds: string[];
 }
 
 export interface Settlement {
