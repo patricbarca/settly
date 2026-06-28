@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Group } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
-import { uid, personColor, memberInitials, money } from "../lib/format";
+import { uid, personColor, initials, memberInitials, money } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
+import { getNetwork, type Contact } from "../lib/contacts";
 import { createInviteLink } from "../lib/invite";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -22,6 +23,23 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
   const [searching, setSearching] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [inviteErr, setInviteErr] = useState(false);
+  // Sugeridos: tu red (registrados) menos quienes ya están en este grupo.
+  const [network, setNetwork] = useState<Contact[]>([]);
+  const [existingIds, setExistingIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    getNetwork().then(setNetwork).catch(() => {});
+    supabase
+      .from("group_members")
+      .select("user_id")
+      .eq("group_id", group.id)
+      .then(({ data }) => setExistingIds(new Set((data ?? []).map((r) => r.user_id))));
+  }, [group.id]);
+
+  const q = query.trim().toLowerCase();
+  const suggestions = network
+    .filter((c) => !existingIds.has(c.userId))
+    .filter((c) => !q || c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
 
   const referenced = new Set<string>();
   group.expenses.forEach((e) => {
@@ -55,7 +73,7 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
       .maybeSingle();
     setSearching(false);
     if (data) {
-      if (group.members.some((m) => m.id === data.id)) {
+      if (existingIds.has(data.id)) {
         setAddMode("notfound");
       } else {
         setFoundUser(data);
@@ -66,25 +84,30 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
     }
   }
 
-  async function addFoundUser() {
-    if (!foundUser) return;
+  async function addUser(userId: string, name: string, avatar = "") {
     const memberId = uid();
     updateGroup(group.id, (g) => ({
       ...g,
-      members: [...g.members, { id: memberId, name: foundUser.name, avatar: "" }],
+      members: [...g.members, { id: memberId, name, avatar }],
       activity: withActivity(g, {
         type: "member_added",
         actorId: g.meId,
         actorName: g.members.find((m) => m.id === g.meId)?.name,
-        label: foundUser.name,
+        label: name,
       }),
     }));
+    setExistingIds((prev) => new Set(prev).add(userId)); // que desaparezca de sugeridos
     await supabase.from("group_members").insert({
       group_id: group.id,
-      user_id: foundUser.id,
+      user_id: userId,
       member_id: memberId,
     });
     reset();
+  }
+
+  async function addFoundUser() {
+    if (!foundUser) return;
+    await addUser(foundUser.id, foundUser.name);
   }
 
   async function copyInvite() {
@@ -216,6 +239,41 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
                 <div className="flex gap-2 mt-2">
                   <button onClick={reset} className="lk text-xs text-muted">{t("common.cancel")}</button>
                 </div>
+
+                {/* Sugeridos: tu red (registrados) que aún no están en el grupo,
+                    ordenados por grupo activo más reciente. Click = añadir. */}
+                {suggestions.length > 0 && (
+                  <div className="mt-3">
+                    <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">
+                      {t("members.suggested")}
+                    </div>
+                    <div className="max-h-52 overflow-y-auto space-y-1">
+                      {suggestions.map((c) => (
+                        <button
+                          key={c.userId}
+                          onClick={() => addUser(c.userId, c.name, c.avatar)}
+                          className="w-full flex items-center gap-2.5 rounded-xl px-2 py-1.5 text-left hover-lift"
+                        >
+                          {c.avatar ? (
+                            <img src={c.avatar} alt="" className="h-8 w-8 rounded-full object-cover shrink-0" />
+                          ) : (
+                            <span
+                              className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+                              style={{ background: personColor(c.name) + "22" }}
+                            >
+                              {initials(c.name)}
+                            </span>
+                          )}
+                          <span className="flex-1 min-w-0">
+                            <span className="text-sm block truncate">{c.name}</span>
+                            {c.email && <span className="text-[11px] text-muted block truncate">{c.email}</span>}
+                          </span>
+                          <Icon name="plus" size={16} className="text-muted shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
             {addMode === "found" && foundUser && (

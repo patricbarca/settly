@@ -222,6 +222,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "members.add": { es: "Añadir miembro", en: "Add member" },
   "members.name": { es: "Nombre", en: "Name" },
   "members.searchHint": { es: "Busca por email o teléfono de un usuario registrado.", en: "Search by email or phone of a registered user." },
+  "members.suggested": { es: "Sugeridos", en: "Suggested" },
   "members.searchPh": { es: "email@ejemplo.com  o  +34 600 000 000", en: "email@example.com  or  +1 234 567 8900" },
   "members.search": { es: "Buscar", en: "Search" },
   "members.found": { es: "Usuario encontrado: {name}", en: "User found: {name}" },
