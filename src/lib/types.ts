@@ -83,6 +83,8 @@ export interface Expense {
   fees?: { name: string; amount: number }[];
   /** Propina, repartida en partes iguales entre quienes consumieron. */
   tip?: number;
+  /** Ruta en Supabase Storage (bucket `receipts`) de la foto del ticket. */
+  receiptPath?: string;
 }
 
 /** Una línea de un gasto repartido por ítem: precio + quiénes lo comparten. */

@@ -42,6 +42,7 @@ export function ItemizedExpenseEditor({
   submitLabel,
   banner,
   taxInfo,
+  submitting,
   onSubmit,
   onCancel,
 }: {
@@ -50,6 +51,7 @@ export function ItemizedExpenseEditor({
   submitLabel: string;
   banner?: string;
   taxInfo?: ScanTax | null;
+  submitting?: boolean;
   onSubmit: (r: ItemizedResult) => void;
   onCancel: () => void;
 }) {
@@ -311,7 +313,9 @@ export function ItemizedExpenseEditor({
       <div className="text-xs text-muted">{t("scan.total")}: {money(total, group.currency)}</div>
 
       <div className="flex gap-2">
-        <button onClick={submit} className="glass-strong rounded-full px-5 py-2.5 font-medium hover-lift">{submitLabel}</button>
+        <button onClick={submit} disabled={submitting} className="glass-strong rounded-full px-5 py-2.5 font-medium hover-lift disabled:opacity-50">
+          {submitting ? t("scan.saving") : submitLabel}
+        </button>
         <button onClick={onCancel} className="glass rounded-full px-5 py-2.5 text-muted hover-lift">{t("common.cancel")}</button>
       </div>
     </div>

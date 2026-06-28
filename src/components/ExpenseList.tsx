@@ -11,6 +11,7 @@ import { Overlay } from "./Overlay";
 import { ConfirmModal } from "./ConfirmModal";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 import { ItemizedExpenseEditor, type ItemizedResult } from "./ItemizedExpenseEditor";
+import { ReceiptButton } from "./ReceiptButton";
 import { RecurringList } from "./RecurringList";
 import { withNotif } from "../lib/notifications";
 import { withActivity } from "../lib/activity";
@@ -465,6 +466,7 @@ export function ExpenseList({ group }: { group: Group }) {
                     >
                       <Icon name="edit" size={13} /> {t("exp.edit")}
                     </button>
+                    {e.receiptPath && <ReceiptButton path={e.receiptPath} />}
                     {!e.reviewRequested ? (
                       <button
                         onClick={() => requestReview(e.id)}

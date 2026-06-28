@@ -5,6 +5,7 @@ import { updateGroup } from "../lib/store";
 import { withNotif } from "../lib/notifications";
 import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
+import { uploadReceipt } from "../lib/storage";
 import { uid, money } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -21,10 +22,13 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
   const [scanError, setScanError] = useState(false);
   const [initial, setInitial] = useState<ItemizedInitial>({});
   const [tax, setTax] = useState<ScanTax | null>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const [saving, setSaving] = useState(false);
 
   function onFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setFile(file);
     const reader = new FileReader();
     reader.onload = async () => {
       setPreview(String(reader.result));
@@ -63,8 +67,12 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     reader.readAsDataURL(file);
   }
 
-  function save(r: ItemizedResult) {
+  async function save(r: ItemizedResult) {
     const meName = group.members.find((m) => m.id === group.meId)?.name ?? "?";
+    // Sube la foto del ticket a Storage (no bloquea: si falla, guardamos sin foto).
+    setSaving(true);
+    const receiptPath = file ? await uploadReceipt(group.id, file) : null;
+    setSaving(false);
     updateGroup(group.id, (g) => ({
       ...g,
       expenses: [
@@ -80,6 +88,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
           items: r.items,
           fees: r.fees,
           tip: r.tip,
+          ...(receiptPath ? { receiptPath } : {}),
           createdBy: group.meId,
         },
         ...g.expenses,
@@ -152,6 +161,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
               taxInfo={tax}
               banner={scanError ? t("scan.error") : undefined}
               submitLabel={t("scan.save")}
+              submitting={saving}
               onSubmit={save}
               onCancel={onClose}
             />
