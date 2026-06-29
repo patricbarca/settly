@@ -34,7 +34,7 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
     const error = await startCheckout(billing);
     if (error) {
       setRedirecting(false);
-      setErr(t("paywall.checkoutError"));
+      setErr(error === "not_authenticated" ? t("paywall.needsLogin") : t("paywall.checkoutError"));
     }
     // On success the page navigates away; no need to reset redirecting
   }

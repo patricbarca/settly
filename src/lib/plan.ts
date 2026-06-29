@@ -89,6 +89,7 @@ export async function startCheckout(billing: "monthly" | "annual"): Promise<stri
     if (!session) return "not_authenticated";
     const res = await supabase.functions.invoke("create-checkout", {
       body: { billing },
+      headers: { Authorization: `Bearer ${session.access_token}` },
     });
     if (res.error) return res.error.message ?? "network";
     const url = (res.data as { url?: string })?.url;

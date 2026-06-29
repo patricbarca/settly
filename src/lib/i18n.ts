@@ -640,6 +640,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "paywall.billedAnnually":  { es: "$60 facturado anualmente", en: "$60 billed annually" },
   "paywall.redirecting":     { es: "Redirigiendo…", en: "Redirecting…" },
   "paywall.checkoutError":   { es: "Error al abrir el pago. Inténtalo de nuevo.", en: "Failed to open checkout. Please try again." },
+  "paywall.needsLogin":      { es: "Inicia sesión para activar Pro.", en: "Please sign in to upgrade to Pro." },
   "paywall.betaNote":        { es: "¿Tienes un código de acceso?", en: "Have an access code?" },
   "paywall.priceNote":       { es: "Pro: $7/mes · $60/año (próximamente)", en: "Pro: $7/mo · $60/year (coming soon)" },
 
