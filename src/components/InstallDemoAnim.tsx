@@ -52,7 +52,7 @@ export function InstallDemoAnim({ scale = 1.5 }: { scale?: number }) {
             <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "9px 9px 6px" }}>
               <Logo size={16} />
               <span style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 800, fontSize: 12, color: "#1a1c22" }}>
-                Settl<span style={{ color: "#2563EB" }}>iA</span>
+                Settlia
               </span>
             </div>
             {/* contenido falso */}
@@ -128,12 +128,12 @@ export function InstallDemoAnim({ scale = 1.5 }: { scale?: number }) {
             background: "radial-gradient(120% 80% at 30% 10%, #6e6cf5 0%, #241c53 55%, #141033 100%)",
             padding: "16px 14px", display: "flex", flexDirection: "column" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, gridAutoRows: "min-content" }}>
-              {/* slot 0 = SettliA que aparece */}
+              {/* slot 0 = Settlia que aparece */}
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
                 <span style={{ animation: `idemo-pop ${D} cubic-bezier(.4,1.5,.5,1) infinite`, display: "inline-flex" }}>
                   <Logo size={26} />
                 </span>
-                <span style={{ fontSize: 7, color: "rgba(255,255,255,.85)", fontWeight: 600, animation: `idemo-label ${D} ease-in-out infinite` }}>SettliA</span>
+                <span style={{ fontSize: 7, color: "rgba(255,255,255,.85)", fontWeight: 600, animation: `idemo-label ${D} ease-in-out infinite` }}>Settlia</span>
               </div>
               {grid.map((_, i) => (
                 <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>

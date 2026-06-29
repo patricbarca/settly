@@ -85,7 +85,7 @@ export function reportToCsv(group: Group, period: Period, t: T, lang: "es" | "en
   const periodLabel = period === "all" ? t("report.allTime") : monthLabel(period, lang);
   const rows: string[] = [];
 
-  rows.push(`SettliA — ${esc(group.name)} — ${esc(periodLabel)}`);
+  rows.push(`Settlia — ${esc(group.name)} — ${esc(periodLabel)}`);
   rows.push("");
   rows.push([t("report.total"), n2(r.total), cur].map(esc).join(","));
   rows.push([t("report.count"), r.count].map(esc).join(","));

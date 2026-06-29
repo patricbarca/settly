@@ -446,7 +446,7 @@ export function processRecurring(groupId: string) {
     });
     return { ...g, expenses: newExpenses, recurring: updatedRecurring, notifications, activity };
   });
-  const groupName = state.groups.find((g) => g.id === groupId)?.name ?? "SettliA";
+  const groupName = state.groups.find((g) => g.id === groupId)?.name ?? "Settlia";
   for (const p of pushed) {
     notifyGroup(
       groupId,

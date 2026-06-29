@@ -6,7 +6,7 @@
 //
 // Despliegue (dashboard, un solo archivo) + desactivar "Verify JWT".
 // Llamar con: Authorization: Bearer <CRON_SECRET> y body
-//   { "title": "SettliA", "body": "¡Hola! 🎉", "url": "/" }
+//   { "title": "Settlia", "body": "¡Hola! 🎉", "url": "/" }
 // ============================================================
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
     const auth = (req.headers.get("Authorization") ?? "").replace("Bearer ", "").trim();
     if (!CRON_SECRET || auth !== CRON_SECRET) return json({ error: "unauthorized" }, 401);
 
-    let title = "SettliA", body = "Prueba de notificación 🎉", url = "/";
+    let title = "Settlia", body = "Prueba de notificación 🎉", url = "/";
     try {
       const b = await req.json();
       if (b?.title) title = String(b.title);

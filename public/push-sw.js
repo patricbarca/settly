@@ -1,4 +1,4 @@
-// Handlers de Web Push para SettliA. Lo importa el service worker de Workbox
+// Handlers de Web Push para Settlia. Lo importa el service worker de Workbox
 // (ver vite.config.ts → workbox.importScripts). Muestra la notificación cuando
 // llega un push y enfoca/abre la app al pulsarla.
 self.addEventListener("push", (event) => {
@@ -8,7 +8,7 @@ self.addEventListener("push", (event) => {
   } catch (e) {
     data = { body: event.data ? event.data.text() : "" };
   }
-  const title = data.title || "SettliA";
+  const title = data.title || "Settlia";
   const options = {
     body: data.body || "",
     icon: "/icons/icon-192.png",

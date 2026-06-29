@@ -218,7 +218,7 @@ Deno.serve(async (req) => {
         // Grupos "home" = recordatorio semanal (su lunes local).
         if (!force && tgt.weekly && !isLocalMonday(tz)) return;
         const body = buildBody(tgt, s.lang ?? "es");
-        const payload = JSON.stringify({ title: "SettliA", body, url: APP_URL });
+        const payload = JSON.stringify({ title: "Settlia", body, url: APP_URL });
         try {
           await webpush.sendNotification(s.subscription, payload);
           sent++;
