@@ -9,7 +9,7 @@ import { memberPays } from "../lib/pay";
 import { countryList, dialCode, isValidPhone, normalizePhone } from "../lib/countries";
 import { useT, useLang } from "../lib/i18n";
 import { useTimezonePref, setTimezone, resolveTz, TIMEZONES } from "../lib/tz";
-import { usePlan, FREE_AI_QUOTA, startPortal } from "../lib/plan";
+import { usePlan, FREE_AI_QUOTA, startPortal, useHasStripeSubscription } from "../lib/plan";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 import { Paywall } from "./Paywall";
@@ -22,6 +22,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const user = useUser();
   const groups = useAllGroups();
   const plan = usePlan();
+  const hasStripe = useHasStripeSubscription();
   const [showPaywall, setShowPaywall] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [portalBusy, setPortalBusy] = useState(false);
@@ -311,7 +312,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
               >
                 {t("pro.upgrade")}
               </button>
-            ) : (
+            ) : hasStripe ? (
               <div className="flex flex-col items-end gap-1 shrink-0">
                 <button
                   onClick={handlePortal}
@@ -323,6 +324,13 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
                 </button>
                 {portalErr && <p className="text-xs text-red-500">{portalErr}</p>}
               </div>
+            ) : (
+              <span
+                className="rounded-full px-3 py-1.5 text-xs font-semibold shrink-0"
+                style={{ background: "rgba(91,91,240,0.12)", color: "var(--indigo)" }}
+              >
+                {t("pro.badge")}
+              </span>
             )}
           </div>
         </div>
