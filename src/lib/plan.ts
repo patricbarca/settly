@@ -25,6 +25,7 @@ type Usage = { month: string; scan: number; voice: number; text: number };
 let plan: Plan = "free";
 let planReady = false;
 let trialEndsAt: Date | null = null;
+let hasStripe = false;
 let usage: Usage = loadUsage();
 const listeners = new Set<() => void>();
 
@@ -43,7 +44,7 @@ async function loadEntitlement(userId: string) {
   try {
     const { data } = await supabase
       .from("entitlements")
-      .select("plan, expires_at, trial_ends_at")
+      .select("plan, expires_at, trial_ends_at, stripe_customer_id")
       .eq("user_id", userId)
       .maybeSingle();
     const active =
@@ -52,10 +53,12 @@ async function loadEntitlement(userId: string) {
       (!data.expires_at || new Date(data.expires_at) > new Date());
     plan = active ? "pro" : "free";
     trialEndsAt = data?.trial_ends_at ? new Date(data.trial_ends_at) : null;
+    hasStripe = !!data?.stripe_customer_id;
   } catch {
     // Table missing (migration not applied yet) or offline → default to free.
     plan = "free";
     trialEndsAt = null;
+    hasStripe = false;
   }
   planReady = true;
   emit();
@@ -67,6 +70,7 @@ supabase.auth.onAuthStateChange((_event, session) => {
   } else {
     plan = "free";
     trialEndsAt = null;
+    hasStripe = false;
     planReady = true;
     emit();
   }
@@ -93,6 +97,11 @@ export function useTrialDaysLeft(): number | null {
     return Math.ceil(ms / 86_400_000);
   };
   return useSyncExternalStore(sub, snap, snap);
+}
+
+/** True only when the user is Pro via a Stripe subscription (not an access code). */
+export function useHasStripeSubscription(): boolean {
+  return useSyncExternalStore(sub, () => hasStripe, () => hasStripe);
 }
 
 export type RedeemResult = { ok: boolean; error?: string };
