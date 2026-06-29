@@ -7,43 +7,51 @@
 ## ✅ Completado hoy (2026-06-29)
 
 - **`migrate_v5`** — bucket `receipts` privado confirmado en Supabase.
-- **`migrate_v6`** — seguridad + performance aplicada:
-  - `handle_new_user` search_path fijado (evita SQL injection vía search_path).
-  - REVOKE EXECUTE en funciones internas para rol `anon` (`handle_new_user`, `is_member_of`, `redeem_access_code`).
-  - 6 índices en FKs sin cubrir (`code_redemptions`, `feedback`, `group_members`, `groups`, `invite_links`).
-  - Todas las políticas RLS migradas a `(select auth.uid())` (fix initplan, mejora rendimiento).
-  - Políticas duplicadas de `group_members` SELECT fusionadas en una (`View group members`).
+- **`migrate_v6`** — seguridad + performance aplicada (search_path, REVOKE, 6 índices, RLS initplan, merge políticas).
 - **`send-push` v10 + `daily-reminders` v11** redespliegados.
+- **Stripe sandbox** — producto `prod_Un55TeYgnza89e` + precios mensual (`price_1TnUvTJNzqooAsfhY6TFJXnd` $7/mo) y anual (`price_1TnUvWJNzqooAsfhYmxHe7sR` $60/yr). Ver `STRIPE.md`.
 
 ---
 
-## 🟡 Pendiente manual (1 clic en Supabase dashboard)
+## 🔴 Stripe — próximos pasos (requieren código)
+
+### Edge Function `create-checkout`
+Crea una Checkout Session de Stripe con 7 días de trial y redirige al usuario.
+- Secret necesario: `STRIPE_SECRET_KEY`
+
+### Edge Function `stripe-webhook`
+Recibe eventos de Stripe (`checkout.session.completed`, `customer.subscription.deleted`) y actualiza `entitlements` en Supabase.
+- Secret necesario: `STRIPE_WEBHOOK_SECRET`
+
+### Migración DB: campos Stripe en `entitlements`
+Añadir `stripe_customer_id` y `stripe_subscription_id` a la tabla.
+
+### Paywall en la app
+Conectar el botón "Go Pro" del `Paywall.tsx` con `create-checkout` en vez del flujo de códigos.
+
+---
+
+## 🟡 Pendiente manual
 
 ### Leaked Password Protection
-Auth → Settings → Enable "Leaked password protection" (HaveIBeenPwned check).
-No requiere código ni SQL.
+Requiere Plan Pro de Supabase (~$25/mes). Ignorar por ahora — login principal es Google OAuth.
 
 ---
 
 ## 🟡 Pendientes técnicos próximos
 
 ### Comprobantes de pago → Storage
-Hoy `settlement.proof` guarda la imagen como base64 en el JSON del grupo. Hay que:
-- Subir el comprobante al bucket `receipts` (mismo bucket, ruta diferente).
-- Migrar los `proof` base64 existentes.
-- Mostrar el recibo en el reporte (miniatura en PDF; CSV = sí/no).
-
-### Mostrar recibo en el reporte
-`ReportModal` no incluye aún los recibos de `Expense.receiptPath`. Pendiente: miniatura embebida en el PDF de impresión; en CSV = columna sí/no.
+Hoy `settlement.proof` guarda la imagen como base64. Migrar a bucket `receipts` + mostrar en reporte.
 
 ### Borrar `PayMethodModal.tsx`
-Archivo huérfano (la edición de métodos de pago se movió al perfil). Seguro borrar.
+Archivo huérfano. Seguro borrar.
 
 ---
 
 ## 📋 Lo que sigue (orden recomendado)
 
-1. **Leaked Password Protection** → 1 clic en Auth Settings (tú).
-2. **Meta Pixel + GA4** → necesario para que los ads optimicen (Fase 1.5).
-3. **Banner de consentimiento de cookies** → obligatorio en UE con los pixels activos.
-4. **Migrar `settlement.proof`** → completar la historia de evidencias (Fase 1).
+1. **Edge Functions Stripe** (`create-checkout` + `stripe-webhook`) → yo puedo implementarlas.
+2. **Migración DB** (`stripe_customer_id` + `stripe_subscription_id` en `entitlements`).
+3. **Conectar Paywall.tsx** con el checkout.
+4. **Meta Pixel + GA4** → necesario para que los ads optimicen (Fase 1.5).
+5. **Banner de consentimiento de cookies** → obligatorio en UE.
