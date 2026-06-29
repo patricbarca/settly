@@ -1,6 +1,6 @@
 export function Logo({ size = 40 }: { size?: number }) {
   const radius = Math.round(size * 0.22);
-  const pad = Math.round(size * 0.06);
+  const pad = Math.round(size * 0.10);
   return (
     <div
       style={{
