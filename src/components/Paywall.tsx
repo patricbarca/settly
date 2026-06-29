@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { redeemCode } from "../lib/plan";
+import { useState, useEffect } from "react";
+import { redeemCode, startCheckout, reloadPlan } from "../lib/plan";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -8,10 +8,36 @@ const FEATURES = ["paywall.f1", "paywall.f2", "paywall.f3", "paywall.f4"];
 
 export function Paywall({ onClose, reason }: { onClose: () => void; reason?: string }) {
   const t = useT();
+  const [billing, setBilling] = useState<"annual" | "monthly">("annual");
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
   const [ok, setOk] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [showCode, setShowCode] = useState(false);
+
+  // Handle ?upgraded=1 param after Stripe redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("upgraded") === "1") {
+      reloadPlan().then(() => {
+        window.history.replaceState({}, "", window.location.pathname);
+        onClose();
+      });
+    }
+  }, []);
+
+  async function handleCheckout() {
+    if (redirecting) return;
+    setRedirecting(true);
+    setErr(null);
+    const error = await startCheckout(billing);
+    if (error) {
+      setRedirecting(false);
+      setErr(error === "not_authenticated" ? t("paywall.needsLogin") : t("paywall.checkoutError"));
+    }
+    // On success the page navigates away; no need to reset redirecting
+  }
 
   async function redeem() {
     if (!code.trim() || busy) return;
@@ -88,32 +114,77 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
           </div>
         ) : (
           <>
-            <div className="rounded-2xl p-3 mb-3 text-center" style={{ background: "var(--glass)" }}>
-              <div className="text-xs text-muted">{t("paywall.betaNote")}</div>
+            {/* Billing toggle */}
+            <div className="flex rounded-2xl overflow-hidden mb-4" style={{ background: "var(--glass)" }}>
+              {(["annual", "monthly"] as const).map((b) => (
+                <button
+                  key={b}
+                  onClick={() => setBilling(b)}
+                  className="flex-1 py-2.5 text-sm font-semibold transition-all"
+                  style={billing === b
+                    ? { background: "var(--indigo)", color: "#fff", borderRadius: "1rem" }
+                    : { color: "var(--muted)" }
+                  }
+                >
+                  {b === "annual"
+                    ? `$5/${t("paywall.month")} · ${t("paywall.annualSave")}`
+                    : `$7/${t("paywall.month")}`}
+                </button>
+              ))}
             </div>
 
-            <label className="text-xs font-semibold text-muted">{t("code.label")}</label>
-            <div className="flex gap-2 mt-1">
-              <input
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && redeem()}
-                placeholder={t("code.placeholder")}
-                autoCapitalize="characters"
-                className="glass rounded-xl px-3 py-2.5 text-sm flex-1 font-mono uppercase"
-              />
+            {billing === "annual" && (
+              <p className="text-xs text-center text-muted mb-3">{t("paywall.billedAnnually")}</p>
+            )}
+
+            <button
+              onClick={handleCheckout}
+              disabled={redirecting}
+              className="w-full rounded-2xl py-3.5 font-semibold text-white hover-lift disabled:opacity-60 mb-2"
+              style={{ background: "linear-gradient(135deg, var(--indigo), var(--teal))" }}
+            >
+              {redirecting ? t("paywall.redirecting") : t("paywall.cta")}
+            </button>
+
+            <p className="text-[11px] text-muted text-center mb-4">{t("paywall.terms")}</p>
+
+            {err && <p className="text-red-500 text-xs text-center mb-3">{err}</p>}
+
+            {/* Divider + access code section */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex-1 h-px" style={{ background: "var(--glass)" }} />
               <button
-                onClick={redeem}
-                disabled={!code.trim() || busy}
-                className="rounded-full px-5 py-2.5 font-semibold text-white hover-lift disabled:opacity-50 shrink-0"
-                style={{ background: "var(--ink)" }}
+                onClick={() => setShowCode(!showCode)}
+                className="text-xs text-muted"
               >
-                {busy ? t("code.redeeming") : t("code.redeem")}
+                {t("paywall.betaNote")}
               </button>
+              <div className="flex-1 h-px" style={{ background: "var(--glass)" }} />
             </div>
-            {err && <p className="text-red-500 text-xs mt-2">{err}</p>}
 
-            <p className="text-[11px] text-muted text-center mt-4">{t("paywall.priceNote")}</p>
+            {showCode && (
+              <>
+                <label className="text-xs font-semibold text-muted">{t("code.label")}</label>
+                <div className="flex gap-2 mt-1">
+                  <input
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && redeem()}
+                    placeholder={t("code.placeholder")}
+                    autoCapitalize="characters"
+                    className="glass rounded-xl px-3 py-2.5 text-sm flex-1 font-mono uppercase"
+                  />
+                  <button
+                    onClick={redeem}
+                    disabled={!code.trim() || busy}
+                    className="rounded-full px-5 py-2.5 font-semibold text-white hover-lift disabled:opacity-50 shrink-0"
+                    style={{ background: "var(--ink)" }}
+                  >
+                    {busy ? t("code.redeeming") : t("code.redeem")}
+                  </button>
+                </div>
+              </>
+            )}
           </>
         )}
       </div>

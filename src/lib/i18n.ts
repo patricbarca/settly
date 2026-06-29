@@ -636,8 +636,13 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "pro.active": { es: "Activo", en: "Active" },
 
-  "paywall.betaNote":  { es: "Durante la beta, activa Pro con un código de acceso.", en: "During the beta, unlock Pro with an access code." },
-  "paywall.priceNote": { es: "Pro: $7/mes · $60/año (próximamente)", en: "Pro: $7/mo · $60/year (coming soon)" },
+  "paywall.annualSave":      { es: "ahorra 29%", en: "save 29%" },
+  "paywall.billedAnnually":  { es: "$60 facturado anualmente", en: "$60 billed annually" },
+  "paywall.redirecting":     { es: "Redirigiendo…", en: "Redirecting…" },
+  "paywall.checkoutError":   { es: "Error al abrir el pago. Inténtalo de nuevo.", en: "Failed to open checkout. Please try again." },
+  "paywall.needsLogin":      { es: "Inicia sesión para activar Pro.", en: "Please sign in to upgrade to Pro." },
+  "paywall.betaNote":        { es: "¿Tienes un código de acceso?", en: "Have an access code?" },
+  "paywall.priceNote":       { es: "Pro: $7/mes · $60/año (próximamente)", en: "Pro: $7/mo · $60/year (coming soon)" },
 
   "code.label":       { es: "Código de acceso", en: "Access code" },
   "code.placeholder": { es: "Tu código", en: "Your code" },

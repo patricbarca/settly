@@ -82,6 +82,31 @@ export function usePlanReady(): boolean {
 
 export type RedeemResult = { ok: boolean; error?: string };
 
+/** Redirect to Stripe Checkout (7-day trial). Returns an error string or null. */
+export async function startCheckout(billing: "monthly" | "annual"): Promise<string | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return "not_authenticated";
+    const res = await supabase.functions.invoke("create-checkout", {
+      body: { billing },
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (res.error) return res.error.message ?? "network";
+    const url = (res.data as { url?: string })?.url;
+    if (!url) return "no_url";
+    window.location.href = url;
+    return null;
+  } catch {
+    return "network";
+  }
+}
+
+/** Re-read entitlement from Supabase (call after returning from Stripe success). */
+export async function reloadPlan(): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) await loadEntitlement(user.id);
+}
+
 /** Redeem an access code via the Supabase RPC and refresh the local plan. */
 export async function redeemCode(code: string): Promise<RedeemResult> {
   const c = code.trim();
