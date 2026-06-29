@@ -641,6 +641,9 @@ const DICT: Record<string, { es: string; en: string }> = {
   "paywall.redirecting":     { es: "Redirigiendo…", en: "Redirecting…" },
   "paywall.checkoutError":   { es: "Error al abrir el pago. Inténtalo de nuevo.", en: "Failed to open checkout. Please try again." },
   "paywall.needsLogin":      { es: "Inicia sesión para activar Pro.", en: "Please sign in to upgrade to Pro." },
+  "trial.daysLeft":          { es: "Tu prueba gratis termina en {n} día(s)", en: "Your free trial ends in {n} day(s)" },
+  "trial.manage":            { es: "Gestionar suscripción", en: "Manage subscription" },
+  "trial.manageError":       { es: "Error al abrir el portal. Inténtalo de nuevo.", en: "Failed to open portal. Please try again." },
   "paywall.betaNote":        { es: "¿Tienes un código de acceso?", en: "Have an access code?" },
   "paywall.priceNote":       { es: "Pro: $7/mes · $60/año (próximamente)", en: "Pro: $7/mo · $60/year (coming soon)" },
 
