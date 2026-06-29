@@ -1,16 +1,30 @@
-<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="512" height="512" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100" height="100" rx="22" fill="#0D1B2A"/>
   <defs>
-    <linearGradient id="settly-g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#5B5BF0"/>
-      <stop offset="55%" stop-color="#0FA3A3"/>
-      <stop offset="100%" stop-color="#0EA5E9"/>
+    <linearGradient id="sg-top" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1FD5A0"/>
+      <stop offset="100%" stop-color="#0FA3A3"/>
+    </linearGradient>
+    <linearGradient id="sg-mid" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0FA3A3"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="sg-bot" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="sg-shadow-top" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0c8a80" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#0c8a80" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="sg-shadow-bot" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a4faa" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#1a4faa" stop-opacity="0.5"/>
     </linearGradient>
   </defs>
-  <!-- Rounded square background (full bleed, no margin) -->
-  <rect x="0" y="0" width="512" height="512" rx="112" fill="url(#settly-g)"/>
-  <!-- Two overlapping circles scaled to 512/48 ≈ 10.67x -->
-  <circle cx="203" cy="256" r="96" fill="#ffffff" fill-opacity="0.92"/>
-  <circle cx="309" cy="256" r="96" fill="#ffffff" fill-opacity="0.5"/>
-  <!-- Checkmark path scaled same ratio -->
-  <path d="M167 260l29 29 54-60" stroke="#5B5BF0" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 62 14 C 82 14 88 28 88 36 C 88 50 74 56 58 56 L 42 56 C 26 56 18 62 18 72 C 18 82 26 88 38 88" stroke="url(#sg-top)" stroke-width="17" stroke-linecap="round" fill="none"/>
+  <path d="M 38 88 C 18 88 12 74 12 66 C 12 52 26 46 42 46 L 58 46 C 74 46 82 40 82 30 C 82 20 74 14 62 14" stroke="url(#sg-bot)" stroke-width="17" stroke-linecap="round" fill="none"/>
+  <path d="M 62 14 C 82 14 88 28 88 36 C 88 50 74 56 58 56 L 42 56" stroke="url(#sg-shadow-top)" stroke-width="17" stroke-linecap="round" fill="none"/>
+  <path d="M 42 46 C 26 46 12 52 12 66 C 12 74 18 88 38 88" stroke="url(#sg-shadow-bot)" stroke-width="17" stroke-linecap="round" fill="none"/>
+  <path d="M 58 56 L 42 46" stroke="url(#sg-mid)" stroke-width="17" stroke-linecap="round" fill="none"/>
 </svg>
