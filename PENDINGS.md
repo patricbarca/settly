@@ -6,14 +6,8 @@
 
 ## 🔴 Bloqueantes / críticos
 
-### 1. Correr `migrate_v5_receipts_storage.sql` en Supabase
-El código de Storage de recibos ya está desplegado (`src/lib/storage.ts`, `ReceiptButton.tsx`, `Expense.receiptPath`) pero el bucket y las políticas RLS **no existen en producción** hasta correr esta migración.
-
-**Cómo:** SQL Editor en el dashboard de Supabase → pegar y ejecutar `supabase/migrate_v5_receipts_storage.sql`.
-
-**Prerequisito:** `migrate_v4` ya aplicada (función `is_member_of` existe).
-
----
+### 1. ✅ ~~Correr `migrate_v5_receipts_storage.sql`~~ — YA APLICADA
+Bucket `receipts` confirmado en Supabase (privado, RLS activa).
 
 ### 2. Auditar RLS (seguridad antes de ads)
 Antes de empujar tráfico pagado hay que asegurarse de que ninguna tabla queda sin Row-Level Security.
@@ -45,8 +39,7 @@ Archivo huérfano (la edición de métodos de pago se movió al perfil). Seguro 
 
 ## 📋 Lo que sigue (orden recomendado)
 
-1. **Correr `migrate_v5`** → habilita recibos en producción (10 min, cero código).
-2. **Auditar RLS** → requisito antes de anunciar.
-3. **Meta Pixel + GA4** → necesario para que los ads optimicen (Fase 1.5).
-4. **Banner de consentimiento de cookies** → obligatorio en UE con los pixels activos.
-5. **Migrar `settlement.proof`** → completar la historia de evidencias (Fase 1).
+1. **Auditar RLS** → requisito antes de anunciar.
+2. **Meta Pixel + GA4** → necesario para que los ads optimicen (Fase 1.5).
+3. **Banner de consentimiento de cookies** → obligatorio en UE con los pixels activos.
+4. **Migrar `settlement.proof`** → completar la historia de evidencias (Fase 1).
