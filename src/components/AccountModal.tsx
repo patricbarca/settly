@@ -24,6 +24,19 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const plan = usePlan();
   const [showPaywall, setShowPaywall] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [portalBusy, setPortalBusy] = useState(false);
+  const [portalErr, setPortalErr] = useState<string | null>(null);
+
+  async function handlePortal() {
+    if (portalBusy) return;
+    setPortalBusy(true);
+    setPortalErr(null);
+    const err = await startPortal();
+    if (err) {
+      setPortalBusy(false);
+      setPortalErr(err === "no_subscription" ? t("trial.noSubscription") : t("trial.manageError"));
+    }
+  }
 
   // Combina tus datos de TODOS los grupos (activos + papelera + archivados):
   // por cada campo toma el primer valor no vacío, para no perder nada aunque el
@@ -299,13 +312,17 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
                 {t("pro.upgrade")}
               </button>
             ) : (
-              <button
-                onClick={() => startPortal()}
-                className="rounded-full px-3 py-1.5 text-xs font-semibold shrink-0 hover-lift"
-                style={{ background: "rgba(91,91,240,0.12)", color: "var(--indigo)" }}
-              >
-                {t("trial.manage")}
-              </button>
+              <div className="flex flex-col items-end gap-1 shrink-0">
+                <button
+                  onClick={handlePortal}
+                  disabled={portalBusy}
+                  className="rounded-full px-3 py-1.5 text-xs font-semibold hover-lift disabled:opacity-50"
+                  style={{ background: "rgba(91,91,240,0.12)", color: "var(--indigo)" }}
+                >
+                  {portalBusy ? "…" : t("trial.manage")}
+                </button>
+                {portalErr && <p className="text-xs text-red-500">{portalErr}</p>}
+              </div>
             )}
           </div>
         </div>

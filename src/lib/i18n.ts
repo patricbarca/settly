@@ -644,6 +644,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "trial.daysLeft":          { es: "Tu prueba gratis termina en {n} día(s)", en: "Your free trial ends in {n} day(s)" },
   "trial.manage":            { es: "Gestionar suscripción", en: "Manage subscription" },
   "trial.manageError":       { es: "Error al abrir el portal. Inténtalo de nuevo.", en: "Failed to open portal. Please try again." },
+  "trial.noSubscription":    { es: "Plan activado por código — sin suscripción Stripe.", en: "Plan activated by code — no Stripe subscription." },
   "paywall.betaNote":        { es: "¿Tienes un código de acceso?", en: "Have an access code?" },
   "paywall.priceNote":       { es: "Pro: $7/mes · $60/año (próximamente)", en: "Pro: $7/mo · $60/year (coming soon)" },
 
