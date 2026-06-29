@@ -9,7 +9,7 @@ import { memberPays } from "../lib/pay";
 import { countryList, dialCode, isValidPhone, normalizePhone } from "../lib/countries";
 import { useT, useLang } from "../lib/i18n";
 import { useTimezonePref, setTimezone, resolveTz, TIMEZONES } from "../lib/tz";
-import { usePlan, FREE_AI_QUOTA } from "../lib/plan";
+import { usePlan, FREE_AI_QUOTA, startPortal } from "../lib/plan";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 import { Paywall } from "./Paywall";
@@ -299,12 +299,13 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
                 {t("pro.upgrade")}
               </button>
             ) : (
-              <span
-                className="inline-flex items-center gap-1 text-xs font-semibold shrink-0"
-                style={{ color: "var(--indigo)" }}
+              <button
+                onClick={() => startPortal()}
+                className="rounded-full px-3 py-1.5 text-xs font-semibold shrink-0 hover-lift"
+                style={{ background: "rgba(91,91,240,0.12)", color: "var(--indigo)" }}
               >
-                <Icon name="check" size={14} /> {t("pro.active")}
-              </span>
+                {t("trial.manage")}
+              </button>
             )}
           </div>
         </div>
