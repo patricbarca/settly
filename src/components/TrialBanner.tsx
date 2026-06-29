@@ -23,7 +23,7 @@ export function TrialBanner() {
 
   return (
     <div
-      className="mx-4 mb-3 rounded-2xl px-4 py-3 flex items-center justify-between gap-3"
+      className="mb-3 rounded-2xl px-4 py-3 flex items-center justify-between gap-3"
       style={{ background: "rgba(232,146,12,0.12)", border: "1px solid rgba(232,146,12,0.25)" }}
     >
       <p className="text-sm font-medium" style={{ color: "var(--amber)" }}>

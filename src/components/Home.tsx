@@ -68,9 +68,9 @@ export function Home() {
   const showOverall = active.length > 0 && spent > 0.01;
 
   return (
-    <div className="max-w-2xl mx-auto pb-10">
+    <div className="max-w-2xl mx-auto px-4 pb-10">
       <TrialBanner />
-      <div className="px-4 pt-4">
+      <div className="pt-4">
         <div className="hero anim-up">
           <span className="blob b1" />
           <span className="blob b2" />
