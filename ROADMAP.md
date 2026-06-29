@@ -90,4 +90,5 @@ Rebrand a **SettliA** + dominios propios · Actividad (log) · settle-up por rol
 aprobación del acreedor · **pagos parciales** con recálculo · banner "pagos por
 confirmar" · pills de balance global · parser "por persona" + few-shot +
 suposiciones · tipo de grupo (Puntual/Casa) · recordatorios diarios bilingües
-(código) · sello de versión en el footer.
+(código y desplegados) · sello de versión en el footer · **redeploy `send-push` v10
++ `daily-reminders` v11** (2026-06-29).
