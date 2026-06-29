@@ -99,6 +99,28 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "customer.subscription.trial_will_end": {
+        // Fires 3 days before trial ends
+        const sub = event.data.object as Stripe.Subscription;
+        const customerId = sub.customer as string;
+        const trialEnd = sub.trial_end ? new Date(sub.trial_end * 1000).toISOString() : null;
+
+        const { data: ent } = await sbAdmin
+          .from("entitlements")
+          .select("user_id")
+          .eq("stripe_customer_id", customerId)
+          .maybeSingle();
+
+        if (ent?.user_id && trialEnd) {
+          await sbAdmin.from("entitlements").upsert({
+            user_id: ent.user_id,
+            trial_ends_at: trialEnd,
+            stripe_customer_id: customerId,
+          }, { onConflict: "user_id" });
+        }
+        break;
+      }
+
       default:
         console.log(`Unhandled event type: ${event.type}`);
     }

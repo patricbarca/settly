@@ -24,6 +24,7 @@ type Usage = { month: string; scan: number; voice: number; text: number };
 
 let plan: Plan = "free";
 let planReady = false;
+let trialEndsAt: Date | null = null;
 let usage: Usage = loadUsage();
 const listeners = new Set<() => void>();
 
@@ -42,7 +43,7 @@ async function loadEntitlement(userId: string) {
   try {
     const { data } = await supabase
       .from("entitlements")
-      .select("plan, expires_at")
+      .select("plan, expires_at, trial_ends_at")
       .eq("user_id", userId)
       .maybeSingle();
     const active =
@@ -50,9 +51,11 @@ async function loadEntitlement(userId: string) {
       data.plan === "pro" &&
       (!data.expires_at || new Date(data.expires_at) > new Date());
     plan = active ? "pro" : "free";
+    trialEndsAt = data?.trial_ends_at ? new Date(data.trial_ends_at) : null;
   } catch {
     // Table missing (migration not applied yet) or offline → default to free.
     plan = "free";
+    trialEndsAt = null;
   }
   planReady = true;
   emit();
@@ -63,6 +66,7 @@ supabase.auth.onAuthStateChange((_event, session) => {
     loadEntitlement(session.user.id);
   } else {
     plan = "free";
+    trialEndsAt = null;
     planReady = true;
     emit();
   }
@@ -80,6 +84,17 @@ export function usePlanReady(): boolean {
   return useSyncExternalStore(sub, () => planReady, () => planReady);
 }
 
+/** Days remaining in trial (null = not in trial or trial already ended). */
+export function useTrialDaysLeft(): number | null {
+  const snap = () => {
+    if (!trialEndsAt || plan !== "pro") return null;
+    const ms = trialEndsAt.getTime() - Date.now();
+    if (ms <= 0) return null;
+    return Math.ceil(ms / 86_400_000);
+  };
+  return useSyncExternalStore(sub, snap, snap);
+}
+
 export type RedeemResult = { ok: boolean; error?: string };
 
 /** Redirect to Stripe Checkout (7-day trial). Returns an error string or null. */
@@ -89,6 +104,25 @@ export async function startCheckout(billing: "monthly" | "annual"): Promise<stri
     if (!session) return "not_authenticated";
     const res = await supabase.functions.invoke("create-checkout", {
       body: { billing },
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (res.error) return res.error.message ?? "network";
+    const url = (res.data as { url?: string })?.url;
+    if (!url) return "no_url";
+    window.location.href = url;
+    return null;
+  } catch {
+    return "network";
+  }
+}
+
+/** Open the Stripe Billing Portal (cancel/change plan/update card). */
+export async function startPortal(): Promise<string | null> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return "not_authenticated";
+    const res = await supabase.functions.invoke("create-portal-session", {
+      body: {},
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
     if (res.error) return res.error.message ?? "network";
