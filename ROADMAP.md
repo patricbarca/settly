@@ -70,6 +70,21 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ Borrar cuenta in-app (Fase 0), **App Privacy label**, capturas por tamaños, revisión.
 - ⚠️ Cuidar guía 4.2 ("minimum functionality"): el push/offline/instalación ayudan.
 
+## Fase 4.5 — Vault personal de gastos (idea a evaluar)
+> Inspirado en Easy Expense. Complementa el core de gastos grupales con un módulo **personal** para rastrear gastos individuales deducibles de impuestos. Especialmente relevante para Australia (año fiscal ATO: 1 jul → 30 jun).
+
+- ⬜ **Tab "Vault" en Home** — junto a Grupos y Contactos. Gastos personales, no compartidos.
+- ⬜ **Escanear recibo → vault** — reutiliza el scanner AI existente (`scan-receipt` Edge Function). Extrae monto, fecha, proveedor, categoría automáticamente.
+- ⬜ **Categorías ATO** — Work from home, Vehicle & travel, Phone & internet, Education, Clothing, Meals (client), Other. Distintas a las categorías de gastos grupales.
+- ⬜ **Resumen Jul–Jun** — vista de gastos deducibles por año fiscal australiano, agrupados por categoría, con total acumulado.
+- ⬜ **Export CSV/PDF para el contador** — todos los recibos del año fiscal en un solo archivo. PDF = printable con logo + tabla. CSV = para contadores/software contable.
+- ⬜ **Recibos en Storage** — cada recibo del vault en bucket privado `vault-receipts/{userId}/{uid}.jpg` (igual que los de grupos).
+- ⬜ **"Mover al vault"** — desde un gasto grupal, guardar tu parte como gasto personal deducible en el vault con un toque.
+- ⬜ **Pro gate** — vault ilimitado en Pro; free = hasta 10 recibos/año.
+
+> **Dependencias:** bucket Storage en Supabase + nueva tabla `vault_expenses` con RLS por `user_id`. Reutiliza el componente `ScanReceiptModal` y `src/lib/storage.ts`.
+> **Por qué Australia:** el ATO exige comprobante por cada deducción >$300; trabajadores en relación de dependencia pueden deducir gastos de trabajo; autónomos (ABN) necesitan llevar libros. La app ya tiene usuarios en AU.
+
 ## Fase 5 — Monetización
 - ⬜ **Stripe** (web) para Pro. Definir límites free vs Pro.
 - ⚠️ **Reglas de tiendas:** vender bienes digitales *dentro* de la app → comisión 15-30% (IAP). Mantener el pago de Pro **por web/códigos**, no dentro de la app iOS.
