@@ -55,7 +55,9 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ **Viralidad por invitaciones** — pulir el flujo de compartir (1 toque, valor en 10 s).
 - ⬜ **Comunidades nicho** — pisos compartidos, estudiantes/Erasmus, viajeros, expats (AUD → Australia).
 - ⬜ **Contenido corto** (TikTok/Reels): "lo dices y la IA reparte".
-- ⬜ **Product Hunt / Hacker News** launch.
+  - Ideas: (1) restaurante — dictás el gasto, la IA reparte; (2) escaneo de ticket en tiempo real; (3) casa compartida con recurrentes. Formato: 30-45s, hook 3s, demo en pantalla, CTA final. Hashtags: `#splitbills #groupexpenses #gastosengrupo #lifehack #australia`.
+- ⬜ **Product Hunt launch** — preparación: cuenta activa 1-2 semanas antes, capturas 1270×760px (shots.so), GIF demo, tagline "AI-powered bill splitter. Type it, say it, or scan the receipt.", descripción en inglés. Lanzar a las **00:01 PST (18:01 AEST)**. Avisar a contactos con antelación para upvotes el día D. Responder cada comentario. Buscar hunter con seguidores en PH (hunterscored.com).
+- ⬜ **AlternativeTo + GetApp** — listar Settlia como alternativa a Splitwise/Tricount para capturar tráfico de usuarios que quieren cambiar.
 - 🔧 **SEO landing** — ✅ hecho lo técnico (`sitemap.xml`, `robots.txt`, JSON-LD `SoftwareApplication`/`FAQPage`/`BlogPosting`, title/description con keywords). **Falta:** enviar sitemap a **Google Search Console** + Bing Webmaster, **páginas comparativa** ("vs Splitwise", "alternativa a Splitwise en Australia"), más artículos de blog (clusters long-tail), y conseguir **backlinks** (Product Hunt, AlternativeTo, Reddit, comunidades). Métricas privacy-friendly (Plausible/Umami).
 - ⬜ **Link de pago / split sin registro (estilo BillBoss)** — el amigo abre un enlace y ve su parte + datos de pago **sin instalar ni registrarse**. Hoy hay que crear cuenta para unirse a un grupo = fricción. Evaluar un flujo ligero de "pagar por link" para gastos puntuales.
 
