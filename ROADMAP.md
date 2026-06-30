@@ -27,18 +27,17 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ **Parser avanzado** — splits desiguales / porcentajes; glosario por grupo (apodos, comercios); pregunta de confirmación solo si hay ambigüedad.
 - ⬜ **Multi-moneda** en las pills de balance global (hoy asume una sola).
 
-## Fase 1.5 — Pre-lanzamiento: ads, legal y seguridad (antes de gastar en publicidad)
-> La app ya es funcional y online; **no hacen falta las tiendas para anunciar la PWA web**. Esto es lo que sí hay que cerrar antes de empujar tráfico pagado (Meta/IG/Google Ads).
+## Fase 1.5 — Pre-lanzamiento: analítica, legal y seguridad
+> La app ya es funcional y online; **no hacen falta las tiendas para empujar tráfico**. Esto es lo que hay que cerrar antes de lanzar en Product Hunt / redes.
 
-**Tracking / ads (imprescindible para optimizar campañas):**
-- ⬜ **Meta Pixel** + **Google Ads tag / GA4** en landing y app, con eventos de conversión (visita → registro → crear grupo → añadir gasto). Sin esto los ads no optimizan = dinero tirado.
-- ⬜ **Verificación de dominio** en Meta Business y Google (meta-tag o DNS).
+**Tracking / analítica:**
+- ⬜ **GA4** en landing y app, con eventos de conversión (visita → registro → crear grupo → añadir gasto).
 - ⬜ **Analítica de producto** (Plausible/Umami o GA4) para ver el embudo real.
 
 **Legal (para no entrar en líos + requisito de las plataformas de ads):**
 - ✅ **Privacy policy** sólida (datos, IA/Groq, Supabase, Google, descargo de pagos, RGPD/Australia, menores, contacto) — `privacy.html`.
-- ⬜ **Banner de consentimiento de cookies** + carga **condicional** de los pixels (obligatorio en UE en cuanto se añadan Meta/GA). **Bloquea anunciar legalmente en UE.**
-- ⬜ **Actualizar privacy.html** con sección **cookies** + proveedores **Meta/Google** cuando se añada el tracking.
+- ⬜ **Banner de consentimiento de cookies** + carga **condicional** de GA4 (obligatorio en UE).
+- ⬜ **Actualizar privacy.html** con sección **cookies** + proveedor **Google** cuando se añada GA4.
 - ⬜ **Revisar `terms.html`**: descargo de responsabilidad (no procesador de pagos, no responsable de deudas entre usuarios, sin garantías), uso aceptable, **ley/jurisdicción** aplicable, terminación de cuenta.
 - ⬜ **Firmar DPA** con **Supabase** y **Groq** (RGPD Art. 28; un clic en cada panel).
 - ⬜ **Identidad legal/operador** (persona/empresa + país) para cuentas de ads y jurisdicción de los términos.
