@@ -34,6 +34,12 @@ SettliA (brand styled **Settl·iA**, the "iA" highlighted = AI) is a PWA for spl
 - `supabase/setup_all.sql` — idempotent full schema (tables + RLS + `redeem_access_code` SECURITY DEFINER fn + `profiles.avatar`). Includes `is_member_of()` SECURITY DEFINER + `View co-members` policy so the network/suggestions work.
 - `supabase/migrate_v4_network_rls.sql` — **run once in SQL Editor** on existing DBs: adds `is_member_of()` + `View co-members` SELECT policy on `group_members` so `getNetwork` can read other members of your groups (fixes empty suggested list). Definer fn avoids RLS recursion.
 
+## Logo y assets de marca
+- **Logo actual:** `public/icons/logo-s.png` — letra S estilo ribbon, gradiente teal→azul, fondo transparente (452×552 RGBA). Es el logo canónico para toda generación de imágenes y contenido de marketing.
+- **Ícono PWA** (logo sobre fondo navy `#0D1B2A`, esquinas redondeadas estilo iOS squircle): `public/icons/icon-512.png` (512×512), `icon-192.png` (192×192), `apple-touch-icon.png` (180×180). Padding 10% en cada lado.
+- **En la app** (`src/components/Logo.tsx`): la S se muestra dentro de un cuadro redondeado con `background: linear-gradient(145deg, #0f2d54, #0a1a2e, #0d2340)`, `border-radius` al 22% del tamaño, borde translúcido y sombra inset — efecto liquid glass oscuro.
+- **Para redes sociales / imágenes de marketing:** usar `public/icons/logo-s.png` como logo. Fondo recomendado: navy `#0D1B2A` o el gradiente hero (`#241C53 → #0D1B2A`). Colores de marca: teal `#0FA3A3`, indigo `#5B5BF0`, azul claro `#0EA5E9`. Tipografía display: Bricolage Grotesque.
+
 ## Design system
 - **Glass morphism**: `.glass` and `.glass-strong` utility classes with `backdrop-filter`
 - **iOS fix**: `@supports (-webkit-touch-callout: none)` disables backdrop-filter on iOS Safari (corner artifact bug), falls back to opaque `--glass-solid` / `--glass-strong-solid` variables
