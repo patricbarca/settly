@@ -13,13 +13,15 @@ import { useSyncExternalStore } from "react";
 import { supabase } from "./supabase";
 
 export type Plan = "free" | "pro";
+/** Tipos de uso de IA con cuota propia. */
+export type AIKind = "scan" | "voice" | "text";
 export const FREE_AI_QUOTA = 3;
 /** Máximo de grupos activos en el plan gratis (Pro = ilimitado). */
 export const FREE_GROUP_LIMIT = 3;
+/** Cuota mensual de IA para Pro (por tipo). Se elimina cuando Stripe esté activo. */
+export const PRO_AI_QUOTA: Record<AIKind, number> = { scan: 30, voice: 30, text: 50 };
 
 const USAGE_KEY = "settly.aiUsage";
-/** Tipos de uso de IA con cuota propia en el plan gratis (3 de cada uno). */
-export type AIKind = "scan" | "voice" | "text";
 type Usage = { month: string; scan: number; voice: number; text: number };
 
 let plan: Plan = "free";
@@ -201,24 +203,26 @@ function rollover() {
   }
 }
 
-/** Usos de IA restantes este mes para un tipo concreto (Pro = ilimitado). */
+function quota(kind: AIKind): number {
+  return plan === "pro" ? PRO_AI_QUOTA[kind] : FREE_AI_QUOTA;
+}
+
+/** Usos de IA restantes este mes para un tipo concreto. */
 export function aiRemaining(kind: AIKind): number {
-  if (plan === "pro") return Infinity;
   rollover();
-  return Math.max(0, FREE_AI_QUOTA - usage[kind]);
+  return Math.max(0, quota(kind) - usage[kind]);
 }
 
 export function useAIRemaining(kind: AIKind): number {
-  const snap = () => (plan === "pro" ? Infinity : Math.max(0, FREE_AI_QUOTA - usage[kind]));
+  const snap = () => Math.max(0, quota(kind) - usage[kind]);
   return useSyncExternalStore(sub, snap, snap);
 }
 
 /** Consume un uso de IA de ese tipo. Devuelve true si se permite; false si la
- *  cuota gratis de ese tipo está agotada. Pro siempre true sin contar. */
+ *  cuota está agotada. */
 export function consumeAI(kind: AIKind): boolean {
-  if (plan === "pro") return true;
   rollover();
-  if (usage[kind] >= FREE_AI_QUOTA) return false;
+  if (usage[kind] >= quota(kind)) return false;
   usage = { ...usage, [kind]: usage[kind] + 1 };
   saveUsage();
   emit();
