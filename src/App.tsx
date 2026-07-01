@@ -17,6 +17,9 @@ import { AccountModal } from "./components/AccountModal";
 import { NotificationsBell } from "./components/NotificationsBell";
 import { FeedbackModal } from "./components/FeedbackModal";
 import { registerAppOpen, shouldShowFeedbackPrompt, markFeedbackPromptShown } from "./lib/feedbackPrompt";
+import { AdminDashboard } from "./components/AdminDashboard";
+
+const ADMIN_EMAIL = "paabarcad@gmail.com";
 
 export default function App() {
   const user = useUser();
@@ -28,6 +31,7 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -97,6 +101,15 @@ export default function App() {
     <div className="min-h-full">
       <OfflineBanner />
       <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">
+        {user.email === ADMIN_EMAIL && (
+          <button
+            onClick={() => setShowAdmin(true)}
+            className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
+            title="Admin"
+          >
+            <Icon name="chart" size={16} />
+          </button>
+        )}
         <button
           onClick={() => setShowOnboarding(true)}
           className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
@@ -142,6 +155,7 @@ export default function App() {
 
       {group ? <GroupView group={group} /> : <Home />}
 
+      {showAdmin && <AdminDashboard onClose={() => setShowAdmin(false)} />}
       {showAccount && <AccountModal onClose={() => setShowAccount(false)} />}
 
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
