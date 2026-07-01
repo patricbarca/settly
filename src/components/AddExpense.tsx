@@ -218,68 +218,75 @@ export function AddExpense({ group }: { group: Group }) {
   return (
     <section className="glass-strong rounded-3xl p-5 anim-up">
       <div className="text-xs uppercase tracking-widest font-mono mb-2" style={{ color: "var(--muted)" }}>{t("add.title")}</div>
-      {/* Texto + "Agregar" (la magia con IA) */}
-      <div className="flex gap-2 items-stretch">
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && interpret()}
-          placeholder={t("add.placeholder")}
-          className="glass rounded-2xl px-4 py-3 text-sm flex-1 min-w-0"
-        />
-        <button
-          onClick={() => interpret()}
-          disabled={!text.trim() || interpreting}
-          className="shrink-0 rounded-2xl px-5 text-sm font-semibold text-white hover-lift disabled:opacity-40 inline-flex items-center gap-1.5"
-          style={{ background: "var(--teal)" }}
-        >
-          <Icon name="sparkles" size={16} /> {interpreting ? "…" : t("add.add")}
-          {!pro && !interpreting && <span className="text-[9px] font-mono opacity-80">{textLeft}/{FREE_AI_QUOTA}</span>}
-        </button>
-      </div>
-      {(sp.listening || sp.busy) && (
-        <div className="text-xs text-muted mt-1.5 pl-1 anim-up">
-          {sp.busy ? t("add.transcribing") : t("add.listening")}
-        </div>
-      )}
-      {sp.error && !sp.listening && !sp.busy && (
-        <div className="text-xs mt-1.5 pl-1 anim-up" style={{ color: "var(--coral)" }}>
-          {sp.error === "mic" ? t("add.micError") : t("add.sttError")}
-        </div>
-      )}
+      {/* Mientras hay un borrador en revisión, ocultamos el input y los métodos
+          para que el flujo sea: agregar -> revisar/confirmar (sin poder meter
+          otro gasto encima). Vuelven a aparecer al guardar o cancelar. */}
+      {!draft && (
+        <>
+          {/* Texto + "Agregar" (la magia con IA) */}
+          <div className="flex gap-2 items-stretch">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && interpret()}
+              placeholder={t("add.placeholder")}
+              className="glass rounded-2xl px-4 py-3 text-sm flex-1 min-w-0"
+            />
+            <button
+              onClick={() => interpret()}
+              disabled={!text.trim() || interpreting}
+              className="shrink-0 rounded-2xl px-5 text-sm font-semibold text-white hover-lift disabled:opacity-40 inline-flex items-center gap-1.5"
+              style={{ background: "var(--teal)" }}
+            >
+              <Icon name="sparkles" size={16} /> {interpreting ? "…" : t("add.add")}
+              {!pro && !interpreting && <span className="text-[9px] font-mono opacity-80">{textLeft}/{FREE_AI_QUOTA}</span>}
+            </button>
+          </div>
+          {(sp.listening || sp.busy) && (
+            <div className="text-xs text-muted mt-1.5 pl-1 anim-up">
+              {sp.busy ? t("add.transcribing") : t("add.listening")}
+            </div>
+          )}
+          {sp.error && !sp.listening && !sp.busy && (
+            <div className="text-xs mt-1.5 pl-1 anim-up" style={{ color: "var(--coral)" }}>
+              {sp.error === "mic" ? t("add.micError") : t("add.sttError")}
+            </div>
+          )}
 
-      {/* Métodos: Voz · Escanear · Manual */}
-      <div className="grid grid-cols-3 gap-2 mt-3">
-        <button
-          onClick={sp.toggle}
-          disabled={!sp.supported || sp.busy}
-          className={`rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift disabled:opacity-40 ${sp.listening ? "" : "glass"}`}
-          style={sp.listening ? { background: "#D14444", color: "#fff" } : undefined}
-        >
-          <Icon name="mic" size={18} />
-          <span className="inline-flex items-center gap-1">
-            {t("add.voice")}
-            {!pro && !sp.listening && <span className="text-[9px] font-mono opacity-70">{voiceLeft}/{FREE_AI_QUOTA}</span>}
-          </span>
-        </button>
-        <button
-          onClick={openScan}
-          className="glass rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift"
-        >
-          <Icon name="camera" size={18} />
-          <span className="inline-flex items-center gap-1">
-            {t("add.scan")}
-            {!pro && <span className="text-[9px] font-mono opacity-70">{scanLeft}/{FREE_AI_QUOTA}</span>}
-          </span>
-        </button>
-        <button
-          onClick={manual}
-          className="glass rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift"
-        >
-          <Icon name="edit" size={18} />
-          {t("add.manual")}
-        </button>
-      </div>
+          {/* Métodos: Voz · Escanear · Manual */}
+          <div className="grid grid-cols-3 gap-2 mt-3">
+            <button
+              onClick={sp.toggle}
+              disabled={!sp.supported || sp.busy}
+              className={`rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift disabled:opacity-40 ${sp.listening ? "" : "glass"}`}
+              style={sp.listening ? { background: "#D14444", color: "#fff" } : undefined}
+            >
+              <Icon name="mic" size={18} />
+              <span className="inline-flex items-center gap-1">
+                {t("add.voice")}
+                {!pro && !sp.listening && <span className="text-[9px] font-mono opacity-70">{voiceLeft}/{FREE_AI_QUOTA}</span>}
+              </span>
+            </button>
+            <button
+              onClick={openScan}
+              className="glass rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift"
+            >
+              <Icon name="camera" size={18} />
+              <span className="inline-flex items-center gap-1">
+                {t("add.scan")}
+                {!pro && <span className="text-[9px] font-mono opacity-70">{scanLeft}/{FREE_AI_QUOTA}</span>}
+              </span>
+            </button>
+            <button
+              onClick={manual}
+              className="glass rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift"
+            >
+              <Icon name="edit" size={18} />
+              {t("add.manual")}
+            </button>
+          </div>
+        </>
+      )}
 
       {draft && (
         <div className="mt-4 glass rounded-3xl p-4 anim-pop">
