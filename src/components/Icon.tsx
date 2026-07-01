@@ -217,6 +217,14 @@ function glyph(name: IconName): ReactNode {
           <path d="M21 20a6 6 0 0 0-4.5-5.8" />
         </>
       );
+    case "chart":
+      return (
+        <>
+          <rect x="3" y="12" width="4" height="9" rx="1" />
+          <rect x="10" y="7" width="4" height="14" rx="1" />
+          <rect x="17" y="3" width="4" height="18" rx="1" />
+        </>
+      );
     case "balance":
       return (
         <>

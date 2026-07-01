@@ -43,10 +43,11 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ **Identidad legal/operador** (persona/empresa + país) para cuentas de ads y jurisdicción de los términos.
 
 **Seguridad:**
-- ⬜ **Auditar RLS** de Supabase (security advisors): que ninguna tabla quede sin Row-Level Security. *Lo más crítico.*
+- ✅ **Auditar RLS** — todas las tablas con RLS activo. Políticas añadidas a `access_codes`; EXECUTE revocado a `anon` en `handle_new_user`, `is_member_of`, `redeem_access_code` (migraciones v9 + v10, 2026-07-01). Warnings restantes son falsos positivos (`is_member_of`/`redeem_access_code` para `authenticated` es correcto e intencional) o limitaciones de plataforma (`pg_net` en public schema).
+- ✅ **Leaked password protection** — activado en Supabase Dashboard → Authentication → Password Settings.
 - ⬜ **Cabeceras de seguridad / CSP** (HSTS, CSP, X-Frame-Options, Referrer-Policy) — GitHub Pages no las permite; **Cloudflare Pages sí** (otra razón para migrar el hosting, Fase 2).
-- ⬜ **`npm audit`** — dependencias con vulnerabilidades conocidas.
-- ⬜ **Quota/abuso de IA** — límite por usuario para las Edge Functions de IA (andamiaje en `plan.ts`) y no disparar la factura.
+- ✅ **`npm audit`** — 0 vulnerabilidades (verificado 2026-07-01).
+- ✅ **Quota/abuso de IA** — límites en `plan.ts`: free 3/mes, Pro scan 30 · voice 30 · text 50/mes. Edge Functions pendientes de rate-limit server-side.
 - ✅ HTTPS · RLS por grupo · borrar cuenta (RGPD) · recibos en bucket privado · service-role solo en servidor.
 
 ## Fase 2 — Lanzamiento web (growth)
