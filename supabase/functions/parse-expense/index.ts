@@ -107,7 +107,12 @@ Examples (sample roster — a: Ana, b: Luis, c: Me; "me"=c). Learn the behavior,
     applyDefaultSplit(String(text), clean, memberArr, memberIds, meId);
     // "por persona": no fiamos la multiplicación al modelo pequeño; la forzamos
     // en el servidor a partir del número de la nota × nº de participantes.
-    const final = enforcePerPerson(String(text), clean);
+    const withPerPerson = enforcePerPerson(String(text), clean);
+    // El modelo 8B a veces "alucina" un split de pagos (p. ej. copia el patrón
+    // del ejemplo few-shot "Ana 30 y yo 20" aunque la nota solo tenga un
+    // número). Si devuelve más pagos de los que hay números distintos en la
+    // nota, no confiamos en ese reparto: colapsamos a un único pagador.
+    const final = guardAgainstHallucinatedSplit(String(text), withPerPerson);
     return json(final);
   } catch (e) {
     console.error(e);
@@ -244,6 +249,33 @@ function enforcePerPerson(
   // Si los pagos no cuadran con el nuevo total, asume un único pagador.
   if (Math.abs(sum - total) > 0.01) payments = [{ memberId: clean.payerId, amount: total }];
   return { ...clean, amount: total, payments };
+}
+
+// Cuenta los importes numéricos DISTINTOS presentes literalmente en la nota
+// (ignora enteros pequeños tipo "2 personas" que casi nunca son dinero, pero
+// sin sobre-filtrar: mejor un falso negativo aquí que bloquear casos válidos).
+function distinctAmountsInText(text: string): number {
+  const numRe = /\d+(?:[.,]\d+)?/g;
+  const vals = new Set<string>();
+  let m: RegExpExecArray | null;
+  while ((m = numRe.exec(text)) !== null) {
+    const val = Number(m[0].replace(/\.(?=\d{3}\b)/g, "").replace(",", "."));
+    if (Number.isFinite(val) && val > 0) vals.add(String(val));
+  }
+  return vals.size;
+}
+
+// Si el modelo devuelve más de 1 pago pero la nota solo menciona 1 importe
+// distinto, es casi seguro que alucinó un reparto que no está en el texto
+// (p. ej. copiando el patrón del ejemplo "Ana 30 y yo 20"). En ese caso,
+// colapsamos a un único pagador con el monto total real.
+function guardAgainstHallucinatedSplit(
+  text: string,
+  clean: { amount: number; payerId: string; payments: { memberId: string; amount: number }[] } & Record<string, unknown>
+) {
+  if (clean.payments.length <= 1) return clean;
+  if (distinctAmountsInText(text) >= clean.payments.length) return clean;
+  return { ...clean, payments: [{ memberId: clean.payerId, amount: clean.amount }] };
 }
 
 function extractJson(text: string): Record<string, unknown> | null {
