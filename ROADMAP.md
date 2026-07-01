@@ -31,13 +31,13 @@ Bloquean lanzamiento serio / publicación en stores.
 > La app ya es funcional y online; **no hacen falta las tiendas para empujar tráfico**. Esto es lo que hay que cerrar antes de lanzar en Product Hunt / redes.
 
 **Tracking / analítica:**
-- ⬜ **GA4** en landing y app, con eventos de conversión (visita → registro → crear grupo → añadir gasto).
-- ⬜ **Analítica de producto** (Plausible/Umami o GA4) para ver el embudo real.
+- ✅ **Plausible** — script instalado en `settlia.app` y `app.settlia.app` (sin cookies, sin banner necesario). Falta que el usuario cree la cuenta en plausible.io y añada ambos dominios.
+- ✅ **Admin dashboard interno** (`AdminDashboard.tsx`, solo `paabarcad@gmail.com`) — usuarios totales/Pro/nuevos 7-30d, grupos activos, códigos canjeados, push subs, registros por mes, últimos 15 usuarios. Función SQL `get_admin_stats()`.
+- ⬜ **GA4** — descartado por ahora, Plausible cubre lo esencial sin fricción legal (RGPD).
 
 **Legal (para no entrar en líos + requisito de las plataformas de ads):**
 - ✅ **Privacy policy** sólida (datos, IA/Groq, Supabase, Google, descargo de pagos, RGPD/Australia, menores, contacto) — `privacy.html`.
-- ⬜ **Banner de consentimiento de cookies** + carga **condicional** de GA4 (obligatorio en UE).
-- ⬜ **Actualizar privacy.html** con sección **cookies** + proveedor **Google** cuando se añada GA4.
+- ✅ **Sin banner de cookies necesario** — Plausible no usa cookies ni recopila datos personales (decisión: Plausible sobre GA4, evita fricción legal RGPD).
 - ⬜ **Revisar `terms.html`**: descargo de responsabilidad (no procesador de pagos, no responsable de deudas entre usuarios, sin garantías), uso aceptable, **ley/jurisdicción** aplicable, terminación de cuenta.
 - ⬜ **Firmar DPA** con **Supabase** y **Groq** (RGPD Art. 28; un clic en cada panel).
 - ⬜ **Identidad legal/operador** (persona/empresa + país) para cuentas de ads y jurisdicción de los términos.
