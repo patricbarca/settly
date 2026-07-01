@@ -31,15 +31,15 @@ Bloquean lanzamiento serio / publicación en stores.
 > La app ya es funcional y online; **no hacen falta las tiendas para empujar tráfico**. Esto es lo que hay que cerrar antes de lanzar en Product Hunt / redes.
 
 **Tracking / analítica:**
-- 🔧 **Cloudflare Web Analytics** — script instalado en `settlia.app` y `app.settlia.app` (gratis, sin cookies, sin banner necesario). **Falta:** ir a Cloudflare Dashboard → Analytics & Logs → Web Analytics → Add site (para cada dominio) y pegar el `token` real en el `data-cf-beacon` de ambos `index.html` (hoy tienen placeholder `YOUR_TOKEN`). Se descartó Plausible (9 USD/mes) por ser de pago.
+- ✅ **Cloudflare Web Analytics** — activo en `settlia.app` y `app.settlia.app` (gratis, sin cookies, sin banner necesario). Sitios creados y tokens reales en producción. Se descartó Plausible (9 USD/mes) por ser de pago.
 - ✅ **Admin dashboard interno** (`AdminDashboard.tsx`, solo `paabarcad@gmail.com`) — usuarios totales/Pro/nuevos 7-30d, grupos activos, códigos canjeados, push subs, registros por mes, últimos 15 usuarios. Función SQL `get_admin_stats()`.
 - ⬜ **GA4** — descartado por ahora, Cloudflare Web Analytics cubre lo esencial sin fricción legal (RGPD) y sin coste.
 
 **Legal (para no entrar en líos + requisito de las plataformas de ads):**
 - ✅ **Privacy policy** sólida (datos, IA/Groq, Supabase, Google, descargo de pagos, RGPD/Australia, menores, contacto) — `privacy.html`.
 - ✅ **Sin banner de cookies necesario** — Cloudflare Web Analytics no usa cookies ni recopila datos personales (decisión: sobre GA4, evita fricción legal RGPD y es gratis).
-- ⬜ **Revisar `terms.html`**: descargo de responsabilidad (no procesador de pagos, no responsable de deudas entre usuarios, sin garantías), uso aceptable, **ley/jurisdicción** aplicable, terminación de cuenta.
-- ⬜ **Firmar DPA** con **Supabase** y **Groq** (RGPD Art. 28; un clic en cada panel).
+- ✅ **Revisado `terms.html`**: ya cubría descargo de responsabilidad, uso aceptable y terminación; se añadió la cláusula de **ley aplicable y jurisdicción** (Australia, con reserva de derechos de consumidor imperativos) en EN/ES (2026-07-01).
+- ✅ **DPA firmados** con **Supabase** y **Groq** (RGPD Art. 28).
 - ⬜ **Identidad legal/operador** (persona/empresa + país) para cuentas de ads y jurisdicción de los términos.
 
 **Seguridad:**
