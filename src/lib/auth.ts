@@ -14,7 +14,7 @@ export type User = {
   country?: string;
   initials?: string;
   pays?: PayMethod[];
-  provider: "email" | "google" | "guest";
+  provider: "email" | "google" | "apple" | "guest";
 };
 
 export type AuthPhase =
@@ -163,6 +163,15 @@ export async function signInGoogle() {
     options: {
       redirectTo: window.location.origin + import.meta.env.BASE_URL,
       queryParams: { prompt: "select_account" },
+    },
+  });
+}
+
+export async function signInApple() {
+  await supabase.auth.signInWithOAuth({
+    provider: "apple",
+    options: {
+      redirectTo: window.location.origin + import.meta.env.BASE_URL,
     },
   });
 }

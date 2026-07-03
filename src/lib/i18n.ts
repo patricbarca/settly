@@ -58,6 +58,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "ai.each": { es: "{amt} c/u", en: "{amt} each" },
   "login.subtitle": { es: "Inicia sesión para guardar tus grupos y compartirlos.", en: "Sign in to save and share your groups." },
   "login.google": { es: "Continuar con Google", en: "Continue with Google" },
+  "login.apple": { es: "Continuar con Apple", en: "Continue with Apple" },
   "login.or": { es: "o", en: "or" },
   "login.name": { es: "Nombre", en: "Name" },
   "login.email": { es: "Email", en: "Email" },

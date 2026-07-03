@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signInEmail, signInGoogle, verifyOtp, useAuthPhase, useOtpEmail } from "../lib/auth";
+import { signInEmail, signInGoogle, signInApple, verifyOtp, useAuthPhase, useOtpEmail } from "../lib/auth";
 import { useLang, setLang, useT } from "../lib/i18n";
 import { useTheme, toggleTheme } from "../lib/theme";
 import { Logo } from "./Logo";
@@ -152,6 +152,15 @@ export function Login() {
             {t("login.google")}
           </button>
 
+          <button
+            onClick={signInApple}
+            className="w-full rounded-full px-4 py-3 font-medium flex items-center justify-center gap-2 hover-lift mt-2.5"
+            style={{ background: "#000", color: "#fff" }}
+          >
+            <AppleIcon />
+            {t("login.apple")}
+          </button>
+
           <div className="flex items-center gap-3 my-4">
             <div className="h-px flex-1" style={{ background: "var(--line)" }} />
             <span className="text-xs text-muted">{t("login.or")}</span>
@@ -205,6 +214,14 @@ function GoogleIcon() {
       <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8A12 12 0 0 1 24 12c3.1 0 5.8 1.2 7.9 3l5.7-5.7A20 20 0 0 0 6.3 14.7z" />
       <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2A12 12 0 0 1 12.7 28l-6.6 5.1A20 20 0 0 0 24 44z" />
       <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3a12 12 0 0 1-4.1 5.6l6.2 5.2C39.9 36 44 30.7 44 24c0-1.2-.1-2.4-.4-3.5z" />
+    </svg>
+  );
+}
+
+function AppleIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+      <path d="M16.365 1.43c0 1.14-.463 2.13-1.216 2.86-.808.79-2.11 1.39-3.087 1.31-.14-1.09.443-2.24 1.187-2.94.78-.73 2.09-1.28 3.116-1.23zM20.5 17.13c-.53 1.22-.79 1.77-1.47 2.85-.95 1.51-2.29 3.39-3.95 3.4-1.48.02-1.86-.98-3.87-.97-2.01.01-2.43 1-3.91.98-1.66-.02-2.93-1.72-3.88-3.23-2.66-4.19-2.94-9.11-1.3-11.73 1.16-1.86 2.99-2.94 4.71-2.94 1.75 0 2.85 1 4.3 1 1.4 0 2.26-1 4.3-1 1.55 0 3.2.85 4.36 2.32-3.83 2.1-3.21 7.57.68 9.32z" />
     </svg>
   );
 }
