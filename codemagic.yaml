@@ -6,6 +6,9 @@ workflows:
     environment:
       xcode: latest
       node: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: app.settlia.pwa
       vars:
         XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
@@ -25,10 +28,6 @@ workflows:
         script: npm run build
       - name: Sync Capacitor iOS
         script: npx cap sync ios
-      - name: Use system default keychain
-        script: keychain initialize
-      - name: Set up signing certificate
-        script: keychain add-certificates
       - name: Set up code signing settings on Xcode project
         script: xcode-project use-profiles
       - name: Increment build number
