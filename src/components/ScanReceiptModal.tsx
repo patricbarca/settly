@@ -8,14 +8,20 @@ import { notifyGroup } from "../lib/push";
 import { uploadReceipt } from "../lib/storage";
 import { uid, money } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { usePlan } from "../lib/plan";
+import { convertCurrency } from "../lib/fx";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
+import { Paywall } from "./Paywall";
 import { ItemizedExpenseEditor, type ItemizedInitial, type ItemizedResult } from "./ItemizedExpenseEditor";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
+type FxInfo = { originalAmount: number; originalCurrency: string; fxRate: number };
+
 export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: () => void }) {
   const t = useT();
+  const plan = usePlan();
   const allIds = group.members.map((m) => m.id);
   const [stage, setStage] = useState<"pick" | "analyzing" | "review">("pick");
   const [preview, setPreview] = useState<string | null>(null);
@@ -24,6 +30,10 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
   const [tax, setTax] = useState<ScanTax | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [fx, setFx] = useState<FxInfo | null>(null);
+  const [fxUpsell, setFxUpsell] = useState<string | null>(null); // moneda detectada, si es free
+  const [fxError, setFxError] = useState<string | null>(null);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   function onFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -34,8 +44,30 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
       setPreview(String(reader.result));
       setStage("analyzing");
       setScanError(false);
+      setFx(null);
+      setFxUpsell(null);
+      setFxError(null);
       try {
         const res = await scanReceipt(file);
+
+        // Moneda distinta a la del grupo: convertir (Pro) o avisar (free).
+        let rate = 1;
+        const scannedCode = (res.currency || "").toUpperCase().trim();
+        if (scannedCode && scannedCode !== group.currency) {
+          if (plan === "pro") {
+            const fxRes = await convertCurrency(1, scannedCode, group.currency);
+            if (fxRes) {
+              rate = fxRes.rate;
+              setFx({ originalAmount: res.total || 0, originalCurrency: scannedCode, fxRate: rate });
+            } else {
+              setFxError(scannedCode);
+            }
+          } else {
+            setFxUpsell(scannedCode);
+          }
+        }
+        const conv = (n: number) => r2(n * rate);
+
         // Expandir cantidades: un "x2" se separa en líneas individuales.
         const itemRows: ExpenseItem[] = [];
         for (const s of res.items) {
@@ -43,20 +75,26 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
           if (q > 1 && s.price > 0) {
             const unit = r2(s.unitPrice || s.price / q);
             for (let i = 0; i < q; i++) {
-              const price = i === q - 1 ? r2(s.price - unit * (q - 1)) : unit;
+              const price = conv(i === q - 1 ? r2(s.price - unit * (q - 1)) : unit);
               itemRows.push({ name: s.name, price, participantIds: allIds });
             }
           } else {
-            itemRows.push({ name: s.name, price: s.price, participantIds: allIds });
+            itemRows.push({ name: s.name, price: conv(s.price), participantIds: allIds });
           }
         }
         setInitial({
           label: res.description || "",
           category: res.category || "comida",
-          items: itemRows.length ? itemRows : [{ name: res.description || "", price: res.total || 0, participantIds: allIds }],
-          fees: res.fees || [],
+          items: itemRows.length
+            ? itemRows
+            : [{ name: res.description || "", price: conv(res.total || 0), participantIds: allIds }],
+          fees: (res.fees || []).map((f) => ({ ...f, amount: conv(f.amount) })),
         });
-        setTax(res.tax && (res.tax.amount > 0 || res.tax.rate > 0) ? res.tax : null);
+        setTax(
+          res.tax && (res.tax.amount > 0 || res.tax.rate > 0)
+            ? { ...res.tax, amount: conv(res.tax.amount) }
+            : null
+        );
       } catch {
         setScanError(true);
         setInitial({ items: [{ name: "", price: 0, participantIds: allIds }], category: "comida" });
@@ -89,6 +127,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
           fees: r.fees,
           tip: r.tip,
           ...(receiptPath ? { receiptPath } : {}),
+          ...(fx ? { originalAmount: fx.originalAmount, originalCurrency: fx.originalCurrency, fxRate: fx.fxRate } : {}),
           createdBy: group.meId,
         },
         ...g.expenses,
@@ -155,6 +194,33 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         {stage === "review" && (
           <>
             <p className="text-[11px] text-muted leading-relaxed mb-3">{t("scan.aiNote")}</p>
+
+            {fx && (
+              <div className="glass rounded-xl px-3 py-2 mb-3 text-xs" style={{ color: "var(--teal)" }}>
+                {t("scan.fxConverted", {
+                  amt: money(fx.originalAmount, fx.originalCurrency),
+                  rate: `1 ${fx.originalCurrency} ≈ ${(fx.fxRate).toFixed(4)} ${group.currency}`,
+                })}
+              </div>
+            )}
+            {fxError && (
+              <div className="rounded-xl px-3 py-2 mb-3 text-xs" style={{ background: "rgba(255,90,77,0.12)", color: "var(--coral)" }}>
+                {t("scan.fxFailed", { code: fxError })}
+              </div>
+            )}
+            {fxUpsell && (
+              <div className="glass rounded-xl px-3 py-2 mb-3 flex items-center justify-between gap-2 text-xs">
+                <span>{t("scan.fxUpsell", { code: fxUpsell, target: group.currency })}</span>
+                <button
+                  onClick={() => setShowPaywall(true)}
+                  className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift"
+                  style={{ background: "var(--indigo)" }}
+                >
+                  {t("scan.fxUpsellCta")}
+                </button>
+              </div>
+            )}
+
             <ItemizedExpenseEditor
               group={group}
               initial={initial}
@@ -168,6 +234,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
           </>
         )}
       </div>
+      {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
     </Overlay>
   );
 }
