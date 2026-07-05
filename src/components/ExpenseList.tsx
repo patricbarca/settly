@@ -3,8 +3,9 @@ import type { Group, Category } from "../lib/types";
 import { catOf } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { shareFor } from "../lib/split";
-import { money, fmtDate, memberLabels } from "../lib/format";
+import { money as rawMoney, fmtDate, memberLabels } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
+import { useGroupMoney } from "../lib/displayCurrency";
 import { monthKey, monthsWithExpenses, monthLabel } from "../lib/report";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -20,6 +21,7 @@ import { notifyGroup } from "../lib/push";
 export function ExpenseList({ group }: { group: Group }) {
   const t = useT();
   const lang = useLang();
+  const money = useGroupMoney(group);
   const ids = group.members.map((m) => m.id);
   const [editId, setEditId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -428,7 +430,7 @@ export function ExpenseList({ group }: { group: Group }) {
                 </div>
               </div>
               <div className="text-right shrink-0 flex items-center gap-1.5">
-                <span className="font-mono font-bold text-sm">{money(e.amount, group.currency)}</span>
+                <span className="font-mono font-bold text-sm">{money(e.amount)}</span>
                 <Icon
                   name="chevron"
                   size={15}
@@ -443,7 +445,7 @@ export function ExpenseList({ group }: { group: Group }) {
                 {e.originalCurrency && e.originalAmount != null && (
                   <div className="text-[11px] text-muted mb-2">
                     {t("scan.fxConverted", {
-                      amt: money(e.originalAmount, e.originalCurrency),
+                      amt: rawMoney(e.originalAmount, e.originalCurrency),
                       rate: `1 ${e.originalCurrency} ≈ ${(e.fxRate ?? 0).toFixed(4)} ${group.currency}`,
                     })}
                   </div>
@@ -460,7 +462,7 @@ export function ExpenseList({ group }: { group: Group }) {
                             <div key={i}>
                               <div className="flex items-center justify-between text-sm">
                                 <span className="truncate pr-2">{it.name || "—"}</span>
-                                <span className="font-mono shrink-0">{money(it.price, group.currency)}</span>
+                                <span className="font-mono shrink-0">{money(it.price)}</span>
                               </div>
                               <div className="flex items-center flex-wrap gap-1 mt-0.5">
                                 {who.map((id) => (
@@ -480,13 +482,13 @@ export function ExpenseList({ group }: { group: Group }) {
                         {e.fees?.map((f, i) => (
                           <div key={`fee${i}`} className="flex items-center justify-between text-sm text-muted">
                             <span className="truncate pr-2">{f.name || t("scan.feeName")}</span>
-                            <span className="font-mono shrink-0">{money(f.amount, group.currency)}</span>
+                            <span className="font-mono shrink-0">{money(f.amount)}</span>
                           </div>
                         ))}
                         {!!e.tip && (
                           <div className="flex items-center justify-between text-sm text-muted">
                             <span>{t("scan.tip")}</span>
-                            <span className="font-mono shrink-0">{money(e.tip, group.currency)}</span>
+                            <span className="font-mono shrink-0">{money(e.tip)}</span>
                           </div>
                         )}
                       </div>
@@ -507,7 +509,7 @@ export function ExpenseList({ group }: { group: Group }) {
                           </span>
                           {name(id)}
                         </span>
-                        <span className="font-mono">{money(shares[id] || 0, group.currency)}</span>
+                        <span className="font-mono">{money(shares[id] || 0)}</span>
                       </div>
                     ))}
                   </div>

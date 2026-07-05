@@ -6,9 +6,11 @@ import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
 import { money, personColor, memberInitials } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
+import { usePlan } from "../lib/plan";
 import { CURRENCIES, currencyOf, localCurrencyName, resolveToCode } from "../lib/currencies";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
+import { Paywall } from "./Paywall";
 
 const COMMON_CODES = ["EUR", "USD", "GBP", "AUD", "CAD", "CHF", "MXN", "BRL", "COP", "ARS", "JPY"];
 
@@ -21,9 +23,13 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
   const [currency, setCurrency] = useState(() => resolveToCode(group.currency));
   const [kind, setKind] = useState<GroupKind>(group.kind ?? "trip");
   const [simplify, setSimplify] = useState(group.simplifyDebts !== false);
+  const [secondaryCurrency, setSecondaryCurrency] = useState(group.secondaryCurrency ?? "");
+  const [displayCurrency, setDisplayCurrency] = useState(group.displayCurrency ?? group.currency);
   const [saved, setSaved] = useState(false);
   const [confirmDanger, setConfirmDanger] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
 
+  const plan = usePlan();
   const user = useUser();
   // Dueño = creador del grupo (o grupo local sin owner, p. ej. invitado).
   const isOwner = !group.ownerId || group.ownerId === user?.id;
@@ -51,13 +57,25 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
     name.trim() !== group.name ||
     currency !== resolveToCode(group.currency) ||
     kind !== (group.kind ?? "trip") ||
-    simplify !== (group.simplifyDebts !== false);
+    simplify !== (group.simplifyDebts !== false) ||
+    secondaryCurrency !== (group.secondaryCurrency ?? "") ||
+    displayCurrency !== (group.displayCurrency ?? group.currency);
 
   function save() {
     const n = name.trim();
     const c = currency.trim();
     if (!n || !c) return;
-    updateGroup(group.id, (g) => ({ ...g, name: n, currency: c, kind, simplifyDebts: simplify }));
+    const sc = plan === "pro" ? secondaryCurrency.trim() || undefined : undefined;
+    const dc = sc && displayCurrency === sc ? sc : c;
+    updateGroup(group.id, (g) => ({
+      ...g,
+      name: n,
+      currency: c,
+      kind,
+      simplifyDebts: simplify,
+      secondaryCurrency: sc,
+      displayCurrency: dc,
+    }));
     setSaved(true);
     setTimeout(() => { setSaved(false); onClose(); }, 800);
   }
@@ -137,6 +155,53 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Segunda moneda + toggle de visualización (Pro) */}
+        <div className="mb-5">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-semibold text-muted">{t("settings.secondaryCurrency")}</label>
+            {plan !== "pro" && (
+              <button onClick={() => setShowPaywall(true)} className="text-xs font-semibold" style={{ color: "var(--indigo)" }}>
+                {t("pro.upgrade")}
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-muted mt-0.5 mb-2">{t("settings.secondaryCurrencyHint")}</p>
+          <select
+            value={secondaryCurrency}
+            disabled={plan !== "pro"}
+            onChange={(e) => {
+              setSecondaryCurrency(e.target.value);
+              if (!e.target.value) setDisplayCurrency(currency);
+            }}
+            className="glass rounded-xl px-3 py-2 text-sm w-full disabled:opacity-50"
+          >
+            <option value="">{t("settings.secondaryCurrencyNone")}</option>
+            {CURRENCIES.filter((c) => c.code !== currency).map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.symbol} {c.code} — {localCurrencyName(c.code, locale)}
+              </option>
+            ))}
+          </select>
+
+          {plan === "pro" && secondaryCurrency && (
+            <div className="glass rounded-full p-0.5 flex text-sm font-semibold mt-2">
+              {[currency, secondaryCurrency].map((code) => {
+                const on = displayCurrency === code;
+                return (
+                  <button
+                    key={code}
+                    onClick={() => setDisplayCurrency(code)}
+                    className={`flex-1 px-3 py-1.5 rounded-full ${on ? "" : "text-muted"}`}
+                    style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                  >
+                    {code}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Group kind */}
@@ -273,6 +338,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
           )}
         </div>
       </div>
+      {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
     </Overlay>
   );
 }
