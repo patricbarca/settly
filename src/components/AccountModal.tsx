@@ -5,7 +5,7 @@ import { useAllGroups, updateMyMember } from "../lib/store";
 import { fileToAvatarDataUrl } from "../lib/image";
 import { personColor, memberInitials } from "../lib/format";
 import { enablePush, disablePush, isPushEnabled, pushSupported } from "../lib/push";
-import { memberPays } from "../lib/pay";
+import { memberPays, payLink } from "../lib/pay";
 import { countryList, dialCode, isValidPhone, normalizePhone } from "../lib/countries";
 import { useT, useLang } from "../lib/i18n";
 import { useTimezonePref, setTimezone, resolveTz, TIMEZONES } from "../lib/tz";
@@ -390,6 +390,25 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
               className="glass rounded-xl px-3 py-2.5 text-sm w-full"
             />
           )}
+          {(() => {
+            const preview = payLink({ type: payType, value: cur.value.trim() }, 0);
+            if (!preview) return null;
+            return (
+              <div className="mt-2">
+                <a
+                  href={preview}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold hover-lift"
+                  style={{ background: "rgba(15,163,163,0.12)", color: "var(--teal)" }}
+                >
+                  <Icon name="external" size={13} />
+                  {t("pay.testLink")}
+                </a>
+                <p className="text-[11px] text-muted mt-1">{t("pay.testLinkHint")}</p>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Zona horaria */}
