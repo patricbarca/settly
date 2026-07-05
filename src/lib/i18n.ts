@@ -399,6 +399,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "pay.copied.short": { es: "Copiado", en: "Copied" },
   "pay.payVia": { es: "Pagar con {name}", en: "Pay via {name}" },
   "pay.toPerson": { es: "Paga {amt} a {name}", en: "Pay {amt} to {name}" },
+  "pay.testLink": { es: "Probar enlace", en: "Test link" },
+  "pay.testLinkHint": { es: "Ábrelo y confirma que va a tu perfil antes de guardar.", en: "Open it and check it goes to your profile before saving." },
 
   "pay.label.payid": { es: "PayID", en: "PayID" },
   "pay.label.bank": { es: "Transferencia", en: "Bank transfer" },
