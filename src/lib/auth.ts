@@ -1,8 +1,26 @@
 import { useSyncExternalStore } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { Capacitor } from "@capacitor/core";
+import { App as CapApp } from "@capacitor/app";
+import { Browser } from "@capacitor/browser";
 import { supabase } from "./supabase";
 import { uid } from "./format";
 import type { PayMethod } from "./types";
+
+// Deep link de retorno del login OAuth dentro de la app nativa (Capacitor).
+// Debe coincidir con el CFBundleURLScheme en Info.plist y estar en la lista
+// de Redirect URLs de Supabase (Authentication → URL Configuration).
+const NATIVE_OAUTH_REDIRECT = "app.settlia.pwa://auth/callback";
+
+if (Capacitor.isNativePlatform()) {
+  CapApp.addListener("appUrlOpen", async ({ url }) => {
+    if (!url.startsWith(NATIVE_OAUTH_REDIRECT)) return;
+    await Browser.close().catch(() => {});
+    await supabase.auth.exchangeCodeForSession(url).catch((e) => {
+      console.error("[auth] exchangeCodeForSession:", e);
+    });
+  });
+}
 
 export type User = {
   id: string;
@@ -157,23 +175,33 @@ export async function verifyOtp(email: string, token: string) {
   if (error) throw error;
 }
 
-export async function signInGoogle() {
+/** Login OAuth: en la app nativa abre el navegador in-app y vuelve por el
+ *  deep link (appUrlOpen la intercepta); en web es la redirección normal. */
+async function oauthSignIn(provider: "google" | "apple", queryParams?: Record<string, string>) {
+  if (Capacitor.isNativePlatform()) {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: { redirectTo: NATIVE_OAUTH_REDIRECT, skipBrowserRedirect: true, queryParams },
+    });
+    if (error) throw error;
+    if (data?.url) await Browser.open({ url: data.url });
+    return;
+  }
   await supabase.auth.signInWithOAuth({
-    provider: "google",
+    provider,
     options: {
       redirectTo: window.location.origin + import.meta.env.BASE_URL,
-      queryParams: { prompt: "select_account" },
+      queryParams,
     },
   });
 }
 
+export async function signInGoogle() {
+  await oauthSignIn("google", { prompt: "select_account" });
+}
+
 export async function signInApple() {
-  await supabase.auth.signInWithOAuth({
-    provider: "apple",
-    options: {
-      redirectTo: window.location.origin + import.meta.env.BASE_URL,
-    },
-  });
+  await oauthSignIn("apple");
 }
 
 export function signInGuest() {
