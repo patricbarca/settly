@@ -1,5 +1,14 @@
 import { supabase } from "./supabase";
 
+/** Formatea una tasa de cambio con suficientes decimales para que se vea
+ *  con sentido incluso en pares muy desbalanceados (p. ej. 1 VND ≈ 0.000055
+ *  AUD — con 4 decimales fijos redondearía a "0.0001"). */
+export function fmtRate(n: number): string {
+  if (!Number.isFinite(n) || n === 0) return "0";
+  const decimals = Math.min(10, Math.max(4, -Math.floor(Math.log10(Math.abs(n))) + 2));
+  return n.toFixed(decimals);
+}
+
 export interface FxResult {
   convertedAmount: number;
   rate: number;

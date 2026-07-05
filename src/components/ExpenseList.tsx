@@ -6,6 +6,7 @@ import { shareFor } from "../lib/split";
 import { money as rawMoney, fmtDate, memberLabels } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
 import { useGroupMoney } from "../lib/displayCurrency";
+import { fmtRate } from "../lib/fx";
 import { monthKey, monthsWithExpenses, monthLabel } from "../lib/report";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -446,7 +447,7 @@ export function ExpenseList({ group }: { group: Group }) {
                   <div className="text-[11px] text-muted mb-2">
                     {t("scan.fxConverted", {
                       amt: rawMoney(e.originalAmount, e.originalCurrency),
-                      rate: `1 ${e.originalCurrency} ≈ ${(e.fxRate ?? 0).toFixed(4)} ${group.currency}`,
+                      rate: `1 ${e.originalCurrency} ≈ ${fmtRate(e.fxRate ?? 0)} ${group.currency}`,
                     })}
                   </div>
                 )}

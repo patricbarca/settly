@@ -9,7 +9,7 @@ import { uploadReceipt } from "../lib/storage";
 import { uid, money } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { usePlan } from "../lib/plan";
-import { convertCurrency } from "../lib/fx";
+import { convertCurrency, fmtRate } from "../lib/fx";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 import { Paywall } from "./Paywall";
@@ -199,7 +199,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
               <div className="glass rounded-xl px-3 py-2 mb-3 text-xs" style={{ color: "var(--teal)" }}>
                 {t("scan.fxConverted", {
                   amt: money(fx.originalAmount, fx.originalCurrency),
-                  rate: `1 ${fx.originalCurrency} ≈ ${(fx.fxRate).toFixed(4)} ${group.currency}`,
+                  rate: `1 ${fx.originalCurrency} ≈ ${fmtRate(fx.fxRate)} ${group.currency}`,
                 })}
               </div>
             )}
