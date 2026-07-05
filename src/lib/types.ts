@@ -190,6 +190,13 @@ export interface Group {
   recurring?: RecurringExpense[];
   notifications?: AppNotification[];
   activity?: ActivityEvent[];
+  /** Segunda moneda del grupo (Pro): permite ver todos los montos
+   *  convertidos a esta moneda con el toggle de GroupSettings. Todos los
+   *  gastos se siguen guardando en `currency`; esto es solo de visualización. */
+  secondaryCurrency?: string;
+  /** Moneda activa para mostrar: `currency` o `secondaryCurrency`. Por
+   *  defecto `currency` si falta. */
+  displayCurrency?: string;
 }
 
 import type { IconName } from "../components/Icon";

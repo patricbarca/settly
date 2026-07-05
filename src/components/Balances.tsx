@@ -2,14 +2,16 @@ import { useState } from "react";
 import type { Group } from "../lib/types";
 import { computeSettle, directTransfers } from "../lib/split";
 import { updateGroup } from "../lib/store";
-import { money, personColor, memberInitials } from "../lib/format";
+import { personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { useGroupMoney } from "../lib/displayCurrency";
 import { Icon } from "./Icon";
 import { MarkPaidModal } from "./MarkPaidModal";
 import { PaySheet } from "./PaySheet";
 
 export function Balances({ group }: { group: Group }) {
   const t = useT();
+  const money = useGroupMoney(group);
   const settlements = group.settlements ?? [];
   const { paid, net, transfers: minTransfers } = computeSettle(group.members, group.expenses, settlements);
   // Modo de pago: simplificado (mínimas transferencias) por defecto, o directo.
@@ -59,7 +61,7 @@ export function Balances({ group }: { group: Group }) {
               <div key={s.id} className="glass rounded-2xl p-3">
                 <div className="text-sm flex items-start gap-2">
                   <Icon name="clock" size={15} className="mt-0.5 shrink-0 text-muted" />
-                  <span>{t("pay.saysPaid", { from: name(s.from), amt: money(s.amount, group.currency), to: name(s.to) })}</span>
+                  <span>{t("pay.saysPaid", { from: name(s.from), amt: money(s.amount), to: name(s.to) })}</span>
                 </div>
                 {s.proof && <img src={s.proof} alt="" className="max-h-24 rounded-lg mt-1.5" />}
                 <div className="flex gap-2 mt-2 items-center">
@@ -83,7 +85,7 @@ export function Balances({ group }: { group: Group }) {
       {/* Total pill */}
       <div className="glass rounded-3xl px-4 py-3 flex items-center justify-between">
         <span className="text-sm font-semibold text-muted">{t("bal.totalSpent")}</span>
-        <span className="font-mono font-bold">{money(total, group.currency)}</span>
+        <span className="font-mono font-bold">{money(total)}</span>
       </div>
 
       <div className="space-y-3">
@@ -106,7 +108,7 @@ export function Balances({ group }: { group: Group }) {
                   <span className="truncate">
                     {m.name}{" "}
                     <span className="text-muted text-xs">
-                      · {t("bal.paid", { amt: money(paid[m.id] || 0, group.currency) })}
+                      · {t("bal.paid", { amt: money(paid[m.id] || 0) })}
                     </span>
                   </span>
                 </span>
@@ -114,7 +116,7 @@ export function Balances({ group }: { group: Group }) {
                   className="font-mono font-bold text-right shrink-0"
                   style={{ color: ok ? "var(--muted)" : v > 0 ? "#0A8B5E" : "#D14444" }}
                 >
-                  {ok ? t("bal.uptodate") : v > 0 ? `+${money(v, group.currency)}` : `−${money(-v, group.currency)}`}
+                  {ok ? t("bal.uptodate") : v > 0 ? `+${money(v)}` : `−${money(-v)}`}
                 </span>
               </div>
             );
@@ -151,7 +153,7 @@ export function Balances({ group }: { group: Group }) {
                     {memberInitials(member(tr.to) ?? { name: name(tr.to) })}
                   </span>
                   <b>{name(tr.to)}</b>
-                  <span className="font-mono font-bold ml-auto">{money(tr.amount, group.currency)}</span>
+                  <span className="font-mono font-bold ml-auto">{money(tr.amount)}</span>
                 </div>
                 {/* Solo el DEUDOR ve "Pagar" y "Marcar pagado". Si ya marcó, queda
                     a la espera de que el acreedor confirme. */}
@@ -195,7 +197,7 @@ export function Balances({ group }: { group: Group }) {
                 <div key={s.id} className="text-xs text-muted flex items-center gap-1.5 py-0.5">
                   <Icon name="check" size={13} style={{ color: "#0A8B5E" }} />
                   <span className="min-w-0">
-                    {t("pay.saysPaid", { from: name(s.from), amt: money(s.amount, group.currency), to: name(s.to) })}
+                    {t("pay.saysPaid", { from: name(s.from), amt: money(s.amount), to: name(s.to) })}
                   </span>
                 </div>
               ))}

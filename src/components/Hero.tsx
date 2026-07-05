@@ -1,12 +1,13 @@
 import type { Group } from "../lib/types";
 import { groupSettleScore } from "../lib/gamification";
 import { computeSettle } from "../lib/split";
-import { money } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { useGroupMoney } from "../lib/displayCurrency";
 import { SettleRing } from "./SettleRing";
 
 export function Hero({ group }: { group: Group }) {
   const t = useT();
+  const money = useGroupMoney(group);
   const score = groupSettleScore(group);
 
   const { net } = computeSettle(group.members, group.expenses, group.settlements ?? []);
@@ -29,19 +30,19 @@ export function Hero({ group }: { group: Group }) {
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold"
               style={{ background: "rgba(255,255,255,0.22)", color: "#FFFFFF" }}
             >
-              T {money(total, group.currency)}
+              T {money(total)}
             </span>
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold"
               style={{ background: "rgba(255,90,77,0.22)", color: "#FFC2BB" }}
             >
-              ↓ {money(owe, group.currency)}
+              ↓ {money(owe)}
             </span>
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold"
               style={{ background: "rgba(46,213,115,0.22)", color: "#9BF6C9" }}
             >
-              ↑ {money(owed, group.currency)}
+              ↑ {money(owed)}
             </span>
           </div>
         </div>
