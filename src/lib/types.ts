@@ -85,6 +85,12 @@ export interface Expense {
   tip?: number;
   /** Ruta en Supabase Storage (bucket `receipts`) de la foto del ticket. */
   receiptPath?: string;
+  /** Conversión de divisas (Pro): monto y moneda originales del ticket
+   *  escaneado, si distinta a la del grupo, más la tasa usada. `amount` ya
+   *  queda convertido a la moneda del grupo. */
+  originalAmount?: number;
+  originalCurrency?: string;
+  fxRate?: number;
 }
 
 /** Una línea de un gasto repartido por ítem: precio + quiénes lo comparten. */

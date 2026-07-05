@@ -440,6 +440,14 @@ export function ExpenseList({ group }: { group: Group }) {
 
             {open && (
               <div className="px-3 pb-3 anim-pop">
+                {e.originalCurrency && e.originalAmount != null && (
+                  <div className="text-[11px] text-muted mb-2">
+                    {t("scan.fxConverted", {
+                      amt: money(e.originalAmount, e.originalCurrency),
+                      rate: `1 ${e.originalCurrency} ≈ ${(e.fxRate ?? 0).toFixed(4)} ${group.currency}`,
+                    })}
+                  </div>
+                )}
                 <div className="glass rounded-xl p-3">
                   {/* Desglose por ítem/plato (solo gastos repartidos por línea) */}
                   {e.items?.length ? (
