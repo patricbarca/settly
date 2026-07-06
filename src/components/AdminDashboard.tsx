@@ -42,13 +42,13 @@ export function AdminDashboard({ onClose }: { onClose: () => void }) {
   const fmt = (iso: string) => new Date(iso).toLocaleDateString("es", { day: "2-digit", month: "short", year: "2-digit" });
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "var(--bg)" }}>
+    <div className="fixed inset-0 z-50 flex flex-col" style={{ background: "var(--bg)", paddingTop: "env(safe-area-inset-top)" }}>
       {/* Header */}
       <div className="max-w-2xl mx-auto w-full px-4 pt-4 pb-2 flex items-center gap-3">
         <Logo size={32} />
         <span className="font-display font-bold text-lg flex-1">Admin Dashboard</span>
         <button onClick={onClose} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift">
-          <Icon name="x" size={16} />
+          <Icon name="close" size={16} />
         </button>
       </div>
 
