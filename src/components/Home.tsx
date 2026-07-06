@@ -83,13 +83,6 @@ export function Home({ tab }: { tab: HomeTab }) {
                 <h1 className="text-white font-display text-5xl font-extrabold tracking-tight">Settlia</h1>
                 <p className="text-white/85 text-base mt-2.5 max-w-md leading-relaxed">{t("login.tagline")}</p>
                 <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/60 mt-1.5">{t("app.poweredAI")}</div>
-                <button
-                  onClick={startCreate}
-                  className="mt-5 rounded-full px-6 py-3 font-semibold hover-lift text-[#241C53] inline-flex items-center gap-1.5"
-                  style={{ background: "#fff" }}
-                >
-                  <Icon name="plus" size={18} /> {t("home.createGroup")}
-                </button>
               </div>
             </div>
           </div>
@@ -155,20 +148,20 @@ export function Home({ tab }: { tab: HomeTab }) {
 
       {/* Balance global (todos los grupos): gastado (T), debo (↓), me deben (↑) */}
       {showOverall && (
-        <div className="mt-6">
-          <p className="text-xs font-semibold text-muted px-1 uppercase tracking-wide mb-2">{t("home.overall")}</p>
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="glass rounded-full px-3.5 py-1.5 text-sm font-mono font-bold">
+        <div className="mt-6 flex flex-col items-center">
+          <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">{t("home.overall")}</p>
+          <div className="glass rounded-full px-2 py-1.5 flex items-center gap-1.5">
+            <span className="rounded-full px-3 py-1 text-sm font-mono font-bold">
               T: {money(spent, overallCur)}
             </span>
             <span
-              className="rounded-full px-3.5 py-1.5 text-sm font-mono font-bold"
+              className="rounded-full px-3 py-1 text-sm font-mono font-bold"
               style={{ background: "rgba(209,68,68,0.12)", color: "#D14444" }}
             >
               ↓ {money(owe, overallCur)}
             </span>
             <span
-              className="rounded-full px-3.5 py-1.5 text-sm font-mono font-bold"
+              className="rounded-full px-3 py-1 text-sm font-mono font-bold"
               style={{ background: "rgba(10,139,94,0.12)", color: "#0A8B5E" }}
             >
               ↑ {money(owed, overallCur)}
