@@ -11,7 +11,6 @@ import { useT, useLang } from "../lib/i18n";
 import { useTimezonePref, setTimezone, resolveTz, TIMEZONES } from "../lib/tz";
 import { usePlan, FREE_AI_QUOTA, startPortal, useHasStripeSubscription } from "../lib/plan";
 import { Icon } from "./Icon";
-import { Overlay } from "./Overlay";
 import { Paywall } from "./Paywall";
 import { FeedbackModal } from "./FeedbackModal";
 
@@ -180,16 +179,24 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Overlay onClose={onClose} respectBottomNav>
-      <div
-        className="glass-strong rounded-3xl w-full max-w-sm p-6 anim-pop max-h-[92vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="font-display text-xl font-bold">{t("account.title")}</h3>
-          <button onClick={onClose} className="glass rounded-full h-9 w-9 flex items-center justify-center text-muted">
-            <Icon name="close" size={16} />
+    <div
+      className="fixed inset-x-0 top-0 z-30 flex flex-col anim-up"
+      style={{
+        background: "var(--bg)",
+        paddingTop: "env(safe-area-inset-top)",
+        bottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom))",
+      }}
+    >
+      <div className="max-w-2xl mx-auto w-full px-4 pt-5 pb-10 flex-1 overflow-y-auto">
+        <div className="flex items-center gap-3 mb-5">
+          <button
+            onClick={onClose}
+            className="glass rounded-full h-9 w-9 flex items-center justify-center text-muted hover-lift"
+            title={t("common.back")}
+          >
+            <Icon name="back" size={16} />
           </button>
+          <h2 className="font-display text-2xl font-bold">{t("account.title")}</h2>
         </div>
 
         {/* Avatar (Google por defecto; se puede subir una propia) */}
@@ -472,22 +479,14 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           <Icon name="chevron" size={16} className="text-muted shrink-0" />
         </button>
 
-        <div className="flex gap-2">
-          <button
-            onClick={save}
-            disabled={saving || !name.trim() || !phoneOk || saved}
-            className="flex-1 rounded-full py-3 font-semibold text-white hover-lift disabled:opacity-60"
-            style={{ background: saved ? "#0A8B5E" : "var(--ink)" }}
-          >
-            {saved ? `✓ ${t("account.saved")}` : saving ? "…" : t("common.save")}
-          </button>
-          <button
-            onClick={onClose}
-            className="rounded-full px-5 py-3 font-semibold glass text-muted hover-lift"
-          >
-            {t("common.close")}
-          </button>
-        </div>
+        <button
+          onClick={save}
+          disabled={saving || !name.trim() || !phoneOk || saved}
+          className="w-full rounded-full py-3 font-semibold text-white hover-lift disabled:opacity-60"
+          style={{ background: saved ? "#0A8B5E" : "var(--ink)" }}
+        >
+          {saved ? `✓ ${t("account.saved")}` : saving ? "…" : t("common.save")}
+        </button>
 
         <button
           onClick={signOut}
@@ -516,6 +515,6 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
         {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
         {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
       </div>
-    </Overlay>
+    </div>
   );
 }
