@@ -85,8 +85,8 @@ export default function App() {
   if (phase === "loading") {
     return (
       <div className="min-h-full flex items-center justify-center">
-        <div className="glass rounded-2xl p-8 text-center anim-up">
-          <Logo size={40} />
+        <div className="anim-logo-pulse">
+          <Logo size={64} />
         </div>
       </div>
     );
