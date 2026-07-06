@@ -7,6 +7,7 @@ import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { parseExpenseAI } from "../lib/ai";
 import { convertCurrency, fmtRate } from "../lib/fx";
+import { CURRENCIES, resolveToCode } from "../lib/currencies";
 import { CATEGORIES } from "../lib/types";
 import { useSpeech } from "../lib/speech";
 import { uid, money } from "../lib/format";
@@ -41,6 +42,12 @@ export function AddExpense({ group }: { group: Group }) {
   const [fx, setFx] = useState<FxInfo | null>(null);
   const [fxUpsell, setFxUpsell] = useState<string | null>(null);
   const [fxError, setFxError] = useState<string | null>(null);
+  // Selector de moneda del gasto manual (no aplica a texto/voz, que la
+  // detectan solos). Por defecto la del grupo; si eliges otra, se convierte
+  // al guardar (Pro).
+  const [manualMode, setManualMode] = useState(false);
+  const [manualCurrency, setManualCurrency] = useState(() => resolveToCode(group.currency));
+  const [manualRate, setManualRate] = useState<number | null>(null);
   const lang = useLang();
   // La voz va directa a la validación: transcribe → interpreta sin pulsar nada.
   const sp = useSpeech((tx) => {
@@ -61,10 +68,34 @@ export function AddExpense({ group }: { group: Group }) {
     setExpenseType((e) => (e === "recurring" ? "one-time" : "recurring"));
   }
 
+  // Cambiar la moneda del gasto manual: si es distinta a la del grupo, Pro
+  // obtiene la tasa del día (se aplica al guardar); free ve el Paywall y la
+  // selección vuelve a la moneda del grupo.
+  async function pickManualCurrency(code: string) {
+    const groupCode = resolveToCode(group.currency);
+    if (code === groupCode) {
+      setManualCurrency(groupCode);
+      setManualRate(null);
+      setFxError(null);
+      return;
+    }
+    if (!pro) {
+      setShowPaywall(true);
+      return;
+    }
+    setManualCurrency(code);
+    setManualRate(null);
+    setFxError(null);
+    const fxRes = await convertCurrency(1, code, groupCode);
+    if (fxRes) setManualRate(fxRes.rate);
+    else setFxError(code);
+  }
+
   async function interpret(override?: string, kind: AIKind = "text") {
     const src = (override ?? text).trim();
     if (!src || interpreting) return;
     setInterpreting(true);
+    setManualMode(false);
     setFx(null);
     setFxUpsell(null);
     setFxError(null);
@@ -174,6 +205,9 @@ export function AddExpense({ group }: { group: Group }) {
     setFx(null);
     setFxUpsell(null);
     setFxError(null);
+    setManualMode(true);
+    setManualCurrency(resolveToCode(group.currency));
+    setManualRate(null);
     setDraft({
       label: "",
       amount: "",
@@ -189,12 +223,27 @@ export function AddExpense({ group }: { group: Group }) {
   }
 
   function save(d: ExpenseDraft) {
-    const { payerId, payments, splits } = draftToExpenseFields(d);
+    const { payerId, payments: rawPayments, splits: rawSplits } = draftToExpenseFields(d);
+
+    // Moneda distinta elegida a mano (Pro): convierte monto, pagos y splits
+    // con la misma tasa, y guarda el original para el badge (igual que IA).
+    const groupCode = resolveToCode(group.currency);
+    const manualForeign = manualMode && manualCurrency !== groupCode && manualRate != null;
+    const rate = manualForeign ? manualRate! : 1;
+    const conv = (n: number) => Math.round(n * rate * 100) / 100;
+    const rawAmount = Number(d.amount) || 0;
+    const amount = manualForeign ? conv(rawAmount) : rawAmount;
+    const payments = manualForeign ? rawPayments?.map((p) => ({ ...p, amount: conv(p.amount) })) : rawPayments;
+    const splits = manualForeign && rawSplits ? Object.fromEntries(Object.entries(rawSplits).map(([k, v]) => [k, conv(v)])) : rawSplits;
+    const effectiveFx = manualForeign
+      ? { originalAmount: rawAmount, originalCurrency: manualCurrency, fxRate: manualRate! }
+      : fx;
+
     if (expenseType === "recurring") {
       addRecurring(group.id, {
         id: uid(),
         label: d.label.trim(),
-        amount: Number(d.amount) || 0,
+        amount,
         payerId,
         ...(payments?.length ? { payments } : {}),
         participantIds: d.participantIds,
@@ -212,7 +261,7 @@ export function AddExpense({ group }: { group: Group }) {
           {
             id: uid(),
             label: d.label.trim(),
-            amount: Number(d.amount) || 0,
+            amount,
             payerId,
             payments,
             participantIds: d.participantIds,
@@ -220,7 +269,7 @@ export function AddExpense({ group }: { group: Group }) {
             category: d.category,
             date: new Date().toISOString().slice(0, 10),
             createdBy: group.meId,
-            ...(fx ? { originalAmount: fx.originalAmount, originalCurrency: fx.originalCurrency, fxRate: fx.fxRate } : {}),
+            ...(effectiveFx ? { originalAmount: effectiveFx.originalAmount, originalCurrency: effectiveFx.originalCurrency, fxRate: effectiveFx.fxRate } : {}),
           },
           ...g.expenses,
         ],
@@ -229,20 +278,20 @@ export function AddExpense({ group }: { group: Group }) {
           actorId: group.meId,
           actorName: meName,
           label: d.label.trim(),
-          amount: Number(d.amount) || 0,
+          amount,
         }),
         activity: withActivity(g, {
           type: "expense_added",
           actorId: group.meId,
           actorName: meName,
           label: d.label.trim(),
-          amount: Number(d.amount) || 0,
+          amount,
         }),
       }));
       notifyGroup(
         group.id,
         group.name,
-        t("notif.expense_added", { name: meName, label: d.label.trim(), amt: money(Number(d.amount) || 0, group.currency) })
+        t("notif.expense_added", { name: meName, label: d.label.trim(), amt: money(amount, group.currency) })
       );
     }
     setDraft(null);
@@ -252,6 +301,7 @@ export function AddExpense({ group }: { group: Group }) {
     setFx(null);
     setFxUpsell(null);
     setFxError(null);
+    setManualMode(false);
   }
 
   return (
@@ -331,6 +381,30 @@ export function AddExpense({ group }: { group: Group }) {
         <div className="mt-4 glass rounded-3xl p-4 anim-pop">
           <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{aiSummary ? t("add.review") : t("add.manualReview")}</div>
 
+          {manualMode && (
+            <div className="mb-3">
+              <label className="text-xs font-semibold text-muted">{t("add.manualCurrency")}</label>
+              <select
+                value={manualCurrency}
+                onChange={(e) => pickManualCurrency(e.target.value)}
+                className="glass rounded-xl px-3 py-2 text-sm w-full mt-1"
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.symbol} {c.code} — {c.name}
+                  </option>
+                ))}
+              </select>
+              {manualCurrency !== resolveToCode(group.currency) && manualRate != null && (
+                <p className="text-[11px] mt-1" style={{ color: "var(--teal)" }}>
+                  {t("add.manualCurrencyHint", {
+                    rate: `1 ${manualCurrency} ≈ ${fmtRate(manualRate)} ${group.currency}`,
+                  })}
+                </p>
+              )}
+            </div>
+          )}
+
           {aiSummary && (
             <div className="mb-3 -mt-1 flex items-start gap-1.5 text-[11px] text-muted">
               <Icon name="sparkles" size={12} className="mt-0.5 shrink-0" style={{ color: "var(--teal)" }} />
@@ -368,7 +442,7 @@ export function AddExpense({ group }: { group: Group }) {
             group={group}
             initial={draft}
             onSave={save}
-            onCancel={() => { setDraft(null); setExpenseType("one-time"); setAiSummary(null); }}
+            onCancel={() => { setDraft(null); setExpenseType("one-time"); setAiSummary(null); setManualMode(false); setFx(null); setFxUpsell(null); setFxError(null); }}
             submitLabel={expenseType === "recurring" ? t("recur.save") : t("add.submit")}
           >
             {/* Recurring toggle — sits between category and save button */}
