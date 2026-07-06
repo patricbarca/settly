@@ -69,52 +69,56 @@ export function Home({ tab }: { tab: HomeTab }) {
   return (
     <div className="max-w-2xl mx-auto px-4 pb-10">
       <TrialBanner />
-      <div className="pt-4">
-        <div className="hero anim-up">
-          <span className="blob b1" />
-          <span className="blob b2" />
-          <span className="blob b3" />
-          <div className="relative z-10 flex flex-col items-center text-center py-3">
-            <div className="mb-4">
-              <Logo size={54} />
+      {tab === "groups" && (
+        <>
+          <div className="pt-4">
+            <div className="hero anim-up">
+              <span className="blob b1" />
+              <span className="blob b2" />
+              <span className="blob b3" />
+              <div className="relative z-10 flex flex-col items-center text-center py-3">
+                <div className="mb-4">
+                  <Logo size={54} />
+                </div>
+                <h1 className="text-white font-display text-5xl font-extrabold tracking-tight">Settlia</h1>
+                <p className="text-white/85 text-base mt-2.5 max-w-md leading-relaxed">{t("login.tagline")}</p>
+                <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/60 mt-1.5">{t("app.poweredAI")}</div>
+                <button
+                  onClick={startCreate}
+                  className="mt-5 rounded-full px-6 py-3 font-semibold hover-lift text-[#241C53] inline-flex items-center gap-1.5"
+                  style={{ background: "#fff" }}
+                >
+                  <Icon name="plus" size={18} /> {t("home.createGroup")}
+                </button>
+              </div>
             </div>
-            <h1 className="text-white font-display text-5xl font-extrabold tracking-tight">Settlia</h1>
-            <p className="text-white/85 text-base mt-2.5 max-w-md leading-relaxed">{t("login.tagline")}</p>
-            <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/60 mt-1.5">{t("app.poweredAI")}</div>
-            <button
-              onClick={startCreate}
-              className="mt-5 rounded-full px-6 py-3 font-semibold hover-lift text-[#241C53] inline-flex items-center gap-1.5"
-              style={{ background: "#fff" }}
-            >
-              <Icon name="plus" size={18} /> {t("home.createGroup")}
-            </button>
           </div>
-        </div>
-      </div>
 
-      {/* Install + upgrade row (each hides itself when not applicable) */}
-      <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
-        <InstallButton />
-        {plan === "free" ? (
-          <button
-            onClick={openUpgrade}
-            className="rounded-full px-3 py-1.5 text-sm font-semibold hover-lift inline-flex items-center gap-1.5 text-white"
-            style={{ background: "linear-gradient(180deg,#6e6cf5,#5b5bf0)" }}
-          >
-            <Icon name="sparkles" size={15} /> {t("pro.upgrade")}
-          </button>
-        ) : (
-          <span
-            className="rounded-full px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5"
-            style={{ background: "rgba(91,91,240,0.12)", color: "var(--indigo)" }}
-          >
-            <Icon name="sparkles" size={15} /> {t("pro.badge")}
-          </span>
-        )}
-      </div>
+          {/* Install + upgrade row (each hides itself when not applicable) */}
+          <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
+            <InstallButton />
+            {plan === "free" ? (
+              <button
+                onClick={openUpgrade}
+                className="rounded-full px-3 py-1.5 text-sm font-semibold hover-lift inline-flex items-center gap-1.5 text-white"
+                style={{ background: "linear-gradient(180deg,#6e6cf5,#5b5bf0)" }}
+              >
+                <Icon name="sparkles" size={15} /> {t("pro.upgrade")}
+              </button>
+            ) : (
+              <span
+                className="rounded-full px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5"
+                style={{ background: "rgba(91,91,240,0.12)", color: "var(--indigo)" }}
+              >
+                <Icon name="sparkles" size={15} /> {t("pro.badge")}
+              </span>
+            )}
+          </div>
+        </>
+      )}
 
       {tab === "contacts" ? (
-        <div className="mt-6">
+        <div className="pt-4">
           <ContactsView />
         </div>
       ) : (
