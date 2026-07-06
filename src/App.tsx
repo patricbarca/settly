@@ -186,13 +186,23 @@ export default function App() {
         onGroups={() => {
           setActiveGroup(null);
           setHomeTab("groups");
+          setShowActivity(false);
+          setShowAccount(false);
         }}
         onFriends={() => {
           setActiveGroup(null);
           setHomeTab("contacts");
+          setShowActivity(false);
+          setShowAccount(false);
         }}
-        onActivity={() => setShowActivity(true)}
-        onProfile={() => setShowAccount(true)}
+        onActivity={() => {
+          setShowAccount(false);
+          setShowActivity(true);
+        }}
+        onProfile={() => {
+          setShowActivity(false);
+          setShowAccount(true);
+        }}
       />
 
       {showActivity && <NotificationsBell open={showActivity} onClose={() => setShowActivity(false)} />}
