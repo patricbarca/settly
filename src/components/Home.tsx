@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useGroups, useTrashedGroups, setActiveGroup, archiveGroup, recoverGroup, purgeGroup } from "../lib/store";
 import { computeSettle, shareFor } from "../lib/split";
 import { groupSettleScore } from "../lib/gamification";
 import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { usePlan, FREE_GROUP_LIMIT } from "../lib/plan";
-import { resetMainScroll } from "../lib/scroll";
 import { TrialBanner } from "./TrialBanner";
 import { Logo } from "./Logo";
 import { Icon } from "./Icon";
@@ -28,13 +27,6 @@ export function Home({ tab }: { tab: HomeTab }) {
   const trashed = useTrashedGroups();
   const [showPaywall, setShowPaywall] = useState(false);
   const [paywallReason, setPaywallReason] = useState<string | undefined>(undefined);
-
-  // Al cambiar de pestaña (Grupos/Amigos) el contenido puede pasar de largo a
-  // corto (o viceversa) — reseteamos el scroll del contenedor para no dejarlo
-  // a mitad de una posición que ya no existe en la pestaña corta.
-  useEffect(() => {
-    resetMainScroll();
-  }, [tab]);
 
   const active = groups.filter((g) => !g.archived);
   const archived = groups.filter((g) => g.archived);

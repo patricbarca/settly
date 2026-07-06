@@ -85,7 +85,7 @@ export function Login() {
 
   if (phase === "otp_sent" && otpEmail) {
     return (
-      <div className="h-full overflow-y-auto flex flex-col">
+      <div className="min-h-full flex flex-col">
         <div className="max-w-md w-full mx-auto px-4 flex flex-col pt-10 pb-8">
           <Controls />
           <div className="glass-strong rounded-3xl p-6 anim-up">
@@ -122,7 +122,7 @@ export function Login() {
   }
 
   return (
-    <div className="h-full overflow-y-auto flex flex-col">
+    <div className="min-h-full flex flex-col">
       <div className="max-w-md w-full mx-auto px-4 flex-1 flex flex-col justify-center py-8">
         <Controls />
 

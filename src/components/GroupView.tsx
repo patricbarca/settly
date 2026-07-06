@@ -3,7 +3,6 @@ import type { Group } from "../lib/types";
 import { setActiveGroup, archiveGroup, processRecurring } from "../lib/store";
 import { createInviteLink } from "../lib/invite";
 import { useT } from "../lib/i18n";
-import { resetMainScroll } from "../lib/scroll";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
 import { Hero } from "./Hero";
@@ -38,7 +37,7 @@ export function GroupView({ group }: { group: Group }) {
     else setPaywall(true);
   }
 
-  useEffect(() => { resetMainScroll(); }, [group.id]);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior }); }, [group.id]);
   useEffect(() => { processRecurring(group.id); }, [group.id]);
 
   async function share() {
