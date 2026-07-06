@@ -7,7 +7,7 @@ import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { parseExpenseAI } from "../lib/ai";
 import { convertCurrency, fmtRate } from "../lib/fx";
-import { CURRENCIES, resolveToCode } from "../lib/currencies";
+import { CURRENCIES, resolveToCode, localCurrencyName } from "../lib/currencies";
 import { CATEGORIES } from "../lib/types";
 import { useSpeech } from "../lib/speech";
 import { uid, money } from "../lib/format";
@@ -391,7 +391,7 @@ export function AddExpense({ group }: { group: Group }) {
               >
                 {CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code}>
-                    {c.symbol} {c.code} — {c.name}
+                    {c.symbol} {c.code} — {localCurrencyName(c.code, lang === "es" ? "es-ES" : "en-US")}
                   </option>
                 ))}
               </select>
@@ -444,6 +444,7 @@ export function AddExpense({ group }: { group: Group }) {
             onSave={save}
             onCancel={() => { setDraft(null); setExpenseType("one-time"); setAiSummary(null); setManualMode(false); setFx(null); setFxUpsell(null); setFxError(null); }}
             submitLabel={expenseType === "recurring" ? t("recur.save") : t("add.submit")}
+            amountCurrency={manualMode ? manualCurrency : undefined}
           >
             {/* Recurring toggle — sits between category and save button */}
             <div className="border-t pt-3 mt-1" style={{ borderColor: "var(--line)" }}>
