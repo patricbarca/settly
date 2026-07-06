@@ -5,7 +5,7 @@
   /* Alto del contenido de BottomNav (sin el safe-area, que ya suma su propio
      padding) — usado por las vistas que deben dejarla siempre visible
      (Activity, Profile) para no dibujarse detrás. */
-  --bottomnav-h: 62px;
+  --bottomnav-h: 76px;
   --ink: #191b22;
   --muted: #6b6f7a;
   --teal: #0fa3a3;

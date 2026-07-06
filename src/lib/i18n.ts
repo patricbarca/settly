@@ -85,7 +85,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "group.shareHint": { es: "Comparte el enlace para que otros se unan.", en: "Share the link so others can join." },
   "group.shareBtn": { es: "Copiar enlace", en: "Copy link" },
 
-  "app.footerCloud": { es: "Settlia · datos guardados en la nube.", en: "Settlia · data saved in the cloud." },
+  "app.footerCloud": { es: "¿Necesitas ayuda?", en: "Need help?" },
 
   "onboard.s1t": { es: "Gastos en grupo, sin líos", en: "Group expenses, no headaches" },
   "onboard.s1d": { es: "La app que hace que todos paguen lo que deben. Sin incomodidades, sin calculadoras, sin dramas.", en: "The app that makes sure everyone pays what they owe. No awkwardness, no calculators, no drama." },

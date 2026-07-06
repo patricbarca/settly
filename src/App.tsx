@@ -229,9 +229,13 @@ export default function App() {
             </button>
           </>
         ) : (
-          t("app.footerCloud")
+          <>
+            {t("app.footerCloud")}{" "}
+            <a href="mailto:hello@settlia.app" className="lk underline">
+              hello@settlia.app
+            </a>
+          </>
         )}
-        <div className="mt-1.5 opacity-50 font-mono text-[10px]">v {__BUILD_ID__}</div>
       </footer>
     </div>
   );
