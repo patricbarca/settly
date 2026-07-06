@@ -15,6 +15,7 @@ export function ContactsView() {
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [showHidden, setShowHidden] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     getNetwork()
@@ -22,6 +23,21 @@ export function ContactsView() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  async function inviteFriends() {
+    const link = window.location.origin + import.meta.env.BASE_URL;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: "Settlia", text: t("contacts.inviteText"), url: link });
+      } else {
+        await navigator.clipboard.writeText(link);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2500);
+      }
+    } catch {
+      /* usuario canceló el share sheet, o el clipboard no está disponible */
+    }
+  }
 
   const q = query.trim().toLowerCase();
   const match = (c: Contact) =>
@@ -51,6 +67,15 @@ export function ContactsView() {
 
   return (
     <div className="space-y-3">
+      <button
+        onClick={inviteFriends}
+        className="w-full rounded-full px-4 py-3 font-semibold text-white hover-lift inline-flex items-center justify-center gap-2"
+        style={{ background: "var(--ink)" }}
+      >
+        <Icon name="external" size={16} />
+        {copied ? t("contacts.inviteCopied") : t("contacts.invite")}
+      </button>
+
       {/* Buscador */}
       {network.length > 0 && (
         <div className="relative">
