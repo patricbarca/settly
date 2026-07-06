@@ -377,6 +377,10 @@ const DICT: Record<string, { es: string; en: string }> = {
   "scan.fxUpsell": { es: "Ticket detectado en {code}. Hazte Pro para convertirlo automáticamente a {target}.", en: "Receipt detected in {code}. Go Pro to auto-convert it to {target}." },
   "scan.fxUpsellCta": { es: "Convertir con Pro", en: "Convert with Pro" },
   "scan.fxFailed": { es: "No pudimos convertir de {code}; revisa los montos a mano.", en: "Couldn't convert from {code}; please check the amounts manually." },
+  "scan.confirmCurrencyTitle": { es: "Confirma la moneda", en: "Confirm the currency" },
+  "scan.confirmCurrencyBody": { es: "Creemos que el ticket está en {code}. ¿Es correcto?", en: "We think the receipt is in {code}. Is that right?" },
+  "scan.confirmCurrencyOther": { es: "Si no, elige la moneda correcta:", en: "If not, pick the right one:" },
+  "scan.confirmCurrencyConfirm": { es: "Confirmar", en: "Confirm" },
 
   "pay.pay": { es: "Pagar", en: "Pay" },
   "pay.markPaid": { es: "Marcar pagado", en: "Mark paid" },
