@@ -33,10 +33,16 @@ export function BottomNav({
   ];
 
   return (
-    <nav
-      className="fixed bottom-0 inset-x-0 z-40 surface"
-      style={{ paddingBottom: "env(safe-area-inset-bottom)", borderTop: "1px solid var(--line)" }}
-    >
+    <>
+      {/* Relleno por si algún dispositivo deja asomar un resquicio por debajo
+       *  del nav (viewport visual vs real, notch, etc.) — mismo color, se
+       *  extiende bien por debajo de la pantalla real así que cubre
+       *  cualquier hueco sin importar la causa exacta. */}
+      <div className="fixed inset-x-0 z-30 surface" style={{ bottom: "-50vh", height: "50vh" }} />
+      <nav
+        className="fixed bottom-0 inset-x-0 z-40 surface"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)", borderTop: "1px solid var(--line)" }}
+      >
       <div className="max-w-2xl mx-auto px-2 flex items-stretch">
         {items.map((it) => (
           <button
@@ -76,6 +82,7 @@ export function BottomNav({
           <span className="text-[11px] font-medium">{t("nav.profile")}</span>
         </button>
       </div>
-    </nav>
+      </nav>
+    </>
   );
 }
