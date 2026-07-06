@@ -105,6 +105,7 @@ export function ExpenseForm({
   onCancel,
   submitLabel,
   children,
+  amountCurrency,
 }: {
   group: Group;
   initial: ExpenseDraft;
@@ -112,9 +113,14 @@ export function ExpenseForm({
   onCancel: () => void;
   submitLabel?: string;
   children?: React.ReactNode;
+  /** Moneda en la que se está tecleando el monto, si distinta a la del grupo
+   *  (selector manual de moneda). Solo cambia símbolos/formato mostrados; la
+   *  conversión real a la moneda del grupo ocurre al guardar. */
+  amountCurrency?: string;
 }) {
   const t = useT();
-  const sym = currencySymbol(group.currency);
+  const currencyCode = amountCurrency || group.currency;
+  const sym = currencySymbol(currencyCode);
   const [f, setF] = useState<ExpenseDraft>(initial);
   const up = <K extends keyof ExpenseDraft>(k: K, v: ExpenseDraft[K]) =>
     setF((s) => ({ ...s, [k]: v }));
@@ -189,7 +195,7 @@ export function ExpenseForm({
   } else if (f.splitMode === "exact") {
     const sum = f.participantIds.reduce((a, id) => a + (f.splitValues[id] ?? 0), 0);
     splitValid = Math.abs(sum - amt) < 0.01;
-    splitSumDisplay = money(sum, group.currency);
+    splitSumDisplay = money(sum, currencyCode);
   } else if (f.splitMode === "shares") {
     splitValid = f.participantIds.length > 0;
   }
@@ -288,8 +294,8 @@ export function ExpenseForm({
               {paymentValid
                 ? `✓ ${t("form.paymentOk")}`
                 : paymentSum < amt
-                ? t("form.remaining", { amt: money(amt - paymentSum, group.currency) })
-                : t("form.over", { amt: money(paymentSum - amt, group.currency) })}
+                ? t("form.remaining", { amt: money(amt - paymentSum, currencyCode) })
+                : t("form.over", { amt: money(paymentSum - amt, currencyCode) })}
             </div>
           </div>
         )}
@@ -302,7 +308,7 @@ export function ExpenseForm({
             {t("form.between")}{" "}
             {f.splitMode === "equal" && f.participantIds.length > 0 && (
               <span className="font-normal">
-                · {money(per, group.currency)} {t("form.each")}
+                · {money(per, currencyCode)} {t("form.each")}
               </span>
             )}
           </label>
@@ -364,7 +370,7 @@ export function ExpenseForm({
                   <span className="text-sm flex-1 min-w-0 truncate">{member.name}</span>
                   {f.splitMode === "shares" && impliedAmt !== null && (
                     <span className="text-xs text-muted font-mono">
-                      {money(impliedAmt, group.currency)}
+                      {money(impliedAmt, currencyCode)}
                     </span>
                   )}
                   <div className="glass rounded-lg px-2 py-1 flex items-center gap-1 w-28 shrink-0">
@@ -391,7 +397,7 @@ export function ExpenseForm({
                 : f.splitMode === "exact"
                 ? splitSumDisplay !== null
                   ? t("form.remaining", {
-                      amt: money(amt - f.participantIds.reduce((a, pid) => a + (f.splitValues[pid] ?? 0), 0), group.currency),
+                      amt: money(amt - f.participantIds.reduce((a, pid) => a + (f.splitValues[pid] ?? 0), 0), currencyCode),
                     })
                   : ""
                 : ""}
