@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Settlia</string>
+    <string name="title_activity_main">Settlia</string>
+    <string name="package_name">app.settlia.pwa</string>
+    <string name="custom_url_scheme">app.settlia.pwa</string>
+</resources>
