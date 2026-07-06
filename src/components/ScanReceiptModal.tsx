@@ -207,30 +207,37 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
           </div>
         )}
 
-        {stage === "currency" && pendingScan && (
+        {stage === "currency" && pendingScan && (() => {
+          const detected = (pendingScan.currency || "EUR").toUpperCase().trim();
+          // Solo mostramos como botón de un toque las monedas del grupo que
+          // coinciden con lo detectado — mostrar AUD/VND cuando la IA leyó
+          // EUR sugeriría falsamente que esas son las opciones detectadas.
+          const quickPicks = [group.currency, group.secondaryCurrency].filter(
+            (c): c is string => !!c && c === detected
+          );
+          return (
           <div className="py-2">
             <h3 className="font-semibold mb-1">{t("scan.confirmCurrencyTitle")}</h3>
             <p className="text-sm text-muted mb-4">
-              {t("scan.confirmCurrencyBody", { code: (pendingScan.currency || "EUR").toUpperCase() })}
+              {t("scan.confirmCurrencyBody", { code: detected })}
             </p>
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => confirmCurrency(group.currency)}
-                className="flex-1 rounded-full px-4 py-3 font-semibold text-white hover-lift"
-                style={{ background: "var(--ink)" }}
-              >
-                {group.currency}
-              </button>
-              {group.secondaryCurrency && (
-                <button
-                  onClick={() => confirmCurrency(group.secondaryCurrency!)}
-                  className="flex-1 glass rounded-full px-4 py-3 font-semibold hover-lift"
-                >
-                  {group.secondaryCurrency}
-                </button>
-              )}
-            </div>
-            <p className="text-xs text-muted mb-2">{t("scan.confirmCurrencyOther")}</p>
+            {quickPicks.length > 0 && (
+              <div className="flex gap-2 mb-4">
+                {quickPicks.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => confirmCurrency(c)}
+                    className="flex-1 rounded-full px-4 py-3 font-semibold text-white hover-lift"
+                    style={{ background: "var(--ink)" }}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="text-xs text-muted mb-2">
+              {t(quickPicks.length > 0 ? "scan.confirmCurrencyOther" : "scan.confirmCurrencyPick")}
+            </p>
             <div className="flex gap-2">
               <select
                 value={otherCurrency}
@@ -251,7 +258,8 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
               </button>
             </div>
           </div>
-        )}
+          );
+        })()}
 
         {stage === "review" && (
           <>

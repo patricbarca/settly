@@ -380,6 +380,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "scan.confirmCurrencyTitle": { es: "Confirma la moneda", en: "Confirm the currency" },
   "scan.confirmCurrencyBody": { es: "Creemos que el ticket está en {code}. ¿Es correcto?", en: "We think the receipt is in {code}. Is that right?" },
   "scan.confirmCurrencyOther": { es: "Si no, elige la moneda correcta:", en: "If not, pick the right one:" },
+  "scan.confirmCurrencyPick": { es: "Elige la moneda correcta:", en: "Pick the right currency:" },
   "scan.confirmCurrencyConfirm": { es: "Confirmar", en: "Confirm" },
 
   "pay.pay": { es: "Pagar", en: "Pay" },
