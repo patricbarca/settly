@@ -1,15 +1,16 @@
 import { useState, type ChangeEvent } from "react";
 import type { Group, Category, ExpenseItem } from "../lib/types";
-import { scanReceipt, type ScanTax } from "../lib/ai";
+import { scanReceipt, type ScanResult, type ScanTax } from "../lib/ai";
 import { updateGroup } from "../lib/store";
 import { withNotif } from "../lib/notifications";
 import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { uploadReceipt } from "../lib/storage";
 import { uid, money } from "../lib/format";
-import { useT } from "../lib/i18n";
+import { useT, useLang } from "../lib/i18n";
 import { usePlan } from "../lib/plan";
 import { convertCurrency, fmtRate } from "../lib/fx";
+import { CURRENCIES, localCurrencyName } from "../lib/currencies";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 import { Paywall } from "./Paywall";
@@ -21,9 +22,10 @@ type FxInfo = { originalAmount: number; originalCurrency: string; fxRate: number
 
 export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: () => void }) {
   const t = useT();
+  const lang = useLang();
   const plan = usePlan();
   const allIds = group.members.map((m) => m.id);
-  const [stage, setStage] = useState<"pick" | "analyzing" | "review">("pick");
+  const [stage, setStage] = useState<"pick" | "analyzing" | "currency" | "review">("pick");
   const [preview, setPreview] = useState<string | null>(null);
   const [scanError, setScanError] = useState(false);
   const [initial, setInitial] = useState<ItemizedInitial>({});
@@ -34,6 +36,8 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
   const [fxUpsell, setFxUpsell] = useState<string | null>(null); // moneda detectada, si es free
   const [fxError, setFxError] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [pendingScan, setPendingScan] = useState<ScanResult | null>(null);
+  const [otherCurrency, setOtherCurrency] = useState("");
 
   function onFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -49,60 +53,72 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
       setFxError(null);
       try {
         const res = await scanReceipt(file);
-
-        // Moneda distinta a la del grupo: convertir (Pro) o avisar (free).
-        let rate = 1;
-        const scannedCode = (res.currency || "").toUpperCase().trim();
-        if (scannedCode && scannedCode !== group.currency) {
-          if (plan === "pro") {
-            const fxRes = await convertCurrency(1, scannedCode, group.currency);
-            if (fxRes) {
-              rate = fxRes.rate;
-              setFx({ originalAmount: res.total || 0, originalCurrency: scannedCode, fxRate: rate });
-            } else {
-              setFxError(scannedCode);
-            }
-          } else {
-            setFxUpsell(scannedCode);
-          }
-        }
-        const conv = (n: number) => r2(n * rate);
-
-        // Expandir cantidades: un "x2" se separa en líneas individuales.
-        const itemRows: ExpenseItem[] = [];
-        for (const s of res.items) {
-          const q = Math.max(1, s.qty || 1);
-          if (q > 1 && s.price > 0) {
-            const unit = r2(s.unitPrice || s.price / q);
-            for (let i = 0; i < q; i++) {
-              const price = conv(i === q - 1 ? r2(s.price - unit * (q - 1)) : unit);
-              itemRows.push({ name: s.name, price, participantIds: allIds });
-            }
-          } else {
-            itemRows.push({ name: s.name, price: conv(s.price), participantIds: allIds });
-          }
-        }
-        setInitial({
-          label: res.description || "",
-          category: res.category || "comida",
-          items: itemRows.length
-            ? itemRows
-            : [{ name: res.description || "", price: conv(res.total || 0), participantIds: allIds }],
-          fees: (res.fees || []).map((f) => ({ ...f, amount: conv(f.amount) })),
-        });
-        setTax(
-          res.tax && (res.tax.amount > 0 || res.tax.rate > 0)
-            ? { ...res.tax, amount: conv(res.tax.amount) }
-            : null
-        );
+        const detected = (res.currency || "").toUpperCase().trim() || "EUR";
+        setPendingScan(res);
+        setOtherCurrency(detected);
+        setStage("currency");
+        return;
       } catch {
         setScanError(true);
         setInitial({ items: [{ name: "", price: 0, participantIds: allIds }], category: "comida" });
         setTax(null);
+        setStage("review");
       }
-      setStage("review");
     };
     reader.readAsDataURL(file);
+  }
+
+  // El usuario confirma (o corrige) la moneda detectada por la IA antes de
+  // aplicar la conversión — el escaneo puede fallar al detectarla si el
+  // ticket no trae símbolo/código visible (el prompt cae a EUR por defecto).
+  async function confirmCurrency(code: string) {
+    const res = pendingScan;
+    if (!res) return;
+    setPendingScan(null);
+    setStage("analyzing");
+
+    let rate = 1;
+    if (code !== group.currency) {
+      if (plan === "pro") {
+        const fxRes = await convertCurrency(1, code, group.currency);
+        if (fxRes) {
+          rate = fxRes.rate;
+          setFx({ originalAmount: res.total || 0, originalCurrency: code, fxRate: rate });
+        } else {
+          setFxError(code);
+        }
+      } else {
+        setFxUpsell(code);
+      }
+    }
+    const conv = (n: number) => r2(n * rate);
+
+    // Expandir cantidades: un "x2" se separa en líneas individuales.
+    const itemRows: ExpenseItem[] = [];
+    for (const s of res.items) {
+      const q = Math.max(1, s.qty || 1);
+      if (q > 1 && s.price > 0) {
+        const unit = r2(s.unitPrice || s.price / q);
+        for (let i = 0; i < q; i++) {
+          const price = conv(i === q - 1 ? r2(s.price - unit * (q - 1)) : unit);
+          itemRows.push({ name: s.name, price, participantIds: allIds });
+        }
+      } else {
+        itemRows.push({ name: s.name, price: conv(s.price), participantIds: allIds });
+      }
+    }
+    setInitial({
+      label: res.description || "",
+      category: res.category || "comida",
+      items: itemRows.length
+        ? itemRows
+        : [{ name: res.description || "", price: conv(res.total || 0), participantIds: allIds }],
+      fees: (res.fees || []).map((f) => ({ ...f, amount: conv(f.amount) })),
+    });
+    setTax(
+      res.tax && (res.tax.amount > 0 || res.tax.rate > 0) ? { ...res.tax, amount: conv(res.tax.amount) } : null
+    );
+    setStage("review");
   }
 
   async function save(r: ItemizedResult) {
@@ -188,6 +204,52 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
           <div className="text-center py-8">
             {preview && <img src={preview} alt="" className="max-h-40 mx-auto rounded-xl mb-4" />}
             <div className="text-sm text-muted">{t("scan.analyzing")}</div>
+          </div>
+        )}
+
+        {stage === "currency" && pendingScan && (
+          <div className="py-2">
+            <h3 className="font-semibold mb-1">{t("scan.confirmCurrencyTitle")}</h3>
+            <p className="text-sm text-muted mb-4">
+              {t("scan.confirmCurrencyBody", { code: (pendingScan.currency || "EUR").toUpperCase() })}
+            </p>
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => confirmCurrency(group.currency)}
+                className="flex-1 rounded-full px-4 py-3 font-semibold text-white hover-lift"
+                style={{ background: "var(--ink)" }}
+              >
+                {group.currency}
+              </button>
+              {group.secondaryCurrency && (
+                <button
+                  onClick={() => confirmCurrency(group.secondaryCurrency!)}
+                  className="flex-1 glass rounded-full px-4 py-3 font-semibold hover-lift"
+                >
+                  {group.secondaryCurrency}
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-muted mb-2">{t("scan.confirmCurrencyOther")}</p>
+            <div className="flex gap-2">
+              <select
+                value={otherCurrency}
+                onChange={(e) => setOtherCurrency(e.target.value)}
+                className="glass rounded-xl px-3 py-2.5 text-sm flex-1"
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.symbol} {c.code} — {localCurrencyName(c.code, lang === "es" ? "es-ES" : "en-US")}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => confirmCurrency(otherCurrency)}
+                className="glass rounded-full px-4 py-2.5 text-sm font-semibold hover-lift shrink-0"
+              >
+                {t("scan.confirmCurrencyConfirm")}
+              </button>
+            </div>
           </div>
         )}
 
