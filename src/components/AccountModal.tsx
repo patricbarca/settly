@@ -187,8 +187,8 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
         bottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom))",
       }}
     >
-      <div className="max-w-2xl mx-auto w-full px-4 pt-5 pb-10 flex-1 overflow-y-auto">
-        <div className="flex items-center gap-3 mb-5">
+      <div className="max-w-2xl mx-auto w-full px-4 pt-5 flex-1 flex flex-col min-h-0">
+        <div className="flex items-center gap-3 mb-5 shrink-0">
           <button
             onClick={onClose}
             className="glass rounded-full h-9 w-9 flex items-center justify-center text-muted hover-lift"
@@ -198,6 +198,8 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           </button>
           <h2 className="font-display text-2xl font-bold">{t("account.title")}</h2>
         </div>
+
+        <div className="flex-1 overflow-y-auto pb-10">
 
         {/* Avatar (Google por defecto; se puede subir una propia) */}
         <div className="flex justify-center mb-5">
@@ -514,6 +516,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
 
         {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
         {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
+        </div>
       </div>
     </div>
   );
