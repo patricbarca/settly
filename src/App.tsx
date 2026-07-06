@@ -1,20 +1,20 @@
 import { useEffect, useState } from "react";
-import { useUser, useAuthPhase, signOut, setProfileName, submitPhone, verifyPhone, skipPhone, usePendingPhone } from "./lib/auth";
+import { useUser, useAuthPhase, setProfileName, submitPhone, verifyPhone, skipPhone, usePendingPhone } from "./lib/auth";
 import { useLang, setLang, useT } from "./lib/i18n";
-import { resetSeed, useActiveGroup, loadGuestMode } from "./lib/store";
+import { resetSeed, useActiveGroup, loadGuestMode, setActiveGroup, addGroup, useGroups } from "./lib/store";
 import { useTheme, toggleTheme } from "./lib/theme";
-import { personColor, initials } from "./lib/format";
 import { joinByToken } from "./lib/invite";
-import { addGroup, setActiveGroup } from "./lib/store";
 import { Icon } from "./components/Icon";
 import { Login } from "./components/Login";
-import { Home } from "./components/Home";
+import { Home, type HomeTab } from "./components/Home";
 import { GroupView } from "./components/GroupView";
 import { Logo } from "./components/Logo";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { AccountModal } from "./components/AccountModal";
 import { NotificationsBell } from "./components/NotificationsBell";
+import { BottomNav, type NavKey } from "./components/BottomNav";
+import { countUnread } from "./lib/notifications";
 import { FeedbackModal } from "./components/FeedbackModal";
 import { registerAppOpen, shouldShowFeedbackPrompt, markFeedbackPromptShown } from "./lib/feedbackPrompt";
 import { AdminDashboard } from "./components/AdminDashboard";
@@ -28,10 +28,21 @@ export default function App() {
   const lang = useLang();
   const theme = useTheme();
   const group = useActiveGroup();
+  const allGroups = useGroups();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
+  const [showActivity, setShowActivity] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [homeTab, setHomeTab] = useState<HomeTab>("groups");
+  const unread = countUnread(allGroups);
+  const navActive: NavKey = showActivity
+    ? "activity"
+    : showAccount
+    ? "profile"
+    : homeTab === "contacts" && !group
+    ? "friends"
+    : "groups";
   // La pantalla de carga se ve al menos 1s (evita un parpadeo si la sesión
   // resuelve casi al instante, p. ej. con Supabase cacheado).
   const [minLoadDone, setMinLoadDone] = useState(false);
@@ -126,7 +137,7 @@ export default function App() {
   if (!user) return <Login />;
 
   return (
-    <div className="min-h-full">
+    <div className="min-h-full pb-20">
       <OfflineBanner />
       <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">
         {user.email === ADMIN_EMAIL && (
@@ -145,7 +156,6 @@ export default function App() {
         >
           <Icon name="help" size={16} />
         </button>
-        <NotificationsBell />
         <button
           onClick={toggleTheme}
           className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
@@ -165,24 +175,27 @@ export default function App() {
             </button>
           ))}
         </div>
-        <div className="glass rounded-full pl-1 pr-1.5 py-1 flex items-center gap-1.5 text-sm">
-          <button onClick={() => setShowAccount(true)} className="flex items-center gap-1.5 hover-lift" title={t("account.title")}>
-            <span
-              className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold"
-              style={{ background: personColor(user.name) + "22" }}
-            >
-              {initials(user.name)}
-            </span>
-            <span className="font-medium max-w-[90px] truncate">{user.name}</span>
-          </button>
-          <button onClick={signOut} className="lk ml-0.5 flex items-center" title={t("app.signout")}>
-            <Icon name="power" size={15} />
-          </button>
-        </div>
       </div>
 
-      {group ? <GroupView group={group} /> : <Home />}
+      {group ? <GroupView group={group} /> : <Home tab={homeTab} />}
 
+      <BottomNav
+        active={navActive}
+        unread={unread}
+        userName={user.name}
+        onGroups={() => {
+          setActiveGroup(null);
+          setHomeTab("groups");
+        }}
+        onFriends={() => {
+          setActiveGroup(null);
+          setHomeTab("contacts");
+        }}
+        onActivity={() => setShowActivity(true)}
+        onProfile={() => setShowAccount(true)}
+      />
+
+      {showActivity && <NotificationsBell open={showActivity} onClose={() => setShowActivity(false)} />}
       {showAdmin && <AdminDashboard onClose={() => setShowAdmin(false)} />}
       {showAccount && <AccountModal onClose={() => setShowAccount(false)} />}
 

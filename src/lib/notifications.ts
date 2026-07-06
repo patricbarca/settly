@@ -49,3 +49,13 @@ export function saveSeen(seen: Set<string>) {
     /* localStorage no disponible */
   }
 }
+
+/** Nº de notificaciones sin leer — para el badge del botón "Actividad" de la
+ *  barra inferior. Se deriva de localStorage en cada llamada (sin estado
+ *  propio) para que quede al día en cuanto NotificationsBell marca como
+ *  vistas las que había al abrir. */
+export function countUnread(groups: Group[]): number {
+  const items = buildFeed(groups);
+  const seen = loadSeen();
+  return items.filter((n) => !seen.has(n.id)).length;
+}

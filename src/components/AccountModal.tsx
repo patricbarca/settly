@@ -1,6 +1,6 @@
 import { useState, useMemo, type ChangeEvent } from "react";
 import type { PayType, PayMethod } from "../lib/types";
-import { useUser, setProfileName, setProfileAvatar, setProfileExtra, deleteAccount } from "../lib/auth";
+import { useUser, setProfileName, setProfileAvatar, setProfileExtra, deleteAccount, signOut } from "../lib/auth";
 import { useAllGroups, updateMyMember } from "../lib/store";
 import { fileToAvatarDataUrl } from "../lib/image";
 import { personColor, memberInitials } from "../lib/format";
@@ -488,6 +488,14 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
             {t("common.close")}
           </button>
         </div>
+
+        <button
+          onClick={signOut}
+          className="mt-4 w-full rounded-full py-2.5 text-sm font-semibold glass hover-lift inline-flex items-center justify-center gap-1.5 text-muted"
+        >
+          <Icon name="power" size={14} />
+          {t("app.signout")}
+        </button>
 
         {/* Danger zone: delete account */}
         <div className="mt-6 pt-4" style={{ borderTop: "1px solid var(--line)" }}>

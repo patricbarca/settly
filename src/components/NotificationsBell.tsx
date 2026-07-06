@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useGroups } from "../lib/store";
 import { buildFeed, loadSeen, saveSeen, type FeedItem } from "../lib/notifications";
 import { buildActivity, type ActivityItem } from "../lib/activity";
@@ -49,28 +49,29 @@ const ACTIVITY_ICON: Record<ActivityType, IconName> = {
 
 type Tab = "notifications" | "activity";
 
-export function NotificationsBell() {
+/** Vista de Notificaciones/Actividad — controlada por la barra inferior
+ *  (el botón "Actividad" pasa `open`; el badge de no-leídas vive ahí, vía
+ *  `countUnread` en lib/notifications.ts). */
+export function NotificationsBell({ open, onClose }: { open: boolean; onClose: () => void }) {
   const t = useT();
   const lang = useLang();
   const tz = useTimezone();
   const groups = useGroups();
-  const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<Tab>("notifications");
   const [seen, setSeen] = useState<Set<string>>(() => loadSeen());
 
   const items = useMemo(() => buildFeed(groups), [groups]);
   const activity = useMemo(() => buildActivity(groups), [groups]);
-  const unread = items.filter((n) => !seen.has(n.id)).length;
 
-  function open_(next: boolean) {
-    setOpen(next);
-    if (next && items.length) {
-      const s = new Set(seen);
-      items.forEach((n) => s.add(n.id));
-      setSeen(s);
-      saveSeen(s);
-    }
-  }
+  // Al abrir, marca como vistas las notificaciones que había en ese momento.
+  useEffect(() => {
+    if (!open || !items.length) return;
+    const s = new Set(seen);
+    items.forEach((n) => s.add(n.id));
+    setSeen(s);
+    saveSeen(s);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   function notifMessage(n: FeedItem): string {
     const amt = n.amount != null ? money(n.amount, n.currency) : "";
@@ -107,39 +108,21 @@ export function NotificationsBell() {
     });
   }
 
-  return (
-    <div className="relative">
-      <button
-        onClick={() => open_(true)}
-        className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
-        title={t("notif.title")}
-      >
-        <Icon name="bell" size={16} />
-      </button>
-      {/* El badge va FUERA del botón .glass (que recorta con overflow:hidden),
-          si no el número se ve cortado dentro del círculo. */}
-      {unread > 0 && (
-        <span
-          className="absolute -top-1.5 -right-1.5 min-w-[17px] h-[17px] px-[3px] rounded-full text-[10px] font-bold text-white flex items-center justify-center leading-none tabular-nums pointer-events-none"
-          style={{ background: "var(--coral)", boxShadow: "0 0 0 2px var(--surface)" }}
-        >
-          {unread > 9 ? "9+" : unread}
-        </span>
-      )}
+  if (!open) return null;
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex flex-col anim-up" style={{ background: "var(--bg)", paddingTop: "env(safe-area-inset-top)" }}>
-          <div className="max-w-2xl mx-auto w-full px-4 pt-5 flex-1 flex flex-col min-h-0">
-            <div className="flex items-center gap-3 mb-4">
-              <button
-                onClick={() => setOpen(false)}
-                className="glass rounded-full h-9 w-9 flex items-center justify-center text-muted hover-lift"
-                title={t("common.back")}
-              >
-                <Icon name="back" size={16} />
-              </button>
-              <h2 className="font-display text-2xl font-bold">{t("notif.title")}</h2>
-            </div>
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col anim-up" style={{ background: "var(--bg)", paddingTop: "env(safe-area-inset-top)" }}>
+      <div className="max-w-2xl mx-auto w-full px-4 pt-5 flex-1 flex flex-col min-h-0">
+        <div className="flex items-center gap-3 mb-4">
+          <button
+            onClick={onClose}
+            className="glass rounded-full h-9 w-9 flex items-center justify-center text-muted hover-lift"
+            title={t("common.back")}
+          >
+            <Icon name="back" size={16} />
+          </button>
+          <h2 className="font-display text-2xl font-bold">{t("notif.title")}</h2>
+        </div>
 
             {/* Selector Notificaciones | Actividad */}
             <div className="flex gap-1.5 mb-4">
@@ -219,8 +202,6 @@ export function NotificationsBell() {
               )}
             </div>
           </div>
-        </div>
-      )}
-    </div>
+      </div>
   );
 }
