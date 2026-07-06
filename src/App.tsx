@@ -139,43 +139,45 @@ export default function App() {
   return (
     <div className="pb-20" style={{ minHeight: "calc(100vh + 1px)" }}>
       <OfflineBanner />
-      <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">
-        {user.email === ADMIN_EMAIL && (
-          <button
-            onClick={() => setShowAdmin(true)}
-            className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
-            title="Admin"
-          >
-            <Icon name="chart" size={16} />
-          </button>
-        )}
-        <button
-          onClick={() => setShowOnboarding(true)}
-          className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
-          title={t("onboard.replay")}
-        >
-          <Icon name="help" size={16} />
-        </button>
-        <button
-          onClick={toggleTheme}
-          className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
-          title={theme === "dark" ? "Light" : "Dark"}
-        >
-          <Icon name={theme === "dark" ? "sun" : "moon"} size={16} />
-        </button>
-        <div className="glass rounded-full p-0.5 flex text-xs font-semibold">
-          {(["es", "en"] as const).map((l) => (
+      {!group && homeTab === "groups" && (
+        <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">
+          {user.email === ADMIN_EMAIL && (
             <button
-              key={l}
-              onClick={() => setLang(l)}
-              className={`px-2.5 py-1 rounded-full ${lang === l ? "" : "text-muted"}`}
-              style={lang === l ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+              onClick={() => setShowAdmin(true)}
+              className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
+              title="Admin"
             >
-              {l.toUpperCase()}
+              <Icon name="chart" size={16} />
             </button>
-          ))}
+          )}
+          <button
+            onClick={() => setShowOnboarding(true)}
+            className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
+            title={t("onboard.replay")}
+          >
+            <Icon name="help" size={16} />
+          </button>
+          <button
+            onClick={toggleTheme}
+            className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
+            title={theme === "dark" ? "Light" : "Dark"}
+          >
+            <Icon name={theme === "dark" ? "sun" : "moon"} size={16} />
+          </button>
+          <div className="glass rounded-full p-0.5 flex text-xs font-semibold">
+            {(["es", "en"] as const).map((l) => (
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                className={`px-2.5 py-1 rounded-full ${lang === l ? "" : "text-muted"}`}
+                style={lang === l ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+              >
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {group ? <GroupView group={group} /> : <Home tab={homeTab} />}
 
