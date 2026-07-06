@@ -137,7 +137,7 @@ export default function App() {
   if (!user) return <Login />;
 
   return (
-    <div className="min-h-full pb-20">
+    <div className="pb-20" style={{ minHeight: "calc(100vh + 1px)" }}>
       <OfflineBanner />
       <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">
         {user.email === ADMIN_EMAIL && (
