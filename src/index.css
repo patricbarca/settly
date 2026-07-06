@@ -57,6 +57,12 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: color 0.2s ease;
+  /* La PWA en iOS usa status-bar-style "black-translucent" (deja ver el
+     tema día/noche debajo de la barra de estado en vez de blanco fijo),
+     así que el contenido normal necesita este espacio para no quedar
+     tapado por la barra/notch. El splash de carga es `fixed inset-0` y
+     no se ve afectado. */
+  padding-top: env(safe-area-inset-top);
 }
 
 .font-display { font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em; }
