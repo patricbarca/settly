@@ -256,6 +256,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "add.scan": { es: "Escanear", en: "Scan" },
   "add.review": { es: "Revisa y confirma", en: "Review and confirm" },
   "add.manualReview": { es: "Ingresar gasto", en: "Enter expense" },
+  "add.manualCurrency": { es: "Moneda del monto", en: "Amount's currency" },
+  "add.manualCurrencyHint": { es: "Se convertirá a la moneda del grupo al guardar ({rate}).", en: "Will convert to the group's currency on save ({rate})." },
   "add.submit": { es: "Añadir gasto", en: "Add expense" },
   "add.dictate": { es: "Dictar", en: "Dictate" },
   "add.voiceOff": { es: "Voz no disponible en este navegador", en: "Voice not available in this browser" },
