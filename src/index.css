@@ -58,6 +58,13 @@
    una posición que ya no existe tras un cambio de contenido corto↔largo. */
 html, body, #root { height: 100%; margin: 0; overflow: hidden; }
 
+/* `<html>` en sí nunca tuvo fondo propio (solo `body`) — en iOS, un desajuste
+   entre el viewport visual y el real puede dejar asomar el blanco por
+   defecto del navegador en un borde (ya se parcheaba solo para el splash de
+   carga, vía JS en App.tsx). Con fondo aquí, cualquier resquicio queda del
+   color del tema en vez de blanco puro, se note o no el resquicio. */
+html { background: var(--bg); }
+
 body {
   font-family: 'Instrument Sans', system-ui, sans-serif;
   color: var(--ink);
