@@ -51,7 +51,12 @@
 .surface-soft { background: var(--surface-soft); }
 
 * { box-sizing: border-box; }
-html, body, #root { height: 100%; margin: 0; }
+/* La app entera vive en un shell `fixed inset-0` con un único contenedor
+   interno con scroll (#main-scroll, ver App.tsx) — el documento en sí nunca
+   hace scroll. Esto evita el "hueco en blanco" que iOS/WKWebView puede dejar
+   bajo elementos fixed cuando el scroll de `window`/`body` queda a mitad de
+   una posición que ya no existe tras un cambio de contenido corto↔largo. */
+html, body, #root { height: 100%; margin: 0; overflow: hidden; }
 
 body {
   font-family: 'Instrument Sans', system-ui, sans-serif;
@@ -184,7 +189,7 @@ button:focus-visible, input:focus-visible, a:focus-visible, [role="button"]:focu
 @media print {
   @page { size: auto; margin: 12mm; }
   /* Fondo blanco en TODA la hoja (no solo el bloque imprimible). */
-  html, body { background: #fff !important; height: auto !important; }
+  html, body { background: #fff !important; height: auto !important; overflow: visible !important; }
   body * { visibility: hidden !important; }
 
   /* El reporte vive dentro de un modal position:fixed centrado (max-w-2xl).
