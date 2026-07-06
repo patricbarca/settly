@@ -65,6 +65,20 @@ export function ContactsView() {
     );
   }
 
+  // Rellena la lista con "espacios libres" hasta un mínimo de filas — así la
+  // vista no se ve vacía/incompleta mientras aún no tienes (muchos) contactos.
+  const MIN_SLOTS = 5;
+  const emptySlots = Math.max(0, MIN_SLOTS - visible.length);
+
+  function EmptySlot() {
+    return (
+      <div className="rounded-3xl px-3 py-2.5 flex items-center gap-3" style={{ border: "1.5px dashed var(--line)" }}>
+        <span className="h-9 w-9 rounded-full shrink-0" style={{ border: "1.5px dashed var(--line)" }} />
+        <div className="text-xs text-muted">{t("contacts.emptySlot")}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
       <button
@@ -96,29 +110,33 @@ export function ContactsView() {
 
       {loading ? (
         <div className="glass rounded-3xl p-8 text-center text-muted">{t("contacts.loading")}</div>
-      ) : network.length === 0 ? (
-        <div className="glass rounded-3xl p-8 text-center text-muted">{t("contacts.empty")}</div>
-      ) : visible.length === 0 ? (
+      ) : q && visible.length === 0 ? (
         <div className="glass rounded-3xl p-8 text-center text-muted">{t("contacts.none")}</div>
       ) : (
-        <div className="space-y-1.5">
-          {visible.map((c) => (
-            <div key={c.userId} className="glass rounded-3xl px-3 py-2.5 flex items-center gap-3">
-              <Avatar c={c} />
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-sm truncate">{c.name}</div>
-                {c.email && <div className="text-[11px] text-muted truncate">{c.email}</div>}
+        <>
+          {network.length === 0 && (
+            <p className="text-xs text-muted px-1">{t("contacts.empty")}</p>
+          )}
+          <div className="space-y-1.5">
+            {visible.map((c) => (
+              <div key={c.userId} className="glass rounded-3xl px-3 py-2.5 flex items-center gap-3">
+                <Avatar c={c} />
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-sm truncate">{c.name}</div>
+                  {c.email && <div className="text-[11px] text-muted truncate">{c.email}</div>}
+                </div>
+                <button
+                  onClick={() => hide(c.userId)}
+                  className="glass rounded-full h-8 w-8 flex items-center justify-center hover-lift lk-danger text-muted shrink-0"
+                  title={t("contacts.remove")}
+                >
+                  <Icon name="close" size={14} />
+                </button>
               </div>
-              <button
-                onClick={() => hide(c.userId)}
-                className="glass rounded-full h-8 w-8 flex items-center justify-center hover-lift lk-danger text-muted shrink-0"
-                title={t("contacts.remove")}
-              >
-                <Icon name="close" size={14} />
-              </button>
-            </div>
-          ))}
-        </div>
+            ))}
+            {!q && Array.from({ length: emptySlots }, (_, i) => <EmptySlot key={i} />)}
+          </div>
+        </>
       )}
 
       {/* Ocultos (restaurables) */}
