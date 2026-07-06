@@ -7,3 +7,9 @@ dist-ssr
 .DS_Store
 *.log
 .claude/
+
+# Android signing (never commit the release keystore or its passwords)
+android/app/release.keystore
+android/app/*.keystore
+android/app/*.jks
+android/local.properties
