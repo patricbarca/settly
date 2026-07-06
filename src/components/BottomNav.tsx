@@ -2,6 +2,8 @@ import { useT } from "../lib/i18n";
 import { personColor, initials } from "../lib/format";
 import { Icon, type IconName } from "./Icon";
 
+declare const __BUILD_ID__: string;
+
 export type NavKey = "groups" | "friends" | "activity" | "profile";
 
 /** Barra de navegación inferior, siempre visible tras el login — sustituye el
@@ -34,7 +36,7 @@ export function BottomNav({
 
   return (
     <nav
-      className="fixed bottom-0 inset-x-0 z-40 glass-strong"
+      className="fixed bottom-0 inset-x-0 z-40 surface"
       style={{ paddingBottom: "env(safe-area-inset-bottom)", borderTop: "1px solid var(--line)" }}
     >
       <div className="max-w-2xl mx-auto px-2 flex items-stretch">
@@ -76,6 +78,7 @@ export function BottomNav({
           <span className="text-[11px] font-medium">{t("nav.profile")}</span>
         </button>
       </div>
+      <div className="text-center text-[9px] opacity-40 font-mono pb-1">v {__BUILD_ID__}</div>
     </nav>
   );
 }
