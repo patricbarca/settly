@@ -514,6 +514,8 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
+        <div className="text-center text-[10px] opacity-40 font-mono mt-8">v {__BUILD_ID__}</div>
+
         {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
         {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
         </div>
