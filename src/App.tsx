@@ -36,9 +36,21 @@ export default function App() {
   // resuelve casi al instante, p. ej. con Supabase cacheado).
   const [minLoadDone, setMinLoadDone] = useState(false);
   useEffect(() => {
-    const id = setTimeout(() => setMinLoadDone(true), 1000);
+    const id = setTimeout(() => setMinLoadDone(true), 2000);
     return () => clearTimeout(id);
   }, []);
+  const showLoading = phase === "loading" || !minLoadDone;
+
+  // Mientras se ve el splash, el theme-color debe coincidir con su fondo
+  // navy (si no, la barra de estado/navegador se ve de otro color arriba).
+  useEffect(() => {
+    const meta = document.querySelector('meta[name="theme-color"]');
+    const prev = meta?.getAttribute("content") ?? null;
+    if (showLoading && meta) meta.setAttribute("content", "#0D1B2A");
+    return () => {
+      if (meta && prev) meta.setAttribute("content", prev);
+    };
+  }, [showLoading]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -89,12 +101,16 @@ export default function App() {
     return () => clearTimeout(id);
   }, [phase]);
 
-  if (phase === "loading" || !minLoadDone) {
+  if (showLoading) {
     return (
-      <div className="min-h-full flex items-center justify-center">
+      <div
+        className="fixed inset-0 flex flex-col items-center justify-center gap-3"
+        style={{ background: "#0D1B2A" }}
+      >
         <div className="anim-logo-pulse">
           <Logo size={64} />
         </div>
+        <div className="text-white font-display text-2xl font-extrabold">Settlia</div>
       </div>
     );
   }
