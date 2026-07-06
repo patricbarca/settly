@@ -184,6 +184,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "contacts.invite": { es: "Invitar amigos", en: "Invite friends" },
   "contacts.inviteText": { es: "Únete a mí en Settlia para dividir gastos en grupo fácilmente", en: "Join me on Settlia to split group expenses easily" },
   "contacts.inviteCopied": { es: "Enlace copiado", en: "Link copied" },
+  "contacts.emptySlot": { es: "Espacio libre — invita a alguien", en: "Empty slot — invite someone" },
   "home.yourGroups": { es: "Tus grupos", en: "Your groups" },
   "home.overall": { es: "Tu balance global", en: "Your overall balance" },
   "home.continuousTitle": { es: "Cuentas continuas", en: "Continuous accounts" },
