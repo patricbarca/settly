@@ -180,7 +180,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Overlay onClose={onClose}>
+    <Overlay onClose={onClose} respectBottomNav>
       <div
         className="glass-strong rounded-3xl w-full max-w-sm p-6 anim-pop max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}

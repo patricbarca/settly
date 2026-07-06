@@ -111,7 +111,14 @@ export function NotificationsBell({ open, onClose }: { open: boolean; onClose: (
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col anim-up" style={{ background: "var(--bg)", paddingTop: "env(safe-area-inset-top)" }}>
+    <div
+      className="fixed inset-x-0 top-0 z-30 flex flex-col anim-up"
+      style={{
+        background: "var(--bg)",
+        paddingTop: "env(safe-area-inset-top)",
+        bottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom))",
+      }}
+    >
       <div className="max-w-2xl mx-auto w-full px-4 pt-5 flex-1 flex flex-col min-h-0">
         <div className="flex items-center gap-3 mb-4">
           <button
