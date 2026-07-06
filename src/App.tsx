@@ -32,6 +32,13 @@ export default function App() {
   const [showAccount, setShowAccount] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  // La pantalla de carga se ve al menos 1s (evita un parpadeo si la sesión
+  // resuelve casi al instante, p. ej. con Supabase cacheado).
+  const [minLoadDone, setMinLoadDone] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setMinLoadDone(true), 1000);
+    return () => clearTimeout(id);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -82,7 +89,7 @@ export default function App() {
     return () => clearTimeout(id);
   }, [phase]);
 
-  if (phase === "loading") {
+  if (phase === "loading" || !minLoadDone) {
     return (
       <div className="min-h-full flex items-center justify-center">
         <div className="anim-logo-pulse">
