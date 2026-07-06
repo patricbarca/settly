@@ -5,6 +5,7 @@ import { groupSettleScore } from "../lib/gamification";
 import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { usePlan, FREE_GROUP_LIMIT } from "../lib/plan";
+import { resetMainScroll } from "../lib/scroll";
 import { TrialBanner } from "./TrialBanner";
 import { Logo } from "./Logo";
 import { Icon } from "./Icon";
@@ -29,12 +30,10 @@ export function Home({ tab }: { tab: HomeTab }) {
   const [paywallReason, setPaywallReason] = useState<string | undefined>(undefined);
 
   // Al cambiar de pestaña (Grupos/Amigos) el contenido puede pasar de largo a
-  // corto (o viceversa) sin una navegación real de página — en iOS/WKWebView
-  // eso puede dejar el scroll "atascado" en una posición que ya no existe,
-  // mostrando un hueco en blanco bajo la barra inferior hasta que se corrige
-  // solo. Forzamos el reset aquí, igual que GroupView hace al cambiar de grupo.
+  // corto (o viceversa) — reseteamos el scroll del contenedor para no dejarlo
+  // a mitad de una posición que ya no existe en la pestaña corta.
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    resetMainScroll();
   }, [tab]);
 
   const active = groups.filter((g) => !g.archived);

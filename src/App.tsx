@@ -137,47 +137,74 @@ export default function App() {
   if (!user) return <Login />;
 
   return (
-    <div className="min-h-full pb-20">
-      <OfflineBanner />
-      <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">
-        {user.email === ADMIN_EMAIL && (
-          <button
-            onClick={() => setShowAdmin(true)}
-            className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
-            title="Admin"
-          >
-            <Icon name="chart" size={16} />
-          </button>
-        )}
-        <button
-          onClick={() => setShowOnboarding(true)}
-          className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
-          title={t("onboard.replay")}
-        >
-          <Icon name="help" size={16} />
-        </button>
-        <button
-          onClick={toggleTheme}
-          className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
-          title={theme === "dark" ? "Light" : "Dark"}
-        >
-          <Icon name={theme === "dark" ? "sun" : "moon"} size={16} />
-        </button>
-        <div className="glass rounded-full p-0.5 flex text-xs font-semibold">
-          {(["es", "en"] as const).map((l) => (
+    <div className="fixed inset-0 flex flex-col" style={{ background: "var(--bg)" }}>
+      <div
+        id="main-scroll"
+        className="flex-1 overflow-y-auto"
+        style={{
+          paddingTop: "env(safe-area-inset-top)",
+          paddingBottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom))",
+        }}
+      >
+        <OfflineBanner />
+        <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">
+          {user.email === ADMIN_EMAIL && (
             <button
-              key={l}
-              onClick={() => setLang(l)}
-              className={`px-2.5 py-1 rounded-full ${lang === l ? "" : "text-muted"}`}
-              style={lang === l ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+              onClick={() => setShowAdmin(true)}
+              className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
+              title="Admin"
             >
-              {l.toUpperCase()}
+              <Icon name="chart" size={16} />
             </button>
-          ))}
+          )}
+          <button
+            onClick={() => setShowOnboarding(true)}
+            className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
+            title={t("onboard.replay")}
+          >
+            <Icon name="help" size={16} />
+          </button>
+          <button
+            onClick={toggleTheme}
+            className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
+            title={theme === "dark" ? "Light" : "Dark"}
+          >
+            <Icon name={theme === "dark" ? "sun" : "moon"} size={16} />
+          </button>
+          <div className="glass rounded-full p-0.5 flex text-xs font-semibold">
+            {(["es", "en"] as const).map((l) => (
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                className={`px-2.5 py-1 rounded-full ${lang === l ? "" : "text-muted"}`}
+                style={lang === l ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+              >
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {group ? <GroupView group={group} /> : <Home tab={homeTab} />}
+        {group ? <GroupView group={group} /> : <Home tab={homeTab} />}
+
+        <footer className="max-w-2xl mx-auto px-4 text-center text-xs text-muted pb-10 leading-relaxed">
+          {phase === "guest" ? (
+            <>
+              {t("app.footer")}{" "}
+              <button onClick={resetSeed} className="lk underline">
+                {t("app.resetDemo")}
+              </button>
+            </>
+          ) : (
+            <>
+              {t("app.footerCloud")}{" "}
+              <a href="mailto:hello@settlia.app" className="lk underline">
+                hello@settlia.app
+              </a>
+            </>
+          )}
+        </footer>
+      </div>
 
       <BottomNav
         active={navActive}
@@ -219,24 +246,6 @@ export default function App() {
           }}
         />
       )}
-
-      <footer className="max-w-2xl mx-auto px-4 text-center text-xs text-muted pb-10 leading-relaxed">
-        {phase === "guest" ? (
-          <>
-            {t("app.footer")}{" "}
-            <button onClick={resetSeed} className="lk underline">
-              {t("app.resetDemo")}
-            </button>
-          </>
-        ) : (
-          <>
-            {t("app.footerCloud")}{" "}
-            <a href="mailto:hello@settlia.app" className="lk underline">
-              hello@settlia.app
-            </a>
-          </>
-        )}
-      </footer>
     </div>
   );
 }
@@ -254,7 +263,7 @@ function SetNameScreen() {
   }
 
   return (
-    <div className="min-h-full flex items-center justify-center p-4">
+    <div className="h-full overflow-y-auto flex items-center justify-center p-4">
       <div className="glass-strong rounded-3xl p-8 w-full max-w-sm text-center anim-pop">
         <div className="flex justify-center mb-4">
           <Logo size={48} />
@@ -334,7 +343,7 @@ function PhoneScreen() {
 
   if (phase === "phone_otp_sent" && pendingPhone) {
     return (
-      <div className="min-h-full flex items-center justify-center p-4">
+      <div className="h-full overflow-y-auto flex items-center justify-center p-4">
         <div className="glass-strong rounded-3xl p-8 w-full max-w-sm text-center anim-pop">
           <div className="flex justify-center mb-4"><Logo size={48} /></div>
           <div className="text-4xl mb-3">📱</div>
@@ -369,7 +378,7 @@ function PhoneScreen() {
   }
 
   return (
-    <div className="min-h-full flex items-center justify-center p-4">
+    <div className="h-full overflow-y-auto flex items-center justify-center p-4">
       <div className="glass-strong rounded-3xl p-8 w-full max-w-sm text-center anim-pop">
         <div className="flex justify-center mb-4"><Logo size={48} /></div>
         <div className="text-4xl mb-3">📱</div>
