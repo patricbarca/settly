@@ -6,6 +6,7 @@ import { withNotif } from "../lib/notifications";
 import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { parseExpenseAI } from "../lib/ai";
+import { convertCurrency, fmtRate } from "../lib/fx";
 import { CATEGORIES } from "../lib/types";
 import { useSpeech } from "../lib/speech";
 import { uid, money } from "../lib/format";
@@ -15,6 +16,8 @@ import { Icon } from "./Icon";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 import { ScanReceiptModal } from "./ScanReceiptModal";
 import { Paywall } from "./Paywall";
+
+type FxInfo = { originalAmount: number; originalCurrency: string; fxRate: number };
 
 const INTERVALS: RecurrenceInterval[] = ["daily", "weekly", "monthly", "yearly"];
 type ExpenseType = "one-time" | "recurring";
@@ -35,6 +38,9 @@ export function AddExpense({ group }: { group: Group }) {
   const [interpreting, setInterpreting] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [fx, setFx] = useState<FxInfo | null>(null);
+  const [fxUpsell, setFxUpsell] = useState<string | null>(null);
+  const [fxError, setFxError] = useState<string | null>(null);
   const lang = useLang();
   // La voz va directa a la validación: transcribe → interpreta sin pulsar nada.
   const sp = useSpeech((tx) => {
@@ -59,10 +65,35 @@ export function AddExpense({ group }: { group: Group }) {
     const src = (override ?? text).trim();
     if (!src || interpreting) return;
     setInterpreting(true);
+    setFx(null);
+    setFxUpsell(null);
+    setFxError(null);
     // Con Pro o cupo disponible, usa el LLM (función parse-expense). Si no hay
     // cupo, falla o no está desplegado, cae al parser local de regex (gratis).
     let r: ParsedExpense | null = await tryAI(src, kind);
     if (!r) r = parseExpense(src, group.members, group.meId);
+
+    // Moneda distinta a la del grupo (solo la vía IA la detecta): convertir
+    // (Pro) o avisar (free), igual que en el escaneo de recibos.
+    if (r.currency && r.currency !== group.currency) {
+      if (pro) {
+        const fxRes = await convertCurrency(1, r.currency, group.currency);
+        if (fxRes) {
+          const rate = fxRes.rate;
+          setFx({ originalAmount: r.amount, originalCurrency: r.currency, fxRate: rate });
+          r = {
+            ...r,
+            amount: Math.round(r.amount * rate * 100) / 100,
+            payments: (r.payments ?? []).map((p) => ({ ...p, amount: Math.round(p.amount * rate * 100) / 100 })),
+          };
+        } else {
+          setFxError(r.currency);
+        }
+      } else {
+        setFxUpsell(r.currency);
+      }
+    }
+
     // Varios pagadores: solo si la IA devolvió ≥2 y los importes cuadran con
     // el total (si no, dejamos un único pagador para no crear un borrador roto).
     const pays = r.payments ?? [];
@@ -126,6 +157,7 @@ export function AddExpense({ group }: { group: Group }) {
       return {
         label: ai.label || "",
         amount: ai.amount || 0,
+        currency: ai.currency,
         payerId: ids.has(ai.payerId) ? ai.payerId : group.meId,
         payments,
         participantIds: participantIds.length ? participantIds : group.members.map((m) => m.id),
@@ -139,6 +171,9 @@ export function AddExpense({ group }: { group: Group }) {
 
   function manual() {
     setAiSummary(null);
+    setFx(null);
+    setFxUpsell(null);
+    setFxError(null);
     setDraft({
       label: "",
       amount: "",
@@ -185,6 +220,7 @@ export function AddExpense({ group }: { group: Group }) {
             category: d.category,
             date: new Date().toISOString().slice(0, 10),
             createdBy: group.meId,
+            ...(fx ? { originalAmount: fx.originalAmount, originalCurrency: fx.originalCurrency, fxRate: fx.fxRate } : {}),
           },
           ...g.expenses,
         ],
@@ -213,6 +249,9 @@ export function AddExpense({ group }: { group: Group }) {
     setText("");
     setExpenseType("one-time");
     setAiSummary(null);
+    setFx(null);
+    setFxUpsell(null);
+    setFxError(null);
   }
 
   return (
@@ -296,6 +335,32 @@ export function AddExpense({ group }: { group: Group }) {
             <div className="mb-3 -mt-1 flex items-start gap-1.5 text-[11px] text-muted">
               <Icon name="sparkles" size={12} className="mt-0.5 shrink-0" style={{ color: "var(--teal)" }} />
               <span><b className="font-semibold">{t("ai.assumed")}:</b> {aiSummary}</span>
+            </div>
+          )}
+
+          {fx && (
+            <div className="glass rounded-xl px-3 py-2 mb-3 text-xs" style={{ color: "var(--teal)" }}>
+              {t("scan.fxConverted", {
+                amt: money(fx.originalAmount, fx.originalCurrency),
+                rate: `1 ${fx.originalCurrency} ≈ ${fmtRate(fx.fxRate)} ${group.currency}`,
+              })}
+            </div>
+          )}
+          {fxError && (
+            <div className="rounded-xl px-3 py-2 mb-3 text-xs" style={{ background: "rgba(255,90,77,0.12)", color: "var(--coral)" }}>
+              {t("scan.fxFailed", { code: fxError })}
+            </div>
+          )}
+          {fxUpsell && (
+            <div className="glass rounded-xl px-3 py-2 mb-3 flex items-center justify-between gap-2 text-xs">
+              <span>{t("scan.fxUpsell", { code: fxUpsell, target: group.currency })}</span>
+              <button
+                onClick={() => setShowPaywall(true)}
+                className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift"
+                style={{ background: "var(--indigo)" }}
+              >
+                {t("scan.fxUpsellCta")}
+              </button>
             </div>
           )}
 

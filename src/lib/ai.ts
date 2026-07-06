@@ -9,6 +9,7 @@ import type { Member, Category, RecurrenceInterval } from "./types";
 export type AIParsedExpense = {
   label: string;
   amount: number;
+  currency?: string;
   payerId: string;
   payments?: { memberId: string; amount: number }[];
   participantIds: string[];

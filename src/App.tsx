@@ -49,6 +49,14 @@ export default function App() {
     meta.setAttribute("content", showLoading ? "#0D1B2A" : theme === "dark" ? "#0D0F14" : "#EDF0EB");
   }, [showLoading, theme]);
 
+  // El splash es `fixed inset-0`, pero en iOS un desajuste entre el viewport
+  // visual y el real puede dejar un resquicio del fondo blanco por defecto de
+  // <html> asomando en un borde. Mientras dura, forzamos ese fondo a navy
+  // también para que no se note ningún hueco.
+  useEffect(() => {
+    document.documentElement.style.background = showLoading ? "#0D1B2A" : "";
+  }, [showLoading]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("join");

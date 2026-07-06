@@ -21,6 +21,9 @@ const CAT_KW: [RegExp, Category][] = [
 export interface ParsedExpense {
   label: string;
   amount: number;
+  /** Moneda ISO detectada (solo la vía IA la rellena; el parser local de
+   *  regex asume siempre la moneda del grupo). */
+  currency?: string;
   payerId: string;
   payments?: { memberId: string; amount: number }[];
   participantIds: string[];

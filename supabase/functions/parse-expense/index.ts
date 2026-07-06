@@ -16,7 +16,11 @@
 //   AI_TEXT_API_URL  (def. https://api.groq.com/openai/v1/chat/completions)
 //   AI_TEXT_MODEL    (def. llama-3.1-8b-instant)
 // ============================================================
-import { corsHeaders } from "../_shared/cors.ts";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 const API_KEY =
   Deno.env.get("AI_TEXT_API_KEY") ?? Deno.env.get("STT_API_KEY") ?? "";
@@ -51,10 +55,11 @@ Currency: ${currency}
 Note: "${text}"
 
 Return a JSON object with exactly these keys:
-{"label":"short title","amount":0,"payments":[{"memberId":"<member id>","amount":0}],"participantIds":["<member id>",...],"category":"<one allowed category>","interval":null}
+{"label":"short title","amount":0,"currency":"XXX","payments":[{"memberId":"<member id>","amount":0}],"participantIds":["<member id>",...],"category":"<one allowed category>","interval":null}
 
 Rules:
 - amount: numeric TOTAL only (no currency symbol; use a dot for decimals).
+- currency: ISO 4217 code (3 letters) of the currency the amount is stated in. Detect words/symbols in the note (e.g. "dong"/"₫"→VND, "dollars"/"USD"/"$"→USD, "euros"/"€"→EUR, "pounds"/"£"→GBP, "yen"/"¥"→JPY, "pesos argentinos"→ARS). If the note does NOT mention a currency, or it matches the group's currency, use the group's currency shown above (${currency}). Never guess an exchange rate yourself — only report which currency the number is in.
 - PER-PERSON amounts: if the note states the amount PER PERSON ("X each", "X cada uno", "X c/u", "X por cabeza", "X por persona", "X apiece"), then the TOTAL amount = that number multiplied by the number of participantIds. Example: "Cinema 12 each" with 4 participants -> amount 48.
 - payments: who actually PAID and how much. One entry per payer; the amounts MUST sum to the total amount. If paid evenly between payers, divide the total. If unclear who paid, use a single entry: [{"memberId":"${meId}","amount":<total>}].
 - participantIds: who SHARES the cost — INDEPENDENT from who paid. DEFAULT = the WHOLE group (ALL member ids). Only use a subset when the note EXPLICITLY limits who shares (e.g. "only Ana and me", "except Luis", "menos Luis"). Naming who PAID never limits who shares. When in doubt, include ALL member ids.
@@ -62,14 +67,15 @@ Rules:
 - interval: "daily" | "weekly" | "monthly" | "yearly" if recurring, else null.
 - Match names loosely: nicknames and diminutives count (e.g. "Ale" -> "Alecita", "Pato" -> "Patricio"). Output member IDS, not names.
 
-Examples (sample roster — a: Ana, b: Luis, c: Me; "me"=c). Learn the behavior, then apply to the REAL members listed above:
-- "Cena 80" -> {"label":"Cena","amount":80,"payments":[{"memberId":"c","amount":80}],"participantIds":["a","b","c"],"category":"comida","interval":null}
-- "Cine 32 cada uno" -> {"label":"Cine","amount":96,"payments":[{"memberId":"c","amount":96}],"participantIds":["a","b","c"],"category":"ocio","interval":null}
-- "Pagó Ana 50 del súper" -> {"label":"Súper","amount":50,"payments":[{"memberId":"a","amount":50}],"participantIds":["a","b","c"],"category":"mercado","interval":null}
-- "Taxi, Ana 30 y yo 20" -> {"label":"Taxi","amount":50,"payments":[{"memberId":"a","amount":30},{"memberId":"c","amount":20}],"participantIds":["a","b","c"],"category":"transporte","interval":null}
-- "Netflix 15 mensual" -> {"label":"Netflix","amount":15,"payments":[{"memberId":"c","amount":15}],"participantIds":["a","b","c"],"category":"servicios","interval":"monthly"}
-- "Cena 100 menos Luis" -> {"label":"Cena","amount":100,"payments":[{"memberId":"c","amount":100}],"participantIds":["a","c"],"category":"comida","interval":null}
-- "¿qué tiempo hace?" -> {"label":"","amount":0,"payments":[],"participantIds":[],"category":"otros","interval":null}`;
+Examples (sample roster — a: Ana, b: Luis, c: Me; "me"=c; assume the group's currency is USD here). Learn the behavior, then apply to the REAL members listed above:
+- "Cena 80" -> {"label":"Cena","amount":80,"currency":"USD","payments":[{"memberId":"c","amount":80}],"participantIds":["a","b","c"],"category":"comida","interval":null}
+- "Cine 32 cada uno" -> {"label":"Cine","amount":96,"currency":"USD","payments":[{"memberId":"c","amount":96}],"participantIds":["a","b","c"],"category":"ocio","interval":null}
+- "Pagó Ana 50 del súper" -> {"label":"Súper","amount":50,"currency":"USD","payments":[{"memberId":"a","amount":50}],"participantIds":["a","b","c"],"category":"mercado","interval":null}
+- "Taxi, Ana 30 y yo 20" -> {"label":"Taxi","amount":50,"currency":"USD","payments":[{"memberId":"a","amount":30},{"memberId":"c","amount":20}],"participantIds":["a","b","c"],"category":"transporte","interval":null}
+- "Netflix 15 mensual" -> {"label":"Netflix","amount":15,"currency":"USD","payments":[{"memberId":"c","amount":15}],"participantIds":["a","b","c"],"category":"servicios","interval":"monthly"}
+- "Cena 100 menos Luis" -> {"label":"Cena","amount":100,"currency":"USD","payments":[{"memberId":"c","amount":100}],"participantIds":["a","c"],"category":"comida","interval":null}
+- "Fideos 200000 dong" -> {"label":"Fideos","amount":200000,"currency":"VND","payments":[{"memberId":"c","amount":200000}],"participantIds":["a","b","c"],"category":"comida","interval":null}
+- "¿qué tiempo hace?" -> {"label":"","amount":0,"currency":"USD","payments":[],"participantIds":[],"category":"otros","interval":null}`;
 
     const res = await fetch(API_URL, {
       method: "POST",
@@ -100,7 +106,7 @@ Examples (sample roster — a: Ana, b: Luis, c: Me; "me"=c). Learn the behavior,
 
     // Saneamos la salida para que sea siempre usable, aunque el modelo se
     // desvíe: IDs válidos, categoría permitida, intervalo válido o null.
-    const clean = sanitize(parsed, { memberIds, meId, categories: catArr });
+    const clean = sanitize(parsed, { memberIds, meId, categories: catArr, groupCurrency: String(currency ?? "") });
     // Reparto por defecto = TODO el grupo. El modelo pequeño a veces estrecha el
     // reparto sin motivo (p. ej. "asado 100" -> solo el pagador). Si la nota NO
     // nombra a otros miembros y no dice "solo yo", repartimos entre todos.
@@ -122,9 +128,9 @@ Examples (sample roster — a: Ana, b: Luis, c: Me; "me"=c). Learn the behavior,
 
 function sanitize(
   p: Record<string, unknown>,
-  ctx: { memberIds: string[]; meId: string; categories: string[] }
+  ctx: { memberIds: string[]; meId: string; categories: string[]; groupCurrency: string }
 ) {
-  const { memberIds, meId, categories } = ctx;
+  const { memberIds, meId, categories, groupCurrency } = ctx;
   const inMembers = (id: unknown) => typeof id === "string" && memberIds.includes(id);
 
   const amount = Number(p.amount);
@@ -167,9 +173,16 @@ function sanitize(
       ? p.interval
       : null;
 
+  // Código ISO 4217 (3 letras); si el modelo no devuelve uno válido, cae a la
+  // moneda del grupo (nunca inventamos una tasa nosotros, solo detectamos cuál
+  // moneda menciona la nota).
+  const currencyGuess = String(p.currency ?? "").toUpperCase().trim();
+  const currency = /^[A-Z]{3}$/.test(currencyGuess) ? currencyGuess : groupCurrency;
+
   return {
     label: String(p.label ?? "").trim() || "Gasto",
     amount: total,
+    currency,
     payerId,
     payments,
     participantIds,
