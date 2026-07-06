@@ -41,16 +41,13 @@ export default function App() {
   }, []);
   const showLoading = phase === "loading" || !minLoadDone;
 
-  // Mientras se ve el splash, el theme-color debe coincidir con su fondo
-  // navy (si no, la barra de estado/navegador se ve de otro color arriba).
+  // theme-color (tiñe la barra de estado/navegador) sigue siempre al tema
+  // día/noche — excepto durante el splash de carga, que fuerza su navy fijo.
   useEffect(() => {
     const meta = document.querySelector('meta[name="theme-color"]');
-    const prev = meta?.getAttribute("content") ?? null;
-    if (showLoading && meta) meta.setAttribute("content", "#0D1B2A");
-    return () => {
-      if (meta && prev) meta.setAttribute("content", prev);
-    };
-  }, [showLoading]);
+    if (!meta) return;
+    meta.setAttribute("content", showLoading ? "#0D1B2A" : theme === "dark" ? "#0D0F14" : "#EDF0EB");
+  }, [showLoading, theme]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
