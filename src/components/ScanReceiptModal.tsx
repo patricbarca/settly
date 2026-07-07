@@ -113,20 +113,36 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         itemRows.push({ name: s.name, price: conv(s.price), originalPrice: s.price, participantIds: allIds });
       }
     }
+    const scannedFees = (res.fees || []).map((f) => ({ ...f, amount: conv(f.amount), originalAmount: f.amount }));
+    // Si el impuesto NO está incluido en los precios (p. ej. "VAT 8%" que se
+    // suma al subtotal), antes se mostraba solo como nota informativa y
+    // nunca se sumaba al total a repartir — el grupo terminaba pagando de
+    // menos. Ahora se agrega como un recargo editable más (se reparte
+    // proporcional al consumo, igual que cualquier otro recargo del ticket).
+    const taxNotIncluded = res.tax && !res.tax.included && res.tax.amount > 0;
+    const fees = taxNotIncluded
+      ? [
+          ...scannedFees,
+          {
+            name: t("scan.taxFeeName", { rate: String(res.tax!.rate || 0) }),
+            amount: conv(res.tax!.amount),
+            originalAmount: res.tax!.amount,
+          },
+        ]
+      : scannedFees;
     setInitial({
       label: res.description || "",
       category: res.category || "comida",
       items: itemRows.length
         ? itemRows
         : [{ name: res.description || "", price: conv(res.total || 0), originalPrice: res.total || 0, participantIds: allIds }],
-      fees: (res.fees || []).map((f) => ({ ...f, amount: conv(f.amount), originalAmount: f.amount })),
+      fees,
       ...(fxInfo ? { originalCurrency: fxInfo.originalCurrency, fxRate: fxInfo.fxRate } : {}),
     });
-    setTax(
-      res.tax && (res.tax.amount > 0 || res.tax.rate > 0)
-        ? { ...res.tax, amount: conv(res.tax.amount), originalAmount: res.tax.amount }
-        : null
-    );
+    // El estado `tax` (nota informativa de solo lectura) solo aplica cuando
+    // el impuesto ya está incluido en los precios — si no lo está, ahora es
+    // un recargo normal y ya se ve/edita en la sección de Recargos.
+    setTax(res.tax && res.tax.included && res.tax.amount > 0 ? { ...res.tax, amount: conv(res.tax.amount), originalAmount: res.tax.amount } : null);
     setStage("review");
   }
 
