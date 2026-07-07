@@ -54,7 +54,7 @@
 html, body, #root { height: 100%; margin: 0; }
 
 body {
-  font-family: 'Instrument Sans', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   color: var(--ink);
   background: var(--bg);
   background-attachment: fixed;
