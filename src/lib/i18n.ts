@@ -382,6 +382,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "scan.aiNote": { es: "Revisa los artículos detectados y corrige lo que haga falta antes de guardar.", en: "Check the detected items and fix anything before saving." },
   "scan.error": { es: "No pudimos leer el ticket. Prueba con otra foto (más nítida y de cerca) o añade los artículos a mano.", en: "We couldn't read the receipt. Try another photo (sharper, closer) or add the items manually." },
   "scan.fxConverted": { es: "Convertido de {amt} ({rate})", en: "Converted from {amt} ({rate})" },
+  "scan.viewOriginal": { es: "Ver en {code}", en: "View in {code}" },
+  "scan.viewConverted": { es: "Ver convertido", en: "View converted" },
   "scan.fxUpsell": { es: "Ticket detectado en {code}. Hazte Pro para convertirlo automáticamente a {target}.", en: "Receipt detected in {code}. Go Pro to auto-convert it to {target}." },
   "scan.fxUpsellCta": { es: "Convertir con Pro", en: "Convert with Pro" },
   "scan.fxFailed": { es: "No pudimos convertir de {code}; revisa los montos a mano.", en: "Couldn't convert from {code}; please check the amounts manually." },

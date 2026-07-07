@@ -512,6 +512,13 @@ function ExpenseRow({
   const isMine = !e.createdBy || e.createdBy === group.meId;
 
   const [swipeX, setSwipeX] = useState(0);
+  // Al escanear un ticket en otra moneda, permite ver los ítems en la moneda
+  // original del recibo (en vez de la ya convertida) para validar que el
+  // escaneo corresponde con lo que realmente decía el ticket.
+  const [showOriginal, setShowOriginal] = useState(false);
+  const canShowOriginal = !!(e.originalCurrency && e.fxRate);
+  const itemMoney = (n: number) =>
+    showOriginal && canShowOriginal ? rawMoney(n / e.fxRate!, e.originalCurrency) : money(n);
   const drag = useRef<{ startX: number; startY: number; startSwipe: number; horiz: boolean | null; active: boolean }>({
     startX: 0,
     startY: 0,
@@ -645,7 +652,18 @@ function ExpenseRow({
             <div className="glass rounded-xl p-3">
               {e.items?.length ? (
                 <div className="mb-3">
-                  <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">{t("exp.itemsBreakdown")}</div>
+                  <div className="flex items-center justify-between mb-1.5 gap-2">
+                    <div className="text-[11px] uppercase tracking-wide font-mono text-muted">{t("exp.itemsBreakdown")}</div>
+                    {canShowOriginal && (
+                      <button
+                        onClick={() => setShowOriginal((v) => !v)}
+                        className="glass rounded-full px-2 py-0.5 text-[10px] font-medium hover-lift text-muted inline-flex items-center gap-1 shrink-0"
+                      >
+                        <Icon name="repeat" size={11} />
+                        {showOriginal ? t("scan.viewConverted") : t("scan.viewOriginal", { code: e.originalCurrency ?? "" })}
+                      </button>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     {e.items.map((it, i) => {
                       const who = it.participantIds?.length ? it.participantIds : ids;
@@ -653,7 +671,7 @@ function ExpenseRow({
                         <div key={i}>
                           <div className="flex items-center justify-between text-sm">
                             <span className="truncate pr-2">{it.name || "—"}</span>
-                            <span className="font-mono shrink-0">{money(it.price)}</span>
+                            <span className="font-mono shrink-0">{itemMoney(it.price)}</span>
                           </div>
                           <div className="flex items-center flex-wrap gap-1 mt-0.5">
                             {who.map((id) => (
@@ -673,13 +691,13 @@ function ExpenseRow({
                     {e.fees?.map((f, i) => (
                       <div key={`fee${i}`} className="flex items-center justify-between text-sm text-muted">
                         <span className="truncate pr-2">{f.name || t("scan.feeName")}</span>
-                        <span className="font-mono shrink-0">{money(f.amount)}</span>
+                        <span className="font-mono shrink-0">{itemMoney(f.amount)}</span>
                       </div>
                     ))}
                     {!!e.tip && (
                       <div className="flex items-center justify-between text-sm text-muted">
                         <span>{t("scan.tip")}</span>
-                        <span className="font-mono shrink-0">{money(e.tip)}</span>
+                        <span className="font-mono shrink-0">{itemMoney(e.tip)}</span>
                       </div>
                     )}
                   </div>
