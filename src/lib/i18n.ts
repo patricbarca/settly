@@ -376,6 +376,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "scan.fees": { es: "Recargos", en: "Surcharges" },
   "scan.feesNote": { es: "Recargos del ticket (fin de semana, tarjeta, servicio…). Se reparten en proporción a lo que consumió cada uno.", en: "Receipt surcharges (weekend, card, service…). Split in proportion to what each person consumed." },
   "scan.feeName": { es: "Recargo", en: "Surcharge" },
+  "scan.taxFeeName": { es: "IVA {rate}%", en: "VAT {rate}%" },
   "scan.addFee": { es: "+ recargo", en: "+ surcharge" },
   "scan.splitRow": { es: "Dividir en dos (p. ej. un «x2»)", en: "Split in two (e.g. an “x2”)" },
   "scan.taxIncluded": { es: "Impuesto {rate}% incluido: {amt} (ya dentro del total)", en: "Tax {rate}% included: {amt} (already in the total)" },
