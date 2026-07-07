@@ -93,18 +93,22 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     }
     const conv = (n: number) => r2(n * rate);
 
-    // Expandir cantidades: un "x2" se separa en líneas individuales.
+    // Expandir cantidades: un "x2" se separa en líneas individuales. Guarda
+    // también el precio nativo (originalPrice) tal cual lo detectó el
+    // escaneo, sin convertir — permite validar el escaneo contra el ticket
+    // real en vez de reconvertir el monto ya convertido (que arrastraría el
+    // redondeo).
     const itemRows: ExpenseItem[] = [];
     for (const s of res.items) {
       const q = Math.max(1, s.qty || 1);
       if (q > 1 && s.price > 0) {
         const unit = r2(s.unitPrice || s.price / q);
         for (let i = 0; i < q; i++) {
-          const price = conv(i === q - 1 ? r2(s.price - unit * (q - 1)) : unit);
-          itemRows.push({ name: s.name, price, participantIds: allIds });
+          const nativePrice = i === q - 1 ? r2(s.price - unit * (q - 1)) : unit;
+          itemRows.push({ name: s.name, price: conv(nativePrice), originalPrice: nativePrice, participantIds: allIds });
         }
       } else {
-        itemRows.push({ name: s.name, price: conv(s.price), participantIds: allIds });
+        itemRows.push({ name: s.name, price: conv(s.price), originalPrice: s.price, participantIds: allIds });
       }
     }
     setInitial({
@@ -112,8 +116,8 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
       category: res.category || "comida",
       items: itemRows.length
         ? itemRows
-        : [{ name: res.description || "", price: conv(res.total || 0), participantIds: allIds }],
-      fees: (res.fees || []).map((f) => ({ ...f, amount: conv(f.amount) })),
+        : [{ name: res.description || "", price: conv(res.total || 0), originalPrice: res.total || 0, participantIds: allIds }],
+      fees: (res.fees || []).map((f) => ({ ...f, amount: conv(f.amount), originalAmount: f.amount })),
     });
     setTax(
       res.tax && (res.tax.amount > 0 || res.tax.rate > 0) ? { ...res.tax, amount: conv(res.tax.amount) } : null

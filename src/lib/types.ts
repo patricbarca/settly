@@ -79,8 +79,10 @@ export interface Expense {
   /** Desglose por ítem/plato (gastos escaneados o repartidos por línea). Si
    *  existe, el gasto se edita con el editor por ítem en vez del de totales. */
   items?: ExpenseItem[];
-  /** Recargos del ticket (surcharge), repartidos proporcional al consumo. */
-  fees?: { name: string; amount: number }[];
+  /** Recargos del ticket (surcharge), repartidos proporcional al consumo.
+   *  `originalAmount`: monto tal cual detectado en el ticket (antes de
+   *  convertir), si el escaneo detectó una moneda distinta a la del grupo. */
+  fees?: { name: string; amount: number; originalAmount?: number }[];
   /** Propina, repartida en partes iguales entre quienes consumieron. */
   tip?: number;
   /** Ruta en Supabase Storage (bucket `receipts`) de la foto del ticket. */
@@ -98,6 +100,10 @@ export interface ExpenseItem {
   name: string;
   price: number;
   participantIds: string[];
+  /** Precio tal cual detectado en el ticket (antes de convertir), si el
+   *  escaneo detectó una moneda distinta a la del grupo — permite validar el
+   *  escaneo mostrando los montos reales del recibo, no una reconversión. */
+  originalPrice?: number;
 }
 
 export interface Settlement {

@@ -517,8 +517,13 @@ function ExpenseRow({
   // escaneo corresponde con lo que realmente decía el ticket.
   const [showOriginal, setShowOriginal] = useState(false);
   const canShowOriginal = !!(e.originalCurrency && e.fxRate);
-  const itemMoney = (n: number) =>
-    showOriginal && canShowOriginal ? rawMoney(n / e.fxRate!, e.originalCurrency) : money(n);
+  // Preferimos el monto nativo tal cual lo detectó el escaneo (`original`);
+  // si no existe (propina, o gastos guardados antes de este cambio), lo
+  // aproximamos reconvirtiendo el monto ya convertido con el fxRate.
+  const itemMoney = (converted: number, original?: number) =>
+    showOriginal && canShowOriginal
+      ? rawMoney(original ?? converted / e.fxRate!, e.originalCurrency)
+      : money(converted);
   const drag = useRef<{ startX: number; startY: number; startSwipe: number; horiz: boolean | null; active: boolean }>({
     startX: 0,
     startY: 0,
@@ -643,8 +648,8 @@ function ExpenseRow({
           <div className="px-3 pb-3 anim-pop">
             {e.originalCurrency && e.originalAmount != null && (
               <div className="text-[11px] text-muted mb-2">
-                {t("scan.fxConverted", {
-                  amt: rawMoney(e.originalAmount, e.originalCurrency),
+                {t("scan.fxConvertedShort", {
+                  code: e.originalCurrency,
                   rate: `1 ${e.originalCurrency} ≈ ${fmtRate(e.fxRate ?? 0)} ${group.currency}`,
                 })}
               </div>
@@ -671,7 +676,7 @@ function ExpenseRow({
                         <div key={i}>
                           <div className="flex items-center justify-between text-sm">
                             <span className="truncate pr-2">{it.name || "—"}</span>
-                            <span className="font-mono shrink-0">{itemMoney(it.price)}</span>
+                            <span className="font-mono shrink-0">{itemMoney(it.price, it.originalPrice)}</span>
                           </div>
                           <div className="flex items-center flex-wrap gap-1 mt-0.5">
                             {who.map((id) => (
@@ -691,7 +696,7 @@ function ExpenseRow({
                     {e.fees?.map((f, i) => (
                       <div key={`fee${i}`} className="flex items-center justify-between text-sm text-muted">
                         <span className="truncate pr-2">{f.name || t("scan.feeName")}</span>
-                        <span className="font-mono shrink-0">{itemMoney(f.amount)}</span>
+                        <span className="font-mono shrink-0">{itemMoney(f.amount, f.originalAmount)}</span>
                       </div>
                     ))}
                     {!!e.tip && (
