@@ -7,8 +7,8 @@ import { currencySymbol } from "../lib/currencies";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 
-type Item = { id: string; name: string; price: number | string; who: Set<string> };
-type Fee = { id: string; name: string; amount: number | string };
+type Item = { id: string; name: string; price: number | string; who: Set<string>; originalPrice?: number };
+type Fee = { id: string; name: string; amount: number | string; originalAmount?: number };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -20,14 +20,14 @@ export type ItemizedResult = {
   category: Category;
   splits: Record<string, number>;
   items: ExpenseItem[];
-  fees: { name: string; amount: number }[];
+  fees: { name: string; amount: number; originalAmount?: number }[];
   tip: number;
 };
 
 export type ItemizedInitial = {
   label?: string;
   items?: ExpenseItem[];
-  fees?: { name: string; amount: number }[];
+  fees?: { name: string; amount: number; originalAmount?: number }[];
   tip?: number;
   payerId?: string;
   category?: Category;
@@ -69,10 +69,11 @@ export function ItemizedExpenseEditor({
       name: it.name,
       price: it.price || "",
       who: new Set(it.participantIds?.length ? it.participantIds : allIds),
+      originalPrice: it.originalPrice,
     }))
   );
   const [fees, setFees] = useState<Fee[]>(() =>
-    (initial.fees ?? []).map((f) => ({ id: uid(), name: f.name, amount: f.amount }))
+    (initial.fees ?? []).map((f) => ({ id: uid(), name: f.name, amount: f.amount, originalAmount: f.originalAmount }))
   );
 
   function toggle(itemId: string, mid: string) {
@@ -97,8 +98,9 @@ export function ItemizedExpenseEditor({
       const it = arr[idx];
       const p = Number(it.price) || 0;
       const half = r2(p / 2);
-      const a: Item = { ...it, id: uid(), price: half, who: new Set(it.who) };
-      const b: Item = { ...it, id: uid(), price: r2(p - half), who: new Set(it.who) };
+      // Al partir en dos deja de corresponder a una única línea del ticket.
+      const a: Item = { ...it, id: uid(), price: half, who: new Set(it.who), originalPrice: undefined };
+      const b: Item = { ...it, id: uid(), price: r2(p - half), who: new Set(it.who), originalPrice: undefined };
       return [...arr.slice(0, idx), a, b, ...arr.slice(idx + 1)];
     });
   }
@@ -144,10 +146,19 @@ export function ItemizedExpenseEditor({
       splits: rounded,
       items: items
         .filter((it) => (Number(it.price) || 0) > 0 || it.name.trim())
-        .map((it) => ({ name: it.name.trim(), price: Number(it.price) || 0, participantIds: [...it.who] })),
+        .map((it) => ({
+          name: it.name.trim(),
+          price: Number(it.price) || 0,
+          participantIds: [...it.who],
+          ...(it.originalPrice != null ? { originalPrice: it.originalPrice } : {}),
+        })),
       fees: fees
         .filter((f) => Math.abs(Number(f.amount) || 0) > 0.0001)
-        .map((f) => ({ name: f.name.trim(), amount: Number(f.amount) || 0 })),
+        .map((f) => ({
+          name: f.name.trim(),
+          amount: Number(f.amount) || 0,
+          ...(f.originalAmount != null ? { originalAmount: f.originalAmount } : {}),
+        })),
       tip: tipNum,
     });
   }
