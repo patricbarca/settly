@@ -45,7 +45,7 @@ export async function parseExpenseAI(
 
 export type ScannedItem = { name: string; qty: number; unitPrice: number; price: number };
 export type ScanFee = { name: string; amount: number };
-export type ScanTax = { amount: number; rate: number; included: boolean };
+export type ScanTax = { amount: number; rate: number; included: boolean; originalAmount?: number };
 export type ScanResult = {
   description: string;
   subtotal: number;

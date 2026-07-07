@@ -7,8 +7,8 @@ import { currencySymbol } from "../lib/currencies";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 
-type Item = { id: string; name: string; price: number | string; who: Set<string>; originalPrice?: number };
-type Fee = { id: string; name: string; amount: number | string; originalAmount?: number };
+type Item = { id: string; name: string; price: number | string; who: Set<string>; originalPrice?: number | string };
+type Fee = { id: string; name: string; amount: number | string; originalAmount?: number | string };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -31,6 +31,11 @@ export type ItemizedInitial = {
   tip?: number;
   payerId?: string;
   category?: Category;
+  /** Moneda/tasa del ticket original (si se escaneó en otra moneda distinta
+   *  a la del grupo) — habilita el toggle para ajustar montos en cualquiera
+   *  de las dos monedas. */
+  originalCurrency?: string;
+  fxRate?: number;
 };
 
 /** Editor de un gasto repartido por ítem/plato. Lo usan el escaneo de tickets
@@ -58,11 +63,17 @@ export function ItemizedExpenseEditor({
   const t = useT();
   const allIds = group.members.map((m) => m.id);
   const cur = currencySymbol(group.currency);
+  const { originalCurrency, fxRate } = initial;
+  const canToggle = !!(originalCurrency && fxRate);
 
   const [label, setLabel] = useState(initial.label ?? "");
   const [category, setCategory] = useState<Category>(initial.category ?? "comida");
   const [payerId, setPayerId] = useState(initial.payerId ?? group.meId);
   const [tip, setTip] = useState<number | string>(initial.tip ? String(initial.tip) : "");
+  // Ver/ajustar los montos en la moneda del ticket original en vez de la
+  // convertida (moneda del grupo) — solo disponible si el escaneo detectó
+  // una moneda distinta y la convirtió (Pro).
+  const [showOriginal, setShowOriginal] = useState(false);
   const [items, setItems] = useState<Item[]>(() =>
     (initial.items?.length ? initial.items : [{ name: "", price: 0, participantIds: allIds }]).map((it) => ({
       id: uid(),
@@ -89,7 +100,23 @@ export function ItemizedExpenseEditor({
   }
   const setItem = (id: string, patch: Partial<Item>) =>
     setItems((arr) => arr.map((it) => (it.id === id ? { ...it, ...patch } : it)));
-  const addItem = () => setItems((arr) => [...arr, { id: uid(), name: "", price: "", who: new Set(allIds) }]);
+  // Edita el precio en la moneda actualmente visible (según el toggle) y
+  // recalcula la otra a partir de fxRate, para que ambas queden sincronizadas.
+  function setItemPrice(id: string, raw: string) {
+    setItems((arr) =>
+      arr.map((it) => {
+        if (it.id !== id) return it;
+        if (showOriginal && fxRate) {
+          const conv = raw === "" ? it.price : r2(Number(raw) * fxRate);
+          return { ...it, originalPrice: raw, price: conv };
+        }
+        const orig = fxRate ? (raw === "" ? it.originalPrice : r2(Number(raw) / fxRate)) : it.originalPrice;
+        return { ...it, price: raw, originalPrice: orig };
+      })
+    );
+  }
+  const addItem = () =>
+    setItems((arr) => [...arr, { id: uid(), name: "", price: "", who: new Set(allIds), originalPrice: canToggle ? "" : undefined }]);
   const removeItem = (id: string) => setItems((arr) => arr.filter((it) => it.id !== id));
   function splitItem(id: string) {
     setItems((arr) => {
@@ -106,14 +133,42 @@ export function ItemizedExpenseEditor({
   }
   const setFee = (id: string, patch: Partial<Fee>) =>
     setFees((arr) => arr.map((f) => (f.id === id ? { ...f, ...patch } : f)));
-  const addFee = () => setFees((arr) => [...arr, { id: uid(), name: "", amount: "" }]);
+  function setFeeAmount(id: string, raw: string) {
+    setFees((arr) =>
+      arr.map((f) => {
+        if (f.id !== id) return f;
+        if (showOriginal && fxRate) {
+          const conv = raw === "" ? f.amount : r2(Number(raw) * fxRate);
+          return { ...f, originalAmount: raw, amount: conv };
+        }
+        const orig = fxRate ? (raw === "" ? f.originalAmount : r2(Number(raw) / fxRate)) : f.originalAmount;
+        return { ...f, amount: raw, originalAmount: orig };
+      })
+    );
+  }
+  const addFee = () => setFees((arr) => [...arr, { id: uid(), name: "", amount: "", originalAmount: canToggle ? "" : undefined }]);
   const removeFee = (id: string) => setFees((arr) => arr.filter((f) => f.id !== id));
+  // Propina: no viene del ticket (se añade después), así que no persiste un
+  // "original" propio — solo se convierte al vuelo para mostrarla/editarla
+  // en la moneda visible; el valor guardado sigue en la moneda del grupo.
+  const tipDisplay = showOriginal && fxRate ? (tip === "" ? "" : String(r2(Number(tip) / fxRate))) : tip;
+  function onTipChange(raw: string) {
+    if (showOriginal && fxRate) setTip(raw === "" ? "" : String(r2(Number(raw) * fxRate)));
+    else setTip(raw);
+  }
 
-  // --- Reparto ---
+  // --- Reparto (siempre en la moneda del grupo, para el reparto real) ---
   const itemsTotal = items.reduce((s, it) => s + (Number(it.price) || 0), 0);
   const feesTotal = fees.reduce((s, f) => s + (Number(f.amount) || 0), 0);
   const tipNum = Number(tip) || 0;
   const total = r2(itemsTotal + feesTotal + tipNum);
+  const originalTotal = canToggle
+    ? r2(
+        items.reduce((s, it) => s + (Number(it.originalPrice ?? (Number(it.price) || 0) / fxRate!) || 0), 0) +
+          fees.reduce((s, f) => s + (Number(f.originalAmount ?? (Number(f.amount) || 0) / fxRate!) || 0), 0) +
+          tipNum / fxRate!
+      )
+    : 0;
 
   const splits: Record<string, number> = {};
   allIds.forEach((id) => (splits[id] = 0));
@@ -150,14 +205,14 @@ export function ItemizedExpenseEditor({
           name: it.name.trim(),
           price: Number(it.price) || 0,
           participantIds: [...it.who],
-          ...(it.originalPrice != null ? { originalPrice: it.originalPrice } : {}),
+          ...(it.originalPrice != null && it.originalPrice !== "" ? { originalPrice: Number(it.originalPrice) } : {}),
         })),
       fees: fees
         .filter((f) => Math.abs(Number(f.amount) || 0) > 0.0001)
         .map((f) => ({
           name: f.name.trim(),
           amount: Number(f.amount) || 0,
-          ...(f.originalAmount != null ? { originalAmount: f.originalAmount } : {}),
+          ...(f.originalAmount != null && f.originalAmount !== "" ? { originalAmount: Number(f.originalAmount) } : {}),
         })),
       tip: tipNum,
     });
@@ -183,7 +238,18 @@ export function ItemizedExpenseEditor({
         />
       </div>
 
-      <div className="text-xs font-semibold text-muted">{t("scan.items")}</div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-xs font-semibold text-muted">{t("scan.items")}</div>
+        {canToggle && (
+          <button
+            onClick={() => setShowOriginal((v) => !v)}
+            className="glass rounded-full px-2 py-0.5 text-[10px] font-medium hover-lift text-muted inline-flex items-center gap-1 shrink-0"
+          >
+            <Icon name="repeat" size={11} />
+            {showOriginal ? t("scan.viewConverted") : t("scan.viewOriginal", { code: originalCurrency ?? "" })}
+          </button>
+        )}
+      </div>
       <div className="glass rounded-3xl p-3 space-y-3">
         {items.map((it, idx) => (
           <div key={it.id} className={idx < items.length - 1 ? "pb-3 border-b border-black/5" : ""}>
@@ -195,13 +261,13 @@ export function ItemizedExpenseEditor({
                 className="bg-transparent text-sm flex-1 px-1"
               />
               <input
-                value={it.price}
-                onChange={(e) => setItem(it.id, { price: e.target.value })}
+                value={showOriginal ? it.originalPrice ?? "" : it.price}
+                onChange={(e) => setItemPrice(it.id, e.target.value)}
                 inputMode="decimal"
                 placeholder="0"
                 className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
               />
-              <span className="text-muted text-sm">{cur}</span>
+              <span className="text-muted text-sm">{showOriginal ? originalCurrency : cur}</span>
               <button onClick={() => splitItem(it.id)} className="lk flex items-center text-muted" title={t("scan.splitRow")}>
                 <Icon name="copy" size={14} />
               </button>
@@ -254,13 +320,13 @@ export function ItemizedExpenseEditor({
                 className="bg-transparent text-sm flex-1 px-1"
               />
               <input
-                value={f.amount}
-                onChange={(e) => setFee(f.id, { amount: e.target.value })}
+                value={showOriginal ? f.originalAmount ?? "" : f.amount}
+                onChange={(e) => setFeeAmount(f.id, e.target.value)}
                 inputMode="decimal"
                 placeholder="0"
                 className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
               />
-              <span className="text-muted text-sm">{cur}</span>
+              <span className="text-muted text-sm">{showOriginal ? originalCurrency : cur}</span>
               <button onClick={() => removeFee(f.id)} className="lk lk-danger flex items-center">
                 <Icon name="close" size={14} />
               </button>
@@ -296,13 +362,13 @@ export function ItemizedExpenseEditor({
           </div>
           <div className="flex items-center gap-1">
             <input
-              value={tip}
-              onChange={(e) => setTip(e.target.value)}
+              value={tipDisplay}
+              onChange={(e) => onTipChange(e.target.value)}
               inputMode="decimal"
               placeholder="0"
               className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
             />
-            <span className="text-muted text-sm">{cur}</span>
+            <span className="text-muted text-sm">{showOriginal ? originalCurrency : cur}</span>
           </div>
         </div>
       )}
@@ -318,10 +384,18 @@ export function ItemizedExpenseEditor({
 
       {taxInfo && (
         <div className="text-[11px] text-muted">
-          {t("scan.taxIncluded", { rate: String(taxInfo.rate || 0), amt: money(taxInfo.amount, group.currency) })}
+          {t("scan.taxIncluded", {
+            rate: String(taxInfo.rate || 0),
+            amt:
+              showOriginal && canToggle && taxInfo.originalAmount != null
+                ? money(taxInfo.originalAmount, originalCurrency)
+                : money(taxInfo.amount, group.currency),
+          })}
         </div>
       )}
-      <div className="text-xs text-muted">{t("scan.total")}: {money(total, group.currency)}</div>
+      <div className="text-xs text-muted">
+        {t("scan.total")}: {showOriginal && canToggle ? money(originalTotal, originalCurrency) : money(total, group.currency)}
+      </div>
 
       <div className="flex gap-2">
         <button onClick={submit} disabled={submitting} className="glass-strong rounded-full px-5 py-2.5 font-medium hover-lift disabled:opacity-50">

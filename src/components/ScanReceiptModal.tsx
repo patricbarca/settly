@@ -78,12 +78,14 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     setStage("analyzing");
 
     let rate = 1;
+    let fxInfo: FxInfo | null = null;
     if (code !== group.currency) {
       if (plan === "pro") {
         const fxRes = await convertCurrency(1, code, group.currency);
         if (fxRes) {
           rate = fxRes.rate;
-          setFx({ originalAmount: res.total || 0, originalCurrency: code, fxRate: rate });
+          fxInfo = { originalAmount: res.total || 0, originalCurrency: code, fxRate: rate };
+          setFx(fxInfo);
         } else {
           setFxError(code);
         }
@@ -118,9 +120,12 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         ? itemRows
         : [{ name: res.description || "", price: conv(res.total || 0), originalPrice: res.total || 0, participantIds: allIds }],
       fees: (res.fees || []).map((f) => ({ ...f, amount: conv(f.amount), originalAmount: f.amount })),
+      ...(fxInfo ? { originalCurrency: fxInfo.originalCurrency, fxRate: fxInfo.fxRate } : {}),
     });
     setTax(
-      res.tax && (res.tax.amount > 0 || res.tax.rate > 0) ? { ...res.tax, amount: conv(res.tax.amount) } : null
+      res.tax && (res.tax.amount > 0 || res.tax.rate > 0)
+        ? { ...res.tax, amount: conv(res.tax.amount), originalAmount: res.tax.amount }
+        : null
     );
     setStage("review");
   }
