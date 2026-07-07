@@ -1,4 +1,5 @@
 import { currencyOf } from "./currencies";
+import { getLang } from "./i18n";
 
 const PALETTE = ["#0FA3A3", "#FF5A4D", "#5B5BF0", "#E8920C", "#E84393", "#0EA5E9"];
 
@@ -8,7 +9,10 @@ export function money(n: number, code = "EUR"): string {
   const f = Math.pow(10, dec);
   const v = Math.round((Number(n) + Number.EPSILON) * f) / f;
   const hasFrac = dec > 0 && Math.abs(v % 1) > 1 / (f * 10);
-  const num = v.toLocaleString("es-ES", {
+  // El separador decimal sigue el idioma de la app (antes forzado a "es-ES",
+  // lo que mostraba comas incluso en inglés/USD y confundía los montos).
+  const locale = getLang() === "en" ? "en-US" : "es-ES";
+  const num = v.toLocaleString(locale, {
     minimumFractionDigits: hasFrac ? dec : 0,
     maximumFractionDigits: dec,
   });
