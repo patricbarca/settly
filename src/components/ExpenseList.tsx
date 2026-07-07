@@ -553,7 +553,7 @@ function ExpenseRow({
 
   return (
     <div className="relative rounded-2xl overflow-hidden">
-      {isMine && (
+      {isMine && swipeX !== 0 && (
         <div className="absolute inset-y-0 right-0 flex items-stretch" style={{ width: SWIPE_W }}>
           <button
             onClick={() => {
