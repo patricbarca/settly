@@ -100,6 +100,16 @@ export function ItemizedExpenseEditor({
   }
   const setItem = (id: string, patch: Partial<Item>) =>
     setItems((arr) => arr.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+  // Valor a mostrar en el input cuando se ve la moneda original: si no se
+  // guardó el precio nativo (gastos previos a esta función, o líneas
+  // agregadas/editadas a mano), lo aproxima reconvirtiendo con fxRate en vez
+  // de dejarlo en blanco (que antes se veía/leía como "0").
+  function origDisplay(price: number | string, orig: number | string | undefined) {
+    if (orig != null && orig !== "") return orig;
+    if (!fxRate) return "";
+    const n = Number(price) || 0;
+    return n ? String(r2(n / fxRate)) : "";
+  }
   // Edita el precio en la moneda actualmente visible (según el toggle) y
   // recalcula la otra a partir de fxRate, para que ambas queden sincronizadas.
   function setItemPrice(id: string, raw: string) {
@@ -261,7 +271,7 @@ export function ItemizedExpenseEditor({
                 className="bg-transparent text-sm flex-1 px-1"
               />
               <input
-                value={showOriginal ? it.originalPrice ?? "" : it.price}
+                value={showOriginal ? origDisplay(it.price, it.originalPrice) : it.price}
                 onChange={(e) => setItemPrice(it.id, e.target.value)}
                 inputMode="decimal"
                 placeholder="0"
@@ -320,7 +330,7 @@ export function ItemizedExpenseEditor({
                 className="bg-transparent text-sm flex-1 px-1"
               />
               <input
-                value={showOriginal ? f.originalAmount ?? "" : f.amount}
+                value={showOriginal ? origDisplay(f.amount, f.originalAmount) : f.amount}
                 onChange={(e) => setFeeAmount(f.id, e.target.value)}
                 inputMode="decimal"
                 placeholder="0"
