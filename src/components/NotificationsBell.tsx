@@ -34,6 +34,7 @@ const ACTIVITY_ICON: Record<ActivityType, IconName> = {
   member_added: "users",
   member_joined: "users",
   member_removed: "users",
+  member_left: "power",
   expense_added: "plus",
   expense_edited: "edit",
   expense_deleted: "trash",

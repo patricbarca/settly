@@ -137,6 +137,7 @@ export type ActivityType =
   | "member_added"
   | "member_joined"
   | "member_removed"
+  | "member_left"
   | "expense_added"
   | "expense_edited"
   | "expense_deleted"
