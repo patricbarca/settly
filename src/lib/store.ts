@@ -326,9 +326,13 @@ export function purgeGroup(id: string) {
 }
 
 /** Salir de un grupo (para quien NO es el dueño): elimina solo tu membresía,
- *  el grupo desaparece de tu lista y balances sin afectar a los demás. */
+ *  el grupo desaparece de tu lista y balances sin afectar a los demás.
+ *  También te saca de `members[]` (antes solo se borraba la fila de
+ *  group_members, dejando un miembro "fantasma" visible para siempre a los
+ *  demás, sin forma de quitarlo si tenía gastos/pagos asociados). */
 export function leaveGroup(id: string) {
   const userId = currentUserId;
+  const g = state.groups.find((g) => g.id === id);
   state = {
     ...state,
     groups: state.groups.filter((g) => g.id !== id),
@@ -338,8 +342,25 @@ export function leaveGroup(id: string) {
   idbDeleteGroup(id).catch(() => {});
   idbClearFromOutbox([id]).catch(() => {});
   if (!userId) return;
-  supabase.from("group_members").delete().eq("group_id", id).eq("user_id", userId)
-    .then(({ error }) => { if (error) console.error("leaveGroup:", error); });
+  if (g) {
+    const meName = g.members.find((m) => m.id === g.meId)?.name;
+    const updated: Group = {
+      ...g,
+      members: g.members.filter((m) => m.id !== g.meId),
+      activity: withActivity(g, { type: "member_left", actorId: g.meId, actorName: meName }),
+    };
+    // Se guarda mientras todavía soy miembro (RLS lo permite); recién después
+    // se borra la fila de group_members.
+    supabase.from("groups").update({ data: updated, updated_at: new Date().toISOString() }).eq("id", id)
+      .then(({ error }) => {
+        if (error) console.error("leaveGroup update:", error);
+        supabase.from("group_members").delete().eq("group_id", id).eq("user_id", userId)
+          .then(({ error }) => { if (error) console.error("leaveGroup:", error); });
+      });
+  } else {
+    supabase.from("group_members").delete().eq("group_id", id).eq("user_id", userId)
+      .then(({ error }) => { if (error) console.error("leaveGroup:", error); });
+  }
 }
 
 export function updateGroup(id: string, fn: (g: Group) => Group) {

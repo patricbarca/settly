@@ -452,6 +452,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "activity.member_added": { es: "{name} añadió a {label}", en: "{name} added {label}" },
   "activity.member_joined": { es: "{name} se unió al grupo", en: "{name} joined the group" },
   "activity.member_removed": { es: "{name} quitó a {label}", en: "{name} removed {label}" },
+  "activity.member_left": { es: "{name} salió del grupo", en: "{name} left the group" },
   "activity.expense_added": { es: "{name} añadió «{label}» ({amt})", en: "{name} added “{label}” ({amt})" },
   "activity.expense_edited": { es: "{name} editó «{label}» ({amt})", en: "{name} edited “{label}” ({amt})" },
   "activity.expense_deleted": { es: "{name} borró «{label}»", en: "{name} deleted “{label}”" },
