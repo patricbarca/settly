@@ -43,11 +43,11 @@ export default function App() {
     : homeTab === "contacts" && !group
     ? "friends"
     : "groups";
-  // La pantalla de carga se ve al menos 1s (evita un parpadeo si la sesión
+  // La pantalla de carga se ve al menos 3s (evita un parpadeo si la sesión
   // resuelve casi al instante, p. ej. con Supabase cacheado).
   const [minLoadDone, setMinLoadDone] = useState(false);
   useEffect(() => {
-    const id = setTimeout(() => setMinLoadDone(true), 2000);
+    const id = setTimeout(() => setMinLoadDone(true), 3000);
     return () => clearTimeout(id);
   }, []);
   const showLoading = phase === "loading" || !minLoadDone;
