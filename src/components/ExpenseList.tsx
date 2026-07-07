@@ -425,6 +425,8 @@ export function ExpenseList({ group }: { group: Group }) {
                   tip: editing.tip,
                   payerId: editing.payerId,
                   category: editing.category,
+                  originalCurrency: editing.originalCurrency,
+                  fxRate: editing.fxRate,
                 }}
                 submitLabel={t("exp.edit")}
                 onSubmit={(r) => saveItemizedEdit(editing.id, r)}
@@ -634,7 +636,7 @@ function ExpenseRow({
             </div>
           </div>
           <div className="text-right shrink-0 flex items-center gap-1.5">
-            <span className="font-mono font-bold text-sm">{money(e.amount)}</span>
+            <span className="font-mono font-bold text-sm">{itemMoney(e.amount, e.originalAmount ?? undefined)}</span>
             <Icon
               name="chevron"
               size={15}
