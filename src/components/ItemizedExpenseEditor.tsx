@@ -383,11 +383,26 @@ export function ItemizedExpenseEditor({
         </div>
       )}
 
+      <div className="flex justify-center">
+        <div className="glass rounded-full px-4 py-1.5 text-xs font-semibold inline-flex items-center gap-1">
+          {t("scan.total")}: {showOriginal && canToggle ? money(originalTotal, originalCurrency) : money(total, group.currency)}
+        </div>
+      </div>
+
       <div className="glass rounded-3xl p-3">
         {group.members.map((m) => (
           <div key={m.id} className="flex items-center justify-between text-sm py-0.5">
             <span>{m.name}</span>
-            <span className="font-mono font-bold">{money(splits[m.id] || 0, group.currency)}</span>
+            {showOriginal && canToggle ? (
+              <span className="font-mono font-bold text-right">
+                {money(splits[m.id] || 0, group.currency)}
+                <span className="block text-[11px] font-normal text-muted">
+                  {money((splits[m.id] || 0) / fxRate!, originalCurrency)}
+                </span>
+              </span>
+            ) : (
+              <span className="font-mono font-bold">{money(splits[m.id] || 0, group.currency)}</span>
+            )}
           </div>
         ))}
       </div>
@@ -403,9 +418,6 @@ export function ItemizedExpenseEditor({
           })}
         </div>
       )}
-      <div className="text-xs text-muted">
-        {t("scan.total")}: {showOriginal && canToggle ? money(originalTotal, originalCurrency) : money(total, group.currency)}
-      </div>
 
       <div className="flex gap-2">
         <button onClick={submit} disabled={submitting} className="glass-strong rounded-full px-5 py-2.5 font-medium hover-lift disabled:opacity-50">
