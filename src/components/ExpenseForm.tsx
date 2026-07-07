@@ -241,6 +241,26 @@ export function ExpenseForm({
         </div>
       </div>
 
+      {/* Category */}
+      <div>
+        <label className="text-xs font-semibold text-muted">{t("form.category")}</label>
+        <div className="flex gap-1.5 flex-wrap mt-1">
+          {CATEGORIES.map((c) => {
+            const on = f.category === c.id;
+            return (
+              <button
+                key={c.id}
+                onClick={() => up("category", c.id)}
+                className={`rounded-full px-3 py-1 text-sm inline-flex items-center gap-1.5 ${on ? "" : "glass text-muted"}`}
+                style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+              >
+                <Icon name={c.icon} size={15} /> {t(`cat.${c.id}`)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Who paid */}
       <div>
         <div className="flex items-center justify-between">
@@ -404,26 +424,6 @@ export function ExpenseForm({
             </div>
           </div>
         )}
-      </div>
-
-      {/* Category */}
-      <div>
-        <label className="text-xs font-semibold text-muted">{t("form.category")}</label>
-        <div className="flex gap-1.5 flex-wrap mt-1">
-          {CATEGORIES.map((c) => {
-            const on = f.category === c.id;
-            return (
-              <button
-                key={c.id}
-                onClick={() => up("category", c.id)}
-                className={`rounded-full px-3 py-1 text-sm inline-flex items-center gap-1.5 ${on ? "" : "glass text-muted"}`}
-                style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
-              >
-                <Icon name={c.icon} size={15} /> {t(`cat.${c.id}`)}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {children}
