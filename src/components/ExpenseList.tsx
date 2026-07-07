@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import type { Group, Category } from "../lib/types";
 import { catOf } from "../lib/types";
 import { updateGroup } from "../lib/store";
@@ -374,224 +374,27 @@ export function ExpenseList({ group }: { group: Group }) {
         <div className="glass rounded-3xl p-10 text-center text-muted">{t("exp.empty")}</div>
       ) : visible.length === 0 ? (
         <div className="glass rounded-3xl p-10 text-center text-muted">{t("filter.none")}</div>
-      ) : visible.map((e) => {
-        const c = catOf(e.category);
-        const open = openId === e.id;
-        const shares = shareFor(e, ids);
-        const participants = (e.participantIds.length ? e.participantIds : ids).filter(
-          (id) => (shares[id] || 0) > 0.001
-        );
-        const payerDisplay = e.payments?.length
-          ? e.payments.map((p) => name(p.memberId)).join(", ")
-          : name(e.payerId);
-        return (
-          <div key={e.id} className="glass rounded-2xl overflow-hidden hover-lift">
-            <div className="px-3 py-2 flex items-center gap-2.5 cursor-pointer" onClick={() => setOpenId(open ? null : e.id)}>
-              <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 surface-soft text-[color:var(--ink)]">
-                <Icon name={c.icon} size={17} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold truncate flex items-center gap-2 text-[15px] leading-tight">
-                  {e.label}
-                  {e.reviewRequested && (
-                    <span
-                      className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0"
-                      style={{ background: "#E8920C22", color: "#9A6B00" }}
-                    >
-                      <Icon name="flag" size={11} /> {t("exp.inReview")}
-                    </span>
-                  )}
-                </div>
-                <div className="text-[11px] text-muted leading-tight mt-0.5 flex items-center gap-1.5">
-                  <span className="truncate">
-                    {t("exp.meta", { payer: payerDisplay, date: fmtDate(e.date) })}
-                  </span>
-                  {/* Burbujas con las iniciales de quienes participan, en la
-                      misma línea que el meta para ocupar menos espacio. */}
-                  {participants.length > 0 && (
-                    <span className="flex items-center gap-0.5 shrink-0">
-                      {participants.slice(0, 5).map((id) => (
-                        <span
-                          key={id}
-                          title={name(id)}
-                          className="h-4 w-4 rounded-full flex items-center justify-center text-[7px] font-semibold"
-                          style={{
-                            background: (labels[id]?.color ?? "#888") + "22",
-                            color: labels[id]?.color ?? "#888",
-                          }}
-                        >
-                          {labels[id]?.label ?? "?"}
-                        </span>
-                      ))}
-                      {participants.length > 5 && (
-                        <span className="text-[10px] text-muted font-semibold">+{participants.length - 5}</span>
-                      )}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="text-right shrink-0 flex items-center gap-1.5">
-                <span className="font-mono font-bold text-sm">{money(e.amount)}</span>
-                <Icon
-                  name="chevron"
-                  size={15}
-                  className="text-muted transition-transform"
-                  style={{ transform: open ? "rotate(180deg)" : "none" }}
-                />
-              </div>
-            </div>
-
-            {open && (
-              <div className="px-3 pb-3 anim-pop">
-                {e.originalCurrency && e.originalAmount != null && (
-                  <div className="text-[11px] text-muted mb-2">
-                    {t("scan.fxConverted", {
-                      amt: rawMoney(e.originalAmount, e.originalCurrency),
-                      rate: `1 ${e.originalCurrency} ≈ ${fmtRate(e.fxRate ?? 0)} ${group.currency}`,
-                    })}
-                  </div>
-                )}
-                <div className="glass rounded-xl p-3">
-                  {/* Desglose por ítem/plato (solo gastos repartidos por línea) */}
-                  {e.items?.length ? (
-                    <div className="mb-3">
-                      <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">{t("exp.itemsBreakdown")}</div>
-                      <div className="space-y-2">
-                        {e.items.map((it, i) => {
-                          const who = it.participantIds?.length ? it.participantIds : ids;
-                          return (
-                            <div key={i}>
-                              <div className="flex items-center justify-between text-sm">
-                                <span className="truncate pr-2">{it.name || "—"}</span>
-                                <span className="font-mono shrink-0">{money(it.price)}</span>
-                              </div>
-                              <div className="flex items-center flex-wrap gap-1 mt-0.5">
-                                {who.map((id) => (
-                                  <span
-                                    key={id}
-                                    title={name(id)}
-                                    className="h-4 w-4 rounded-full flex items-center justify-center text-[7px] font-semibold"
-                                    style={{ background: (labels[id]?.color ?? "#888") + "22", color: labels[id]?.color ?? "#888" }}
-                                  >
-                                    {labels[id]?.label ?? "?"}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })}
-                        {e.fees?.map((f, i) => (
-                          <div key={`fee${i}`} className="flex items-center justify-between text-sm text-muted">
-                            <span className="truncate pr-2">{f.name || t("scan.feeName")}</span>
-                            <span className="font-mono shrink-0">{money(f.amount)}</span>
-                          </div>
-                        ))}
-                        {!!e.tip && (
-                          <div className="flex items-center justify-between text-sm text-muted">
-                            <span>{t("scan.tip")}</span>
-                            <span className="font-mono shrink-0">{money(e.tip)}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ) : null}
-                  <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">
-                    {e.items?.length ? t("exp.perPerson") : t("exp.shares")}
-                  </div>
-                  <div className="space-y-1">
-                    {participants.map((id) => (
-                      <div key={id} className="flex items-center justify-between text-sm">
-                        <span className="flex items-center gap-2">
-                          <span
-                            className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-semibold"
-                            style={{ background: (labels[id]?.color ?? "#888") + "22", color: labels[id]?.color ?? "#888" }}
-                          >
-                            {labels[id]?.label ?? "?"}
-                          </span>
-                          {name(id)}
-                        </span>
-                        <span className="font-mono">{money(shares[id] || 0)}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2 mt-3 flex-wrap">
-                    <button
-                      onClick={() => setEditId(e.id)}
-                      className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted inline-flex items-center gap-1"
-                    >
-                      <Icon name="edit" size={13} /> {t("exp.edit")}
-                    </button>
-                    {e.receiptPath && <ReceiptButton path={e.receiptPath} />}
-                    {!e.reviewRequested ? (
-                      <button
-                        onClick={() => requestReview(e.id)}
-                        className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted inline-flex items-center gap-1"
-                      >
-                        <Icon name="flag" size={13} /> {t("exp.review")}
-                      </button>
-                    ) : e.createdBy === group.meId ? (
-                      <button
-                        onClick={() => markReviewed(e.id)}
-                        className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift inline-flex items-center gap-1"
-                        style={{ background: "#0A8B5E" }}
-                      >
-                        <Icon name="check" size={13} /> {t("exp.reviewed")}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => cancelReview(e.id)}
-                        title={t("exp.tapToCancel")}
-                        className="rounded-full px-3 py-1 text-xs font-semibold hover-lift inline-flex items-center gap-1"
-                        style={{ background: "rgba(232,146,12,0.16)", color: "var(--amber)" }}
-                      >
-                        <Icon name="flag" size={13} /> {t("exp.reviewRequested")} <Icon name="close" size={12} />
-                      </button>
-                    )}
-                    {e.createdBy && e.createdBy !== group.meId ? (
-                      // No soy el creador: puedo pedir que lo elimine, o ver que ya lo pedí.
-                      e.deleteRequested ? (
-                        <button
-                          onClick={() => cancelDelete(e.id)}
-                          title={t("exp.tapToCancel")}
-                          className="rounded-full px-3 py-1 text-xs font-semibold hover-lift inline-flex items-center gap-1"
-                          style={{ background: "rgba(232,146,12,0.16)", color: "var(--amber)" }}
-                        >
-                          <Icon name="clock" size={13} /> {t("exp.deletePending")} <Icon name="close" size={12} />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => requestDelete(e.id)}
-                          className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted inline-flex items-center gap-1"
-                        >
-                          <Icon name="trash" size={13} /> {t("exp.requestDelete")}
-                        </button>
-                      )
-                    ) : e.deleteRequested ? (
-                      // Soy el creador (o gasto sin autor) y alguien pidió eliminarlo:
-                      // el botón se resalta para aprobar la eliminación (como "Revisado").
-                      <button
-                        onClick={() => setConfirmId(e.id)}
-                        className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift inline-flex items-center gap-1"
-                        style={{ background: "var(--coral)" }}
-                      >
-                        <Icon name="trash" size={13} /> {t("exp.deleteApprove")}
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => setConfirmId(e.id)}
-                        className="glass rounded-full px-3 py-1 text-xs hover-lift lk-danger text-muted inline-flex items-center gap-1"
-                      >
-                        <Icon name="trash" size={13} /> {t("common.delete")}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        );
-      })}
+      ) : visible.map((e) => (
+        <ExpenseRow
+          key={e.id}
+          e={e}
+          group={group}
+          ids={ids}
+          labels={labels}
+          name={name}
+          money={money}
+          t={t}
+          open={openId === e.id}
+          onToggleOpen={() => setOpenId(openId === e.id ? null : e.id)}
+          onEdit={() => setEditId(e.id)}
+          onRequestReview={() => requestReview(e.id)}
+          onMarkReviewed={() => markReviewed(e.id)}
+          onCancelReview={() => cancelReview(e.id)}
+          onRequestDelete={() => requestDelete(e.id)}
+          onCancelDelete={() => cancelDelete(e.id)}
+          onDelete={() => setConfirmId(e.id)}
+        />
+      ))}
 
       {confirmId && (
         <ConfirmModal
@@ -651,5 +454,329 @@ export function ExpenseList({ group }: { group: Group }) {
         </Overlay>
       )}
     </section>
+  );
+}
+
+// Ancho revelado por el swipe (botón "Eliminar" rojo detrás de la fila).
+const SWIPE_W = 76;
+
+/** Fila de gasto con swipe-to-delete: deslizar a la izquierda revela un botón
+ *  rojo de eliminar, pero SOLO si el gasto lo agregué yo (`createdBy`) — para
+ *  los de otras personas el swipe no hace nada (usan el flujo de "pedir
+ *  eliminación" dentro del detalle, igual que antes). */
+function ExpenseRow({
+  e,
+  group,
+  ids,
+  labels,
+  name,
+  money,
+  t,
+  open,
+  onToggleOpen,
+  onEdit,
+  onRequestReview,
+  onMarkReviewed,
+  onCancelReview,
+  onRequestDelete,
+  onCancelDelete,
+  onDelete,
+}: {
+  e: Group["expenses"][number];
+  group: Group;
+  ids: string[];
+  labels: ReturnType<typeof memberLabels>;
+  name: (id: string) => string;
+  money: (n: number) => string;
+  t: ReturnType<typeof useT>;
+  open: boolean;
+  onToggleOpen: () => void;
+  onEdit: () => void;
+  onRequestReview: () => void;
+  onMarkReviewed: () => void;
+  onCancelReview: () => void;
+  onRequestDelete: () => void;
+  onCancelDelete: () => void;
+  onDelete: () => void;
+}) {
+  const c = catOf(e.category);
+  const shares = shareFor(e, ids);
+  const participants = (e.participantIds.length ? e.participantIds : ids).filter(
+    (id) => (shares[id] || 0) > 0.001
+  );
+  const payerDisplay = e.payments?.length
+    ? e.payments.map((p) => name(p.memberId)).join(", ")
+    : name(e.payerId);
+  // Mismo criterio que el botón de eliminar en el detalle: sin autor (gastos
+  // antiguos) o autor = yo → es "mío", puedo eliminarlo directo.
+  const isMine = !e.createdBy || e.createdBy === group.meId;
+
+  const [swipeX, setSwipeX] = useState(0);
+  const drag = useRef<{ startX: number; startY: number; startSwipe: number; horiz: boolean | null; active: boolean }>({
+    startX: 0,
+    startY: 0,
+    startSwipe: 0,
+    horiz: null,
+    active: false,
+  });
+
+  function onTouchStart(ev: React.TouchEvent) {
+    if (!isMine) return;
+    const touch = ev.touches[0];
+    drag.current = { startX: touch.clientX, startY: touch.clientY, startSwipe: swipeX, horiz: null, active: true };
+  }
+  function onTouchMove(ev: React.TouchEvent) {
+    if (!drag.current.active) return;
+    const touch = ev.touches[0];
+    const dx = touch.clientX - drag.current.startX;
+    const dy = touch.clientY - drag.current.startY;
+    if (drag.current.horiz === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      drag.current.horiz = Math.abs(dx) > Math.abs(dy);
+    }
+    if (!drag.current.horiz) return;
+    const next = Math.min(0, Math.max(-SWIPE_W, drag.current.startSwipe + dx));
+    setSwipeX(next);
+  }
+  function onTouchEnd() {
+    if (!drag.current.active) return;
+    drag.current.active = false;
+    setSwipeX((v) => (v < -SWIPE_W / 2 ? -SWIPE_W : 0));
+  }
+
+  function handleHeaderClick() {
+    if (swipeX !== 0) {
+      setSwipeX(0);
+      return;
+    }
+    onToggleOpen();
+  }
+
+  return (
+    <div className="relative rounded-2xl overflow-hidden">
+      {isMine && (
+        <div className="absolute inset-y-0 right-0 flex items-stretch" style={{ width: SWIPE_W }}>
+          <button
+            onClick={() => {
+              setSwipeX(0);
+              onDelete();
+            }}
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 text-white"
+            style={{ background: "var(--coral)" }}
+          >
+            <Icon name="trash" size={16} />
+            <span className="text-[10px] font-semibold">{t("common.delete")}</span>
+          </button>
+        </div>
+      )}
+      <div
+        className="glass hover-lift"
+        style={{
+          transform: `translateX(${swipeX}px)`,
+          transition: drag.current.active ? "none" : "transform 0.2s ease",
+          touchAction: "pan-y",
+        }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <div className="px-3 py-2 flex items-center gap-2.5 cursor-pointer" onClick={handleHeaderClick}>
+          <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 surface-soft text-[color:var(--ink)]">
+            <Icon name={c.icon} size={17} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold truncate flex items-center gap-2 text-[15px] leading-tight">
+              {e.label}
+              {e.reviewRequested && (
+                <span
+                  className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0"
+                  style={{ background: "#E8920C22", color: "#9A6B00" }}
+                >
+                  <Icon name="flag" size={11} /> {t("exp.inReview")}
+                </span>
+              )}
+            </div>
+            <div className="text-[11px] text-muted leading-tight mt-0.5 flex items-center gap-1.5">
+              <span className="truncate">
+                {t("exp.meta", { payer: payerDisplay, date: fmtDate(e.date) })}
+              </span>
+              {participants.length > 0 && (
+                <span className="flex items-center gap-0.5 shrink-0">
+                  {participants.slice(0, 5).map((id) => (
+                    <span
+                      key={id}
+                      title={name(id)}
+                      className="h-4 w-4 rounded-full flex items-center justify-center text-[7px] font-semibold"
+                      style={{
+                        background: (labels[id]?.color ?? "#888") + "22",
+                        color: labels[id]?.color ?? "#888",
+                      }}
+                    >
+                      {labels[id]?.label ?? "?"}
+                    </span>
+                  ))}
+                  {participants.length > 5 && (
+                    <span className="text-[10px] text-muted font-semibold">+{participants.length - 5}</span>
+                  )}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="text-right shrink-0 flex items-center gap-1.5">
+            <span className="font-mono font-bold text-sm">{money(e.amount)}</span>
+            <Icon
+              name="chevron"
+              size={15}
+              className="text-muted transition-transform"
+              style={{ transform: open ? "rotate(180deg)" : "none" }}
+            />
+          </div>
+        </div>
+
+        {open && (
+          <div className="px-3 pb-3 anim-pop">
+            {e.originalCurrency && e.originalAmount != null && (
+              <div className="text-[11px] text-muted mb-2">
+                {t("scan.fxConverted", {
+                  amt: rawMoney(e.originalAmount, e.originalCurrency),
+                  rate: `1 ${e.originalCurrency} ≈ ${fmtRate(e.fxRate ?? 0)} ${group.currency}`,
+                })}
+              </div>
+            )}
+            <div className="glass rounded-xl p-3">
+              {e.items?.length ? (
+                <div className="mb-3">
+                  <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">{t("exp.itemsBreakdown")}</div>
+                  <div className="space-y-2">
+                    {e.items.map((it, i) => {
+                      const who = it.participantIds?.length ? it.participantIds : ids;
+                      return (
+                        <div key={i}>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="truncate pr-2">{it.name || "—"}</span>
+                            <span className="font-mono shrink-0">{money(it.price)}</span>
+                          </div>
+                          <div className="flex items-center flex-wrap gap-1 mt-0.5">
+                            {who.map((id) => (
+                              <span
+                                key={id}
+                                title={name(id)}
+                                className="h-4 w-4 rounded-full flex items-center justify-center text-[7px] font-semibold"
+                                style={{ background: (labels[id]?.color ?? "#888") + "22", color: labels[id]?.color ?? "#888" }}
+                              >
+                                {labels[id]?.label ?? "?"}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {e.fees?.map((f, i) => (
+                      <div key={`fee${i}`} className="flex items-center justify-between text-sm text-muted">
+                        <span className="truncate pr-2">{f.name || t("scan.feeName")}</span>
+                        <span className="font-mono shrink-0">{money(f.amount)}</span>
+                      </div>
+                    ))}
+                    {!!e.tip && (
+                      <div className="flex items-center justify-between text-sm text-muted">
+                        <span>{t("scan.tip")}</span>
+                        <span className="font-mono shrink-0">{money(e.tip)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : null}
+              <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">
+                {e.items?.length ? t("exp.perPerson") : t("exp.shares")}
+              </div>
+              <div className="space-y-1">
+                {participants.map((id) => (
+                  <div key={id} className="flex items-center justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-semibold"
+                        style={{ background: (labels[id]?.color ?? "#888") + "22", color: labels[id]?.color ?? "#888" }}
+                      >
+                        {labels[id]?.label ?? "?"}
+                      </span>
+                      {name(id)}
+                    </span>
+                    <span className="font-mono">{money(shares[id] || 0)}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2 mt-3 flex-wrap">
+                <button
+                  onClick={onEdit}
+                  className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted inline-flex items-center gap-1"
+                >
+                  <Icon name="edit" size={13} /> {t("exp.edit")}
+                </button>
+                {e.receiptPath && <ReceiptButton path={e.receiptPath} />}
+                {!e.reviewRequested ? (
+                  <button
+                    onClick={onRequestReview}
+                    className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted inline-flex items-center gap-1"
+                  >
+                    <Icon name="flag" size={13} /> {t("exp.review")}
+                  </button>
+                ) : e.createdBy === group.meId ? (
+                  <button
+                    onClick={onMarkReviewed}
+                    className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift inline-flex items-center gap-1"
+                    style={{ background: "#0A8B5E" }}
+                  >
+                    <Icon name="check" size={13} /> {t("exp.reviewed")}
+                  </button>
+                ) : (
+                  <button
+                    onClick={onCancelReview}
+                    title={t("exp.tapToCancel")}
+                    className="rounded-full px-3 py-1 text-xs font-semibold hover-lift inline-flex items-center gap-1"
+                    style={{ background: "rgba(232,146,12,0.16)", color: "var(--amber)" }}
+                  >
+                    <Icon name="flag" size={13} /> {t("exp.reviewRequested")} <Icon name="close" size={12} />
+                  </button>
+                )}
+                {e.createdBy && e.createdBy !== group.meId ? (
+                  e.deleteRequested ? (
+                    <button
+                      onClick={onCancelDelete}
+                      title={t("exp.tapToCancel")}
+                      className="rounded-full px-3 py-1 text-xs font-semibold hover-lift inline-flex items-center gap-1"
+                      style={{ background: "rgba(232,146,12,0.16)", color: "var(--amber)" }}
+                    >
+                      <Icon name="clock" size={13} /> {t("exp.deletePending")} <Icon name="close" size={12} />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={onRequestDelete}
+                      className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted inline-flex items-center gap-1"
+                    >
+                      <Icon name="trash" size={13} /> {t("exp.requestDelete")}
+                    </button>
+                  )
+                ) : e.deleteRequested ? (
+                  <button
+                    onClick={onDelete}
+                    className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift inline-flex items-center gap-1"
+                    style={{ background: "var(--coral)" }}
+                  >
+                    <Icon name="trash" size={13} /> {t("exp.deleteApprove")}
+                  </button>
+                ) : (
+                  <button
+                    onClick={onDelete}
+                    className="glass rounded-full px-3 py-1 text-xs hover-lift lk-danger text-muted inline-flex items-center gap-1"
+                  >
+                    <Icon name="trash" size={13} /> {t("common.delete")}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
