@@ -56,6 +56,8 @@ export interface Member {
   pay?: PayMethod;
   /** Métodos de pago guardados por separado (PayID, banco, PayPal…). */
   pays?: PayMethod[];
+  /** false = alta manual sin cuenta todavía; undefined/true = tiene cuenta vinculada. */
+  claimed?: boolean;
 }
 
 export interface Expense {

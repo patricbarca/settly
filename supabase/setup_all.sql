@@ -64,7 +64,10 @@ CREATE TABLE IF NOT EXISTS invite_links (
   group_id   TEXT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   created_by UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   expires_at TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '7 days'),
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  -- Si se define, este link reclama un Member añadido manualmente (sin cuenta)
+  -- en vez de crear uno nuevo al unirse. Ver migrate_v9_claim_member.sql.
+  claim_member_id TEXT
 );
 
 -- ---------- PLANES + CÓDIGOS ----------

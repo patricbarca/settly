@@ -22,6 +22,8 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
   const [network, setNetwork] = useState<Contact[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState("");
+  const [manualMembers, setManualMembers] = useState<{ id: string; name: string }[]>([]);
+  const [manualName, setManualName] = useState("");
 
   useEffect(() => {
     getNetwork().then(setNetwork).catch(() => {});
@@ -44,6 +46,17 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
     });
   }
 
+  function addManual() {
+    const n = manualName.trim();
+    if (!n) return;
+    setManualMembers((prev) => [...prev, { id: uid(), name: n }]);
+    setManualName("");
+  }
+
+  function removeManual(id: string) {
+    setManualMembers((prev) => prev.filter((m) => m.id !== id));
+  }
+
   function create() {
     if (!name.trim()) return;
     const meId = uid();
@@ -55,13 +68,14 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
       extraMembers.push({ userId: c.userId, memberId });
       return { id: memberId, name: c.name, avatar: c.avatar };
     });
+    const manual = manualMembers.map((m) => ({ id: m.id, name: m.name, avatar: "", claimed: false }));
     const group: Group = {
       id: uid(),
       name: name.trim(),
       currency,
       kind,
       meId,
-      members: [me, ...others],
+      members: [me, ...others, ...manual],
       expenses: [],
       activity: [makeActivity({ type: "group_created", actorId: meId, actorName: me.name })],
     };
@@ -214,6 +228,41 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
               )}
             </div>
           )}
+
+          {/* Alta manual: gente sin cuenta todavía. Luego puedes mandarles un
+              link para que vinculen su cuenta a esta persona (UsersModal). */}
+          <div>
+            <label className="text-xs font-semibold text-muted">{t("members.addManual")}</label>
+            {manualMembers.length > 0 && (
+              <div className="flex gap-1.5 flex-wrap mt-1.5">
+                {manualMembers.map((m) => (
+                  <span key={m.id} className="glass rounded-full pl-3 pr-1.5 py-1 text-sm flex items-center gap-1.5">
+                    {m.name}
+                    <button onClick={() => removeManual(m.id)} className="text-muted hover-lift">
+                      <Icon name="close" size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2 mt-1.5">
+              <input
+                value={manualName}
+                onChange={(e) => setManualName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addManual())}
+                placeholder={t("members.name")}
+                className="glass rounded-xl px-3 py-2 text-sm flex-1"
+              />
+              <button
+                onClick={addManual}
+                disabled={!manualName.trim()}
+                className="glass-strong rounded-xl px-3 py-2 text-sm font-medium hover-lift disabled:opacity-50"
+              >
+                <Icon name="plus" size={16} />
+              </button>
+            </div>
+            <p className="text-[11px] text-muted mt-1">{t("members.manualHint")}</p>
+          </div>
         </div>
 
         <div className="flex gap-2 mt-5">

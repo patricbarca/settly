@@ -12,9 +12,7 @@ import { createInviteLink } from "../lib/invite";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 
-// Solo se pueden añadir usuarios YA registrados (búsqueda por email/teléfono) o
-// invitar por link. No hay alta "manual" de personas sin cuenta.
-type AddMode = "idle" | "search" | "found" | "notfound";
+type AddMode = "idle" | "search" | "found" | "notfound" | "manual";
 
 export function UsersModal({ group, onClose }: { group: Group; onClose: () => void }) {
   const t = useT();
@@ -24,6 +22,9 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
   const [searching, setSearching] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [inviteErr, setInviteErr] = useState(false);
+  const [manualName, setManualName] = useState("");
+  const [linkMemberId, setLinkMemberId] = useState<string | null>(null);
+  const [linkErrId, setLinkErrId] = useState<string | null>(null);
   // Sugeridos: tu red (registrados) menos quienes ya están en este grupo.
   const [network, setNetwork] = useState<Contact[]>([]);
   const [existingIds, setExistingIds] = useState<Set<string>>(new Set());
@@ -60,6 +61,7 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
     setQuery("");
     setFoundUser(null);
     setSearching(false);
+    setManualName("");
   }
 
   async function searchUser() {
@@ -112,6 +114,22 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
     await addUser(foundUser.id, foundUser.name);
   }
 
+  function addManual() {
+    const name = manualName.trim();
+    if (!name) return;
+    updateGroup(group.id, (g) => ({
+      ...g,
+      members: [...g.members, { id: uid(), name, avatar: "", claimed: false }],
+      activity: withActivity(g, {
+        type: "member_added",
+        actorId: g.meId,
+        actorName: g.members.find((m) => m.id === g.meId)?.name,
+        label: name,
+      }),
+    }));
+    reset();
+  }
+
   async function copyInvite() {
     setInviteErr(false);
     try {
@@ -122,6 +140,19 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
     } catch {
       setInviteErr(true);
       setTimeout(() => setInviteErr(false), 2500);
+    }
+  }
+
+  async function copyClaimLink(memberId: string) {
+    setLinkErrId(null);
+    try {
+      const link = await createInviteLink(group, memberId);
+      await navigator.clipboard.writeText(link);
+      setLinkMemberId(memberId);
+      setTimeout(() => setLinkMemberId(null), 2500);
+    } catch {
+      setLinkErrId(memberId);
+      setTimeout(() => setLinkErrId(null), 2500);
     }
   }
 
@@ -172,7 +203,20 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
                     {m.name}
                     {m.id === group.meId && <span className="text-muted text-xs ml-1">({t("members.you")})</span>}
                   </div>
+                  {m.claimed === false && (
+                    <div className="text-[11px] text-muted">{t("members.unclaimed")}</div>
+                  )}
                 </div>
+                {m.claimed === false && (
+                  <button
+                    onClick={() => copyClaimLink(m.id)}
+                    className="glass rounded-full h-7 w-7 flex items-center justify-center shrink-0 hover-lift"
+                    style={{ color: linkErrId === m.id ? "#D14444" : linkMemberId === m.id ? "#0A8B5E" : "var(--teal)" }}
+                    title={t("members.claimLink")}
+                  >
+                    <Icon name={linkMemberId === m.id ? "check" : "copy"} size={13} />
+                  </button>
+                )}
                 <div
                   className="text-sm font-mono font-semibold shrink-0"
                   style={{ color: ok ? "var(--muted)" : bal > 0 ? "#0A8B5E" : "#D14444" }}
@@ -239,6 +283,9 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
                   </button>
                 </div>
                 <div className="flex gap-2 mt-2">
+                  <button onClick={() => setAddMode("manual")} className="lk text-xs" style={{ color: "var(--teal)" }}>
+                    {t("members.addManual")}
+                  </button>
                   <button onClick={reset} className="lk text-xs text-muted">{t("common.cancel")}</button>
                 </div>
 
@@ -291,13 +338,40 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
             )}
             {addMode === "notfound" && (
               <>
-                <p className="text-sm text-muted mb-3">{t("members.notFoundInvite")}</p>
+                <p className="text-sm text-muted mb-3">{t("members.notFound")}</p>
                 <div className="flex gap-2 flex-wrap">
-                  <button onClick={() => { reset(); copyInvite(); }} className="glass-strong rounded-full px-4 py-2 text-sm font-medium hover-lift" style={{ color: "var(--teal)" }}>
+                  <button onClick={() => setAddMode("manual")} className="glass-strong rounded-full px-4 py-2 text-sm font-medium hover-lift" style={{ color: "var(--teal)" }}>
+                    {t("members.addManual")}
+                  </button>
+                  <button onClick={() => { reset(); copyInvite(); }} className="glass rounded-full px-4 py-2 text-sm text-muted hover-lift">
                     <span className="inline-flex items-center gap-1.5"><Icon name="copy" size={14} /> {t("group.shareBtn")}</span>
                   </button>
                   <button onClick={() => setAddMode("search")} className="glass rounded-full px-4 py-2 text-sm text-muted hover-lift">{t("members.backSearch")}</button>
                   <button onClick={reset} className="lk text-sm text-muted">{t("common.cancel")}</button>
+                </div>
+              </>
+            )}
+            {addMode === "manual" && (
+              <>
+                <p className="text-xs text-muted mb-2">{t("members.manualHint")}</p>
+                <input
+                  autoFocus
+                  value={manualName}
+                  onChange={(e) => setManualName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && addManual()}
+                  placeholder={t("members.name")}
+                  className="glass rounded-xl px-3 py-2 text-sm w-full"
+                />
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={addManual}
+                    disabled={!manualName.trim()}
+                    className="glass-strong rounded-full px-4 py-2 text-sm font-medium hover-lift disabled:opacity-50"
+                    style={{ color: "var(--teal)" }}
+                  >
+                    {t("members.addConfirm")}
+                  </button>
+                  <button onClick={reset} className="glass rounded-full px-4 py-2 text-sm text-muted hover-lift">{t("common.cancel")}</button>
                 </div>
               </>
             )}
