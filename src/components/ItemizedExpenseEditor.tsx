@@ -268,16 +268,16 @@ export function ItemizedExpenseEditor({
                 value={it.name}
                 onChange={(e) => setItem(it.id, { name: e.target.value })}
                 placeholder="—"
-                className="bg-transparent text-sm flex-1 px-1"
+                className="bg-transparent text-sm flex-1 min-w-0 px-1"
               />
               <input
                 value={showOriginal ? origDisplay(it.price, it.originalPrice) : it.price}
                 onChange={(e) => setItemPrice(it.id, e.target.value)}
                 inputMode="decimal"
                 placeholder="0"
-                className="glass rounded-lg px-2 py-1 text-sm w-28 text-right font-mono"
+                className={`glass rounded-lg px-1.5 py-1 text-right font-mono shrink-0 ${showOriginal ? "text-xs w-24" : "text-sm w-20"}`}
               />
-              <span className="text-muted text-sm">{showOriginal ? originalCurrency : cur}</span>
+              <span className="text-muted text-[11px] shrink-0">{showOriginal ? originalCurrency : cur}</span>
               <button onClick={() => splitItem(it.id)} className="lk flex items-center text-muted" title={t("scan.splitRow")}>
                 <Icon name="copy" size={14} />
               </button>
@@ -327,16 +327,16 @@ export function ItemizedExpenseEditor({
                 value={f.name}
                 onChange={(e) => setFee(f.id, { name: e.target.value })}
                 placeholder={t("scan.feeName")}
-                className="bg-transparent text-sm flex-1 px-1"
+                className="bg-transparent text-sm flex-1 min-w-0 px-1"
               />
               <input
                 value={showOriginal ? origDisplay(f.amount, f.originalAmount) : f.amount}
                 onChange={(e) => setFeeAmount(f.id, e.target.value)}
                 inputMode="decimal"
                 placeholder="0"
-                className="glass rounded-lg px-2 py-1 text-sm w-28 text-right font-mono"
+                className={`glass rounded-lg px-1.5 py-1 text-right font-mono shrink-0 ${showOriginal ? "text-xs w-24" : "text-sm w-20"}`}
               />
-              <span className="text-muted text-sm">{showOriginal ? originalCurrency : cur}</span>
+              <span className="text-muted text-[11px] shrink-0">{showOriginal ? originalCurrency : cur}</span>
               <button onClick={() => removeFee(f.id)} className="lk lk-danger flex items-center">
                 <Icon name="close" size={14} />
               </button>
@@ -366,9 +366,9 @@ export function ItemizedExpenseEditor({
               onChange={(e) => onTipChange(e.target.value)}
               inputMode="decimal"
               placeholder="0"
-              className="glass rounded-lg px-2 py-1 text-sm w-28 text-right font-mono"
+              className={`glass rounded-lg px-1.5 py-1 text-right font-mono shrink-0 ${showOriginal ? "text-xs w-24" : "text-sm w-20"}`}
             />
-            <span className="text-muted text-sm">{showOriginal ? originalCurrency : cur}</span>
+            <span className="text-muted text-[11px] shrink-0">{showOriginal ? originalCurrency : cur}</span>
           </div>
         </div>
       )}

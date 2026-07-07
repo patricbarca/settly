@@ -725,7 +725,16 @@ function ExpenseRow({
                       </span>
                       {name(id)}
                     </span>
-                    <span className="font-mono">{money(shares[id] || 0)}</span>
+                    {showOriginal && canShowOriginal ? (
+                      <span className="font-mono text-right">
+                        {money(shares[id] || 0)}
+                        <span className="block text-[10px] font-normal text-muted">
+                          {rawMoney((shares[id] || 0) / e.fxRate!, e.originalCurrency)}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="font-mono">{money(shares[id] || 0)}</span>
+                    )}
                   </div>
                 ))}
               </div>
