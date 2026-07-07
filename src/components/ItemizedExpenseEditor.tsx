@@ -275,7 +275,7 @@ export function ItemizedExpenseEditor({
                 onChange={(e) => setItemPrice(it.id, e.target.value)}
                 inputMode="decimal"
                 placeholder="0"
-                className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
+                className="glass rounded-lg px-2 py-1 text-sm w-28 text-right font-mono"
               />
               <span className="text-muted text-sm">{showOriginal ? originalCurrency : cur}</span>
               <button onClick={() => splitItem(it.id)} className="lk flex items-center text-muted" title={t("scan.splitRow")}>
@@ -334,7 +334,7 @@ export function ItemizedExpenseEditor({
                 onChange={(e) => setFeeAmount(f.id, e.target.value)}
                 inputMode="decimal"
                 placeholder="0"
-                className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
+                className="glass rounded-lg px-2 py-1 text-sm w-28 text-right font-mono"
               />
               <span className="text-muted text-sm">{showOriginal ? originalCurrency : cur}</span>
               <button onClick={() => removeFee(f.id)} className="lk lk-danger flex items-center">
@@ -345,23 +345,13 @@ export function ItemizedExpenseEditor({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <label className="text-xs font-semibold text-muted">{t("form.paid")}</label>
-          <select value={payerId} onChange={(e) => setPayerId(e.target.value)} className="glass rounded-xl px-3 py-2 text-sm w-full mt-1">
-            {group.members.map((m) => (
-              <option key={m.id} value={m.id}>{m.name}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="text-xs font-semibold text-muted">{t("form.category")}</label>
-          <select value={category} onChange={(e) => setCategory(e.target.value as Category)} className="glass rounded-xl px-3 py-2 text-sm w-full mt-1">
-            {CATEGORIES.map((c) => (
-              <option key={c.id} value={c.id}>{t(`cat.${c.id}`)}</option>
-            ))}
-          </select>
-        </div>
+      <div>
+        <label className="text-xs font-semibold text-muted">{t("form.category")}</label>
+        <select value={category} onChange={(e) => setCategory(e.target.value as Category)} className="glass rounded-xl px-3 py-2 text-sm w-full mt-1">
+          {CATEGORIES.map((c) => (
+            <option key={c.id} value={c.id}>{t(`cat.${c.id}`)}</option>
+          ))}
+        </select>
       </div>
 
       {category === "comida" && (
@@ -376,17 +366,27 @@ export function ItemizedExpenseEditor({
               onChange={(e) => onTipChange(e.target.value)}
               inputMode="decimal"
               placeholder="0"
-              className="glass rounded-lg px-2 py-1 text-sm w-20 text-right font-mono"
+              className="glass rounded-lg px-2 py-1 text-sm w-28 text-right font-mono"
             />
             <span className="text-muted text-sm">{showOriginal ? originalCurrency : cur}</span>
           </div>
         </div>
       )}
 
-      <div className="flex justify-center">
-        <div className="glass rounded-full px-4 py-1.5 text-xs font-semibold inline-flex items-center gap-1">
-          {t("scan.total")}: {showOriginal && canToggle ? money(originalTotal, originalCurrency) : money(total, group.currency)}
-        </div>
+      <div className="glass rounded-3xl p-3 flex items-center justify-between">
+        <span className="text-sm font-semibold">{t("scan.total")}</span>
+        <span className="font-mono font-bold text-lg">
+          {showOriginal && canToggle ? money(originalTotal, originalCurrency) : money(total, group.currency)}
+        </span>
+      </div>
+
+      <div>
+        <label className="text-xs font-semibold text-muted">{t("form.paid")}</label>
+        <select value={payerId} onChange={(e) => setPayerId(e.target.value)} className="glass rounded-xl px-3 py-2 text-sm w-full mt-1">
+          {group.members.map((m) => (
+            <option key={m.id} value={m.id}>{m.name}</option>
+          ))}
+        </select>
       </div>
 
       <div className="glass rounded-3xl p-3">
