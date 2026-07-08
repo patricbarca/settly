@@ -13,6 +13,7 @@ import { usePlan, FREE_AI_QUOTA, startPortal, useHasStripeSubscription } from ".
 import { Icon } from "./Icon";
 import { Paywall } from "./Paywall";
 import { FeedbackModal } from "./FeedbackModal";
+import { FaqModal } from "./FaqModal";
 
 const PAY_TYPES: PayType[] = ["payid", "bank", "paypal", "revolut", "wise", "bizum", "bunq", "other"];
 
@@ -24,6 +25,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const hasStripe = useHasStripeSubscription();
   const [showPaywall, setShowPaywall] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showFaq, setShowFaq] = useState(false);
   const [portalBusy, setPortalBusy] = useState(false);
   const [portalErr, setPortalErr] = useState<string | null>(null);
 
@@ -466,6 +468,21 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           </div>
         )}
 
+        {/* Preguntas frecuentes */}
+        <button
+          onClick={() => setShowFaq(true)}
+          className="glass rounded-xl p-3 mb-3 w-full flex items-center gap-2 text-left hover-lift"
+        >
+          <span className="h-8 w-8 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(15,163,163,0.14)", color: "var(--teal)" }}>
+            <Icon name="help" size={16} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold">{t("faq.entry")}</div>
+            <div className="text-xs text-muted">{t("faq.entrySub")}</div>
+          </div>
+          <Icon name="chevron" size={16} className="text-muted shrink-0" />
+        </button>
+
         {/* Enviar comentarios / reportar problema */}
         <button
           onClick={() => setShowFeedback(true)}
@@ -518,6 +535,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
 
         {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
         {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
+        {showFaq && <FaqModal onClose={() => setShowFaq(false)} />}
         </div>
       </div>
     </div>
