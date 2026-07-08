@@ -45,6 +45,13 @@ export function memberInitials(m: { initials?: string; name: string }): string {
 
 export const uid = () => Math.random().toString(36).slice(2, 9);
 
+/** Miembros ordenados alfabéticamente por nombre (case/acento-insensible),
+ *  para que aparezcan siempre en el mismo orden en toda la app en vez del
+ *  orden de alta (creador primero, luego quien se fue añadiendo). */
+export function sortedMembers<T extends { name: string }>(members: T[]): T[] {
+  return [...members].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }));
+}
+
 /** Etiquetas de iniciales ÚNICAS dentro de un grupo, cada una con un color
  *  distinto, para que nunca haya dos personas indistinguibles en los avatares.
  *  - Respeta las iniciales personalizadas (`Member.initials`).

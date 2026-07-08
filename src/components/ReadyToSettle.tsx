@@ -1,7 +1,7 @@
 import type { Group } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { withActivity } from "../lib/activity";
-import { personColor, memberInitials } from "../lib/format";
+import { personColor, memberInitials, sortedMembers } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 
@@ -32,7 +32,7 @@ export function ReadyToSettle({ group }: { group: Group }) {
       <p className="text-sm text-muted mt-0.5 mb-3">{t("ready.sub")}</p>
 
       <div className="space-y-1.5">
-        {group.members.map((m) => {
+        {sortedMembers(group.members).map((m) => {
           const isReady = ready.includes(m.id);
           return (
             <div key={m.id} className="flex items-center gap-2 text-sm">

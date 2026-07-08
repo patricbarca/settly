@@ -4,7 +4,7 @@ import { updateGroup, deleteGroup, leaveGroup } from "../lib/store";
 import { useUser } from "../lib/auth";
 import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
-import { money, personColor, memberInitials } from "../lib/format";
+import { money, personColor, memberInitials, sortedMembers } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
 import { usePlan } from "../lib/plan";
 import { CURRENCIES, currencyOf, localCurrencyName, resolveToCode } from "../lib/currencies";
@@ -254,7 +254,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
         <div className="mb-5">
           <div className="text-xs font-semibold text-muted mb-2">{t("settings.members")}</div>
           <div className="space-y-2">
-            {group.members.map((m) => {
+            {sortedMembers(group.members).map((m) => {
               const balance = net[m.id] ?? 0;
               const settled = Math.abs(balance) < 0.01;
               const canRemove = m.id !== group.meId && !referenced.has(m.id);

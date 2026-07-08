@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Group } from "../lib/types";
 import { computeSettle, directTransfers } from "../lib/split";
 import { updateGroup } from "../lib/store";
-import { personColor, memberInitials } from "../lib/format";
+import { personColor, memberInitials, sortedMembers } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useGroupMoney } from "../lib/displayCurrency";
 import { Icon } from "./Icon";
@@ -93,7 +93,7 @@ export function Balances({ group }: { group: Group }) {
       <div className="glass rounded-3xl p-5">
         <div className="text-xs uppercase tracking-widest font-mono text-muted">{t("bal.title")}</div>
         <div className="mt-3 space-y-1.5">
-          {group.members.map((m) => {
+          {sortedMembers(group.members).map((m) => {
             const v = net[m.id] || 0;
             const ok = Math.abs(v) < 0.01;
             return (
