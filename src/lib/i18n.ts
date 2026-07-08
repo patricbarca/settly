@@ -210,6 +210,18 @@ const DICT: Record<string, { es: string; en: string }> = {
   "hero.owedLabel": { es: "Te deben en total", en: "You're owed in total" },
   "hero.total": { es: "Total del grupo {amt} · {e} gastos", en: "Group total {amt} · {e} expenses" },
   "hero.groupLabel": { es: "Grupo", en: "Group" },
+  "hero.modeSimplified": { es: "Simplificado", en: "Simplified" },
+  "hero.modeDirect": { es: "Directo", en: "Direct" },
+  "hero.modeInfoTitle": { es: "Modo de pago", en: "Settle-up mode" },
+  "hero.modeInfoSimplified": {
+    es: "Este grupo usa el modo Simplificado: se calcula el mínimo número de transferencias para saldar cuentas, aunque a veces le pagues a alguien con quien no compartiste ningún gasto directamente. Al marcar un pago, los gastos pendientes se van cubriendo automáticamente del más antiguo al más nuevo.",
+    en: "This group uses Simplified mode: it computes the fewest transfers to settle up, even if that means paying someone you never actually shared an expense with. When you mark a payment, pending expenses get covered automatically from oldest to newest.",
+  },
+  "hero.modeInfoDirect": {
+    es: "Este grupo usa el modo Directo: cada quien le paga exactamente a quien puso el dinero de cada gasto — más transferencias, pero cada una corresponde a un gasto real. Al marcar un pago puedes elegir qué gastos concretos cubre.",
+    en: "This group uses Direct mode: everyone pays exactly whoever fronted each expense — more transfers, but each one maps to a real expense. When you mark a payment you can choose exactly which expenses it covers.",
+  },
+  "hero.modeChangeHint": { es: "Se cambia en los ajustes del grupo.", en: "You can change it in group settings." },
 
   "group.back": { es: "Mis grupos", en: "My groups" },
   "group.delete": { es: "Eliminar grupo", en: "Delete group" },

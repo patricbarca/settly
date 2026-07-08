@@ -486,20 +486,16 @@ function ExpenseRow({
   // Mismo criterio que el botón de eliminar en el detalle: sin autor (gastos
   // antiguos) o autor = yo → es "mío", puedo eliminarlo directo.
   const isMine = !e.createdBy || e.createdBy === group.meId;
-  // Indicador "pagado"/"pendiente" por gasto — solo tiene sentido en modo
-  // Directo, donde un pago confirmado puede referenciar gastos concretos
-  // (`Settlement.expenseIds`). En Simplificado no hay vínculo gasto↔pago.
-  const direct = group.simplifyDebts === false;
-  const { debtorIds, settledIds } = direct
-    ? expenseSettledStatus(e, ids, group.settlements ?? [])
-    : { debtorIds: [], settledIds: new Set<string>() };
+  // Indicador "pagado"/"pendiente" por gasto: un pago confirmado que
+  // referencia este gasto en `expenseIds` — en modo Directo por elección
+  // manual (picker), en Simplificado por asignación automática de más
+  // antiguo a más nuevo (`fifoExpenseIdsForAmount`).
+  const { debtorIds, settledIds } = expenseSettledStatus(e, ids, group.settlements ?? []);
   const pendingCount = debtorIds.filter((id) => !settledIds.has(id)).length;
   const paidStatus: "paid" | "pending" | null =
-    direct && debtorIds.length > 0 ? (pendingCount === 0 ? "paid" : "pending") : null;
-  // Anillo verde en la burbuja: ya saldó su parte (o no debía, por ser
-  // pagador). Solo se marca en modo Directo, que es donde hay vínculo real
-  // entre un gasto y los pagos que lo cubren.
-  const bubblePaid = (id: string) => direct && (payerIds.includes(id) || settledIds.has(id));
+    debtorIds.length > 0 ? (pendingCount === 0 ? "paid" : "pending") : null;
+  // Anillo verde en la burbuja: ya saldó su parte (o no debía, por ser pagador).
+  const bubblePaid = (id: string) => payerIds.includes(id) || settledIds.has(id);
 
   const [swipeX, setSwipeX] = useState(0);
   // Al escanear un ticket en otra moneda, permite ver los ítems en la moneda

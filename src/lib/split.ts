@@ -207,3 +207,42 @@ export function expenseSettledStatus(
   }
   return { debtorIds, settledIds };
 }
+
+/** Modo Simplificado: una transferencia es una optimización agregada que no
+ *  siempre corresponde a un gasto real entre ese par exacto, así que no se
+ *  puede dejar elegir gastos concretos como en Directo. En su lugar, al
+ *  marcar un pago se asignan automáticamente los gastos pendientes de
+ *  'fromId' del más ANTIGUO al más nuevo, hasta agotar el monto pagado —
+ *  solo se marcan como cubiertos los que caben enteros (no se parte un
+ *  gasto), dejando el resto para el próximo pago. */
+export function fifoExpenseIdsForAmount(
+  members: Member[],
+  expenses: Expense[],
+  settlements: Settlement[],
+  fromId: string,
+  amount: number
+): string[] {
+  const ids = members.map((m) => m.id);
+  const alreadySettled = new Set<string>();
+  for (const s of settlements) {
+    if (s.status === "confirmed" && s.from === fromId) {
+      (s.expenseIds ?? []).forEach((id) => alreadySettled.add(id));
+    }
+  }
+
+  const sorted = [...expenses].sort((a, b) => a.date.localeCompare(b.date));
+  let remaining = amount;
+  const out: string[] = [];
+  for (const e of sorted) {
+    if (alreadySettled.has(e.id)) continue;
+    const owedShare = shareFor(e, ids)[fromId] || 0;
+    if (owedShare <= 0.01) continue;
+    if (owedShare <= remaining + 0.01) {
+      out.push(e.id);
+      remaining -= owedShare;
+    } else {
+      break;
+    }
+  }
+  return out;
+}
