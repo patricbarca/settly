@@ -51,7 +51,7 @@ export function InstallDemoAnim({ scale = 1.5 }: { scale?: number }) {
             {/* mini header app */}
             <div style={{ display: "flex", alignItems: "center", gap: 5, padding: "9px 9px 6px" }}>
               <Logo size={16} />
-              <span style={{ fontFamily: "'Bricolage Grotesque',sans-serif", fontWeight: 800, fontSize: 12, color: "#1a1c22" }}>
+              <span style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 800, fontSize: 12, color: "#1a1c22" }}>
                 Settlia
               </span>
             </div>
