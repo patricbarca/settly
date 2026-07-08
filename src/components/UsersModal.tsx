@@ -23,8 +23,6 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
   const [inviteCopied, setInviteCopied] = useState(false);
   const [inviteErr, setInviteErr] = useState(false);
   const [manualName, setManualName] = useState("");
-  const [linkMemberId, setLinkMemberId] = useState<string | null>(null);
-  const [linkErrId, setLinkErrId] = useState<string | null>(null);
   // Sugeridos: tu red (registrados) menos quienes ya están en este grupo.
   const [network, setNetwork] = useState<Contact[]>([]);
   const [existingIds, setExistingIds] = useState<Set<string>>(new Set());
@@ -143,19 +141,6 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
     }
   }
 
-  async function copyClaimLink(memberId: string) {
-    setLinkErrId(null);
-    try {
-      const link = await createInviteLink(group, memberId);
-      await navigator.clipboard.writeText(link);
-      setLinkMemberId(memberId);
-      setTimeout(() => setLinkMemberId(null), 2500);
-    } catch {
-      setLinkErrId(memberId);
-      setTimeout(() => setLinkErrId(null), 2500);
-    }
-  }
-
   function remove(id: string) {
     if (referenced.has(id) || id === group.meId) return;
     const removed = group.members.find((m) => m.id === id)?.name;
@@ -207,16 +192,6 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
                     <div className="text-[11px] text-muted">{t("members.unclaimed")}</div>
                   )}
                 </div>
-                {m.claimed === false && (
-                  <button
-                    onClick={() => copyClaimLink(m.id)}
-                    className="glass rounded-full h-7 w-7 flex items-center justify-center shrink-0 hover-lift"
-                    style={{ color: linkErrId === m.id ? "#D14444" : linkMemberId === m.id ? "#0A8B5E" : "var(--teal)" }}
-                    title={t("members.claimLink")}
-                  >
-                    <Icon name={linkMemberId === m.id ? "check" : "copy"} size={13} />
-                  </button>
-                )}
                 <div
                   className="text-sm font-mono font-semibold shrink-0"
                   style={{ color: ok ? "var(--muted)" : bal > 0 ? "#0A8B5E" : "#D14444" }}

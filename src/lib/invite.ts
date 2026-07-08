@@ -30,7 +30,34 @@ export async function createInviteLink(group: Group, claimMemberId?: string): Pr
   return `${base.replace(/\/$/, "")}/?join=${data.token}`;
 }
 
-export async function joinByToken(token: string, userId: string): Promise<Group | null> {
+/**
+ * Antes de unir la cuenta al grupo, muestra al invitado quién falta por
+ * reclamar (miembros añadidos manualmente, sin cuenta todavía) para que pueda
+ * elegir "soy yo" en vez de que el creador tenga que mandar un link por
+ * persona. `null` si el token no es válido/expiró.
+ */
+export async function getJoinPreview(
+  token: string
+): Promise<{ groupName: string; unclaimed: { id: string; name: string }[] } | null> {
+  const { data: invite } = await supabase
+    .from("invite_links")
+    .select("group_id, expires_at")
+    .eq("token", token)
+    .single();
+  if (!invite || new Date(invite.expires_at) < new Date()) return null;
+
+  const { data: row } = await supabase
+    .from("groups").select("data").eq("id", invite.group_id).single();
+  if (!row) return null;
+
+  const group = row.data as Group;
+  return {
+    groupName: group.name,
+    unclaimed: group.members.filter((m) => m.claimed === false).map((m) => ({ id: m.id, name: m.name })),
+  };
+}
+
+export async function joinByToken(token: string, userId: string, claimMemberId?: string): Promise<Group | null> {
   const { data: invite } = await supabase
     .from("invite_links")
     .select("group_id, expires_at, claim_member_id")
@@ -61,11 +88,13 @@ export async function joinByToken(token: string, userId: string): Promise<Group 
   if (!row) return null;
   const group = row.data as Group;
 
-  // Si el link apunta a un miembro añadido manualmente (sin cuenta) y nadie lo
-  // ha reclamado todavía, esta cuenta se vincula a ESE miembro en vez de crear
-  // uno nuevo — así el gasto histórico ya asignado a esa persona no se pierde.
-  const claimTarget = invite.claim_member_id
-    ? group.members.find((m) => m.id === invite.claim_member_id && m.claimed === false)
+  // Si el invitado eligió "soy yo" sobre un miembro añadido manualmente (sin
+  // cuenta) — vía el picker en el link general, o un link antiguo dirigido a
+  // un miembro concreto — esta cuenta se vincula a ESE miembro en vez de crear
+  // uno nuevo, así el gasto histórico ya asignado a esa persona no se pierde.
+  const wantedId = claimMemberId ?? invite.claim_member_id;
+  const claimTarget = wantedId
+    ? group.members.find((m) => m.id === wantedId && m.claimed === false)
     : null;
 
   if (claimTarget) {

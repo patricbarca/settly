@@ -84,6 +84,9 @@ const DICT: Record<string, { es: string; en: string }> = {
   "group.shareTitle": { es: "Compartir grupo", en: "Share group" },
   "group.shareHint": { es: "Comparte el enlace para que otros se unan.", en: "Share the link so others can join." },
   "group.shareBtn": { es: "Copiar enlace", en: "Copy link" },
+  "join.whichAreYou": { es: "¿Cuál de estos eres tú?", en: "Which one of these are you?" },
+  "join.whichAreYouHint": { es: "Alguien te añadió a \"{name}\" sin cuenta todavía. Elige tu nombre para heredar tu historial.", en: "Someone added you to \"{name}\" without an account yet. Pick your name to inherit your history." },
+  "join.noneOfThese": { es: "Ninguno, soy nuevo/a", en: "None of these, I'm new" },
 
   "app.footerCloud": { es: "¿Necesitas ayuda?", en: "Need help?" },
 
