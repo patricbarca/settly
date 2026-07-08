@@ -146,7 +146,7 @@ export function Home({ tab }: { tab: HomeTab }) {
         </div>
       )}
 
-      {/* Balance global (todos los grupos): gastado (T, pill propia), debo (↓), me deben (↑) */}
+      {/* Balance global (todos los grupos): gastado (T), debo (↓), me deben (↑) — cada uno en su propia pill */}
       {showOverall && (
         <div className="mt-6 flex flex-col items-center">
           <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">{t("home.overall")}</p>
@@ -154,19 +154,11 @@ export function Home({ tab }: { tab: HomeTab }) {
             <div className="glass rounded-full px-3 py-1.5">
               <span className="text-sm font-mono font-bold">T: {money(spent, overallCur)}</span>
             </div>
-            <div className="glass rounded-full px-2 py-1.5 flex items-center gap-1.5">
-              <span
-                className="rounded-full px-3 py-1 text-sm font-mono font-bold"
-                style={{ background: "rgba(209,68,68,0.12)", color: "#D14444" }}
-              >
-                ↓ {money(owe, overallCur)}
-              </span>
-              <span
-                className="rounded-full px-3 py-1 text-sm font-mono font-bold"
-                style={{ background: "rgba(10,139,94,0.12)", color: "#0A8B5E" }}
-              >
-                ↑ {money(owed, overallCur)}
-              </span>
+            <div className="rounded-full px-3 py-1.5" style={{ background: "rgba(209,68,68,0.12)", color: "#D14444" }}>
+              <span className="text-sm font-mono font-bold">↓ {money(owe, overallCur)}</span>
+            </div>
+            <div className="rounded-full px-3 py-1.5" style={{ background: "rgba(10,139,94,0.12)", color: "#0A8B5E" }}>
+              <span className="text-sm font-mono font-bold">↑ {money(owed, overallCur)}</span>
             </div>
           </div>
         </div>
