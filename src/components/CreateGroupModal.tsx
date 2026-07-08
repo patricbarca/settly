@@ -47,9 +47,11 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
   }
 
   function addManual() {
-    const n = manualName.trim();
-    if (!n) return;
-    setManualMembers((prev) => [...prev, { id: uid(), name: n }]);
+    // Admite varios nombres separados por coma en una sola pasada, para no
+    // tener que tocar el botón "+" ni cerrar el teclado entre uno y otro.
+    const names = manualName.split(",").map((n) => n.trim()).filter(Boolean);
+    if (!names.length) return;
+    setManualMembers((prev) => [...prev, ...names.map((n) => ({ id: uid(), name: n }))]);
     setManualName("");
   }
 
@@ -248,7 +250,16 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
             <div className="flex gap-2 mt-1.5">
               <input
                 value={manualName}
-                onChange={(e) => setManualName(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v.includes(",")) {
+                    const names = v.split(",").map((n) => n.trim()).filter(Boolean);
+                    if (names.length) setManualMembers((prev) => [...prev, ...names.map((n) => ({ id: uid(), name: n }))]);
+                    setManualName("");
+                  } else {
+                    setManualName(v);
+                  }
+                }}
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addManual())}
                 placeholder={t("members.name")}
                 className="glass rounded-xl px-3 py-2 text-sm flex-1"
