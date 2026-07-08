@@ -159,6 +159,7 @@ export function AddExpense({ group }: { group: Group }) {
       splitMode: "equal",
       splitValues: {},
       category: r.category,
+      allowEdits: false,
     });
     if (r.interval && pro) {
       setExpenseType("recurring");
@@ -218,6 +219,7 @@ export function AddExpense({ group }: { group: Group }) {
       splitMode: "equal",
       splitValues: {},
       category: "otros",
+      allowEdits: false,
     });
     setExpenseType("one-time");
   }
@@ -268,6 +270,7 @@ export function AddExpense({ group }: { group: Group }) {
           category: d.category,
           date: new Date().toISOString().slice(0, 10),
           createdBy: group.meId,
+          allowEdits: d.allowEdits ?? false,
           ...(effectiveFx ? { originalAmount: effectiveFx.originalAmount, originalCurrency: effectiveFx.originalCurrency, fxRate: effectiveFx.fxRate } : {}),
         },
         {

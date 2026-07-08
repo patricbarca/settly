@@ -20,6 +20,8 @@ export interface ExpenseDraft {
   splitMode: SplitMode;
   splitValues: Record<string, number>;   // %, exact amounts, or share counts
   category: Category;
+  /** Si true, cualquier participante puede editar este gasto (no solo el creador). */
+  allowEdits?: boolean;
 }
 
 /** Initialize splitValues for a given mode, participant list, and total amount */
@@ -427,6 +429,24 @@ export function ExpenseForm({
           </div>
         )}
       </div>
+
+      {/* Permitir edición a otros participantes (por defecto, solo el creador puede editar) */}
+      <button
+        type="button"
+        onClick={() => up("allowEdits", !f.allowEdits)}
+        className="w-full flex items-center justify-between gap-2 glass rounded-xl px-3 py-2.5 text-left"
+      >
+        <span className="text-sm">{t("form.allowEdits")}</span>
+        <span
+          className="h-5 w-9 rounded-full relative shrink-0 transition-colors"
+          style={{ background: f.allowEdits ? "var(--teal)" : "var(--line)" }}
+        >
+          <span
+            className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform"
+            style={{ transform: f.allowEdits ? "translateX(18px)" : "translateX(2px)" }}
+          />
+        </span>
+      </button>
 
       {children}
 

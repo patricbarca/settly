@@ -78,6 +78,9 @@ export interface Expense {
   deleteRequested?: boolean;
   /** memberId de quien añadió el gasto (para el botón "Revisado"). */
   createdBy?: string;
+  /** Si true, cualquier participante puede editar este gasto (no solo quien
+   *  lo creó). Por defecto false/undefined = solo el creador puede editarlo. */
+  allowEdits?: boolean;
   /** Desglose por ítem/plato (gastos escaneados o repartidos por línea). Si
    *  existe, el gasto se edita con el editor por ítem en vez del de totales. */
   items?: ExpenseItem[];

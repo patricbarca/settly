@@ -167,6 +167,7 @@ export function ExpenseList({ group }: { group: Group }) {
         participantIds: d.participantIds,
         category: d.category,
         splits,
+        allowEdits: d.allowEdits ?? false,
       },
       {
         activity: makeActivity({
@@ -421,6 +422,7 @@ export function ExpenseList({ group }: { group: Group }) {
                 splitMode: editing.splits ? "exact" : "equal",
                 splitValues: editing.splits ?? {},
                 category: editing.category,
+                allowEdits: editing.allowEdits ?? false,
               }}
               onSave={(d) => saveEdit(editing.id, d)}
               onCancel={() => setEditId(null)}
@@ -753,12 +755,14 @@ function ExpenseRow({
               </div>
 
               <div className="flex gap-2 mt-3 flex-wrap">
-                <button
-                  onClick={onEdit}
-                  className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted inline-flex items-center gap-1"
-                >
-                  <Icon name="edit" size={13} /> {t("exp.edit")}
-                </button>
+                {(isMine || e.allowEdits) && (
+                  <button
+                    onClick={onEdit}
+                    className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted inline-flex items-center gap-1"
+                  >
+                    <Icon name="edit" size={13} /> {t("exp.edit")}
+                  </button>
+                )}
                 {e.receiptPath && <ReceiptButton path={e.receiptPath} />}
                 {!e.reviewRequested ? (
                   <button
