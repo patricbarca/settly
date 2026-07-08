@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import type { Category, Group } from "../lib/types";
 import type { SplitMode } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
-import { personColor, money } from "../lib/format";
+import { personColor, money, sortedMembers } from "../lib/format";
 import { Avatar } from "./Avatar";
 import { currencySymbol } from "../lib/currencies";
 import { useT } from "../lib/i18n";
@@ -212,6 +212,8 @@ export function ExpenseForm({
     onSave({ ...f, amount: amt });
   }
 
+  const members = sortedMembers(group.members);
+
   const modeTabs: { mode: SplitMode; label: string }[] = [
     { mode: "equal", label: "=" },
     { mode: "percent", label: "%" },
@@ -276,7 +278,7 @@ export function ExpenseForm({
 
         {!f.multiPay ? (
           <div className="flex gap-1.5 flex-wrap mt-1">
-            {group.members.map((m) => {
+            {members.map((m) => {
               const on = f.payerId === m.id;
               return (
                 <button
@@ -293,7 +295,7 @@ export function ExpenseForm({
           </div>
         ) : (
           <div className="mt-1 space-y-1">
-            {group.members.map((m) => (
+            {members.map((m) => (
               <div key={m.id} className="flex items-center gap-2">
                 <Avatar name={m.name} avatar={m.avatar} size={24} />
                 <span className="text-sm flex-1 min-w-0 truncate">{m.name}</span>
@@ -353,7 +355,7 @@ export function ExpenseForm({
 
         {/* Participant pill toggles */}
         <div className="flex gap-1.5 flex-wrap mt-1">
-          {group.members.map((m) => {
+          {members.map((m) => {
             const on = f.participantIds.includes(m.id);
             return (
               <button

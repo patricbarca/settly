@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Group, Category, ExpenseItem } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
 import type { ScanTax } from "../lib/ai";
-import { uid, money, personColor, memberInitials } from "../lib/format";
+import { uid, money, personColor, memberInitials, sortedMembers } from "../lib/format";
 import { currencySymbol } from "../lib/currencies";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -71,6 +71,7 @@ export function ItemizedExpenseEditor({
   onCancel: () => void;
 }) {
   const t = useT();
+  const members = sortedMembers(group.members);
   const allIds = group.members.map((m) => m.id);
   const cur = currencySymbol(group.currency);
   const { originalCurrency, fxRate } = initial;
@@ -340,7 +341,7 @@ export function ItemizedExpenseEditor({
               </button>
             )}
             <div className="flex gap-1 flex-wrap mt-2">
-              {group.members.map((m) => {
+              {members.map((m) => {
                 const on = it.who.has(m.id);
                 return (
                   <button
@@ -450,14 +451,14 @@ export function ItemizedExpenseEditor({
       <div>
         <label className="text-xs font-semibold text-muted">{t("form.paid")}</label>
         <select value={payerId} onChange={(e) => setPayerId(e.target.value)} className="glass rounded-xl px-3 py-2 text-sm w-full mt-1">
-          {group.members.map((m) => (
+          {members.map((m) => (
             <option key={m.id} value={m.id}>{m.name}</option>
           ))}
         </select>
       </div>
 
       <div className="glass rounded-3xl p-3">
-        {group.members.map((m) => (
+        {members.map((m) => (
           <div key={m.id} className="flex items-center justify-between text-sm py-0.5">
             <span>{m.name}</span>
             {showOriginal && canToggle ? (

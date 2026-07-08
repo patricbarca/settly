@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Group } from "../lib/types";
 import { useT, useLang } from "../lib/i18n";
-import { money, personColor, memberInitials } from "../lib/format";
+import { money, personColor, memberInitials, sortedMembers } from "../lib/format";
 import {
   buildReport,
   monthsWithExpenses,
@@ -126,7 +126,7 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
               <div className="glass rounded-3xl p-5">
                 <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{t("report.balances")}</div>
                 <div className="space-y-1.5">
-                  {group.members.map((m) => {
+                  {sortedMembers(group.members).map((m) => {
                     const v = r.net[m.id] || 0;
                     const ok = Math.abs(v) < 0.01;
                     return (

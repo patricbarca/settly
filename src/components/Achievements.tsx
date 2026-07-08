@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Group, Member } from "../lib/types";
 import { memberStats } from "../lib/gamification";
-import { personColor, memberInitials } from "../lib/format";
+import { personColor, memberInitials, sortedMembers } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { ProfileModal } from "./ProfileModal";
@@ -14,7 +14,7 @@ export function Achievements({ group }: { group: Group }) {
     <section className="glass rounded-3xl p-5">
       <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{t("game.groupAch")}</div>
       <div className="space-y-1">
-        {group.members.map((m) => {
+        {sortedMembers(group.members).map((m) => {
           const s = memberStats(group, m.id);
           return (
             <button

@@ -3,7 +3,7 @@ import type { Group } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
-import { uid, personColor, initials, memberInitials, money } from "../lib/format";
+import { uid, personColor, initials, memberInitials, money, sortedMembers } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
 import { getNetwork, type Contact } from "../lib/contacts";
@@ -181,7 +181,7 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
 
         {/* Members list */}
         <div className="space-y-1 mb-4">
-          {group.members.map((m) => {
+          {sortedMembers(group.members).map((m) => {
             const bal = net[m.id] || 0;
             const ok = Math.abs(bal) < 0.01;
             const removable = !referenced.has(m.id) && m.id !== group.meId;

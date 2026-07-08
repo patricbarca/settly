@@ -3,7 +3,7 @@ import type { Group, Member } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
-import { personColor, memberInitials } from "../lib/format";
+import { personColor, memberInitials, sortedMembers } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { ProfileModal } from "./ProfileModal";
@@ -42,7 +42,7 @@ export function Members({ group }: { group: Group }) {
   return (
     <div>
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        {group.members.map((m) => {
+        {sortedMembers(group.members).map((m) => {
           const removable = !referenced.has(m.id) && m.id !== group.meId;
           const paid = Math.abs(net[m.id] || 0) < 0.01;
           return (
