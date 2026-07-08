@@ -1,9 +1,9 @@
 import { useState, type ChangeEvent } from "react";
 import type { Group, Category, ExpenseItem } from "../lib/types";
 import { scanReceipt, type ScanResult, type ScanTax } from "../lib/ai";
-import { updateGroup } from "../lib/store";
-import { withNotif } from "../lib/notifications";
-import { withActivity } from "../lib/activity";
+import { addExpense } from "../lib/store";
+import { makeNotif } from "../lib/notifications";
+import { makeActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { uploadReceipt } from "../lib/storage";
 import { uid, money } from "../lib/format";
@@ -170,42 +170,41 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     setSaving(true);
     const receiptPath = file ? await uploadReceipt(group.id, file) : null;
     setSaving(false);
-    updateGroup(group.id, (g) => ({
-      ...g,
-      expenses: [
-        {
-          id: uid(),
+    addExpense(
+      group.id,
+      {
+        id: uid(),
+        label: r.label,
+        amount: r.amount,
+        payerId: r.payerId,
+        participantIds: r.participantIds,
+        category: r.category,
+        date: new Date().toISOString().slice(0, 10),
+        splits: r.splits,
+        items: r.items,
+        fees: r.fees,
+        tip: r.tip,
+        ...(receiptPath ? { receiptPath } : {}),
+        ...(fx ? { originalAmount: fx.originalAmount, originalCurrency: fx.originalCurrency, fxRate: fx.fxRate } : {}),
+        createdBy: group.meId,
+      },
+      {
+        notifAdd: makeNotif({
+          type: "expense_added",
+          actorId: group.meId,
+          actorName: meName,
           label: r.label,
           amount: r.amount,
-          payerId: r.payerId,
-          participantIds: r.participantIds,
-          category: r.category,
-          date: new Date().toISOString().slice(0, 10),
-          splits: r.splits,
-          items: r.items,
-          fees: r.fees,
-          tip: r.tip,
-          ...(receiptPath ? { receiptPath } : {}),
-          ...(fx ? { originalAmount: fx.originalAmount, originalCurrency: fx.originalCurrency, fxRate: fx.fxRate } : {}),
-          createdBy: group.meId,
-        },
-        ...g.expenses,
-      ],
-      notifications: withNotif(g, {
-        type: "expense_added",
-        actorId: group.meId,
-        actorName: meName,
-        label: r.label,
-        amount: r.amount,
-      }),
-      activity: withActivity(g, {
-        type: "scan_used",
-        actorId: group.meId,
-        actorName: meName,
-        label: r.label,
-        amount: r.amount,
-      }),
-    }));
+        }),
+        activity: makeActivity({
+          type: "scan_used",
+          actorId: group.meId,
+          actorName: meName,
+          label: r.label,
+          amount: r.amount,
+        }),
+      }
+    );
     notifyGroup(
       group.id,
       group.name,

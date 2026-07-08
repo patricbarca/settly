@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { Group, RecurringExpense, RecurrenceInterval } from "./types";
+import type { Group, RecurringExpense, RecurrenceInterval, Expense, ActivityEvent, AppNotification } from "./types";
 import { supabase } from "./supabase";
 import { createSeed } from "./seed";
 import { uid, money } from "./format";
@@ -369,6 +369,143 @@ export function updateGroup(id: string, fn: (g: Group) => Group) {
   emit();
   const g = groups.find((g) => g.id === id);
   if (g) persist(g);
+}
+
+// Igual que updateGroup, pero sin persistir: solo actualiza el estado local +
+// caché IndexedDB. Lo usan las operaciones atómicas de gastos (más abajo) para
+// reflejar el cambio al instante en la UI mientras el RPC atómico viaja al
+// servidor por su cuenta — evita el doble-persist (uno optimista de blob
+// completo + otro atómico) que reintroduciría el problema de sobrescritura.
+function applyLocal(id: string, fn: (g: Group) => Group): Group | undefined {
+  const groups = state.groups.map((g) => (g.id === id ? fn(g) : g));
+  state = { ...state, groups };
+  emit();
+  const g = groups.find((g) => g.id === id);
+  if (g) idbPutGroup(g).catch(() => {});
+  return g;
+}
+
+type NotifRemovePredicate = { type: string; expenseId: string };
+
+function applyNotifRemove(notifications: AppNotification[], pred?: NotifRemovePredicate): AppNotification[] {
+  if (!pred) return notifications;
+  return notifications.filter((n) => !(n.type === pred.type && n.expenseId === pred.expenseId));
+}
+
+/**
+ * Operaciones atómicas sobre gastos (Fase 1 del arreglo de concurrencia).
+ *
+ * A diferencia de `updateGroup` (que sobrescribe TODO group.data desde la
+ * copia local, pudiendo pisar cambios de otro dispositivo hechos mientras
+ * tanto), estas funciones llaman a RPCs de Postgres (`add_expense`,
+ * `patch_expense`, `delete_expense`, ver migrate_v10_atomic_expense_ops.sql)
+ * que parchean SOLO el gasto afectado dentro del JSONB, con un lock de fila
+ * (`SELECT ... FOR UPDATE`) que serializa escrituras concurrentes en vez de
+ * dejarlas competir en el cliente. Dos personas editando gastos distintos —o
+ * incluso campos distintos del MISMO gasto— a la vez ya no se pisan.
+ *
+ * Aplican el cambio localmente al instante (optimista, vía `applyLocal`) y
+ * disparan el RPC en paralelo; si el RPC falla se reintenta vía el outbox
+ * (mismo mecanismo que `persist`).
+ *
+ * Sin conexión no hay RPC posible: cae al `updateGroup` de siempre (blob
+ * completo + outbox), igual que antes de este cambio — la ventana de
+ * colisión solo se cierra del todo estando online, que es el caso común.
+ */
+export async function addExpense(
+  groupId: string,
+  expense: Expense,
+  opts?: { activity?: ActivityEvent; notifAdd?: AppNotification }
+) {
+  const apply = (g: Group): Group => ({
+    ...g,
+    expenses: [expense, ...g.expenses],
+    activity: opts?.activity ? [...(g.activity ?? []), opts.activity].slice(-200) : g.activity,
+    notifications: opts?.notifAdd ? [...(g.notifications ?? []), opts.notifAdd].slice(-100) : g.notifications,
+  });
+
+  if (!isOnline || !currentUserId) {
+    updateGroup(groupId, apply);
+    return;
+  }
+  applyLocal(groupId, apply);
+  const { error } = await supabase.rpc("add_expense", {
+    p_group_id: groupId,
+    p_expense: expense,
+    p_activity: opts?.activity ?? null,
+    p_notif_add: opts?.notifAdd ?? null,
+  });
+  if (error) {
+    console.error("add_expense:", error);
+    idbAddToOutbox(groupId).catch(() => {});
+  }
+}
+
+export async function patchExpense(
+  groupId: string,
+  expenseId: string,
+  patch: Partial<Expense>,
+  opts?: { activity?: ActivityEvent; notifAdd?: AppNotification; notifRemove?: NotifRemovePredicate }
+) {
+  const apply = (g: Group): Group => ({
+    ...g,
+    expenses: g.expenses.map((e) => (e.id === expenseId ? { ...e, ...patch } : e)),
+    activity: opts?.activity ? [...(g.activity ?? []), opts.activity].slice(-200) : g.activity,
+    notifications: (() => {
+      let n = applyNotifRemove(g.notifications ?? [], opts?.notifRemove);
+      if (opts?.notifAdd) n = [...n, opts.notifAdd].slice(-100);
+      return n;
+    })(),
+  });
+
+  if (!isOnline || !currentUserId) {
+    updateGroup(groupId, apply);
+    return;
+  }
+  applyLocal(groupId, apply);
+  const { error } = await supabase.rpc("patch_expense", {
+    p_group_id: groupId,
+    p_expense_id: expenseId,
+    p_patch: patch,
+    p_activity: opts?.activity ?? null,
+    p_notif_add: opts?.notifAdd ?? null,
+    p_notif_remove_type: opts?.notifRemove?.type ?? null,
+    p_notif_remove_expense_id: opts?.notifRemove?.expenseId ?? null,
+  });
+  if (error) {
+    console.error("patch_expense:", error);
+    idbAddToOutbox(groupId).catch(() => {});
+  }
+}
+
+export async function deleteExpense(
+  groupId: string,
+  expenseId: string,
+  opts?: { activity?: ActivityEvent; notifRemove?: NotifRemovePredicate }
+) {
+  const apply = (g: Group): Group => ({
+    ...g,
+    expenses: g.expenses.filter((e) => e.id !== expenseId),
+    activity: opts?.activity ? [...(g.activity ?? []), opts.activity].slice(-200) : g.activity,
+    notifications: applyNotifRemove(g.notifications ?? [], opts?.notifRemove),
+  });
+
+  if (!isOnline || !currentUserId) {
+    updateGroup(groupId, apply);
+    return;
+  }
+  applyLocal(groupId, apply);
+  const { error } = await supabase.rpc("delete_expense", {
+    p_group_id: groupId,
+    p_expense_id: expenseId,
+    p_activity: opts?.activity ?? null,
+    p_notif_remove_type: opts?.notifRemove?.type ?? null,
+    p_notif_remove_expense_id: opts?.notifRemove?.expenseId ?? null,
+  });
+  if (error) {
+    console.error("delete_expense:", error);
+    idbAddToOutbox(groupId).catch(() => {});
+  }
 }
 
 export function addRecurring(groupId: string, r: RecurringExpense) {

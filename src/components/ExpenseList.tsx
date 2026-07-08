@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import type { Group, Category } from "../lib/types";
 import { catOf } from "../lib/types";
-import { updateGroup } from "../lib/store";
+import { patchExpense, deleteExpense } from "../lib/store";
 import { shareFor } from "../lib/split";
 import { money as rawMoney, fmtDate, memberLabels } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
@@ -15,8 +15,8 @@ import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseF
 import { ItemizedExpenseEditor, type ItemizedResult } from "./ItemizedExpenseEditor";
 import { ReceiptButton } from "./ReceiptButton";
 import { RecurringList } from "./RecurringList";
-import { withNotif } from "../lib/notifications";
-import { withActivity } from "../lib/activity";
+import { makeNotif } from "../lib/notifications";
+import { makeActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 
 export function ExpenseList({ group }: { group: Group }) {
@@ -80,32 +80,30 @@ export function ExpenseList({ group }: { group: Group }) {
     setFMonth(null);
   }
 
+  // Estas mutaciones usan las operaciones atómicas de store.ts (RPCs que
+  // parchean solo este gasto en el servidor, con lock de fila) en vez de
+  // updateGroup — así dos personas tocando gastos distintos (o distintos
+  // campos del mismo gasto) a la vez no se pisan el cambio.
   function remove(id: string) {
     const exp = group.expenses.find((e) => e.id === id);
-    updateGroup(group.id, (g) => ({
-      ...g,
-      expenses: g.expenses.filter((e) => e.id !== id),
-      // Limpia cualquier aviso de "eliminación solicitada" de este gasto.
-      notifications: (g.notifications ?? []).filter(
-        (n) => !(n.type === "delete_requested" && n.expenseId === id)
-      ),
-      activity: withActivity(g, {
+    deleteExpense(group.id, id, {
+      activity: makeActivity({
         type: "expense_deleted",
         actorId: group.meId,
         actorName: name(group.meId),
         label: exp?.label,
         amount: exp?.amount,
       }),
-    }));
+      // Limpia cualquier aviso de "eliminación solicitada" de este gasto.
+      notifRemove: { type: "delete_requested", expenseId: id },
+    });
   }
 
   function requestDelete(id: string) {
     const exp = group.expenses.find((e) => e.id === id);
     if (!exp || exp.deleteRequested) return;
-    updateGroup(group.id, (g) => ({
-      ...g,
-      expenses: g.expenses.map((e) => (e.id === id ? { ...e, deleteRequested: true } : e)),
-      notifications: withNotif(g, {
+    patchExpense(group.id, id, { deleteRequested: true }, {
+      notifAdd: makeNotif({
         type: "delete_requested",
         actorId: group.meId,
         actorName: name(group.meId),
@@ -113,126 +111,102 @@ export function ExpenseList({ group }: { group: Group }) {
         label: exp.label,
         expenseId: id,
       }),
-    }));
+    });
   }
 
-  function approveDelete(expenseId: string, notifId: string) {
+  function approveDelete(expenseId: string, _notifId: string) {
     const exp = group.expenses.find((e) => e.id === expenseId);
-    updateGroup(group.id, (g) => ({
-      ...g,
-      expenses: g.expenses.filter((e) => e.id !== expenseId),
-      notifications: (g.notifications ?? []).filter((n) => n.id !== notifId),
-      activity: withActivity(g, {
+    deleteExpense(group.id, expenseId, {
+      activity: makeActivity({
         type: "expense_deleted",
         actorId: group.meId,
         actorName: name(group.meId),
         label: exp?.label,
         amount: exp?.amount,
       }),
-    }));
+      notifRemove: { type: "delete_requested", expenseId },
+    });
   }
   function requestReview(id: string) {
     const exp = group.expenses.find((e) => e.id === id);
     if (!exp) return;
-    updateGroup(group.id, (g) => ({
-      ...g,
-      expenses: g.expenses.map((e) => (e.id === id ? { ...e, reviewRequested: true } : e)),
-      // Solicitud de revisión: anónima (sin actorId) por diseño. Guardamos
-      // expenseId para poder cancelarla después con precisión.
-      notifications: withNotif(g, { type: "review_requested", label: exp.label, expenseId: id }),
-      // La solicitud de revisión es ANÓNIMA: en el log tampoco guardamos quién
-      // la pidió (ni actorId ni actorName), igual que en la notificación. Así
-      // se muestra como "Alguien pidió revisar «…»" para todos.
-      activity: withActivity(g, {
-        type: "review_requested",
-        label: exp.label,
-      }),
-    }));
+    patchExpense(group.id, id, { reviewRequested: true }, {
+      // Solicitud de revisión: anónima (sin actorId) por diseño, tanto en la
+      // notificación como en el log de actividad. Guardamos expenseId para
+      // poder cancelarla después con precisión.
+      notifAdd: makeNotif({ type: "review_requested", label: exp.label, expenseId: id }),
+      activity: makeActivity({ type: "review_requested", label: exp.label }),
+    });
     notifyGroup(group.id, group.name, t("notif.review_requested", { label: exp.label }));
   }
   // El creador del gasto marca que ya lo revisó (resuelve la solicitud).
   function markReviewed(id: string) {
-    updateGroup(group.id, (g) => ({
-      ...g,
-      expenses: g.expenses.map((e) => (e.id === id ? { ...e, reviewRequested: false } : e)),
-    }));
+    patchExpense(group.id, id, { reviewRequested: false });
   }
   // Cancelar una solicitud propia (la pulsé por error): quita el flag y el aviso.
   function cancelReview(id: string) {
-    updateGroup(group.id, (g) => ({
-      ...g,
-      expenses: g.expenses.map((e) => (e.id === id ? { ...e, reviewRequested: false } : e)),
-      notifications: (g.notifications ?? []).filter(
-        (n) => !(n.type === "review_requested" && n.expenseId === id)
-      ),
-    }));
+    patchExpense(group.id, id, { reviewRequested: false }, {
+      notifRemove: { type: "review_requested", expenseId: id },
+    });
   }
   function cancelDelete(id: string) {
-    updateGroup(group.id, (g) => ({
-      ...g,
-      expenses: g.expenses.map((e) => (e.id === id ? { ...e, deleteRequested: false } : e)),
-      notifications: (g.notifications ?? []).filter(
-        (n) => !(n.type === "delete_requested" && n.expenseId === id)
-      ),
-    }));
+    patchExpense(group.id, id, { deleteRequested: false }, {
+      notifRemove: { type: "delete_requested", expenseId: id },
+    });
   }
   function saveEdit(id: string, d: ExpenseDraft) {
     const { payerId, payments, splits } = draftToExpenseFields(d);
-    updateGroup(group.id, (g) => ({
-      ...g,
-      expenses: g.expenses.map((e) =>
-        e.id === id
-          ? {
-              ...e,
-              label: d.label.trim(),
-              amount: Number(d.amount) || 0,
-              payerId,
-              payments,
-              participantIds: d.participantIds,
-              category: d.category,
-              splits,
-            }
-          : e
-      ),
-      activity: withActivity(g, {
-        type: "expense_edited",
-        actorId: group.meId,
-        actorName: name(group.meId),
+    patchExpense(
+      group.id,
+      id,
+      {
         label: d.label.trim(),
         amount: Number(d.amount) || 0,
-      }),
-    }));
+        payerId,
+        payments,
+        participantIds: d.participantIds,
+        category: d.category,
+        splits,
+      },
+      {
+        activity: makeActivity({
+          type: "expense_edited",
+          actorId: group.meId,
+          actorName: name(group.meId),
+          label: d.label.trim(),
+          amount: Number(d.amount) || 0,
+        }),
+      }
+    );
     setEditId(null);
   }
   // Guardar la edición de un gasto repartido por ítem (editor por plato).
   function saveItemizedEdit(id: string, r: ItemizedResult) {
-    updateGroup(group.id, (g) => ({
-      ...g,
-      expenses: g.expenses.map((e) =>
-        e.id === id
-          ? {
-              ...e,
-              label: r.label,
-              amount: r.amount,
-              payerId: r.payerId,
-              payments: undefined,
-              participantIds: r.participantIds,
-              category: r.category,
-              splits: r.splits,
-              items: r.items,
-              fees: r.fees,
-              tip: r.tip,
-            }
-          : e
-      ),
-      activity: withActivity(g, {
-        type: "expense_edited",
-        actorId: group.meId,
-        actorName: name(group.meId),
+    patchExpense(
+      group.id,
+      id,
+      {
         label: r.label,
         amount: r.amount,
-      }),
-    }));
+        payerId: r.payerId,
+        payments: undefined,
+        participantIds: r.participantIds,
+        category: r.category,
+        splits: r.splits,
+        items: r.items,
+        fees: r.fees,
+        tip: r.tip,
+      },
+      {
+        activity: makeActivity({
+          type: "expense_edited",
+          actorId: group.meId,
+          actorName: name(group.meId),
+          label: r.label,
+          amount: r.amount,
+        }),
+      }
+    );
     setEditId(null);
   }
 

@@ -242,3 +242,140 @@ GRANT EXECUTE ON FUNCTION redeem_access_code(TEXT) TO authenticated;
 INSERT INTO access_codes (code, grants_plan, duration_days, max_uses, note)
 VALUES ('SETTLYBETA', 'pro', NULL, NULL, 'beta abierta')
 ON CONFLICT (code) DO NOTHING;
+
+-- ---------- OPERACIONES ATÓMICAS SOBRE GASTOS ----------
+-- add_expense / patch_expense / delete_expense: patchean solo el gasto
+-- afectado dentro del JSONB (con SELECT ... FOR UPDATE para serializar
+-- escrituras concurrentes), en vez de sobrescribir todo group.data desde una
+-- copia local potencialmente desactualizada. Ver migrate_v10_atomic_expense_ops.sql
+-- para el detalle completo y el porqué.
+CREATE OR REPLACE FUNCTION public.jsonb_array_cap(p_arr jsonb, p_max int)
+RETURNS jsonb LANGUAGE sql IMMUTABLE AS $$
+  SELECT CASE
+    WHEN p_arr IS NULL THEN '[]'::jsonb
+    WHEN jsonb_array_length(p_arr) > p_max THEN (
+      SELECT COALESCE(jsonb_agg(x ORDER BY i), '[]'::jsonb)
+      FROM jsonb_array_elements(p_arr) WITH ORDINALITY AS t(x, i)
+      WHERE i > jsonb_array_length(p_arr) - p_max
+    )
+    ELSE p_arr
+  END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.add_expense(
+  p_group_id text,
+  p_expense jsonb,
+  p_activity jsonb DEFAULT NULL,
+  p_notif_add jsonb DEFAULT NULL
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_data jsonb;
+BEGIN
+  IF NOT public.is_member_of(p_group_id) THEN
+    RAISE EXCEPTION 'not a member of this group';
+  END IF;
+
+  SELECT data INTO v_data FROM groups WHERE id = p_group_id FOR UPDATE;
+  IF v_data IS NULL THEN
+    RAISE EXCEPTION 'group not found';
+  END IF;
+
+  v_data := jsonb_set(v_data, '{expenses}', jsonb_build_array(p_expense) || COALESCE(v_data->'expenses', '[]'::jsonb));
+  IF p_activity IS NOT NULL THEN
+    v_data := jsonb_set(v_data, '{activity}', public.jsonb_array_cap(COALESCE(v_data->'activity', '[]'::jsonb) || jsonb_build_array(p_activity), 200));
+  END IF;
+  IF p_notif_add IS NOT NULL THEN
+    v_data := jsonb_set(v_data, '{notifications}', public.jsonb_array_cap(COALESCE(v_data->'notifications', '[]'::jsonb) || jsonb_build_array(p_notif_add), 100));
+  END IF;
+
+  UPDATE groups SET data = v_data, updated_at = now() WHERE id = p_group_id;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.add_expense(text, jsonb, jsonb, jsonb) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.patch_expense(
+  p_group_id text,
+  p_expense_id text,
+  p_patch jsonb,
+  p_activity jsonb DEFAULT NULL,
+  p_notif_add jsonb DEFAULT NULL,
+  p_notif_remove_type text DEFAULT NULL,
+  p_notif_remove_expense_id text DEFAULT NULL
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_data jsonb;
+  v_idx int;
+BEGIN
+  IF NOT public.is_member_of(p_group_id) THEN
+    RAISE EXCEPTION 'not a member of this group';
+  END IF;
+
+  SELECT data INTO v_data FROM groups WHERE id = p_group_id FOR UPDATE;
+  IF v_data IS NULL THEN
+    RAISE EXCEPTION 'group not found';
+  END IF;
+
+  SELECT ord - 1 INTO v_idx
+  FROM jsonb_array_elements(COALESCE(v_data->'expenses', '[]'::jsonb)) WITH ORDINALITY AS t(elem, ord)
+  WHERE elem->>'id' = p_expense_id;
+
+  IF v_idx IS NOT NULL THEN
+    v_data := jsonb_set(v_data, ARRAY['expenses', v_idx::text], (v_data->'expenses'->v_idx) || p_patch);
+  END IF;
+
+  IF p_activity IS NOT NULL THEN
+    v_data := jsonb_set(v_data, '{activity}', public.jsonb_array_cap(COALESCE(v_data->'activity', '[]'::jsonb) || jsonb_build_array(p_activity), 200));
+  END IF;
+  IF p_notif_add IS NOT NULL THEN
+    v_data := jsonb_set(v_data, '{notifications}', public.jsonb_array_cap(COALESCE(v_data->'notifications', '[]'::jsonb) || jsonb_build_array(p_notif_add), 100));
+  END IF;
+  IF p_notif_remove_type IS NOT NULL THEN
+    v_data := jsonb_set(v_data, '{notifications}', COALESCE((
+      SELECT jsonb_agg(elem) FROM jsonb_array_elements(COALESCE(v_data->'notifications', '[]'::jsonb)) elem
+      WHERE NOT (elem->>'type' = p_notif_remove_type AND elem->>'expenseId' = p_notif_remove_expense_id)
+    ), '[]'::jsonb));
+  END IF;
+
+  UPDATE groups SET data = v_data, updated_at = now() WHERE id = p_group_id;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.patch_expense(text, text, jsonb, jsonb, jsonb, text, text) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.delete_expense(
+  p_group_id text,
+  p_expense_id text,
+  p_activity jsonb DEFAULT NULL,
+  p_notif_remove_type text DEFAULT NULL,
+  p_notif_remove_expense_id text DEFAULT NULL
+) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  v_data jsonb;
+BEGIN
+  IF NOT public.is_member_of(p_group_id) THEN
+    RAISE EXCEPTION 'not a member of this group';
+  END IF;
+
+  SELECT data INTO v_data FROM groups WHERE id = p_group_id FOR UPDATE;
+  IF v_data IS NULL THEN
+    RAISE EXCEPTION 'group not found';
+  END IF;
+
+  v_data := jsonb_set(v_data, '{expenses}', COALESCE((
+    SELECT jsonb_agg(elem) FROM jsonb_array_elements(COALESCE(v_data->'expenses', '[]'::jsonb)) elem
+    WHERE elem->>'id' <> p_expense_id
+  ), '[]'::jsonb));
+
+  IF p_activity IS NOT NULL THEN
+    v_data := jsonb_set(v_data, '{activity}', public.jsonb_array_cap(COALESCE(v_data->'activity', '[]'::jsonb) || jsonb_build_array(p_activity), 200));
+  END IF;
+  IF p_notif_remove_type IS NOT NULL THEN
+    v_data := jsonb_set(v_data, '{notifications}', COALESCE((
+      SELECT jsonb_agg(elem) FROM jsonb_array_elements(COALESCE(v_data->'notifications', '[]'::jsonb)) elem
+      WHERE NOT (elem->>'type' = p_notif_remove_type AND elem->>'expenseId' = p_notif_remove_expense_id)
+    ), '[]'::jsonb));
+  END IF;
+
+  UPDATE groups SET data = v_data, updated_at = now() WHERE id = p_group_id;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.delete_expense(text, text, jsonb, text, text) TO authenticated;
