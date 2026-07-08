@@ -598,6 +598,10 @@ const DICT: Record<string, { es: string; en: string }> = {
   "settings.payDirect": { es: "Directo", en: "Direct" },
   "settings.payModeSimpleHint": { es: "Mínimas transferencias. Puede pedirte pagar a alguien con quien no compartiste gastos.", en: "Fewest transfers. May ask you to pay someone you didn't share expenses with." },
   "settings.payModeDirectHint": { es: "Pagas a quien puso el dinero de cada gasto. Más pagos, pero más claro.", en: "You pay whoever fronted each expense. More payments, but clearer." },
+  "settings.payModeSwitchWarn": {
+    es: "No se pierde nada al cambiar: los gastos y pagos ya confirmados quedan igual. Pero la lista de \"para saldar\" se recalcula con el nuevo modo, así que quién le debe a quién puede cambiar.",
+    en: "Nothing is lost when you switch: existing expenses and confirmed payments stay as they are. But the \"to settle up\" list is recalculated under the new mode, so who owes whom can change.",
+  },
   "settings.saved":    { es: "Guardado", en: "Saved" },
 
   "account.title":   { es: "Mi cuenta", en: "My account" },
