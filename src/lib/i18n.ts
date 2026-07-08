@@ -375,6 +375,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "scan.items": { es: "Artículos · marca quién consumió cada uno", en: "Items · mark who consumed each" },
   "scan.addItem": { es: "+ artículo", en: "+ item" },
   "scan.total": { es: "Total a repartir", en: "Total to split" },
+  "scan.subtotal": { es: "Subtotal (artículos)", en: "Subtotal (items)" },
   "scan.save": { es: "Añadir gasto", en: "Add expense" },
   "scan.saving": { es: "Guardando…", en: "Saving…" },
   "scan.tip": { es: "Propina", en: "Tip" },

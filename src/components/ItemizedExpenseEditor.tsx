@@ -220,6 +220,9 @@ export function ItemizedExpenseEditor({
           tipNum / fxRate!
       )
     : 0;
+  const originalItemsTotal = canToggle
+    ? r2(items.reduce((s, it) => s + (Number(it.originalPrice ?? (Number(it.price) || 0) / fxRate!) || 0), 0))
+    : 0;
 
   const splits: Record<string, number> = {};
   allIds.forEach((id) => (splits[id] = 0));
@@ -425,6 +428,15 @@ export function ItemizedExpenseEditor({
             />
             <span className="text-muted text-[11px] shrink-0">{showOriginal ? originalCurrency : cur}</span>
           </div>
+        </div>
+      )}
+
+      {Math.abs(feesTotal) > 0.001 && (
+        <div className="glass rounded-3xl p-3 flex items-center justify-between">
+          <span className="text-sm text-muted">{t("scan.subtotal")}</span>
+          <span className="font-mono text-muted">
+            {showOriginal && canToggle ? money(originalItemsTotal, originalCurrency) : money(itemsTotal, group.currency)}
+          </span>
         </div>
       )}
 

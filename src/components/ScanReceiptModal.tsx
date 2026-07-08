@@ -125,7 +125,19 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     // nunca se sumaba al total a repartir — el grupo terminaba pagando de
     // menos. Ahora se agrega como un recargo editable más (se reparte
     // proporcional al consumo, igual que cualquier otro recargo del ticket).
-    const taxNotIncluded = res.tax && !res.tax.included && res.tax.amount > 0;
+    //
+    // Red de seguridad: muchos tickets (AU/NZ en particular) muestran un
+    // desglose "GST Sales / GST Amount" puramente informativo, con el
+    // subtotal y el total pagado siendo el MISMO número — el impuesto ya
+    // está dentro del precio de cada línea. Si el modelo de visión etiqueta
+    // esto como `included: false` por error, sumarlo aparte duplicaría el
+    // impuesto. Cuando subtotal y total prácticamente coinciden, no puede
+    // haber un impuesto añadido encima: se fuerza `included` sin importar lo
+    // que haya devuelto el escaneo.
+    const gapCoversTax =
+      res.subtotal > 0 && res.total > 0 && res.total - res.subtotal > Math.max(0.01, res.tax.amount * 0.5);
+    const taxIncluded = !res.tax || res.tax.amount <= 0 || res.tax.included || !gapCoversTax;
+    const taxNotIncluded = res.tax && res.tax.amount > 0 && !taxIncluded;
     const fees = taxNotIncluded
       ? [
           ...scannedFees,
@@ -148,7 +160,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     // El estado `tax` (nota informativa de solo lectura) solo aplica cuando
     // el impuesto ya está incluido en los precios — si no lo está, ahora es
     // un recargo normal y ya se ve/edita en la sección de Recargos.
-    setTax(res.tax && res.tax.included && res.tax.amount > 0 ? { ...res.tax, amount: conv(res.tax.amount), originalAmount: res.tax.amount } : null);
+    setTax(res.tax && res.tax.amount > 0 && taxIncluded ? { ...res.tax, amount: conv(res.tax.amount), originalAmount: res.tax.amount } : null);
     setStage("review");
   }
 
