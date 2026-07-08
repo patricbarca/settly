@@ -13,6 +13,7 @@ import { Logo } from "./components/Logo";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { OfflineBanner } from "./components/OfflineBanner";
 import { AccountModal } from "./components/AccountModal";
+import { FaqModal } from "./components/FaqModal";
 import { NotificationsBell } from "./components/NotificationsBell";
 import { BottomNav, type NavKey } from "./components/BottomNav";
 import { countUnread } from "./lib/notifications";
@@ -32,6 +33,7 @@ export default function App() {
   const allGroups = useGroups();
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
+  const [showFaq, setShowFaq] = useState(false);
   const [showActivity, setShowActivity] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
@@ -181,6 +183,13 @@ export default function App() {
             <Icon name="help" size={16} />
           </button>
           <button
+            onClick={() => setShowFaq(true)}
+            className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
+            title={t("faq.entry")}
+          >
+            <Icon name="info" size={16} />
+          </button>
+          <button
             onClick={toggleTheme}
             className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
             title={theme === "dark" ? "Light" : "Dark"}
@@ -241,6 +250,7 @@ export default function App() {
       {showActivity && <NotificationsBell open={showActivity} onClose={() => setShowActivity(false)} />}
       {showAdmin && <AdminDashboard onClose={() => setShowAdmin(false)} />}
       {showAccount && <AccountModal onClose={() => setShowAccount(false)} />}
+      {showFaq && <FaqModal onClose={() => setShowFaq(false)} />}
 
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
 
