@@ -281,6 +281,7 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "form.concept": { es: "Añade una descripción", en: "Add a description" },
   "form.paid": { es: "Pagó", en: "Paid" },
+  "form.allowEdits": { es: "Permitir que otros participantes editen este gasto", en: "Allow other participants to edit this expense" },
   "form.between": { es: "Entre", en: "Between" },
   "form.each": { es: "c/u", en: "each" },
   "form.category": { es: "Categoría", en: "Category" },
