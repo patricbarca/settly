@@ -33,6 +33,10 @@ export function EditPaymentExpensesModal({
     [group.members, group.expenses, group.settlements, settlement.from, settlement.to, settlement.id]
   );
   const [selected, setSelected] = useState<Set<string>>(() => new Set(settlement.expenseIds ?? []));
+  const pickedTotal =
+    Math.round(debts.filter((d) => selected.has(d.expenseId)).reduce((s, d) => s + d.amount, 0) * 100) / 100;
+  const diff = Math.round((pickedTotal - settlement.amount) * 100) / 100;
+  const matches = Math.abs(diff) < 0.01;
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -92,6 +96,22 @@ export function EditPaymentExpensesModal({
             })}
           </div>
         )}
+
+        <div className="flex items-center justify-between mt-3 text-sm">
+          <span className="text-muted">{t("pay.selectedTotal")}</span>
+          <span className="font-mono font-bold">{money(pickedTotal, group.currency)}</span>
+        </div>
+        <div
+          className="flex items-center gap-1.5 mt-1 text-xs"
+          style={{ color: matches ? "#0A8B5E" : "var(--amber)" }}
+        >
+          <Icon name={matches ? "check" : "clock"} size={13} />
+          {matches
+            ? t("pay.matchesPaid", { amt: money(settlement.amount, group.currency) })
+            : diff > 0
+            ? t("pay.overPaid", { amt: money(diff, group.currency) })
+            : t("pay.underPaid", { amt: money(-diff, group.currency) })}
+        </div>
 
         <div className="flex gap-2 mt-4">
           <button onClick={save} className="glass-strong rounded-full px-5 py-2.5 font-medium hover-lift">
