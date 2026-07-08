@@ -223,6 +223,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   },
   "hero.modeChangeHint": { es: "Se cambia en los ajustes del grupo.", en: "You can change it in group settings." },
 
+  "group.shareText": { es: "Únete al grupo \"{name}\" en Settlia", en: "Join the \"{name}\" group on Settlia" },
   "group.back": { es: "Mis grupos", en: "My groups" },
   "group.delete": { es: "Eliminar grupo", en: "Delete group" },
   "group.leave": { es: "Salir del grupo", en: "Leave group" },
