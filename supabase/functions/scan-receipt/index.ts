@@ -47,6 +47,7 @@ Rules:
   - For non-itemized receipts (utility/invoice) return [].
 - fees: extra charges added ON TOP of the items — surcharge, service charge, card/payment surcharge, delivery, weekend/public-holiday surcharge. Each {name, amount}. Do NOT put tax, tip, subtotal or total in fees.
 - tax: the tax/GST/VAT line if present — {amount, rate (percent as a number), included (true if the tax is already inside the total, e.g. "10% Tax Included")}. If no tax is shown use {"amount":0,"rate":0,"included":true}.
+  - CRITICAL: many receipts (Australia/NZ especially) print a "GST Sales" / "GST Amount" (or "Tax Sales" / "Tax Amount") breakdown near the bottom purely as a statutory disclosure of the tax portion ALREADY inside the prices — it is NOT an extra charge to add. If the printed subtotal equals (or is within a cent of) the final total/amount paid, the tax is included: set included:true. Only set included:false when the tax amount is clearly added ON TOP — i.e. subtotal + tax ≈ total, with total strictly greater than subtotal.
 - subtotal: items subtotal before fees/tax. total: the FINAL amount paid.
 - category: one of exactly these — comida, mercado, bebidas, transporte, viajes, alojamiento, ocio, compras, salud, servicios, suscripciones, seguros, regalos, otros.
 - currency: ISO 4217 code detected (AUD, USD, EUR, GBP, ARS, CLP, COP, MXN…). Default EUR.
