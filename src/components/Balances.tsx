@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Group } from "../lib/types";
 import { computeSettle, directTransfers } from "../lib/split";
 import { updateGroup } from "../lib/store";
-import { personColor, memberInitials, sortedMembers } from "../lib/format";
+import { personColor, memberInitials, sortedMembers, fmtDate } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useGroupMoney } from "../lib/displayCurrency";
 import { Icon } from "./Icon";
@@ -32,6 +32,10 @@ export function Balances({ group }: { group: Group }) {
 
   const [mark, setMark] = useState<{ from: string; to: string; amount: number } | null>(null);
   const [paySheet, setPaySheet] = useState<{ to: string; amount: number } | null>(null);
+  const [logFilter, setLogFilter] = useState<string>("all");
+  const sortedConfirmed = [...confirmed].sort((a, b) => b.date.localeCompare(a.date));
+  const filteredLog =
+    logFilter === "all" ? sortedConfirmed : sortedConfirmed.filter((s) => s.from === logFilter || s.to === logFilter);
 
   const confirmS = (id: string) =>
     updateGroup(group.id, (g) => ({
@@ -186,21 +190,79 @@ export function Balances({ group }: { group: Group }) {
             ))}
           </div>
         )}
+      </div>
 
+      {/* Log de pagos: historial completo (con fecha) filtrable por persona,
+          para ver quién pagó qué y cuándo. */}
+      <div className="glass rounded-3xl p-5">
+        <div className="text-xs uppercase tracking-widest font-mono text-muted">{t("pay.logTitle")}</div>
         {confirmed.length > 0 && (
-          <div className="mt-3">
-            <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1">{t("pay.history")}</div>
-            {confirmed
-              .slice(-4)
-              .reverse()
-              .map((s) => (
-                <div key={s.id} className="text-xs text-muted flex items-center gap-1.5 py-0.5">
-                  <Icon name="check" size={13} style={{ color: "#0A8B5E" }} />
-                  <span className="min-w-0">
-                    {t("pay.saysPaid", { from: name(s.from), amt: money(s.amount), to: name(s.to) })}
-                  </span>
-                </div>
+          <div className="flex items-center gap-1.5 mt-3 overflow-x-auto pb-0.5">
+            <button
+              onClick={() => setLogFilter("all")}
+              className="rounded-full px-3 py-1 text-xs font-semibold shrink-0 hover-lift"
+              style={
+                logFilter === "all"
+                  ? { background: "var(--pill-bg)", color: "var(--pill-fg)" }
+                  : { background: "var(--surface-soft)", color: "var(--muted)" }
+              }
+            >
+              {t("pay.logAll")}
+            </button>
+            {sortedMembers(group.members)
+              .filter((m) => confirmed.some((s) => s.from === m.id || s.to === m.id))
+              .map((m) => (
+                <button
+                  key={m.id}
+                  onClick={() => setLogFilter(m.id)}
+                  className="rounded-full px-3 py-1 text-xs font-semibold shrink-0 hover-lift"
+                  style={
+                    logFilter === m.id
+                      ? { background: "var(--pill-bg)", color: "var(--pill-fg)" }
+                      : { background: "var(--surface-soft)", color: "var(--muted)" }
+                  }
+                >
+                  {m.name}
+                </button>
               ))}
+          </div>
+        )}
+
+        {filteredLog.length === 0 ? (
+          <div className="text-sm text-muted py-6 text-center">{t("pay.logEmpty")}</div>
+        ) : (
+          <div className="mt-3 space-y-2.5">
+            {filteredLog.map((s) => {
+              const covered = (s.expenseIds ?? [])
+                .map((id) => group.expenses.find((e) => e.id === id)?.label)
+                .filter(Boolean);
+              return (
+                <div key={s.id} className="text-sm border-b border-[color:var(--line)] last:border-0 pb-2.5 last:pb-0">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0"
+                      style={{ background: personColor(name(s.from)) }}
+                    >
+                      {memberInitials(member(s.from) ?? { name: name(s.from) })}
+                    </span>
+                    <b>{name(s.from)}</b>
+                    <span className="text-muted">{t("bal.paysTo")}</span>
+                    <span
+                      className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0"
+                      style={{ background: personColor(name(s.to)) }}
+                    >
+                      {memberInitials(member(s.to) ?? { name: name(s.to) })}
+                    </span>
+                    <b>{name(s.to)}</b>
+                    <span className="font-mono font-bold ml-auto">{money(s.amount)}</span>
+                  </div>
+                  <div className="text-[11px] text-muted mt-1 pl-8">
+                    {fmtDate(s.date)}
+                    {covered.length > 0 && ` · ${t("pay.logCovers", { items: covered.join(", ") })}`}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
