@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useGroups, useTrashedGroups, setActiveGroup, archiveGroup, recoverGroup, purgeGroup } from "../lib/store";
 import { computeSettle, shareFor } from "../lib/split";
 import { groupSettleScore } from "../lib/gamification";
@@ -178,57 +178,9 @@ export function Home({ tab }: { tab: HomeTab }) {
         {active.length === 0 && allDone && (
           <div className="glass rounded-3xl p-8 text-center text-muted">{t("home.empty")}</div>
         )}
-        {active.map((g) => {
-          const { net } = computeSettle(g.members, g.expenses, g.settlements ?? []);
-          const mine = net[g.meId] || 0;
-          const total = g.expenses.reduce((s, e) => s + e.amount, 0);
-          const ok = Math.abs(mine) < 0.01;
-          return (
-            <button
-              key={g.id}
-              onClick={() => setActiveGroup(g.id)}
-              className="glass rounded-3xl p-4 w-full text-left hover-lift flex items-center gap-3"
-            >
-              <div className="shrink-0">
-                <SettleRing value={groupSettleScore(g)} size={44} stroke={5} color="#0FA3A3" track="var(--line)" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="font-display text-lg font-bold truncate">{g.name}</div>
-                <div className="text-xs text-muted mt-0.5">
-                  {t("home.meta", { p: g.members.length, amt: money(total, g.currency), e: g.expenses.length })}
-                </div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {g.members.slice(0, 5).map((m) => (
-                    <span
-                      key={m.id}
-                      className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold border-2"
-                      style={{ background: personColor(m.name) + "33", borderColor: "var(--ring)" }}
-                    >
-                      {memberInitials(m)}
-                    </span>
-                  ))}
-                  {g.members.length > 5 && (
-                    <span
-                      className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold border-2 text-muted"
-                      style={{ background: "var(--glass)", borderColor: "var(--ring)" }}
-                    >
-                      +{g.members.length - 5}
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="text-right shrink-0">
-                <div className="text-[11px] uppercase tracking-wide font-mono text-muted">{t("home.yourBalance")}</div>
-                <div
-                  className="font-mono font-bold"
-                  style={{ color: ok ? "var(--muted)" : mine > 0 ? "#0A8B5E" : "#D14444" }}
-                >
-                  {ok ? t("bal.uptodate") : mine > 0 ? `+${money(mine, g.currency)}` : `−${money(-mine, g.currency)}`}
-                </div>
-              </div>
-            </button>
-          );
-        })}
+        {active.map((g) => (
+          <GroupCard key={g.id} g={g} t={t} money={money} onOpen={() => setActiveGroup(g.id)} onArchive={() => archiveGroup(g.id, true)} />
+        ))}
       </div>
 
       {archived.length > 0 && (
@@ -354,6 +306,143 @@ function StartStep({
           {actionLabel}
         </button>
       )}
+    </div>
+  );
+}
+
+const CARD_SWIPE_W = 76;
+
+/** Tarjeta de grupo con deslizar hacia la DERECHA para archivar (revela el
+ *  botón detrás, a la izquierda) — igual patrón que deslizar-para-eliminar
+ *  en los gastos, pero en la dirección opuesta y para archivar en vez de
+ *  borrar. */
+function GroupCard({
+  g,
+  t,
+  money,
+  onOpen,
+  onArchive,
+}: {
+  g: Group;
+  t: ReturnType<typeof useT>;
+  money: (n: number, cur?: string) => string;
+  onOpen: () => void;
+  onArchive: () => void;
+}) {
+  const { net } = computeSettle(g.members, g.expenses, g.settlements ?? []);
+  const mine = net[g.meId] || 0;
+  const total = g.expenses.reduce((s, e) => s + e.amount, 0);
+  const ok = Math.abs(mine) < 0.01;
+
+  const [swipeX, setSwipeX] = useState(0);
+  const drag = useRef<{ startX: number; startY: number; startSwipe: number; horiz: boolean | null; active: boolean }>({
+    startX: 0,
+    startY: 0,
+    startSwipe: 0,
+    horiz: null,
+    active: false,
+  });
+
+  function onTouchStart(ev: React.TouchEvent) {
+    const touch = ev.touches[0];
+    drag.current = { startX: touch.clientX, startY: touch.clientY, startSwipe: swipeX, horiz: null, active: true };
+  }
+  function onTouchMove(ev: React.TouchEvent) {
+    if (!drag.current.active) return;
+    const touch = ev.touches[0];
+    const dx = touch.clientX - drag.current.startX;
+    const dy = touch.clientY - drag.current.startY;
+    if (drag.current.horiz === null && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      drag.current.horiz = Math.abs(dx) > Math.abs(dy);
+    }
+    if (!drag.current.horiz) return;
+    const next = Math.max(0, Math.min(CARD_SWIPE_W, drag.current.startSwipe + dx));
+    setSwipeX(next);
+  }
+  function onTouchEnd() {
+    if (!drag.current.active) return;
+    drag.current.active = false;
+    setSwipeX((v) => (v > CARD_SWIPE_W / 2 ? CARD_SWIPE_W : 0));
+  }
+
+  function handleClick() {
+    if (swipeX !== 0) {
+      setSwipeX(0);
+      return;
+    }
+    onOpen();
+  }
+
+  return (
+    <div className="relative rounded-3xl overflow-hidden">
+      {swipeX !== 0 && (
+        <div className="absolute inset-y-0 left-0 flex items-stretch" style={{ width: CARD_SWIPE_W }}>
+          <button
+            onClick={() => {
+              setSwipeX(0);
+              onArchive();
+            }}
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 text-white"
+            style={{ background: "var(--indigo)" }}
+          >
+            <Icon name="archive" size={16} />
+            <span className="text-[10px] font-semibold">{t("group.archive")}</span>
+          </button>
+        </div>
+      )}
+      <div
+        style={{
+          transform: `translateX(${swipeX}px)`,
+          transition: drag.current.active ? "none" : "transform 0.2s ease",
+          touchAction: "pan-y",
+        }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        <button
+          onClick={handleClick}
+          className="glass rounded-3xl p-4 w-full text-left hover-lift flex items-center gap-3"
+        >
+          <div className="shrink-0">
+            <SettleRing value={groupSettleScore(g)} size={44} stroke={5} color="#0FA3A3" track="var(--line)" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-display text-lg font-bold truncate">{g.name}</div>
+            <div className="text-xs text-muted mt-0.5">
+              {t("home.meta", { p: g.members.length, amt: money(total, g.currency), e: g.expenses.length })}
+            </div>
+            <div className="flex flex-wrap gap-1 mt-2">
+              {g.members.slice(0, 5).map((m) => (
+                <span
+                  key={m.id}
+                  className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold border-2"
+                  style={{ background: personColor(m.name) + "33", borderColor: "var(--ring)" }}
+                >
+                  {memberInitials(m)}
+                </span>
+              ))}
+              {g.members.length > 5 && (
+                <span
+                  className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold border-2 text-muted"
+                  style={{ background: "var(--glass)", borderColor: "var(--ring)" }}
+                >
+                  +{g.members.length - 5}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="text-right shrink-0">
+            <div className="text-[11px] uppercase tracking-wide font-mono text-muted">{t("home.yourBalance")}</div>
+            <div
+              className="font-mono font-bold"
+              style={{ color: ok ? "var(--muted)" : mine > 0 ? "#0A8B5E" : "#D14444" }}
+            >
+              {ok ? t("bal.uptodate") : mine > 0 ? `+${money(mine, g.currency)}` : `−${money(-mine, g.currency)}`}
+            </div>
+          </div>
+        </button>
+      </div>
     </div>
   );
 }
