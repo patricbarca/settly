@@ -113,11 +113,10 @@ export function NotificationsBell({ open, onClose }: { open: boolean; onClose: (
 
   return (
     <div
-      className="fixed inset-x-0 top-0 z-30 flex flex-col anim-up"
+      className="fixed inset-0 z-30 flex flex-col anim-up"
       style={{
         background: "var(--bg)",
         paddingTop: "env(safe-area-inset-top)",
-        bottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom))",
       }}
     >
       <div className="max-w-2xl mx-auto w-full px-4 pt-5 flex-1 flex flex-col min-h-0">
@@ -149,7 +148,10 @@ export function NotificationsBell({ open, onClose }: { open: boolean; onClose: (
               })}
             </div>
 
-            <div className="flex-1 overflow-y-auto pb-10">
+            <div
+              className="flex-1 overflow-y-auto"
+              style={{ paddingBottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 24px)" }}
+            >
               {tab === "notifications" ? (
                 items.length === 0 ? (
                   <div className="glass rounded-3xl p-10 text-center text-muted mt-2">{t("notif.empty")}</div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 
@@ -47,13 +48,14 @@ export function FaqModal({ onClose }: { onClose: () => void }) {
   const sections = useFaqSections();
   const [open, setOpen] = useState<string | null>(null);
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="fixed inset-x-0 top-0 z-30 flex flex-col anim-up"
+      className="fixed inset-0 z-30 flex flex-col anim-up"
       style={{
         background: "var(--bg)",
         paddingTop: "env(safe-area-inset-top)",
-        bottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom))",
       }}
     >
       <div className="max-w-2xl mx-auto w-full px-4 pt-5 flex-1 flex flex-col min-h-0">
@@ -68,7 +70,10 @@ export function FaqModal({ onClose }: { onClose: () => void }) {
           <h2 className="font-display text-2xl font-bold">{t("faq.title")}</h2>
         </div>
 
-        <div className="flex-1 overflow-y-auto pb-10 space-y-5">
+        <div
+          className="flex-1 overflow-y-auto space-y-5"
+          style={{ paddingBottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 24px)" }}
+        >
           {sections.map((section) => (
             <div key={section.title}>
               <div className="text-xs uppercase tracking-widest font-mono text-muted mb-2">{section.title}</div>
@@ -101,6 +106,7 @@ export function FaqModal({ onClose }: { onClose: () => void }) {
           ))}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
