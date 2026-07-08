@@ -496,6 +496,10 @@ function ExpenseRow({
   const pendingCount = debtorIds.filter((id) => !settledIds.has(id)).length;
   const paidStatus: "paid" | "pending" | null =
     direct && debtorIds.length > 0 ? (pendingCount === 0 ? "paid" : "pending") : null;
+  // Anillo verde en la burbuja: ya saldó su parte (o no debía, por ser
+  // pagador). Solo se marca en modo Directo, que es donde hay vínculo real
+  // entre un gasto y los pagos que lo cubren.
+  const bubblePaid = (id: string) => direct && (payerIds.includes(id) || settledIds.has(id));
 
   const [swipeX, setSwipeX] = useState(0);
   // Al escanear un ticket en otra moneda, permite ver los ítems en la moneda
@@ -632,11 +636,12 @@ function ExpenseRow({
                   {participants.slice(0, 5).map((id) => (
                     <span
                       key={id}
-                      title={name(id)}
+                      title={bubblePaid(id) ? `${name(id)} · ${t("exp.paid")}` : name(id)}
                       className="h-4 w-4 rounded-full flex items-center justify-center text-[7px] font-semibold"
                       style={{
                         background: (labels[id]?.color ?? "#888") + "22",
                         color: labels[id]?.color ?? "#888",
+                        boxShadow: bubblePaid(id) ? "0 0 0 1.5px #0A8B5E" : undefined,
                       }}
                     >
                       {labels[id]?.label ?? "?"}
@@ -734,7 +739,11 @@ function ExpenseRow({
                     <span className="flex items-center gap-2">
                       <span
                         className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-semibold"
-                        style={{ background: (labels[id]?.color ?? "#888") + "22", color: labels[id]?.color ?? "#888" }}
+                        style={{
+                          background: (labels[id]?.color ?? "#888") + "22",
+                          color: labels[id]?.color ?? "#888",
+                          boxShadow: bubblePaid(id) ? "0 0 0 1.5px #0A8B5E" : undefined,
+                        }}
                       >
                         {labels[id]?.label ?? "?"}
                       </span>
