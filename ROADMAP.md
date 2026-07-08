@@ -26,6 +26,10 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ **Recurrentes por servidor** (opcional) — cron que materialice las ocurrencias aunque nadie abra el grupo.
 - ⬜ **Parser avanzado** — splits desiguales / porcentajes; glosario por grupo (apodos, comercios); pregunta de confirmación solo si hay ambigüedad.
 - ⬜ **Multi-moneda** en las pills de balance global (hoy asume una sola).
+- ✅ **Miembros sin cuenta ("añadir manual")** — se puede añadir a alguien a un grupo solo con su nombre, sin necesidad de que tenga cuenta todavía (`CreateGroupModal` y `UsersModal`, nombres separados por coma, sin cerrar teclado entre uno y otro). `Member.claimed: false` marca el placeholder. Al compartir el **link único del grupo**, quien se une ve un picker "¿cuál de estos eres tú?" (`ClaimMemberModal`) si hay miembros sin reclamar — elegir uno vincula su cuenta real a ese miembro (conserva el historial de gastos ya asignado) en vez de crear uno nuevo. `invite_links.claim_member_id` + `getJoinPreview`/`joinByToken` en `src/lib/invite.ts`. Requiere `migrate_v9_claim_member.sql` (ya aplicada en producción).
+- ✅ **Concurrencia — gastos (Fase 1)** — arreglado el caso de dos personas editando el grupo a la vez: antes cualquier alta/edición/borrado de gasto sobrescribía **todo** el JSON del grupo desde la copia local (posiblemente desactualizada), pudiendo pisar el cambio de otro dispositivo aunque tocaran gastos distintos. Ahora `add_expense`/`patch_expense`/`delete_expense` (funciones Postgres, `SELECT ... FOR UPDATE`) parchean solo el gasto afectado de forma atómica — verificado en producción que dos ediciones "simultáneas" a campos distintos del mismo gasto ya no se pisan. `migrate_v10_atomic_expense_ops.sql` (aplicada). **Pendiente (Fase 2, no crítico):** miembros, settlements, recurrentes y notificaciones siguen usando el `updateGroup` de blob completo — colisionan mucho menos en la práctica (raro que dos editen ajustes del grupo o marquen pagos en el mismo instante), pero sería lo próximo si se quiere cerrar del todo. Tampoco cubre el caso offline (dos móviles sin conexión editando lo mismo; ese camino sigue siendo "el último en sincronizar gana").
+- ✅ **Escaneo de tickets — cantidades múltiples** — un ítem "x24" ya no se explota automáticamente en 24 líneas: queda en una sola línea con botón **"Partir en N ítems"** para explotarla a demanda (asignar cada unidad a una persona distinta). Por defecto: si la cantidad ≤ nº de miembros, se preseleccionan todos (fácil deseleccionar quien no participó); si es mayor, no se preselecciona nadie (no hay default razonable). Botones **Seleccionar todos / Ninguno** en cada ítem.
+- ✅ **Fix impuesto duplicado en tickets escaneados** — si el ticket ya incluye el IVA/GST en los precios (frecuente en AU/NZ: desglose informativo "GST Sales/Amount" que NO es un cargo aparte), antes a veces se sumaba de nuevo como recargo, inflando el total. Ahora se compara `subtotal` vs `total` del propio ticket: solo se añade como recargo si hay un hueco real del tamaño del impuesto. Nueva línea **"Subtotal (ítems)"** visible cuando hay recargos, para detectar a simple vista si algo se sumó de más.
 
 ## Fase 1.5 — Pre-lanzamiento: analítica, legal y seguridad
 > La app ya es funcional y online; **no hacen falta las tiendas para empujar tráfico**. Esto es lo que hay que cerrar antes de lanzar en Product Hunt / redes.
@@ -59,6 +63,7 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ **Product Hunt launch** — preparación: cuenta activa 1-2 semanas antes, capturas 1270×760px (shots.so), GIF demo, tagline "AI-powered bill splitter. Type it, say it, or scan the receipt.", descripción en inglés. Lanzar a las **00:01 PST (18:01 AEST)**. Avisar a contactos con antelación para upvotes el día D. Responder cada comentario. Buscar hunter con seguidores en PH (hunterscored.com).
 - ⬜ **AlternativeTo + GetApp** — listar Settlia como alternativa a Splitwise/Tricount para capturar tráfico de usuarios que quieren cambiar.
 - ⬜ **Google Ads (Search)** — campaña preparada (keywords + copy), falta crearla en ads.google.com y activar presupuesto. 2 grupos de anuncios: (1) genérico "group shared expenses app" / "gastos de grupos compartidos" → landing en `blog-app-gastos-grupos-compartidos.html`; (2) comparativa "splitwise alternative" / "tricount alternative" → landing en `settlia.app/`. Presupuesto de prueba sugerido: 10-15 USD/día, 1-2 semanas. Ubicación Australia, ampliar después.
+  - ⬜ **Conversion tracking (bloqueante antes de gastar presupuesto real)** — se retomó la idea de GA4 (antes descartada para analítica general, Cloudflare Web Analytics ya cubre eso) específicamente para medir conversiones de Ads: eventos `sign_up` / `first_group_created` importados como conversión en Google Ads. **Pendiente del usuario:** crear la propiedad GA4 (Measurement ID `G-XXXXXXX`) y la cuenta de Google Ads, vincularlas, y pasar el ID para cablear el tag + los eventos en la landing y en `src/lib/auth.ts`/`src/lib/store.ts`. Sin esto, correr ads es gastar a ciegas.
 - 🔧 **SEO landing** — ✅ hecho lo técnico (`sitemap.xml`, `robots.txt`, JSON-LD `SoftwareApplication`/`FAQPage`/`BlogPosting`, title/description con keywords). **Falta:** enviar sitemap a **Google Search Console** + Bing Webmaster, **páginas comparativa** ("vs Splitwise", "alternativa a Splitwise en Australia"), más artículos de blog (clusters long-tail), y conseguir **backlinks** (Product Hunt, AlternativeTo, Reddit, comunidades). Métricas privacy-friendly (Plausible/Umami).
 - ⬜ **Link de pago / split sin registro (estilo BillBoss)** — el amigo abre un enlace y ve su parte + datos de pago **sin instalar ni registrarse**. Hoy hay que crear cuenta para unirse a un grupo = fricción. Evaluar un flujo ligero de "pagar por link" para gastos puntuales.
 
@@ -100,6 +105,7 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ Borrar `PayMethodModal.tsx` (huérfano; edición de métodos solo en perfil).
 - ⬜ Migrar `settlement.proof` base64 → Storage (con Fase 1).
 - ⬜ Revisar concurrencia de `processRecurring` (posible doble generación si dos abren a la vez).
+- ⬜ **Concurrencia — Fase 2**: extender el patrón atómico (`SELECT ... FOR UPDATE` + parche puntual) a miembros, settlements, recurrentes y notificaciones; hoy siguen en el `updateGroup` de blob completo (ver Fase 1).
 
 ---
 
@@ -110,3 +116,12 @@ confirmar" · pills de balance global · parser "por persona" + few-shot +
 suposiciones · tipo de grupo (Puntual/Casa) · recordatorios diarios bilingües
 (código y desplegados) · sello de versión en el footer · **redeploy `send-push` v10
 + `daily-reminders` v11** (2026-06-29).
+
+**Sesión 2026-07-08:** miembros sin cuenta + link único con picker de reclamo ·
+**fix de concurrencia (Fase 1, gastos)** con operaciones atómicas en Postgres ·
+escaneo de tickets: cantidades múltiples ya no se auto-explotan (botón "Partir
+en N") + fix de IVA/GST duplicado + línea de subtotal · categoría y pagador
+movidos arriba en el form de gasto · miembros **ordenados alfabéticamente** en
+toda la app · tipografía unificada a **Baloo 2** (self-hosted, reemplaza
+Bricolage/Inter/Space Mono) · pills de balance global: Total, debo y me deben
+cada una en su propia pill separada.
