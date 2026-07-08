@@ -132,7 +132,6 @@ export function Balances({ group }: { group: Group }) {
       <div className="glass rounded-3xl p-5">
         <div>
           <div className="text-xs uppercase tracking-widest font-mono text-muted">{t("bal.toSettle")}</div>
-          <div className="text-[11px] text-muted mt-0.5">{t("bal.simplified")}</div>
         </div>
 
         {transfers.length === 0 && pending.length === 0 ? (
