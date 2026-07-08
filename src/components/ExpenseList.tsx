@@ -480,9 +480,7 @@ function ExpenseRow({
   const participants = (e.participantIds.length ? e.participantIds : ids).filter(
     (id) => (shares[id] || 0) > 0.001
   );
-  const payerDisplay = e.payments?.length
-    ? e.payments.map((p) => name(p.memberId)).join(", ")
-    : name(e.payerId);
+  const payerIds = e.payments?.length ? e.payments.map((p) => p.memberId) : [e.payerId];
   // Mismo criterio que el botón de eliminar en el detalle: sin autor (gastos
   // antiguos) o autor = yo → es "mío", puedo eliminarlo directo.
   const isMine = !e.createdBy || e.createdBy === group.meId;
@@ -606,10 +604,27 @@ function ExpenseRow({
                 </span>
               )}
             </div>
-            <div className="text-[11px] text-muted leading-tight mt-0.5 flex items-center gap-1.5">
-              <span className="truncate">
-                {t("exp.meta", { payer: payerDisplay, date: fmtDate(e.date) })}
+            <div className="text-[11px] text-muted leading-tight mt-0.5 flex items-center gap-1 flex-wrap">
+              <span className="flex items-center gap-0.5 shrink-0">
+                {payerIds.slice(0, 5).map((id) => (
+                  <span
+                    key={id}
+                    title={name(id)}
+                    className="h-4 w-4 rounded-full flex items-center justify-center text-[7px] font-semibold"
+                    style={{
+                      background: (labels[id]?.color ?? "#888") + "22",
+                      color: labels[id]?.color ?? "#888",
+                    }}
+                  >
+                    {labels[id]?.label ?? "?"}
+                  </span>
+                ))}
               </span>
+              {participants.length > 0 && (
+                <span className="text-muted shrink-0" aria-hidden>
+                  →
+                </span>
+              )}
               {participants.length > 0 && (
                 <span className="flex items-center gap-0.5 shrink-0">
                   {participants.slice(0, 5).map((id) => (
@@ -630,6 +645,7 @@ function ExpenseRow({
                   )}
                 </span>
               )}
+              <span className="truncate">· {fmtDate(e.date)}</span>
             </div>
           </div>
           <div className="text-right shrink-0 flex items-center gap-1.5">
