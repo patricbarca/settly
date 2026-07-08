@@ -5,7 +5,7 @@ import { withNotif } from "../lib/notifications";
 import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { uid, money } from "../lib/format";
-import { expenseDebtsBetween } from "../lib/split";
+import { expenseDebtsBetween, fifoExpenseIdsForAmount } from "../lib/split";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -69,6 +69,12 @@ export function MarkPaidModal({
   function confirm() {
     if (!valid) return;
     const paidAmt = Math.round(value * 100) / 100;
+    // Simplificado: no hay picker (una transferencia puede no corresponder a
+    // ningún gasto real con esta persona), así que se asignan solos los
+    // gastos pendientes de más antiguo a más nuevo hasta agotar el monto.
+    const fifoIds = !usingPicker
+      ? fifoExpenseIdsForAmount(group.members, group.expenses, group.settlements ?? [], from, paidAmt)
+      : [];
     updateGroup(group.id, (g) => ({
       ...g,
       settlements: [
@@ -83,7 +89,7 @@ export function MarkPaidModal({
           // cobra lo confirme o lo rechace. Puede ser un pago PARCIAL.
           status: "pending",
           proof,
-          ...(usingPicker ? { expenseIds: [...selected] } : {}),
+          ...(usingPicker ? { expenseIds: [...selected] } : fifoIds.length ? { expenseIds: fifoIds } : {}),
         },
       ],
       notifications: withNotif(g, {
