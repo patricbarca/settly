@@ -248,6 +248,11 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
           <p className="text-[11px] text-muted mt-1.5">
             {t(simplify ? "settings.payModeSimpleHint" : "settings.payModeDirectHint")}
           </p>
+          {simplify !== (group.simplifyDebts !== false) && (
+            <p className="text-[11px] mt-1.5" style={{ color: "var(--amber)" }}>
+              {t("settings.payModeSwitchWarn")}
+            </p>
+          )}
         </div>
 
         {/* Members */}
