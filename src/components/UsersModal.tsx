@@ -112,20 +112,30 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
     await addUser(foundUser.id, foundUser.name);
   }
 
-  function addManual() {
-    const name = manualName.trim();
-    if (!name) return;
+  function addManualNames(raw: string) {
+    // Admite varios nombres separados por coma de una vez, y no cierra el
+    // panel al añadir para poder seguir escribiendo sin perder el teclado.
+    const names = raw.split(",").map((n) => n.trim()).filter(Boolean);
+    if (!names.length) return;
     updateGroup(group.id, (g) => ({
       ...g,
-      members: [...g.members, { id: uid(), name, avatar: "", claimed: false }],
-      activity: withActivity(g, {
-        type: "member_added",
-        actorId: g.meId,
-        actorName: g.members.find((m) => m.id === g.meId)?.name,
-        label: name,
-      }),
+      members: [...g.members, ...names.map((name) => ({ id: uid(), name, avatar: "", claimed: false }))],
+      activity: names.reduce(
+        (activity, name) =>
+          withActivity({ ...g, activity }, {
+            type: "member_added",
+            actorId: g.meId,
+            actorName: g.members.find((m) => m.id === g.meId)?.name,
+            label: name,
+          }),
+        g.activity
+      ),
     }));
-    reset();
+  }
+
+  function addManual() {
+    addManualNames(manualName);
+    setManualName("");
   }
 
   async function copyInvite() {
@@ -332,8 +342,16 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
                 <input
                   autoFocus
                   value={manualName}
-                  onChange={(e) => setManualName(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addManual()}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v.includes(",")) {
+                      addManualNames(v);
+                      setManualName("");
+                    } else {
+                      setManualName(v);
+                    }
+                  }}
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addManual())}
                   placeholder={t("members.name")}
                   className="glass rounded-xl px-3 py-2 text-sm w-full"
                 />
@@ -346,7 +364,7 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
                   >
                     {t("members.addConfirm")}
                   </button>
-                  <button onClick={reset} className="glass rounded-full px-4 py-2 text-sm text-muted hover-lift">{t("common.cancel")}</button>
+                  <button onClick={reset} className="glass rounded-full px-4 py-2 text-sm text-muted hover-lift">{t("common.done")}</button>
                 </div>
               </>
             )}
