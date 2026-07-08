@@ -116,6 +116,11 @@ export interface Settlement {
   date: string;
   status: "pending" | "confirmed";
   proof?: string; // dataURL del comprobante (opcional)
+  /** Gastos concretos que cubre este pago (solo modo Directo — en Simplificado
+   *  la transferencia es una optimización agregada que no siempre corresponde
+   *  a gastos reales compartidos entre estas dos personas). Al confirmarse,
+   *  esos gastos se marcan como pagados por `from` en el listado de gastos. */
+  expenseIds?: string[];
 }
 
 export type NotificationType = "expense_added" | "payment_made" | "review_requested" | "delete_requested" | "recurring_generated";

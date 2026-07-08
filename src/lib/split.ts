@@ -139,3 +139,67 @@ export function directTransfers(
   }
   return transfers;
 }
+
+export interface ExpenseDebt {
+  expenseId: string;
+  label: string;
+  amount: number;
+}
+
+/** Desglose de qué gastos concretos componen lo que 'fromId' le debe a
+ *  'toId' (modo Directo) — excluye los ya cubiertos por un pago CONFIRMADO
+ *  entre ese mismo par que los referencia en `expenseIds`. Se usa para dejar
+ *  elegir gastos concretos al pagar/marcar como pagado (en vez de un monto
+ *  suelto), y para saber qué gastos siguen pendientes. */
+export function expenseDebtsBetween(
+  members: Member[],
+  expenses: Expense[],
+  settlements: Settlement[],
+  fromId: string,
+  toId: string
+): ExpenseDebt[] {
+  const ids = members.map((m) => m.id);
+  const paidExpenseIds = new Set<string>();
+  for (const s of settlements) {
+    if (s.status === "confirmed" && s.from === fromId && s.to === toId) {
+      (s.expenseIds ?? []).forEach((id) => paidExpenseIds.add(id));
+    }
+  }
+
+  const out: ExpenseDebt[] = [];
+  for (const e of expenses) {
+    if (paidExpenseIds.has(e.id)) continue;
+    const sh = shareFor(e, ids);
+    const owedShare = sh[fromId] || 0;
+    if (owedShare <= 0.001) continue;
+    const pays = e.payments?.length
+      ? e.payments
+      : [{ memberId: e.payerId, amount: Number(e.amount || 0) }];
+    const totalPaid = pays.reduce((s, p) => s + Number(p.amount || 0), 0) || Number(e.amount || 0) || 1;
+    const toPay = pays.find((p) => p.memberId === toId);
+    if (!toPay) continue;
+    const frac = Number(toPay.amount || 0) / totalPaid;
+    const amount = Math.round(owedShare * frac * 100) / 100;
+    if (amount > 0.01) out.push({ expenseId: e.id, label: e.label, amount });
+  }
+  return out;
+}
+
+/** Para un gasto dado, quiénes lo deben (participantes con parte > 0 que no
+ *  son quien(es) pagaron) y cuáles de ellos ya lo saldaron vía un pago
+ *  confirmado que referencia este gasto — para el indicador "pagado" en el
+ *  listado de gastos. */
+export function expenseSettledStatus(
+  e: Expense,
+  memberIds: string[],
+  settlements: Settlement[]
+): { debtorIds: string[]; settledIds: Set<string> } {
+  const sh = shareFor(e, memberIds);
+  const payerIds = new Set(e.payments?.length ? e.payments.map((p) => p.memberId) : [e.payerId]);
+  const debtorIds = memberIds.filter((id) => (sh[id] || 0) > 0.001 && !payerIds.has(id));
+  const settledIds = new Set<string>();
+  for (const s of settlements) {
+    if (s.status === "confirmed" && s.expenseIds?.includes(e.id)) settledIds.add(s.from);
+  }
+  return { debtorIds, settledIds };
+}
