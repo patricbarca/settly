@@ -3,7 +3,8 @@ import { useUser, useAuthPhase, setProfileName, submitPhone, verifyPhone, skipPh
 import { useLang, setLang, useT } from "./lib/i18n";
 import { resetSeed, useActiveGroup, loadGuestMode, setActiveGroup, addGroup, useGroups } from "./lib/store";
 import { useTheme, toggleTheme } from "./lib/theme";
-import { joinByToken } from "./lib/invite";
+import { joinByToken, getJoinPreview } from "./lib/invite";
+import { ClaimMemberModal } from "./components/ClaimMemberModal";
 import { Icon } from "./components/Icon";
 import { Login } from "./components/Login";
 import { Home, type HomeTab } from "./components/Home";
@@ -34,6 +35,11 @@ export default function App() {
   const [showActivity, setShowActivity] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [joinPreview, setJoinPreview] = useState<{
+    token: string;
+    groupName: string;
+    unclaimed: { id: string; name: string }[];
+  } | null>(null);
   const [homeTab, setHomeTab] = useState<HomeTab>("groups");
   const unread = countUnread(allGroups);
   const navActive: NavKey = showActivity
@@ -86,10 +92,27 @@ export default function App() {
     const token = sessionStorage.getItem("settly.pendingJoin");
     if (!token) return;
     sessionStorage.removeItem("settly.pendingJoin");
-    joinByToken(token, user.id).then((g) => {
-      if (g) { addGroup(g); setActiveGroup(g.id); }
+    getJoinPreview(token).then((preview) => {
+      if (preview && preview.unclaimed.length > 0) {
+        // Hay personas añadidas sin cuenta en el grupo: dejamos que el
+        // invitado elija "soy yo" en vez de crear un miembro nuevo directo.
+        setJoinPreview({ token, groupName: preview.groupName, unclaimed: preview.unclaimed });
+        return;
+      }
+      joinByToken(token, user.id).then((g) => {
+        if (g) { addGroup(g); setActiveGroup(g.id); }
+      });
     });
   }, [phase, user]);
+
+  function resolveJoin(memberId?: string) {
+    if (!joinPreview || !user) return;
+    const { token } = joinPreview;
+    setJoinPreview(null);
+    joinByToken(token, user.id, memberId).then((g) => {
+      if (g) { addGroup(g); setActiveGroup(g.id); }
+    });
+  }
 
   useEffect(() => {
     // El onboarding se muestra una sola vez (flag persistente). Se puede
@@ -206,6 +229,14 @@ export default function App() {
           setShowAccount(true);
         }}
       />
+
+      {joinPreview && (
+        <ClaimMemberModal
+          groupName={joinPreview.groupName}
+          unclaimed={joinPreview.unclaimed}
+          onPick={resolveJoin}
+        />
+      )}
 
       {showActivity && <NotificationsBell open={showActivity} onClose={() => setShowActivity(false)} />}
       {showAdmin && <AdminDashboard onClose={() => setShowAdmin(false)} />}
