@@ -436,6 +436,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "pay.logAll": { es: "Todos", en: "All" },
   "pay.logEmpty": { es: "Todavía no hay pagos registrados.", en: "No payments logged yet." },
   "pay.logCovers": { es: "Cubre: {items}", en: "Covers: {items}" },
+  "pay.editExpenses": { es: "Editar gastos", en: "Edit expenses" },
+  "pay.editExpensesTitle": { es: "¿Qué gastos cubre este pago?", en: "Which expenses does this payment cover?" },
   "pay.undo": { es: "Deshacer", en: "Undo" },
   "pay.copied": { es: "Copiado: {v} — pégalo en tu app de pago.", en: "Copied: {v} — paste it in your payment app." },
   "pay.copy": { es: "Copiar", en: "Copy" },

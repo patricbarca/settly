@@ -156,11 +156,15 @@ export function expenseDebtsBetween(
   expenses: Expense[],
   settlements: Settlement[],
   fromId: string,
-  toId: string
+  toId: string,
+  /** Settlement a ignorar al calcular qué ya está cubierto (para poder editar
+   *  sus propios gastos sin que se auto-excluyan). */
+  excludeSettlementId?: string
 ): ExpenseDebt[] {
   const ids = members.map((m) => m.id);
   const paidExpenseIds = new Set<string>();
   for (const s of settlements) {
+    if (s.id === excludeSettlementId) continue;
     if (s.status === "confirmed" && s.from === fromId && s.to === toId) {
       (s.expenseIds ?? []).forEach((id) => paidExpenseIds.add(id));
     }

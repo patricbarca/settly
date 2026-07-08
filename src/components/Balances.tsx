@@ -1,16 +1,21 @@
 import { useState } from "react";
-import type { Group } from "../lib/types";
+import type { Group, Settlement } from "../lib/types";
 import { computeSettle, directTransfers } from "../lib/split";
 import { updateGroup } from "../lib/store";
+import { useUser } from "../lib/auth";
 import { personColor, memberInitials, sortedMembers, fmtDate } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useGroupMoney } from "../lib/displayCurrency";
 import { Icon } from "./Icon";
 import { MarkPaidModal } from "./MarkPaidModal";
 import { PaySheet } from "./PaySheet";
+import { EditPaymentExpensesModal } from "./EditPaymentExpensesModal";
 
 export function Balances({ group }: { group: Group }) {
   const t = useT();
+  const user = useUser();
+  const isOwner = !group.ownerId || group.ownerId === user?.id;
+  const direct = group.simplifyDebts === false;
   const money = useGroupMoney(group);
   const settlements = group.settlements ?? [];
   const { paid, net, transfers: minTransfers } = computeSettle(group.members, group.expenses, settlements);
@@ -32,6 +37,7 @@ export function Balances({ group }: { group: Group }) {
 
   const [mark, setMark] = useState<{ from: string; to: string; amount: number } | null>(null);
   const [paySheet, setPaySheet] = useState<{ to: string; amount: number } | null>(null);
+  const [editSettlement, setEditSettlement] = useState<Settlement | null>(null);
   const [logFilter, setLogFilter] = useState<string>("all");
   const sortedConfirmed = [...confirmed].sort((a, b) => b.date.localeCompare(a.date));
   const filteredLog =
@@ -255,9 +261,20 @@ export function Balances({ group }: { group: Group }) {
                     <b>{name(s.to)}</b>
                     <span className="font-mono font-bold ml-auto">{money(s.amount)}</span>
                   </div>
-                  <div className="text-[11px] text-muted mt-1 pl-8">
-                    {fmtDate(s.date)}
-                    {covered.length > 0 && ` · ${t("pay.logCovers", { items: covered.join(", ") })}`}
+                  <div className="text-[11px] text-muted mt-1 pl-8 flex items-center gap-1.5 flex-wrap">
+                    <span>
+                      {fmtDate(s.date)}
+                      {covered.length > 0 && ` · ${t("pay.logCovers", { items: covered.join(", ") })}`}
+                    </span>
+                    {isOwner && direct && (
+                      <button
+                        onClick={() => setEditSettlement(s)}
+                        className="rounded-full px-2 py-0.5 text-[10px] font-semibold hover-lift shrink-0"
+                        style={{ background: "var(--surface-soft)", color: "var(--muted)" }}
+                      >
+                        {t("pay.editExpenses")}
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -276,6 +293,13 @@ export function Balances({ group }: { group: Group }) {
           to={mark.to}
           amount={mark.amount}
           onClose={() => setMark(null)}
+        />
+      )}
+      {editSettlement && (
+        <EditPaymentExpensesModal
+          group={group}
+          settlement={editSettlement}
+          onClose={() => setEditSettlement(null)}
         />
       )}
       </div>
