@@ -28,7 +28,7 @@ export default defineConfig({
       manifest: {
         name: "Settlia",
         short_name: "Settlia",
-        description: "Gastos en grupo, sin líos.",
+        description: "Group expenses, drama-free. Powered by AI.",
         theme_color: "#0D1B2A",
         background_color: "#0D1B2A",
         display: "standalone",
