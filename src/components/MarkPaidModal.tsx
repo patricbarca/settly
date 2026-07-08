@@ -1,10 +1,11 @@
-import { useState, type ChangeEvent } from "react";
+import { useMemo, useState, type ChangeEvent } from "react";
 import type { Group } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { withNotif } from "../lib/notifications";
 import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { uid, money } from "../lib/format";
+import { expenseDebtsBetween } from "../lib/split";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -28,8 +29,32 @@ export function MarkPaidModal({
   const [proof, setProof] = useState<string | undefined>();
   const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
 
-  // Monto a registrar: lo escrito, acotado a (0, total adeudado].
-  const value = Math.min(Math.max(0, Number(amt) || 0), max);
+  // Selección por gasto: solo disponible en modo Directo, donde una deuda SÍ
+  // corresponde a gastos reales compartidos entre estas dos personas (en
+  // Simplificado la transferencia es una optimización agregada que puede no
+  // corresponder a ningún gasto real entre este par).
+  const direct = group.simplifyDebts === false;
+  const debts = useMemo(
+    () => (direct ? expenseDebtsBetween(group.members, group.expenses, group.settlements ?? [], from, to) : []),
+    [direct, group.members, group.expenses, group.settlements, from, to]
+  );
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(debts.map((d) => d.expenseId)));
+  const usingPicker = direct && debts.length > 0;
+
+  function toggleExpense(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const pickedTotal = Math.round(debts.filter((d) => selected.has(d.expenseId)).reduce((s, d) => s + d.amount, 0) * 100) / 100;
+
+  // Monto a registrar: la suma de los gastos elegidos (modo Directo), o lo
+  // escrito a mano (fallback: Simplificado, o sin desglose disponible).
+  const value = usingPicker ? pickedTotal : Math.min(Math.max(0, Number(amt) || 0), max);
   const valid = value > 0.005;
   const remaining = Math.round((max - value) * 100) / 100;
 
@@ -58,6 +83,7 @@ export function MarkPaidModal({
           // cobra lo confirme o lo rechace. Puede ser un pago PARCIAL.
           status: "pending",
           proof,
+          ...(usingPicker ? { expenseIds: [...selected] } : {}),
         },
       ],
       notifications: withNotif(g, {
@@ -93,31 +119,72 @@ export function MarkPaidModal({
           {t("pay.markDesc", { amt: money(max, group.currency), to: name(to) })}
         </p>
 
-        {/* Monto pagado (permite pago parcial) */}
-        <label className="text-xs font-semibold text-muted">{t("pay.amountPaid")}</label>
-        <div className="flex gap-2 mt-1">
-          <input
-            type="number"
-            inputMode="decimal"
-            min="0"
-            max={max}
-            step="0.01"
-            value={amt}
-            onChange={(e) => setAmt(e.target.value)}
-            className="glass rounded-xl px-3 py-2.5 text-sm flex-1 font-mono"
-          />
-          <button
-            type="button"
-            onClick={() => setAmt(String(max))}
-            className="glass rounded-xl px-3 text-xs font-semibold text-muted hover-lift shrink-0"
-          >
-            {t("pay.full")}
-          </button>
-        </div>
-        {valid && remaining > 0.005 && (
-          <div className="text-[11px] text-muted mt-1.5">
-            {t("pay.remaining", { amt: money(remaining, group.currency) })}
-          </div>
+        {usingPicker ? (
+          <>
+            {/* Elegir qué gastos concretos cubre este pago (modo Directo) —
+                en vez de un monto suelto, para poder marcarlos como pagados
+                individualmente y ver qué queda pendiente en el listado. */}
+            <label className="text-xs font-semibold text-muted">{t("pay.whichExpenses")}</label>
+            <div className="glass rounded-2xl p-1.5 mt-1 space-y-0.5 max-h-56 overflow-y-auto">
+              {debts.map((d) => {
+                const on = selected.has(d.expenseId);
+                return (
+                  <button
+                    key={d.expenseId}
+                    onClick={() => toggleExpense(d.expenseId)}
+                    className="w-full flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover-lift"
+                    style={on ? { background: "var(--surface-soft)" } : undefined}
+                  >
+                    <span
+                      className="h-5 w-5 rounded-full flex items-center justify-center shrink-0"
+                      style={{
+                        background: on ? "var(--teal)" : "transparent",
+                        border: on ? "none" : "1.5px solid var(--line)",
+                        color: "#fff",
+                      }}
+                    >
+                      {on && <Icon name="check" size={12} />}
+                    </span>
+                    <span className="text-sm flex-1 min-w-0 truncate">{d.label || "—"}</span>
+                    <span className="text-sm font-mono font-semibold shrink-0">{money(d.amount, group.currency)}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-between mt-2 text-sm">
+              <span className="text-muted">{t("pay.selectedTotal")}</span>
+              <span className="font-mono font-bold">{money(pickedTotal, group.currency)}</span>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Monto pagado (permite pago parcial) */}
+            <label className="text-xs font-semibold text-muted">{t("pay.amountPaid")}</label>
+            <div className="flex gap-2 mt-1">
+              <input
+                type="number"
+                inputMode="decimal"
+                min="0"
+                max={max}
+                step="0.01"
+                value={amt}
+                onChange={(e) => setAmt(e.target.value)}
+                className="glass rounded-xl px-3 py-2.5 text-sm flex-1 font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => setAmt(String(max))}
+                className="glass rounded-xl px-3 text-xs font-semibold text-muted hover-lift shrink-0"
+              >
+                {t("pay.full")}
+              </button>
+            </div>
+            {valid && remaining > 0.005 && (
+              <div className="text-[11px] text-muted mt-1.5">
+                {t("pay.remaining", { amt: money(remaining, group.currency) })}
+              </div>
+            )}
+          </>
         )}
 
         <label className="text-xs font-semibold text-muted block mt-4">{t("pay.attach")}</label>

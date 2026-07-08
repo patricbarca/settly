@@ -2,7 +2,7 @@ import { useState, useMemo, useRef } from "react";
 import type { Group, Category } from "../lib/types";
 import { catOf } from "../lib/types";
 import { patchExpense, deleteExpense } from "../lib/store";
-import { shareFor } from "../lib/split";
+import { shareFor, expenseSettledStatus } from "../lib/split";
 import { money as rawMoney, fmtDate, memberLabels } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
 import { useGroupMoney } from "../lib/displayCurrency";
@@ -486,6 +486,16 @@ function ExpenseRow({
   // Mismo criterio que el botón de eliminar en el detalle: sin autor (gastos
   // antiguos) o autor = yo → es "mío", puedo eliminarlo directo.
   const isMine = !e.createdBy || e.createdBy === group.meId;
+  // Indicador "pagado"/"pendiente" por gasto — solo tiene sentido en modo
+  // Directo, donde un pago confirmado puede referenciar gastos concretos
+  // (`Settlement.expenseIds`). En Simplificado no hay vínculo gasto↔pago.
+  const direct = group.simplifyDebts === false;
+  const { debtorIds, settledIds } = direct
+    ? expenseSettledStatus(e, ids, group.settlements ?? [])
+    : { debtorIds: [], settledIds: new Set<string>() };
+  const pendingCount = debtorIds.filter((id) => !settledIds.has(id)).length;
+  const paidStatus: "paid" | "pending" | null =
+    direct && debtorIds.length > 0 ? (pendingCount === 0 ? "paid" : "pending") : null;
 
   const [swipeX, setSwipeX] = useState(0);
   // Al escanear un ticket en otra moneda, permite ver los ítems en la moneda
@@ -580,6 +590,19 @@ function ExpenseRow({
                   style={{ background: "#E8920C22", color: "#9A6B00" }}
                 >
                   <Icon name="flag" size={11} /> {t("exp.inReview")}
+                </span>
+              )}
+              {paidStatus && (
+                <span
+                  className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0"
+                  style={
+                    paidStatus === "paid"
+                      ? { background: "#0A8B5E22", color: "#0A8B5E" }
+                      : { background: "#E8920C22", color: "#9A6B00" }
+                  }
+                >
+                  <Icon name={paidStatus === "paid" ? "check" : "clock"} size={11} />
+                  {t(paidStatus === "paid" ? "exp.paid" : "exp.pending")}
                 </span>
               )}
             </div>
