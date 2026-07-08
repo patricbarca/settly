@@ -662,6 +662,7 @@ const DICT: Record<string, { es: string; en: string }> = {
     es: "Grupos ilimitados (gratis hasta 3), gastos recurrentes, escaneo de recibos sin límite mensual, reportes exportables y conversión de moneda al escanear tickets en otra divisa.",
     en: "Unlimited groups (free is capped at 3), recurring expenses, unlimited monthly receipt scans, exportable reports, and currency conversion when scanning receipts in a different currency.",
   },
+  "feedback.entry":    { es: "Enviar comentarios", en: "Send feedback" },
   "feedback.entrySub": { es: "Valora la app o reporta un problema", en: "Rate the app or report a problem" },
   "feedback.title":    { es: "Comentarios", en: "Feedback" },
   "feedback.tabRate":  { es: "Valorar", en: "Rate" },
