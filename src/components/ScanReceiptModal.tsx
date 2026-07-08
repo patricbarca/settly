@@ -95,24 +95,30 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     }
     const conv = (n: number) => r2(n * rate);
 
-    // Expandir cantidades: un "x2" se separa en líneas individuales. Guarda
-    // también el precio nativo (originalPrice) tal cual lo detectó el
-    // escaneo, sin convertir — permite validar el escaneo contra el ticket
-    // real en vez de reconvertir el monto ya convertido (que arrastraría el
-    // redondeo).
-    const itemRows: ExpenseItem[] = [];
-    for (const s of res.items) {
+    // Un "x24" ya NO se explota automáticamente en 24 líneas: queda como una
+    // sola fila con `qty` adjunto (botón "Partir en N" en el editor, para
+    // asignar cada unidad a una persona distinta). Guarda también el precio
+    // nativo (originalPrice) tal cual lo detectó el escaneo, sin convertir —
+    // permite validar el escaneo contra el ticket real en vez de reconvertir
+    // el monto ya convertido (que arrastraría el redondeo).
+    //
+    // Participantes por defecto: si hay tantas o más personas en el grupo
+    // que unidades del ítem, es plausible que sea "una por persona" (p. ej.
+    // 24 cubiertos de banquete para 24 comensales) — se preseleccionan todos
+    // para que baste con quitar a quien no participó. Si hay MENOS personas
+    // que unidades, no hay un reparto por defecto razonable: se deja vacío
+    // para que se asigne a mano (normalmente partiendo en N).
+    const itemRows: (ExpenseItem & { qty?: number })[] = res.items.map((s) => {
       const q = Math.max(1, s.qty || 1);
-      if (q > 1 && s.price > 0) {
-        const unit = r2(s.unitPrice || s.price / q);
-        for (let i = 0; i < q; i++) {
-          const nativePrice = i === q - 1 ? r2(s.price - unit * (q - 1)) : unit;
-          itemRows.push({ name: s.name, price: conv(nativePrice), originalPrice: nativePrice, participantIds: allIds });
-        }
-      } else {
-        itemRows.push({ name: s.name, price: conv(s.price), originalPrice: s.price, participantIds: allIds });
-      }
-    }
+      const defaultIds = allIds.length >= q ? allIds : [];
+      return {
+        name: s.name,
+        price: conv(s.price),
+        originalPrice: s.price,
+        participantIds: defaultIds,
+        ...(q > 1 ? { qty: q } : {}),
+      };
+    });
     const scannedFees = (res.fees || []).map((f) => ({ ...f, amount: conv(f.amount), originalAmount: f.amount }));
     // Si el impuesto NO está incluido en los precios (p. ej. "VAT 8%" que se
     // suma al subtotal), antes se mostraba solo como nota informativa y

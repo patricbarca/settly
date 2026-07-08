@@ -7,7 +7,17 @@ import { currencySymbol } from "../lib/currencies";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 
-type Item = { id: string; name: string; price: number | string; who: Set<string>; originalPrice?: number | string };
+type Item = {
+  id: string;
+  name: string;
+  price: number | string;
+  who: Set<string>;
+  originalPrice?: number | string;
+  /** Cantidad detectada en el ticket (p. ej. "24 banquet") mientras sigue en
+   *  una sola línea sin partir — habilita el botón "Partir en N". Se pierde
+   *  al partir (cada unidad ya es una línea normal) y nunca se persiste. */
+  qty?: number;
+};
 type Fee = { id: string; name: string; amount: number | string; originalAmount?: number | string };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -26,7 +36,7 @@ export type ItemizedResult = {
 
 export type ItemizedInitial = {
   label?: string;
-  items?: ExpenseItem[];
+  items?: (ExpenseItem & { qty?: number })[];
   fees?: { name: string; amount: number; originalAmount?: number }[];
   tip?: number;
   payerId?: string;
@@ -79,8 +89,12 @@ export function ItemizedExpenseEditor({
       id: uid(),
       name: it.name,
       price: it.price || "",
-      who: new Set(it.participantIds?.length ? it.participantIds : allIds),
+      // ?? (no .length ?) para respetar un participantIds=[] deliberado (p.
+      // ej. un ítem de cantidad múltiple sin asignar todavía); solo cae a
+      // allIds cuando el campo no viene informado en absoluto.
+      who: new Set(it.participantIds ?? allIds),
       originalPrice: it.originalPrice,
+      qty: it.qty,
     }))
   );
   const [fees, setFees] = useState<Fee[]>(() =>
@@ -141,6 +155,33 @@ export function ItemizedExpenseEditor({
       return [...arr.slice(0, idx), a, b, ...arr.slice(idx + 1)];
     });
   }
+  // Explota una línea de cantidad múltiple (p. ej. "24 banquet") en N líneas
+  // individuales de precio unitario, sin nadie asignado — cada una se
+  // reparte a mano (normalmente a una sola persona). Deja de ser "de
+  // cantidad" (pierde `qty`) una vez partida.
+  function splitQty(id: string) {
+    setItems((arr) => {
+      const idx = arr.findIndex((it) => it.id === id);
+      if (idx < 0) return arr;
+      const it = arr[idx];
+      const q = it.qty || 1;
+      if (q <= 1) return arr;
+      const p = Number(it.price) || 0;
+      const unit = r2(p / q);
+      const origTotal = it.originalPrice != null && it.originalPrice !== "" ? Number(it.originalPrice) : undefined;
+      const origUnit = origTotal != null ? r2(origTotal / q) : undefined;
+      const rows: Item[] = Array.from({ length: q }, (_, i) => ({
+        id: uid(),
+        name: it.name,
+        price: i === q - 1 ? r2(p - unit * (q - 1)) : unit,
+        who: new Set<string>(),
+        originalPrice: origUnit != null ? (i === q - 1 ? r2(origTotal! - origUnit * (q - 1)) : origUnit) : undefined,
+      }));
+      return [...arr.slice(0, idx), ...rows, ...arr.slice(idx + 1)];
+    });
+  }
+  const selectAll = (id: string) => setItem(id, { who: new Set(allIds) });
+  const deselectAll = (id: string) => setItem(id, { who: new Set() });
   const setFee = (id: string, patch: Partial<Fee>) =>
     setFees((arr) => arr.map((f) => (f.id === id ? { ...f, ...patch } : f)));
   function setFeeAmount(id: string, raw: string) {
@@ -285,6 +326,16 @@ export function ItemizedExpenseEditor({
                 <Icon name="close" size={14} />
               </button>
             </div>
+            {it.qty && it.qty > 1 && (
+              <button
+                onClick={() => splitQty(it.id)}
+                className="glass rounded-full px-2.5 py-1 text-[11px] font-medium hover-lift mt-1.5 inline-flex items-center gap-1"
+                style={{ color: "var(--teal)" }}
+              >
+                <Icon name="copy" size={12} />
+                {t("scan.splitQty", { n: String(it.qty) })}
+              </button>
+            )}
             <div className="flex gap-1 flex-wrap mt-2">
               {group.members.map((m) => {
                 const on = it.who.has(m.id);
@@ -302,6 +353,10 @@ export function ItemizedExpenseEditor({
                   </button>
                 );
               })}
+            </div>
+            <div className="flex gap-2 mt-1">
+              <button onClick={() => selectAll(it.id)} className="lk text-[11px] text-muted">{t("scan.selectAll")}</button>
+              <button onClick={() => deselectAll(it.id)} className="lk text-[11px] text-muted">{t("scan.deselectAll")}</button>
             </div>
           </div>
         ))}
