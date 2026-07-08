@@ -409,6 +409,7 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "pay.pay": { es: "Pagar", en: "Pay" },
   "pay.markPaid": { es: "Marcar pagado", en: "Mark paid" },
+  "pay.method": { es: "Método de pago", en: "Payment method" },
   "pay.methods": { es: "Métodos de pago", en: "Payment methods" },
   "pay.methodsHint": { es: "Cómo cobra cada persona. Se usa para el botón “Pagar”.", en: "How each person gets paid. Used by the “Pay” button." },
   "pay.handle": { es: "Usuario, teléfono o enlace", en: "Username, phone or link" },

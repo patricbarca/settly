@@ -170,17 +170,17 @@ export function Balances({ group }: { group: Group }) {
                     ) : (
                       <>
                         <button
-                          onClick={() => setPaySheet({ to: tr.to, amount: tr.amount })}
+                          onClick={() => setMark({ from: tr.from, to: tr.to, amount: tr.amount })}
                           className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift"
                           style={{ background: "var(--teal)" }}
                         >
                           {t("pay.pay")}
                         </button>
                         <button
-                          onClick={() => setMark({ from: tr.from, to: tr.to, amount: tr.amount })}
+                          onClick={() => setPaySheet({ to: tr.to, amount: tr.amount })}
                           className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted"
                         >
-                          {t("pay.markPaid")}
+                          {t("pay.method")}
                         </button>
                       </>
                     )}
