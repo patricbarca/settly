@@ -146,29 +146,41 @@ export function Home({ tab }: { tab: HomeTab }) {
         </div>
       )}
 
-      {/* Balance global (todos los grupos): gastado (T), debo (↓), me deben (↑) */}
-      {showOverall && (
-        <div className="mt-6 flex flex-col items-center">
-          <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">{t("home.overall")}</p>
-          <div className="glass rounded-full px-2 py-1.5 flex items-center gap-1.5">
-            <span className="rounded-full px-3 py-1 text-sm font-mono font-bold">
-              T: {money(spent, overallCur)}
-            </span>
-            <span
-              className="rounded-full px-3 py-1 text-sm font-mono font-bold"
-              style={{ background: "rgba(209,68,68,0.12)", color: "#D14444" }}
-            >
-              ↓ {money(owe, overallCur)}
-            </span>
-            <span
-              className="rounded-full px-3 py-1 text-sm font-mono font-bold"
-              style={{ background: "rgba(10,139,94,0.12)", color: "#0A8B5E" }}
-            >
-              ↑ {money(owed, overallCur)}
-            </span>
+      {/* Balance global (todos los grupos): neto (owed-owe), gastado (T), debo (↓), me deben (↑) */}
+      {showOverall && (() => {
+        const net = owed - owe;
+        const netSettled = Math.abs(net) < 0.01;
+        const netColor = netSettled ? undefined : net > 0 ? "#0A8B5E" : "#D14444";
+        return (
+          <div className="mt-6 flex flex-col items-center">
+            <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">{t("home.overall")}</p>
+            <div className="glass rounded-full px-2 py-1.5 flex items-center gap-1.5 flex-wrap justify-center">
+              <span
+                className="rounded-full px-3 py-1 text-sm font-mono font-bold"
+                style={netColor ? { background: `${netColor}1F`, color: netColor } : undefined}
+              >
+                {netSettled ? "= " : net > 0 ? "+" : "−"}
+                {money(Math.abs(net), overallCur)}
+              </span>
+              <span className="rounded-full px-3 py-1 text-sm font-mono font-bold">
+                T: {money(spent, overallCur)}
+              </span>
+              <span
+                className="rounded-full px-3 py-1 text-sm font-mono font-bold"
+                style={{ background: "rgba(209,68,68,0.12)", color: "#D14444" }}
+              >
+                ↓ {money(owe, overallCur)}
+              </span>
+              <span
+                className="rounded-full px-3 py-1 text-sm font-mono font-bold"
+                style={{ background: "rgba(10,139,94,0.12)", color: "#0A8B5E" }}
+              >
+                ↑ {money(owed, overallCur)}
+              </span>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       <div className="flex items-center justify-between mt-6 mb-2 px-1">
         <h2 className="font-display text-xl font-bold">{t("home.yourGroups")}</h2>

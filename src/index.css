@@ -54,7 +54,7 @@
 html, body, #root { height: 100%; margin: 0; }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   color: var(--ink);
   background: var(--bg);
   background-attachment: fixed;
@@ -69,8 +69,8 @@ body {
   padding-top: env(safe-area-inset-top);
 }
 
-.font-display { font-family: 'Bricolage Grotesque', sans-serif; letter-spacing: -0.02em; }
-.font-mono { font-family: 'Space Mono', monospace; }
+.font-display { font-family: 'Baloo 2', sans-serif; letter-spacing: -0.02em; }
+.font-mono { font-family: 'Baloo 2', sans-serif; }
 .text-muted { color: var(--muted); }
 
 @layer components {
