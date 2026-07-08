@@ -120,6 +120,116 @@ function Slide2Anim() {
   );
 }
 
+// ── AI badge overlay: reused on the 3 AI-powered slides ─────────────────────
+function AiBadge() {
+  const t = useT();
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: -10,
+        right: -6,
+        background: "rgba(124,58,237,0.9)",
+        color: "white",
+        fontSize: 10,
+        fontWeight: 800,
+        borderRadius: 999,
+        padding: "3px 9px",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.35)",
+        whiteSpace: "nowrap",
+      }}
+    >
+      ✨ {t("app.poweredAI")}
+    </div>
+  );
+}
+
+// ── Slide: choose who's in — payer + participants + split modes ─────────────
+function SlideSplitAnim() {
+  const t = useT();
+  const [phase, setPhase] = useState(0);
+  useEffect(() => {
+    const delays = [1400, 1400, 1400, 2400];
+    const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 1400);
+    return () => clearTimeout(timer);
+  }, [phase]);
+
+  const ava = (l: string, c: string) => (
+    <div style={{ width: 20, height: 20, borderRadius: "50%", background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "white", fontWeight: 700 }}>{l}</div>
+  );
+  const modes = ["=", "%", "$", "×"];
+
+  return (
+    <div style={{ width: "100%", maxWidth: 280, margin: "0 auto" }}>
+      <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{t("form.paid")}</div>
+        <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+          {[["S", "#7c3aed"], ["A", "#0891b2"], ["P", "#dc2626"]].map(([l, c], i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, background: i === 0 ? `${c}33` : "rgba(255,255,255,0.08)", border: i === 0 ? `1.5px solid ${c}88` : "1.5px solid transparent", borderRadius: 999, padding: "3px 8px 3px 3px" }}>
+              {ava(l, c)}
+            </div>
+          ))}
+        </div>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{t("form.between")}</div>
+        <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+          {[["S", "#7c3aed"], ["A", "#0891b2"], ["P", "#dc2626"]].map(([l, c], i) => (
+            <div key={i} style={{ opacity: phase >= 1 ? 1 : 0.35, transition: "opacity 0.3s" }}>{ava(l, c)}</div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 5 }}>
+          {modes.map((m, i) => (
+            <div
+              key={m}
+              style={{
+                width: 30, height: 24, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 12, fontWeight: 800, color: phase === i ? "#120d36" : "white",
+                background: phase === i ? "white" : "rgba(255,255,255,0.1)", transition: "all 0.3s",
+              }}
+            >
+              {m}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Slide: Simplified vs Direct settle-up mode ───────────────────────────────
+function SlideModeAnim() {
+  const t = useT();
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setOn((v) => !v), 1900);
+    return () => clearTimeout(timer);
+  }, [on]);
+
+  return (
+    <div style={{ width: "100%", maxWidth: 280, margin: "0 auto" }}>
+      <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+          {[t("hero.modeSimplified"), t("hero.modeDirect")].map((label, i) => (
+            <div
+              key={label}
+              style={{
+                borderRadius: 12, padding: "8px 6px", textAlign: "center", fontWeight: 800, fontSize: 12,
+                background: (i === 0) === !on ? "white" : "rgba(255,255,255,0.1)",
+                color: (i === 0) === !on ? "#120d36" : "white",
+                transition: "all 0.4s",
+              }}
+            >
+              {label}
+            </div>
+          ))}
+        </div>
+        <div style={{ animation: "ob-fadeup 0.3s ease both", color: "rgba(255,255,255,0.75)", fontSize: 11.5, lineHeight: 1.5, minHeight: 54 }}>
+          {!on ? t("hero.modeInfoSimplified") : t("hero.modeInfoDirect")}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Slide 3: Receipt scan ────────────────────────────────────────────────────
 function Slide3Anim() {
   const t = useT();
@@ -286,14 +396,22 @@ function Slide5Anim() {
           <span style={{ marginLeft: "auto", fontFamily: "monospace", fontWeight: 800, color: "white", fontSize: 14 }}>$18</span>
         </div>
 
-        {/* payee payment details */}
-        <div style={{ fontSize: 10.5, color: "rgba(255,255,255,0.6)", marginBottom: 11 }}>💳 PayID · siena@pay</div>
-
         {/* actions → states */}
         {phase === 0 && (
-          <div style={{ display: "flex", gap: 6, animation: "ob-fadeup 0.3s ease both" }}>
-            <span style={{ background: "#34d399", color: "#06281c", fontWeight: 700, fontSize: 11, borderRadius: 999, padding: "5px 14px" }}>{t("pay.pay")}</span>
-            <span style={{ background: "rgba(255,255,255,0.14)", color: "white", fontWeight: 600, fontSize: 11, borderRadius: 999, padding: "5px 14px" }}>{t("pay.markPaid")}</span>
+          <div style={{ animation: "ob-fadeup 0.3s ease both" }}>
+            <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: 6, marginBottom: 8 }}>
+              {[["Cena", "$14"], ["Vino", "$4"]].map(([label, amt]) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 4px" }}>
+                  <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#34d399", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#06281c", fontWeight: 900 }}>✓</div>
+                  <span style={{ color: "white", fontSize: 10.5, flex: 1 }}>{label}</span>
+                  <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 10.5, fontFamily: "monospace" }}>{amt}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <span style={{ background: "#34d399", color: "#06281c", fontWeight: 700, fontSize: 11, borderRadius: 999, padding: "5px 14px" }}>{t("pay.pay")}</span>
+              <span style={{ background: "rgba(255,255,255,0.14)", color: "white", fontWeight: 600, fontSize: 11, borderRadius: 999, padding: "5px 14px" }}>{t("pay.method")}</span>
+            </div>
           </div>
         )}
         {phase === 1 && (
@@ -390,9 +508,11 @@ function SlideTypeAnim() {
 const SLIDES = [
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #120d36 18%, #3d2fa0 100%)", Animation: Slide1Anim, titleKey: "onboard.s1t", descKey: "onboard.s1d" },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #082a28 18%, #0a7060 100%)", Animation: Slide2Anim, titleKey: "onboard.s2t", descKey: "onboard.s2d" },
-  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #3d1005 18%, #c2410c 100%)", Animation: Slide3Anim, titleKey: "onboard.s3t", descKey: "onboard.s3d" },
-  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #08153d 18%, #0369a1 100%)", Animation: Slide4Anim, titleKey: "onboard.s4t", descKey: "onboard.s4d" },
-  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #2a0a3d 18%, #7c3aed 100%)", Animation: SlideTypeAnim, titleKey: "onboard.sTypeT", descKey: "onboard.sTypeD" },
+  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #3d0a2a 18%, #be185d 100%)", Animation: SlideSplitAnim, titleKey: "onboard.sSplitT", descKey: "onboard.sSplitD" },
+  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #3d1005 18%, #c2410c 100%)", Animation: Slide3Anim, titleKey: "onboard.s3t", descKey: "onboard.s3d", ai: true },
+  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #08153d 18%, #0369a1 100%)", Animation: Slide4Anim, titleKey: "onboard.s4t", descKey: "onboard.s4d", ai: true },
+  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #2a0a3d 18%, #7c3aed 100%)", Animation: SlideTypeAnim, titleKey: "onboard.sTypeT", descKey: "onboard.sTypeD", ai: true },
+  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #3d2905 18%, #b45309 100%)", Animation: SlideModeAnim, titleKey: "onboard.sModeT", descKey: "onboard.sModeD" },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #032014 18%, #059669 100%)", Animation: Slide5Anim, titleKey: "onboard.s5t", descKey: "onboard.s5d" },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #160836 18%, #6d28d9 100%)", Animation: Slide6Anim, titleKey: "onboard.s6t", descKey: "onboard.s6d" },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #061a33 18%, #0e7490 100%)", Animation: InstallDemoAnim, titleKey: "install.guideTitle", descKey: "install.guideDesc", guide: true },
@@ -474,7 +594,10 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
               <Logo size={56} />
             </div>
           )}
-          <slide.Animation />
+          <div style={{ position: "relative", width: "100%", maxWidth: 300, margin: "0 auto" }}>
+            {"ai" in slide && slide.ai && <AiBadge />}
+            <slide.Animation />
+          </div>
         </div>
 
         {/* Text + CTA */}
