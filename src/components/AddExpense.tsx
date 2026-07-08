@@ -1,9 +1,9 @@
 import { useState } from "react";
 import type { Group, RecurrenceInterval } from "../lib/types";
-import { updateGroup, addRecurring } from "../lib/store";
+import { addExpense, addRecurring } from "../lib/store";
 import { parseExpense, type ParsedExpense } from "../lib/parse";
-import { withNotif } from "../lib/notifications";
-import { withActivity } from "../lib/activity";
+import { makeNotif } from "../lib/notifications";
+import { makeActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { parseExpenseAI } from "../lib/ai";
 import { convertCurrency, fmtRate } from "../lib/fx";
@@ -255,39 +255,38 @@ export function AddExpense({ group }: { group: Group }) {
       });
     } else {
       const meName = group.members.find((m) => m.id === group.meId)?.name ?? "?";
-      updateGroup(group.id, (g) => ({
-        ...g,
-        expenses: [
-          {
-            id: uid(),
+      addExpense(
+        group.id,
+        {
+          id: uid(),
+          label: d.label.trim(),
+          amount,
+          payerId,
+          payments,
+          participantIds: d.participantIds,
+          splits,
+          category: d.category,
+          date: new Date().toISOString().slice(0, 10),
+          createdBy: group.meId,
+          ...(effectiveFx ? { originalAmount: effectiveFx.originalAmount, originalCurrency: effectiveFx.originalCurrency, fxRate: effectiveFx.fxRate } : {}),
+        },
+        {
+          notifAdd: makeNotif({
+            type: "expense_added",
+            actorId: group.meId,
+            actorName: meName,
             label: d.label.trim(),
             amount,
-            payerId,
-            payments,
-            participantIds: d.participantIds,
-            splits,
-            category: d.category,
-            date: new Date().toISOString().slice(0, 10),
-            createdBy: group.meId,
-            ...(effectiveFx ? { originalAmount: effectiveFx.originalAmount, originalCurrency: effectiveFx.originalCurrency, fxRate: effectiveFx.fxRate } : {}),
-          },
-          ...g.expenses,
-        ],
-        notifications: withNotif(g, {
-          type: "expense_added",
-          actorId: group.meId,
-          actorName: meName,
-          label: d.label.trim(),
-          amount,
-        }),
-        activity: withActivity(g, {
-          type: "expense_added",
-          actorId: group.meId,
-          actorName: meName,
-          label: d.label.trim(),
-          amount,
-        }),
-      }));
+          }),
+          activity: makeActivity({
+            type: "expense_added",
+            actorId: group.meId,
+            actorName: meName,
+            label: d.label.trim(),
+            amount,
+          }),
+        }
+      );
       notifyGroup(
         group.id,
         group.name,
