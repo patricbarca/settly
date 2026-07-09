@@ -5,7 +5,7 @@ import { withNotif } from "../lib/notifications";
 import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { uid, money } from "../lib/format";
-import { expenseDebtsBetween, fifoExpenseIdsForAmount } from "../lib/split";
+import { expenseDebtsBetween, myPendingExpenses } from "../lib/split";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -29,17 +29,36 @@ export function MarkPaidModal({
   const [proof, setProof] = useState<string | undefined>();
   const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
 
-  // Selección por gasto: solo disponible en modo Directo, donde una deuda SÍ
-  // corresponde a gastos reales compartidos entre estas dos personas (en
-  // Simplificado la transferencia es una optimización agregada que puede no
-  // corresponder a ningún gasto real entre este par).
+  // Selección por gasto: en Directo son los gastos reales compartidos entre
+  // estas dos personas; en Simplificado (la transferencia es una optimización
+  // agregada que puede no corresponder a ningún gasto real con ESTA persona)
+  // se listan los propios gastos pendientes del deudor sin importar quién los
+  // pagó — así el monto a pagar siempre es una suma exacta de gastos reales,
+  // nunca un número escrito a mano que podría no cuadrar con nada.
   const direct = group.simplifyDebts === false;
   const debts = useMemo(
-    () => (direct ? expenseDebtsBetween(group.members, group.expenses, group.settlements ?? [], from, to) : []),
+    () =>
+      direct
+        ? expenseDebtsBetween(group.members, group.expenses, group.settlements ?? [], from, to)
+        : myPendingExpenses(group.members, group.expenses, group.settlements ?? [], from),
     [direct, group.members, group.expenses, group.settlements, from, to]
   );
-  const [selected, setSelected] = useState<Set<string>>(() => new Set(debts.map((d) => d.expenseId)));
-  const usingPicker = direct && debts.length > 0;
+  // Preselección: en Directo, todo lo que compone la deuda con esta persona.
+  // En Simplificado, los más antiguos hasta cubrir el monto sugerido (FIFO) —
+  // el usuario puede ajustar la selección libremente después.
+  const [selected, setSelected] = useState<Set<string>>(() => {
+    if (direct) return new Set(debts.map((d) => d.expenseId));
+    let remaining = amount;
+    const ids: string[] = [];
+    for (const d of debts) {
+      if (d.amount <= remaining + 0.005) {
+        ids.push(d.expenseId);
+        remaining -= d.amount;
+      } else break;
+    }
+    return new Set(ids);
+  });
+  const usingPicker = debts.length > 0;
 
   function toggleExpense(id: string) {
     setSelected((prev) => {
@@ -52,8 +71,9 @@ export function MarkPaidModal({
 
   const pickedTotal = Math.round(debts.filter((d) => selected.has(d.expenseId)).reduce((s, d) => s + d.amount, 0) * 100) / 100;
 
-  // Monto a registrar: la suma de los gastos elegidos (modo Directo), o lo
-  // escrito a mano (fallback: Simplificado, o sin desglose disponible).
+  // Monto a registrar: siempre la suma exacta de los gastos elegidos. Solo si
+  // no hay ningún gasto propio pendiente (caso raro/borde) se cae a un monto
+  // escrito a mano, sin desglose por gasto.
   const value = usingPicker ? pickedTotal : Math.min(Math.max(0, Number(amt) || 0), max);
   const valid = value > 0.005;
   const remaining = Math.round((max - value) * 100) / 100;
@@ -69,12 +89,6 @@ export function MarkPaidModal({
   function confirm() {
     if (!valid) return;
     const paidAmt = Math.round(value * 100) / 100;
-    // Simplificado: no hay picker (una transferencia puede no corresponder a
-    // ningún gasto real con esta persona), así que se asignan solos los
-    // gastos pendientes de más antiguo a más nuevo hasta agotar el monto.
-    const fifoIds = !usingPicker
-      ? fifoExpenseIdsForAmount(group.members, group.expenses, group.settlements ?? [], from, paidAmt)
-      : [];
     updateGroup(group.id, (g) => ({
       ...g,
       settlements: [
@@ -89,7 +103,7 @@ export function MarkPaidModal({
           // cobra lo confirme o lo rechace. Puede ser un pago PARCIAL.
           status: "pending",
           proof,
-          ...(usingPicker ? { expenseIds: [...selected] } : fifoIds.length ? { expenseIds: fifoIds } : {}),
+          ...(usingPicker ? { expenseIds: [...selected] } : {}),
         },
       ],
       notifications: withNotif(g, {
@@ -127,10 +141,15 @@ export function MarkPaidModal({
 
         {usingPicker ? (
           <>
-            {/* Elegir qué gastos concretos cubre este pago (modo Directo) —
-                en vez de un monto suelto, para poder marcarlos como pagados
-                individualmente y ver qué queda pendiente en el listado. */}
-            <label className="text-xs font-semibold text-muted">{t("pay.whichExpenses")}</label>
+            {/* Elegir qué gastos concretos cubre este pago — en vez de un
+                monto suelto, para que el total a pagar sea siempre la suma
+                exacta de gastos reales y para poder marcarlos como pagados
+                individualmente en el listado. En Simplificado son los propios
+                gastos pendientes del deudor (no necesariamente con esta
+                persona en particular). */}
+            <label className="text-xs font-semibold text-muted">
+              {t(direct ? "pay.whichExpenses" : "pay.whichExpensesSimplified")}
+            </label>
             <div className="glass rounded-2xl p-1.5 mt-1 space-y-0.5 max-h-56 overflow-y-auto">
               {debts.map((d) => {
                 const on = selected.has(d.expenseId);

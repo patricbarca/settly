@@ -105,7 +105,7 @@ export function Balances({ group }: { group: Group }) {
         <div className="mt-3 space-y-1.5">
           {sortedMembers(group.members).map((m) => {
             const v = net[m.id] || 0;
-            const ok = Math.abs(v) < 0.01;
+            const ok = Math.abs(v) < 0.005;
             return (
               <div key={m.id} className="flex items-center justify-between text-sm gap-2">
                 <span className="flex items-center gap-2 min-w-0">

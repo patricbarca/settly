@@ -1,6 +1,10 @@
 import type { Expense, Member, Settlement } from "./types";
 
-/** Cuánto le toca a cada miembro de un gasto concreto. */
+/** Cuánto le toca a cada miembro de un gasto concreto. Reparto EXACTO en
+ *  centavos: si no divide justo (ej. $10 entre 3), el o los centavos sueltos
+ *  se asignan a los primeros participantes de la lista (orden determinista)
+ *  en vez de dejar decimales infinitos que luego arrastran error de
+ *  redondeo hasta aparecer como saldos fantasma de $0.01. */
 export function shareFor(e: Expense, memberIds: string[]): Record<string, number> {
   const owed: Record<string, number> = {};
   memberIds.forEach((m) => (owed[m] = 0));
@@ -9,8 +13,14 @@ export function shareFor(e: Expense, memberIds: string[]): Record<string, number
     return owed;
   }
   const parts = e.participantIds.length ? e.participantIds : memberIds;
-  const per = e.amount / (parts.length || 1);
-  parts.forEach((m) => (owed[m] = per));
+  const n = parts.length || 1;
+  const totalCents = Math.round(e.amount * 100);
+  const baseCents = Math.floor(totalCents / n);
+  const remainderCents = totalCents - baseCents * n;
+  parts.forEach((m, i) => {
+    const cents = baseCents + (i < remainderCents ? 1 : 0);
+    owed[m] = cents / 100;
+  });
   return owed;
 }
 
@@ -243,6 +253,40 @@ export function fifoExpenseIdsForAmount(
     } else {
       break;
     }
+  }
+  return out;
+}
+
+/** Modo Simplificado: en vez de escribir un monto suelto (que puede no
+ *  coincidir con ninguna combinación real de gastos), se listan los propios
+ *  gastos pendientes de 'fromId' — sin importar quién los pagó — para que
+ *  la persona elija cuáles saldar. El monto a pagar es SIEMPRE la suma
+ *  exacta de lo elegido, nunca un número arbitrario. Ordenado del más
+ *  antiguo al más nuevo para que el preselect por defecto (FIFO) tenga
+ *  sentido visualmente. */
+export function myPendingExpenses(
+  members: Member[],
+  expenses: Expense[],
+  settlements: Settlement[],
+  fromId: string
+): ExpenseDebt[] {
+  const ids = members.map((m) => m.id);
+  const alreadySettled = new Set<string>();
+  for (const s of settlements) {
+    if (s.status === "confirmed" && s.from === fromId) {
+      (s.expenseIds ?? []).forEach((id) => alreadySettled.add(id));
+    }
+  }
+
+  const sorted = [...expenses].sort((a, b) => a.date.localeCompare(b.date));
+  const out: ExpenseDebt[] = [];
+  for (const e of sorted) {
+    if (alreadySettled.has(e.id)) continue;
+    const payerIds = new Set(e.payments?.length ? e.payments.map((p) => p.memberId) : [e.payerId]);
+    if (payerIds.has(fromId)) continue;
+    const owedShare = shareFor(e, ids)[fromId] || 0;
+    if (owedShare <= 0.005) continue;
+    out.push({ expenseId: e.id, label: e.label, amount: owedShare });
   }
   return out;
 }
