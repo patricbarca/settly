@@ -69,6 +69,26 @@ body {
   padding-top: env(safe-area-inset-top);
 }
 
+/* Ese padding-top de arriba solo reserva espacio al inicio del documento —
+ * en cuanto se hace scroll, el contenido normal (tarjetas de colores, etc.)
+ * pasa por debajo del notch/barra de estado sin ningún fondo que lo tape,
+ * chocando visualmente con los íconos de batería/wifi/señal. Esta franja fija
+ * (mismo truco que el relleno de BottomNav para el borde inferior) se queda
+ * siempre pegada arriba, por encima de cualquier overlay, con el color sólido
+ * del tema — así los íconos del sistema siempre tienen un fondo consistente
+ * sin importar qué haya scrolleado debajo. */
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: var(--surface);
+  z-index: 2000;
+  pointer-events: none;
+}
+
 .font-display { font-family: 'Baloo 2', sans-serif; letter-spacing: -0.02em; }
 .font-mono { font-family: 'Baloo 2', sans-serif; }
 .text-muted { color: var(--muted); }
