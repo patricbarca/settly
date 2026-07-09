@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signInEmail, signInGoogle, signInApple, verifyOtp, useAuthPhase, useOtpEmail } from "../lib/auth";
+import { signInEmail, signInGoogle, signInApple, signInPassword, verifyOtp, useAuthPhase, useOtpEmail } from "../lib/auth";
 import { useLang, setLang, useT } from "../lib/i18n";
 import { useTheme, toggleTheme } from "../lib/theme";
 import { Logo } from "./Logo";
@@ -18,9 +18,27 @@ export function Login() {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  // Login con contraseña: solo para la cuenta demo de Apple Beta App Review
+  // (necesitan un usuario/contraseña fijos; el resto usa OTP/OAuth).
+  const [pwMode, setPwMode] = useState(false);
+  const [password, setPassword] = useState("");
 
   async function submit() {
-    if (!email.trim() || loading) return;
+    if (loading) return;
+    if (pwMode) {
+      if (!email.trim() || !password) return;
+      setLoading(true);
+      setError("");
+      try {
+        await signInPassword(email, password);
+      } catch (e: any) {
+        setError(e.message ?? "Credenciales incorrectas");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+    if (!email.trim()) return;
     setLoading(true);
     setError("");
     try {
@@ -168,7 +186,7 @@ export function Login() {
           </div>
 
           <div className="space-y-2.5">
-            {mode === "signup" && (
+            {mode === "signup" && !pwMode && (
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -184,22 +202,47 @@ export function Login() {
               type="email"
               className="glass rounded-xl px-3 py-2.5 text-sm w-full"
             />
+            {pwMode && (
+              <input
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && submit()}
+                placeholder={t("login.password")}
+                type="password"
+                className="glass rounded-xl px-3 py-2.5 text-sm w-full"
+              />
+            )}
             {error && <p className="text-red-500 text-xs">{error}</p>}
             <button
               onClick={submit}
-              disabled={!email.trim() || loading}
+              disabled={(pwMode ? !password : false) || !email.trim() || loading}
               className="w-full rounded-full px-4 py-3 font-semibold text-white hover-lift disabled:opacity-50"
               style={{ background: "var(--ink)" }}
             >
-              {loading ? t("login.sending") : mode === "signup" ? t("login.signup") : t("login.signin")}
+              {loading
+                ? t("login.sending")
+                : pwMode
+                ? t("login.signin")
+                : mode === "signup"
+                ? t("login.signup")
+                : t("login.signin")}
             </button>
           </div>
 
+          {!pwMode && (
+            <button
+              onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+              className="lk text-sm w-full text-center mt-3"
+            >
+              {mode === "signin" ? t("login.noAccount") : t("login.haveAccount")}
+            </button>
+          )}
+
           <button
-            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-            className="lk text-sm w-full text-center mt-3"
+            onClick={() => { setPwMode(!pwMode); setError(""); }}
+            className="text-[11px] text-muted w-full text-center mt-3 opacity-60"
           >
-            {mode === "signin" ? t("login.noAccount") : t("login.haveAccount")}
+            {pwMode ? t("login.usePasswordOff") : t("login.usePasswordOn")}
           </button>
         </div>
       </div>
