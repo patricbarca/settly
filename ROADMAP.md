@@ -73,10 +73,12 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ Política de privacidad, "Seguridad de los datos", clasificación de contenido, target API.
 
 ## Fase 4 — App Store (~99 USD/año)
-- ⬜ Empaquetar con **Capacitor** (WKWebView + plugins).
-- ⬜ **Sign in with Apple** (obligatorio por ofrecer login Google).
-- ⬜ Borrar cuenta in-app (Fase 0), **App Privacy label**, capturas por tamaños, revisión.
+- ✅ Empaquetar con **Capacitor** (WKWebView + plugins) — `ios/App` scaffolded, `codemagic.yaml` con workflow `ios-testflight` (build + auto-submit a TestFlight). Íconos/splash nativos reemplazados (placeholder de Capacitor → navy `#0D1B2A` + logo real); permisos `NSCameraUsageDescription`/`NSMicrophoneUsageDescription`/`NSPhotoLibraryUsageDescription` agregados a `Info.plist` (faltaban — hubieran causado crash/rechazo).
+- ✅ **Sign in with Apple**: entitlement `com.apple.developer.applesignin` ya está en `App.entitlements` y el flujo OAuth nativo (`app.settlia.pwa://` + PKCE) ya soporta Apple. **Pendiente del lado de Apple**: habilitar la capability "Sign In with Apple" en el App ID desde el Apple Developer portal (paso manual, no se puede hacer desde el repo).
+- ⬜ Borrar cuenta in-app (Fase 0, ya implementado) + **App Privacy label** (cuestionario en App Store Connect), capturas de pantalla por tamaño de dispositivo, descripción/keywords — todo pendiente en App Store Connect.
+- ⬜ **Cuenta de Apple Developer Program** ($99/año) + registrar el app record en App Store Connect (`app.settlia.pwa`) + integración `codemagic_appstore` en Codemagic (API key de App Store Connect: Issuer ID + Key ID + .p8).
 - ⚠️ Cuidar guía 4.2 ("minimum functionality"): el push/offline/instalación ayudan.
+- ⚠️ Verificar si Web Push funciona de forma confiable dentro del WKWebView empaquetado (funciona en el PWA instalado vía Safari, pero el comportamiento dentro de la app nativa de Capacitor no está confirmado).
 
 ## Fase 4.5 — Vault personal de gastos (idea a evaluar)
 > Inspirado en Easy Expense. Complementa el core de gastos grupales con un módulo **personal** para rastrear gastos individuales deducibles de impuestos. Especialmente relevante para Australia (año fiscal ATO: 1 jul → 30 jun).
