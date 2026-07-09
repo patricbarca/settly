@@ -121,13 +121,6 @@ export function NotificationsBell({ open, onClose }: { open: boolean; onClose: (
     >
       <div className="max-w-2xl mx-auto w-full px-4 pt-5 flex-1 flex flex-col min-h-0">
         <div className="flex items-center gap-3 mb-4">
-          <button
-            onClick={onClose}
-            className="glass rounded-full h-9 w-9 flex items-center justify-center text-muted hover-lift"
-            title={t("common.back")}
-          >
-            <Icon name="back" size={16} />
-          </button>
           <h2 className="font-display text-2xl font-bold">{t("notif.title")}</h2>
         </div>
 
