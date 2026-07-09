@@ -79,6 +79,13 @@ export default function App() {
     document.documentElement.style.background = showLoading ? "#0D1B2A" : "";
   }, [showLoading]);
 
+  // La franja fija que tapa el notch/barra de estado (ver index.css) usa el
+  // color del tema — durante el splash (fondo navy fijo, sin tema aún) se
+  // ocultaría mal (blanco/gris sobre navy), así que se apaga mientras dure.
+  useEffect(() => {
+    document.body.classList.toggle("splash-active", showLoading);
+  }, [showLoading]);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const token = params.get("join");
