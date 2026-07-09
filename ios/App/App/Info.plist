@@ -33,6 +33,12 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Settlia uses the camera to scan receipts so AI can turn them into a shared expense.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Settlia uses the microphone so you can add an expense by voice.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Settlia needs access to your photos so you can upload a receipt or a profile picture.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
