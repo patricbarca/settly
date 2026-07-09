@@ -188,10 +188,10 @@ function AiBadge() {
 function SlideModeAnim() {
   const t = useT();
   const [phase, setPhase] = useState(0);
-  // 0: los 3 gastos de casa · 1: modo Simplificado · 2: modo Directo
-  const delays = [4200, 5000, 5200];
+  // 0: modo Directo (cadena A→B, B→C) · 1: modo Simplificado (una sola transacción por transitividad)
+  const delays = [5200, 5600];
   useEffect(() => {
-    const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 4200);
+    const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 5200);
     return () => clearTimeout(timer);
   }, [phase]);
 
@@ -199,82 +199,59 @@ function SlideModeAnim() {
     <div style={{ width: size, height: size, borderRadius: "50%", background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.4, color: "white", fontWeight: 700, flexShrink: 0 }}>{l}</div>
   );
 
-  const expenses = [
-    { label: "Wifi", amt: 12, who: "S", c: "#7c3aed" },
-    { label: "Electricidad", amt: 18, who: "P", c: "#dc2626" },
-    { label: "Groceries", amt: 9, who: "A", c: "#0891b2" },
-  ];
-
-  if (phase === 0) {
-    return (
-      <div style={{ width: "100%", maxWidth: 280, margin: "0 auto" }}>
-        <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
-          <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>{t("onboard.demo.houseExpenses")}</div>
-          {expenses.map((e, i) => (
-            <div key={e.label} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, animation: `ob-fadeup 0.3s ease ${i * 0.2}s both` }}>
-              {ava(e.who, e.c, 20)}
-              <span style={{ color: "white", fontSize: 12, flex: 1 }}>{e.label}</span>
-              <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, fontFamily: "monospace" }}>${e.amt}</span>
-            </div>
-          ))}
-          <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 10.5, marginTop: 6 }}>{t("onboard.demo.houseSplitEqual")}</div>
-        </div>
-      </div>
-    );
-  }
-
-  const direct = phase === 2;
+  const direct = phase === 0;
   return (
     <div style={{ width: "100%", maxWidth: 280, margin: "0 auto" }}>
       <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-          {[t("hero.modeSimplified"), t("hero.modeDirect")].map((label, i) => (
+          {[t("hero.modeDirect"), t("hero.modeSimplified")].map((label, i) => (
             <div
               key={label}
               style={{
                 borderRadius: 12, padding: "8px 6px", textAlign: "center", fontWeight: 800, fontSize: 12,
-                background: (i === 1) === direct ? "white" : "rgba(255,255,255,0.1)",
-                color: (i === 1) === direct ? "#120d36" : "white",
+                background: (i === 0) === direct ? "white" : "rgba(255,255,255,0.1)",
+                color: (i === 0) === direct ? "#120d36" : "white",
               }}
             >
               {label}
             </div>
           ))}
         </div>
-        {/* Diagrama: quién le paga a quién, a partir de los 3 gastos de arriba */}
-        <div style={{ animation: "ob-fadeup 0.3s ease both", background: "rgba(0,0,0,0.15)", borderRadius: 12, padding: "14px 10px", marginBottom: 10 }}>
-          {!direct ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              {ava("A", "#0891b2")}
-              <span style={{ color: "#34d399", fontSize: 16 }}>→</span>
-              <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 13 }}>$4</span>
-              <span style={{ color: "#34d399", fontSize: 16 }}>→</span>
-              {ava("P", "#dc2626")}
-            </div>
-          ) : (
+        {/* Diagrama: la misma deuda en cadena (A debe a B, B debe a C) vista en
+            Directo (dos pagos) y en Simplificado (una sola, por transitividad) */}
+        <div key={phase} style={{ animation: "ob-fadeup 0.3s ease both", background: "rgba(0,0,0,0.15)", borderRadius: 12, padding: "14px 10px", marginBottom: 10 }}>
+          {direct ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
                 {ava("A", "#0891b2", 18)}
                 <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
-                <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 11 }}>$4</span>
+                <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 11 }}>$10</span>
                 <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
-                {ava("S", "#7c3aed", 18)}
+                {ava("B", "#7c3aed", 18)}
               </div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                {ava("A", "#0891b2", 18)}
+                {ava("B", "#7c3aed", 18)}
                 <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
-                <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 11 }}>$6</span>
+                <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 11 }}>$10</span>
                 <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
-                {ava("P", "#dc2626", 18)}
+                {ava("C", "#dc2626", 18)}
               </div>
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              {ava("A", "#0891b2")}
+              <span style={{ color: "#34d399", fontSize: 16 }}>→</span>
+              <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 13 }}>$10</span>
+              <span style={{ color: "#34d399", fontSize: 16 }}>→</span>
+              {ava("C", "#dc2626")}
             </div>
           )}
           <div style={{ textAlign: "center", marginTop: 8, color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600 }}>
             {direct ? t("onboard.demo.twoTransfers") : t("onboard.demo.oneTransfer")}
           </div>
         </div>
-        <div style={{ animation: "ob-fadeup 0.3s ease both", color: "rgba(255,255,255,0.75)", fontSize: 11, lineHeight: 1.5 }}>
-          {!direct ? t("hero.modeInfoSimplified") : t("hero.modeInfoDirect")}
+        <div key={`info-${phase}`} style={{ animation: "ob-fadeup 0.3s ease both", color: "rgba(255,255,255,0.75)", fontSize: 11, lineHeight: 1.5 }}>
+          {direct ? t("hero.modeInfoDirect") : t("hero.modeInfoSimplified")}
         </div>
       </div>
     </div>
@@ -330,13 +307,13 @@ function SlideSettleAnim() {
             <span style={{ marginLeft: "auto", fontFamily: "monospace", fontWeight: 800, color: "white", fontSize: 14 }}>$18</span>
           </div>
           {!settled && (
-            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 9.5, marginBottom: 6 }}>{t("pay.whichExpenses")}</div>
+            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 9.5, marginBottom: 6 }}>{t("onboard.demo.oldestFirst")}</div>
           )}
           <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: 6, marginBottom: 8 }}>
             {[
-              { label: "Wifi", amt: "$12", picked: true },
-              { label: "Agua", amt: "$6", picked: true },
-              { label: "Electricidad", amt: "$20", picked: false },
+              { label: "Wifi", date: "Jul 1", amt: "$12", picked: true },
+              { label: "Agua", date: "Jul 3", amt: "$6", picked: true },
+              { label: "Electricidad", date: "Jul 8", amt: "$20", picked: false },
             ].map((it, i) => {
               const on = checking && it.picked;
               return (
@@ -352,6 +329,7 @@ function SlideSettleAnim() {
                     </div>
                   ) : <div style={{ width: 14 }} />}
                   <span style={{ color: it.picked ? "white" : "rgba(255,255,255,0.45)", fontSize: 10.5, flex: 1 }}>{it.label}</span>
+                  <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 9.5, fontFamily: "monospace", marginRight: 4 }}>{it.date}</span>
                   <span style={{ color: it.picked ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.35)", fontSize: 10.5, fontFamily: "monospace" }}>{it.amt}</span>
                   {it.picked && (settled ? badge(true) : (checking && badge(false)))}
                 </div>
@@ -394,9 +372,9 @@ function SlideSettleAnim() {
   // más nuevo, y el total pendiente baja ──
   const paidCount = phase === 5 ? 0 : 2; // se cubren 2 de 3 con $18 (más antiguos primero)
   const simItems = [
-    { label: "Wifi", amt: 12, paid: paidCount >= 1 },
-    { label: "Agua", amt: 6, paid: paidCount >= 2 },
-    { label: "Electricidad", amt: 20, paid: false },
+    { label: "Wifi", date: "Jul 1", amt: 12, paid: paidCount >= 1 },
+    { label: "Agua", date: "Jul 3", amt: 6, paid: paidCount >= 2 },
+    { label: "Electricidad", date: "Jul 8", amt: 20, paid: false },
   ];
   const remaining = simItems.filter((it) => !it.paid).reduce((s, it) => s + it.amt, 0);
   return (
@@ -423,6 +401,7 @@ function SlideSettleAnim() {
                 {it.paid && "✓"}
               </div>
               <span style={{ color: "white", fontSize: 10.5, flex: 1 }}>{it.label}</span>
+              <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 9.5, fontFamily: "monospace", marginRight: 4 }}>{it.date}</span>
               <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 10.5, fontFamily: "monospace" }}>${it.amt}</span>
               {badge(it.paid)}
             </div>
