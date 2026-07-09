@@ -32,6 +32,7 @@ export type ItemizedResult = {
   items: ExpenseItem[];
   fees: { name: string; amount: number; originalAmount?: number }[];
   tip: number;
+  allowEdits: boolean;
 };
 
 export type ItemizedInitial = {
@@ -41,6 +42,8 @@ export type ItemizedInitial = {
   tip?: number;
   payerId?: string;
   category?: Category;
+  /** Si true, cualquier participante puede editar este gasto (no solo quien lo creó). */
+  allowEdits?: boolean;
   /** Moneda/tasa del ticket original (si se escaneó en otra moneda distinta
    *  a la del grupo) — habilita el toggle para ajustar montos en cualquiera
    *  de las dos monedas. */
@@ -80,6 +83,7 @@ export function ItemizedExpenseEditor({
   const [label, setLabel] = useState(initial.label ?? "");
   const [category, setCategory] = useState<Category>(initial.category ?? "comida");
   const [payerId, setPayerId] = useState(initial.payerId ?? group.meId);
+  const [allowEdits, setAllowEdits] = useState(initial.allowEdits ?? false);
   const [tip, setTip] = useState<number | string>(initial.tip ? String(initial.tip) : "");
   // Ver/ajustar los montos en la moneda del ticket original en vez de la
   // convertida (moneda del grupo) — solo disponible si el escaneo detectó
@@ -270,6 +274,7 @@ export function ItemizedExpenseEditor({
           ...(f.originalAmount != null && f.originalAmount !== "" ? { originalAmount: Number(f.originalAmount) } : {}),
         })),
       tip: tipNum,
+      allowEdits,
     });
   }
 
@@ -486,6 +491,24 @@ export function ItemizedExpenseEditor({
           })}
         </div>
       )}
+
+      {/* Permitir edición a otros participantes (por defecto, solo el creador puede editar) */}
+      <button
+        type="button"
+        onClick={() => setAllowEdits((v) => !v)}
+        className="w-full flex items-center justify-between gap-2 glass rounded-xl px-3 py-2.5 text-left"
+      >
+        <span className="text-sm">{t("form.allowEdits")}</span>
+        <span
+          className="h-5 w-9 rounded-full relative shrink-0 transition-colors"
+          style={{ background: allowEdits ? "var(--teal)" : "var(--line)" }}
+        >
+          <span
+            className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform"
+            style={{ transform: allowEdits ? "translateX(18px)" : "translateX(2px)" }}
+          />
+        </span>
+      </button>
 
       <div className="flex gap-2">
         <button onClick={submit} disabled={submitting} className="glass-strong rounded-full px-5 py-2.5 font-medium hover-lift disabled:opacity-50">

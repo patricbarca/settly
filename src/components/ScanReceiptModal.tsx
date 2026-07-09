@@ -184,6 +184,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         items: r.items,
         fees: r.fees,
         tip: r.tip,
+        allowEdits: r.allowEdits,
         ...(receiptPath ? { receiptPath } : {}),
         ...(fx ? { originalAmount: fx.originalAmount, originalCurrency: fx.originalCurrency, fxRate: fx.fxRate } : {}),
         createdBy: group.meId,
