@@ -308,7 +308,7 @@ function Slide3Anim() {
   const t = useT();
   const [phase, setPhase] = useState(0);
   useEffect(() => {
-    const delays = [600, 2000, 1800, 2400];
+    const delays = [600, 2000, 3200, 2400];
     const timer = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 600);
     return () => clearTimeout(timer);
   }, [phase]);
@@ -326,18 +326,22 @@ function Slide3Anim() {
     <div key={key} style={{ width: 16, height: 16, borderRadius: "50%", background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7.5, color: "white", fontWeight: 700, marginLeft: key > 0 ? -4 : 0, border: "1.5px solid rgba(0,0,0,0.25)" }}>{l}</div>
   );
 
-  // Moneda secundaria + detección automática (Pro): aparece un instante
-  // después del resultado, para no competir con la asignación por ítem.
-  const [showFx, setShowFx] = useState(false);
+  // Moneda detectada + conversión (Pro): aparece como ventana emergente un
+  // instante después del resultado (para no competir con la asignación por
+  // ítem) y se cierra sola, revelando la tarjeta ya en la moneda del grupo.
+  const [showFxPopup, setShowFxPopup] = useState(false);
   useEffect(() => {
-    if (phase < 2) { setShowFx(false); return; }
-    const timer = setTimeout(() => setShowFx(true), 1400);
-    return () => clearTimeout(timer);
+    // Se dispara una sola vez al ENTRAR a la fase 2 (no en cada fase >= 2,
+    // para no reabrirse al pasar de 2 a 3 dentro del mismo resultado).
+    if (phase !== 2) { setShowFxPopup(false); return; }
+    const showTimer = setTimeout(() => setShowFxPopup(true), 900);
+    const hideTimer = setTimeout(() => setShowFxPopup(false), 2900);
+    return () => { clearTimeout(showTimer); clearTimeout(hideTimer); };
   }, [phase]);
 
   if (phase >= 2) {
     return (
-      <div style={{ width: "100%", maxWidth: 260, margin: "0 auto", animation: "ob-pop 0.5s cubic-bezier(.34,1.56,.64,1) both" }}>
+      <div style={{ width: "100%", maxWidth: 260, margin: "0 auto", position: "relative", animation: "ob-pop 0.5s cubic-bezier(.34,1.56,.64,1) both" }}>
         <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
           <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{t("onboard.demo.detected")}</div>
           <div style={{ color: "white", fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{t("onboard.demo.restaurant")}</div>
@@ -352,16 +356,40 @@ function Slide3Anim() {
               </div>
             ))}
           </div>
-          <div style={{ color: "#34d399", fontWeight: 800, fontSize: 20, fontFamily: "monospace", marginBottom: 8 }}>$70.00</div>
-          {showFx && (
-            <div style={{ animation: "ob-fadeup 0.3s ease both", display: "flex", alignItems: "center", gap: 5, color: "rgba(255,255,255,0.55)", fontSize: 9.5, marginBottom: 10 }}>
-              💱 {t("onboard.demo.fxDetected")}
-            </div>
-          )}
+          <div style={{ color: "#34d399", fontWeight: 800, fontSize: 20, fontFamily: "monospace", marginBottom: 10 }}>$70.00</div>
           <div style={{ background: "rgba(52,211,153,0.18)", borderRadius: 8, padding: "6px 8px", textAlign: "center", color: "#34d399", fontSize: 11, fontWeight: 700 }}>
             {t("onboard.demo.addGroup")}
           </div>
         </div>
+
+        {/* Ventana emergente: moneda detectada + conversión */}
+        {showFxPopup && (
+          <div
+            style={{
+              position: "absolute", inset: 0, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(10,8,25,0.72)", backdropFilter: "blur(2px)", animation: "ob-fadeup 0.25s ease both",
+            }}
+          >
+            <div
+              style={{
+                width: "88%", background: "#1c1533", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 14,
+                padding: "14px 16px", boxShadow: "0 12px 30px rgba(0,0,0,0.5)", animation: "ob-pop 0.35s cubic-bezier(.34,1.56,.64,1) both",
+              }}
+            >
+              <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8, textAlign: "center" }}>
+                💱 {t("onboard.demo.fxTitle")}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8 }}>
+                <span style={{ color: "white", fontWeight: 800, fontSize: 17, fontFamily: "monospace" }}>€47.60</span>
+                <span style={{ color: "#34d399", fontSize: 15 }}>→</span>
+                <span style={{ color: "#34d399", fontWeight: 800, fontSize: 17, fontFamily: "monospace" }}>$70.00</span>
+              </div>
+              <div style={{ textAlign: "center", color: "rgba(255,255,255,0.5)", fontSize: 9.5 }}>
+                {t("onboard.demo.fxRate")}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
