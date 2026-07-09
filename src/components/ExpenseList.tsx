@@ -197,6 +197,7 @@ export function ExpenseList({ group }: { group: Group }) {
         items: r.items,
         fees: r.fees,
         tip: r.tip,
+        allowEdits: r.allowEdits,
       },
       {
         activity: makeActivity({
@@ -400,6 +401,7 @@ export function ExpenseList({ group }: { group: Group }) {
                   tip: editing.tip,
                   payerId: editing.payerId,
                   category: editing.category,
+                  allowEdits: editing.allowEdits ?? false,
                   originalCurrency: editing.originalCurrency,
                   fxRate: editing.fxRate,
                 }}
