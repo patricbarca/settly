@@ -183,121 +183,205 @@ function AiBadge() {
   );
 }
 
-// ── Slide: Simplified vs Direct — flow diagram, then pick & mark paid ───────
+// ── Slide: Simplified vs Direct — payment flow diagram ──────────────────────
 function SlideModeAnim() {
   const t = useT();
-  const [phase, setPhase] = useState(0);
-  const delays = [3000, 3000, 2600, 2800, 3600];
+  const [direct, setDirect] = useState(false);
   useEffect(() => {
-    const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 1800);
+    const timer = setTimeout(() => setDirect((v) => !v), 3200);
     return () => clearTimeout(timer);
-  }, [phase]);
+  }, [direct]);
 
   const ava = (l: string, c: string, size = 22) => (
     <div style={{ width: size, height: size, borderRadius: "50%", background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.4, color: "white", fontWeight: 700, flexShrink: 0 }}>{l}</div>
   );
 
-  // ── Fases 0-1: diagrama de flujo de pagos por modo ──
-  if (phase <= 1) {
-    const direct = phase === 1;
+  return (
+    <div style={{ width: "100%", maxWidth: 280, margin: "0 auto" }}>
+      <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+          {[t("hero.modeSimplified"), t("hero.modeDirect")].map((label, i) => (
+            <div
+              key={label}
+              style={{
+                borderRadius: 12, padding: "8px 6px", textAlign: "center", fontWeight: 800, fontSize: 12,
+                background: (i === 1) === direct ? "white" : "rgba(255,255,255,0.1)",
+                color: (i === 1) === direct ? "#120d36" : "white",
+                transition: "all 0.4s",
+              }}
+            >
+              {label}
+            </div>
+          ))}
+        </div>
+        {/* Diagrama: quién le paga a quién */}
+        <div style={{ animation: "ob-fadeup 0.3s ease both", background: "rgba(0,0,0,0.15)", borderRadius: 12, padding: "14px 10px", marginBottom: 10 }}>
+          {!direct ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              {ava("P", "#dc2626")}
+              <span style={{ color: "#34d399", fontSize: 16 }}>→</span>
+              <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 13 }}>$18</span>
+              <span style={{ color: "#34d399", fontSize: 16 }}>→</span>
+              {ava("A", "#0891b2")}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                {ava("P", "#dc2626", 18)}
+                <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
+                <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 11 }}>$14</span>
+                <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
+                {ava("S", "#7c3aed", 18)}
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                {ava("P", "#dc2626", 18)}
+                <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
+                <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 11 }}>$4</span>
+                <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
+                {ava("A", "#0891b2", 18)}
+              </div>
+            </div>
+          )}
+          <div style={{ textAlign: "center", marginTop: 8, color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600 }}>
+            {direct ? t("onboard.demo.twoTransfers") : t("onboard.demo.oneTransfer")}
+          </div>
+        </div>
+        <div style={{ animation: "ob-fadeup 0.3s ease both", color: "rgba(255,255,255,0.75)", fontSize: 11, lineHeight: 1.5 }}>
+          {!direct ? t("hero.modeInfoSimplified") : t("hero.modeInfoDirect")}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Slide: Settle up — Direct (pick expenses, Pending → Paid) then
+// Simplified (FIFO auto-assign, running total) ───────────────────────────────
+function SlideSettleAnim() {
+  const t = useT();
+  const [phase, setPhase] = useState(0);
+  const delays = [2600, 2600, 2000, 2800, 2600, 3000, 3200];
+  useEffect(() => {
+    const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 2000);
+    return () => clearTimeout(timer);
+  }, [phase]);
+
+  const ava = (l: string, c: string) => (
+    <div style={{ width: 22, height: 22, borderRadius: "50%", background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "white", fontWeight: 700, flexShrink: 0 }}>{l}</div>
+  );
+  const badge = (paid: boolean) => (
+    <span
+      style={{
+        fontSize: 8.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.3, borderRadius: 999, padding: "2px 6px",
+        background: paid ? "#0A8B5E33" : "#E8920C33", color: paid ? "#34d399" : "#f0b429",
+      }}
+    >
+      {paid ? t("exp.paid") : t("exp.pending")}
+    </span>
+  );
+
+  // ── Fases 0-3: modo Directo — elegir gastos, pagar, y verlos pasar de
+  // Pendiente a Pagado ──
+  if (phase <= 3) {
+    const checking = phase >= 1; // se van tildando
+    const settled = phase >= 3; // ya confirmado: Pendiente -> Pagado
     return (
-      <div style={{ width: "100%", maxWidth: 280, margin: "0 auto" }}>
+      <div style={{ width: "100%", maxWidth: 290, margin: "0 auto" }}>
         <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-            {[t("hero.modeSimplified"), t("hero.modeDirect")].map((label, i) => (
-              <div
-                key={label}
-                style={{
-                  borderRadius: 12, padding: "8px 6px", textAlign: "center", fontWeight: 800, fontSize: 12,
-                  background: (i === 1) === direct ? "white" : "rgba(255,255,255,0.1)",
-                  color: (i === 1) === direct ? "#120d36" : "white",
-                  transition: "all 0.4s",
-                }}
-              >
-                {label}
+          <div style={{ display: "inline-block", marginBottom: 10, borderRadius: 999, padding: "3px 10px", fontSize: 10, fontWeight: 800, background: "white", color: "#120d36" }}>
+            {t("hero.modeDirect")}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
+            {ava("P", "#dc2626")}
+            <b style={{ color: "white", fontSize: 12 }}>Patrick</b>
+            <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 11 }}>{t("onboard.demo.paysTo")}</span>
+            {ava("S", "#0891b2")}
+            <b style={{ color: "white", fontSize: 12 }}>Siena</b>
+            <span style={{ marginLeft: "auto", fontFamily: "monospace", fontWeight: 800, color: "white", fontSize: 14 }}>$18</span>
+          </div>
+          {!settled && (
+            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 9.5, marginBottom: 6 }}>{t("pay.whichExpenses")}</div>
+          )}
+          <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: 6, marginBottom: 8 }}>
+            {[["Cena", "$14"], ["Vino", "$4"]].map(([label, amt], i) => (
+              <div key={label} style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 4px", animation: checking ? `ob-fadeup 0.3s ease ${i * 0.35}s both` : undefined }}>
+                {!settled ? (
+                  <div
+                    style={{
+                      width: 14, height: 14, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900,
+                      background: checking ? "#34d399" : "transparent", border: checking ? "none" : "1.5px solid rgba(255,255,255,0.4)", color: "#06281c",
+                    }}
+                  >
+                    {checking && "✓"}
+                  </div>
+                ) : <div style={{ width: 14 }} />}
+                <span style={{ color: "white", fontSize: 10.5, flex: 1 }}>{label}</span>
+                <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 10.5, fontFamily: "monospace" }}>{amt}</span>
+                {settled ? badge(true) : (checking && badge(false))}
               </div>
             ))}
           </div>
-          {/* Diagrama: quién le paga a quién */}
-          <div style={{ animation: "ob-fadeup 0.3s ease both", background: "rgba(0,0,0,0.15)", borderRadius: 12, padding: "14px 10px", marginBottom: 10 }}>
-            {!direct ? (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                {ava("P", "#dc2626")}
-                <span style={{ color: "#34d399", fontSize: 16 }}>→</span>
-                <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 13 }}>$18</span>
-                <span style={{ color: "#34d399", fontSize: 16 }}>→</span>
-                {ava("A", "#0891b2")}
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                  {ava("P", "#dc2626", 18)}
-                  <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
-                  <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 11 }}>$14</span>
-                  <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
-                  {ava("S", "#7c3aed", 18)}
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                  {ava("P", "#dc2626", 18)}
-                  <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
-                  <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 11 }}>$4</span>
-                  <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
-                  {ava("A", "#0891b2", 18)}
-                </div>
-              </div>
-            )}
-            <div style={{ textAlign: "center", marginTop: 8, color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600 }}>
-              {direct ? t("onboard.demo.twoTransfers") : t("onboard.demo.oneTransfer")}
+          {phase === 0 && (
+            <div style={{ display: "flex", gap: 6, animation: "ob-fadeup 0.3s ease both" }}>
+              <span style={{ background: "#34d399", color: "#06281c", fontWeight: 700, fontSize: 11, borderRadius: 999, padding: "5px 14px" }}>{t("pay.pay")}</span>
+              <span style={{ background: "rgba(255,255,255,0.14)", color: "white", fontWeight: 600, fontSize: 11, borderRadius: 999, padding: "5px 14px" }}>{t("pay.method")}</span>
             </div>
-          </div>
-          <div style={{ animation: "ob-fadeup 0.3s ease both", color: "rgba(255,255,255,0.75)", fontSize: 11, lineHeight: 1.5 }}>
-            {!direct ? t("hero.modeInfoSimplified") : t("hero.modeInfoDirect")}
-          </div>
+          )}
+          {phase === 2 && (
+            <div style={{ animation: "ob-fadeup 0.3s ease both", background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: "7px 10px", display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "rgba(255,255,255,0.85)" }}>
+              ⏳ {t("onboard.demo.markedPaid")}
+            </div>
+          )}
+          {settled && (
+            <div style={{ animation: "ob-pop 0.4s cubic-bezier(.34,1.56,.64,1) both", color: "rgba(255,255,255,0.6)", fontSize: 10.5, textAlign: "center" }}>
+              {t("onboard.demo.nowPaid")}
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
-  // ── Fases 2-4: elegir qué gastos cubre el pago y verlo marcarse como pagado ──
+  // ── Fases 4-6: modo Simplificado — se asignan solos, del más antiguo al
+  // más nuevo, y el total pendiente baja ──
+  const paidCount = phase === 4 ? 0 : phase === 5 ? 2 : 2; // se cubren 2 de 3 con $18
+  const simItems = [
+    { label: "Cena", amt: 14, paid: paidCount >= 1 },
+    { label: "Vino", amt: 4, paid: paidCount >= 2 },
+    { label: "Postre", amt: 14, paid: false },
+  ];
+  const remaining = simItems.filter((it) => !it.paid).reduce((s, it) => s + it.amt, 0);
   return (
     <div style={{ width: "100%", maxWidth: 290, margin: "0 auto" }}>
       <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
-        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>{t("onboard.demo.toSettle")}</div>
-        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
-          {ava("P", "#dc2626")}
-          <b style={{ color: "white", fontSize: 12 }}>Patrick</b>
-          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 11 }}>{t("onboard.demo.paysTo")}</span>
-          {ava("S", "#0891b2")}
-          <b style={{ color: "white", fontSize: 12 }}>Siena</b>
-          <span style={{ marginLeft: "auto", fontFamily: "monospace", fontWeight: 800, color: "white", fontSize: 14 }}>$18</span>
+        <div style={{ display: "inline-block", marginBottom: 10, borderRadius: 999, padding: "3px 10px", fontSize: 10, fontWeight: 800, background: "white", color: "#120d36" }}>
+          {t("hero.modeSimplified")}
         </div>
-        {phase === 2 && (
-          <div style={{ animation: "ob-fadeup 0.3s ease both" }}>
-            <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: 6, marginBottom: 8 }}>
-              {[["Cena", "$14"], ["Vino", "$4"]].map(([label, amt]) => (
-                <div key={label} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 4px" }}>
-                  <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#34d399", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#06281c", fontWeight: 900 }}>✓</div>
-                  <span style={{ color: "white", fontSize: 10.5, flex: 1 }}>{label}</span>
-                  <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 10.5, fontFamily: "monospace" }}>{amt}</span>
-                </div>
-              ))}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 10.5 }}>{t("onboard.demo.totalOwed")}</span>
+          <span style={{ color: remaining > 0 ? "#f0b429" : "#34d399", fontWeight: 800, fontFamily: "monospace", fontSize: 16, transition: "color 0.3s" }}>
+            ${remaining}
+          </span>
+        </div>
+        <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: 6, marginBottom: 8 }}>
+          {simItems.map((it) => (
+            <div key={it.label} style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 4px", transition: "opacity 0.3s" }}>
+              <div
+                style={{
+                  width: 14, height: 14, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, transition: "background 0.3s",
+                  background: it.paid ? "#34d399" : "transparent", border: it.paid ? "none" : "1.5px solid rgba(255,255,255,0.4)", color: "#06281c",
+                }}
+              >
+                {it.paid && "✓"}
+              </div>
+              <span style={{ color: "white", fontSize: 10.5, flex: 1 }}>{it.label}</span>
+              <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 10.5, fontFamily: "monospace" }}>${it.amt}</span>
+              {badge(it.paid)}
             </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              <span style={{ background: "#34d399", color: "#06281c", fontWeight: 700, fontSize: 11, borderRadius: 999, padding: "5px 14px" }}>{t("pay.pay")}</span>
-              <span style={{ background: "rgba(255,255,255,0.14)", color: "white", fontWeight: 600, fontSize: 11, borderRadius: 999, padding: "5px 14px" }}>{t("pay.method")}</span>
-            </div>
-          </div>
-        )}
-        {phase === 3 && (
-          <div style={{ animation: "ob-fadeup 0.3s ease both", background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: "7px 10px", display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "rgba(255,255,255,0.85)" }}>
-            ⏳ {t("onboard.demo.markedPaid")}
-          </div>
-        )}
-        {phase >= 4 && (
-          <div style={{ animation: "ob-pop 0.4s cubic-bezier(.34,1.56,.64,1) both", background: "rgba(52,211,153,0.18)", border: "1px solid rgba(52,211,153,0.4)", borderRadius: 10, padding: "8px 10px", display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: "#34d399" }}>
-            ✓ {t("onboard.demo.validated")}
-          </div>
-        )}
+          ))}
+        </div>
+        <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 10.5, lineHeight: 1.4 }}>
+          {phase === 4 ? t("onboard.demo.simBefore") : phase === 5 ? t("onboard.demo.simPaying") : t("onboard.demo.simAfter")}
+        </div>
       </div>
     </div>
   );
@@ -575,6 +659,7 @@ const SLIDES = [
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #08153d 18%, #0369a1 100%)", Animation: Slide4Anim, titleKey: "onboard.s4t", descKey: "onboard.s4d", ai: true },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #2a0a3d 18%, #7c3aed 100%)", Animation: SlideTypeAnim, titleKey: "onboard.sTypeT", descKey: "onboard.sTypeD", ai: true },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #3d2905 18%, #b45309 100%)", Animation: SlideModeAnim, titleKey: "onboard.sModeT", descKey: "onboard.sModeD" },
+  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #032014 18%, #059669 100%)", Animation: SlideSettleAnim, titleKey: "onboard.s5t", descKey: "onboard.s5d" },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #160836 18%, #6d28d9 100%)", Animation: Slide6Anim, titleKey: "onboard.s6t", descKey: "onboard.s6d" },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #061a33 18%, #0e7490 100%)", Animation: InstallDemoAnim, titleKey: "install.guideTitle", descKey: "install.guideDesc", guide: true },
 ];
