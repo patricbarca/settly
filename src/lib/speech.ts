@@ -2,21 +2,41 @@ import { useRef, useState } from "react";
 import { transcribeAudio } from "./ai";
 import { isIOS } from "./pwa";
 
+/** Tope de grabación: evita que el mic se quede abierto por error (o alguien
+ *  hablando de más) y termine golpeando el timeout de la Edge Function o
+ *  generando un audio innecesariamente largo/caro de transcribir. */
+const MAX_RECORD_MS = 60_000;
+/** Tope del texto (escrito o transcrito) que llega al parser/IA — una
+ *  descripción de gasto no necesita más que esto. */
+const MAX_TEXT_LEN = 200;
+
 /**
  * Dictado por voz en el idioma indicado (sigue el selector ES/EN de la app).
  * En navegadores con Web Speech API (Android/escritorio) usa la transcripción
  * nativa; donde no existe (iPhone/Safari) graba y transcribe en el servidor
  * (Edge Function `transcribe` → Groq/Whisper). Requiere conexión: sin internet
- * el dictado no está disponible y el gasto se añade a mano.
+ * el dictado no está disponible y el gasto se añade a mano. La grabación se
+ * corta sola a los `MAX_RECORD_MS` si no se detuvo antes.
  */
 export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es") {
   const recRef = useRef<any>(null);
   const mediaRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const streamRef = useRef<MediaStream | null>(null);
+  const maxTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [listening, setListening] = useState(false);
   const [busy, setBusy] = useState(false); // transcribiendo (servidor)
   const [error, setError] = useState<"mic" | "stt" | null>(null);
+
+  function clearMaxTimer() {
+    if (maxTimerRef.current) {
+      clearTimeout(maxTimerRef.current);
+      maxTimerRef.current = null;
+    }
+  }
+  function emitText(txt: string) {
+    onText(txt.slice(0, MAX_TEXT_LEN));
+  }
 
   const SR =
     typeof window !== "undefined"
@@ -51,13 +71,15 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
         const txt = Array.from(e.results)
           .map((r: any) => r[0].transcript)
           .join(" ");
-        onText(txt);
+        emitText(txt);
       };
-      rec.onend = () => { recRef.current = null; setListening(false); };
-      rec.onerror = () => { recRef.current = null; setListening(false); setError("mic"); };
+      rec.onend = () => { clearMaxTimer(); recRef.current = null; setListening(false); };
+      rec.onerror = () => { clearMaxTimer(); recRef.current = null; setListening(false); setError("mic"); };
       recRef.current = rec;
       setListening(true);
       rec.start();
+      clearMaxTimer();
+      maxTimerRef.current = setTimeout(() => { try { rec.stop(); } catch {} }, MAX_RECORD_MS);
     } catch {
       setListening(false);
       setError("mic");
@@ -73,6 +95,8 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
       const rec = new MediaRecorder(stream);
       rec.ondataavailable = (e) => e.data.size && chunksRef.current.push(e.data);
       rec.onstop = async () => {
+        clearMaxTimer();
+        setListening(false);
         stream.getTracks().forEach((t) => t.stop());
         streamRef.current = null;
         const blob = new Blob(chunksRef.current, { type: rec.mimeType || "audio/webm" });
@@ -82,7 +106,7 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
           // Transcripción en el servidor (Edge Function `transcribe` → Groq).
           // Necesita conexión; offline lanza y caemos al mensaje de error.
           const text = await transcribeAudio(blob, lang);
-          if (text) onText(text);
+          if (text) emitText(text);
           else setError("stt");
         } catch {
           setError("stt");
@@ -93,6 +117,8 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
       mediaRef.current = rec;
       setListening(true);
       rec.start();
+      clearMaxTimer();
+      maxTimerRef.current = setTimeout(() => { try { rec.stop(); } catch {} }, MAX_RECORD_MS);
     } catch {
       setListening(false);
       setError("mic");

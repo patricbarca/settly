@@ -81,6 +81,7 @@ function RecurringModal({ group, onClose }: { group: Group; onClose: () => void 
             onChange={(e) => setVoiceText(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && interpret()}
             placeholder={t("add.placeholder")}
+            maxLength={200}
             className="glass rounded-xl px-3 py-2.5 text-sm flex-1"
           />
           <button
