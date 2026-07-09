@@ -307,7 +307,7 @@ function SlideSettleAnim() {
             <span style={{ marginLeft: "auto", fontFamily: "monospace", fontWeight: 800, color: "white", fontSize: 14 }}>$18</span>
           </div>
           {!settled && (
-            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 9.5, marginBottom: 6 }}>{t("onboard.demo.oldestFirst")}</div>
+            <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 9.5, marginBottom: 6 }}>{t("pay.whichExpenses")}</div>
           )}
           <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: 6, marginBottom: 8 }}>
             {[

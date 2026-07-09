@@ -155,7 +155,6 @@ const DICT: Record<string, { es: string; en: string }> = {
   "onboard.demo.paysTo":   { es: "paga a", en: "pays" },
   "onboard.demo.markedPaid":{ es: "Patrick marcó el pago", en: "Patrick marked it as paid" },
   "onboard.demo.verified": { es: "Verificado", en: "Verified" },
-  "onboard.demo.oldestFirst": { es: "Se seleccionan los más antiguos primero", en: "Oldest ones get selected first" },
   "onboard.demo.validated":{ es: "Siena lo confirmó · saldado", en: "Siena confirmed it · settled" },
   "onboard.demo.voiceTitle":{ es: "Cena",             en: "Dinner" },
   "onboard.demo.voiceMeta":{ es: "Pagó: Tú · Alexa, Patrick", en: "Paid by: You · Alexa, Patrick" },
