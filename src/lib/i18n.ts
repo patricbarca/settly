@@ -127,6 +127,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "onboard.demo.detail7": { es: "PayID, banco, PayPal…", en: "PayID, bank, PayPal…" },
   "onboard.demo.detail8": { es: "Suscripciones, alquiler", en: "Subscriptions, rent" },
   "onboard.next": { es: "Siguiente →", en: "Next →" },
+  "onboard.back": { es: "← Atrás", en: "← Back" },
   "onboard.start": { es: "¡Empezar!", en: "Get started!" },
   "onboard.skip": { es: "Omitir", en: "Skip" },
   "onboard.replay": { es: "Ver introducción", en: "View intro" },
