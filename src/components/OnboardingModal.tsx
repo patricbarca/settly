@@ -80,15 +80,30 @@ function Slide1Anim() {
   );
 }
 
-// ── Slide 2: Groups — members appearing one by one ───────────────────────────
+// ── Slide 2: Groups — name it, create it, add people, share the link ────────
 function Slide2Anim() {
   const t = useT();
   const [phase, setPhase] = useState(0);
+  // 0: escribir nombre · 1: tocar Crear · 2-4: personas apareciendo · 5: link
+  const delays = [1500, 700, 650, 650, 650, 2200];
   useEffect(() => {
-    const delays = [900, 650, 650, 650, 2200];
     const timer = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 900);
     return () => clearTimeout(timer);
   }, [phase]);
+
+  const groupName = t("onboard.demo.groupName");
+  const [typed, setTyped] = useState("");
+  useEffect(() => {
+    if (phase !== 0) return;
+    setTyped("");
+    let i = 0;
+    const iv = setInterval(() => {
+      i++;
+      setTyped(groupName.slice(0, i));
+      if (i >= groupName.length) clearInterval(iv);
+    }, 55);
+    return () => clearInterval(iv);
+  }, [phase, groupName]);
 
   const members = [
     { name: t("onboard.demo.you"), color: "#7c3aed" },
@@ -96,19 +111,42 @@ function Slide2Anim() {
     { name: "Alexa", color: "#dc2626" },
   ];
 
+  if (phase <= 1) {
+    return (
+      <div style={{ width: "100%", maxWidth: 280, margin: "0 auto" }}>
+        <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
+          <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{t("onboard.demo.newGroup")}</div>
+          <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: "9px 12px", color: "white", fontSize: 13, marginBottom: 10, minHeight: 20 }}>
+            {typed || <span style={{ opacity: 0.4 }}>{t("onboard.demo.groupNamePlaceholder")}</span>}
+            {phase === 0 && typed.length < groupName.length && <span style={{ animation: "ob-pulse 0.8s ease-in-out infinite" }}>|</span>}
+          </div>
+          <div
+            style={{
+              textAlign: "center", borderRadius: 999, padding: "8px 0", fontWeight: 800, fontSize: 13,
+              background: phase === 1 ? "white" : "rgba(255,255,255,0.14)", color: phase === 1 ? "#120d36" : "white",
+              transition: "all 0.3s", transform: phase === 1 ? "scale(0.96)" : "scale(1)",
+            }}
+          >
+            {t("home.createGroup")}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ width: "100%", maxWidth: 280, margin: "0 auto" }}>
       <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
-        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>{t("onboard.demo.dinner")}</div>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 6 }}>{groupName}</div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", minHeight: 36 }}>
-          {members.slice(0, Math.min(phase + 1, 3)).map((m, i) => (
+          {members.slice(0, Math.min(phase - 1, 3)).map((m, i) => (
             <div key={i} style={{ animation: "ob-pop 0.4s cubic-bezier(.34,1.56,.64,1) both", background: `${m.color}2a`, border: `1.5px solid ${m.color}55`, borderRadius: 20, padding: "4px 10px", display: "flex", alignItems: "center", gap: 5 }}>
               <div style={{ width: 18, height: 18, borderRadius: "50%", background: m.color, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "white", fontWeight: 700 }}>{m.name[0]}</div>
               <span style={{ color: "white", fontSize: 11, fontWeight: 600 }}>{m.name}</span>
             </div>
           ))}
         </div>
-        {phase >= 3 && (
+        {phase >= 5 && (
           <div style={{ animation: "ob-fadeup 0.4s ease both", marginTop: 10, background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: "7px 10px", display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ fontSize: 13 }}>🔗</span>
             <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 10 }}>settly.app/join/xk9p</span>
@@ -120,111 +158,146 @@ function Slide2Anim() {
   );
 }
 
-// ── AI badge overlay: reused on the 3 AI-powered slides ─────────────────────
+// ── AI badge: shown centered ABOVE the card (not overlapping it) on the
+// 3 AI-powered slides — normal flow, no absolute positioning, so it can
+// never end up rendered behind anything.
 function AiBadge() {
   const t = useT();
   return (
-    <div
-      style={{
-        position: "absolute",
-        top: -10,
-        right: -6,
-        background: "rgba(124,58,237,0.9)",
-        color: "white",
-        fontSize: 10,
-        fontWeight: 800,
-        borderRadius: 999,
-        padding: "3px 9px",
-        boxShadow: "0 2px 10px rgba(0,0,0,0.35)",
-        whiteSpace: "nowrap",
-      }}
-    >
-      ✨ {t("app.poweredAI")}
-    </div>
-  );
-}
-
-// ── Slide: choose who's in — payer + participants + split modes ─────────────
-function SlideSplitAnim() {
-  const t = useT();
-  const [phase, setPhase] = useState(0);
-  useEffect(() => {
-    const delays = [1400, 1400, 1400, 2400];
-    const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 1400);
-    return () => clearTimeout(timer);
-  }, [phase]);
-
-  const ava = (l: string, c: string) => (
-    <div style={{ width: 20, height: 20, borderRadius: "50%", background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, color: "white", fontWeight: 700 }}>{l}</div>
-  );
-  const modes = ["=", "%", "$", "×"];
-
-  return (
-    <div style={{ width: "100%", maxWidth: 280, margin: "0 auto" }}>
-      <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
-        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{t("form.paid")}</div>
-        <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-          {[["S", "#7c3aed"], ["A", "#0891b2"], ["P", "#dc2626"]].map(([l, c], i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 4, background: i === 0 ? `${c}33` : "rgba(255,255,255,0.08)", border: i === 0 ? `1.5px solid ${c}88` : "1.5px solid transparent", borderRadius: 999, padding: "3px 8px 3px 3px" }}>
-              {ava(l, c)}
-            </div>
-          ))}
-        </div>
-        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 8 }}>{t("form.between")}</div>
-        <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-          {[["S", "#7c3aed"], ["A", "#0891b2"], ["P", "#dc2626"]].map(([l, c], i) => (
-            <div key={i} style={{ opacity: phase >= 1 ? 1 : 0.35, transition: "opacity 0.3s" }}>{ava(l, c)}</div>
-          ))}
-        </div>
-        <div style={{ display: "flex", gap: 5 }}>
-          {modes.map((m, i) => (
-            <div
-              key={m}
-              style={{
-                width: 30, height: 24, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 12, fontWeight: 800, color: phase === i ? "#120d36" : "white",
-                background: phase === i ? "white" : "rgba(255,255,255,0.1)", transition: "all 0.3s",
-              }}
-            >
-              {m}
-            </div>
-          ))}
-        </div>
+    <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+      <div
+        style={{
+          background: "rgba(124,58,237,0.95)",
+          color: "white",
+          fontSize: 11,
+          fontWeight: 800,
+          borderRadius: 999,
+          padding: "4px 12px",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.35)",
+          whiteSpace: "nowrap",
+        }}
+      >
+        ✨ {t("app.poweredAI")}
       </div>
     </div>
   );
 }
 
-// ── Slide: Simplified vs Direct settle-up mode ───────────────────────────────
+// ── Slide: Simplified vs Direct — flow diagram, then pick & mark paid ───────
 function SlideModeAnim() {
   const t = useT();
-  const [on, setOn] = useState(false);
+  const [phase, setPhase] = useState(0);
+  const delays = [2200, 2200, 1800, 2000, 2600];
   useEffect(() => {
-    const timer = setTimeout(() => setOn((v) => !v), 1900);
+    const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 1800);
     return () => clearTimeout(timer);
-  }, [on]);
+  }, [phase]);
 
-  return (
-    <div style={{ width: "100%", maxWidth: 280, margin: "0 auto" }}>
-      <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-          {[t("hero.modeSimplified"), t("hero.modeDirect")].map((label, i) => (
-            <div
-              key={label}
-              style={{
-                borderRadius: 12, padding: "8px 6px", textAlign: "center", fontWeight: 800, fontSize: 12,
-                background: (i === 0) === !on ? "white" : "rgba(255,255,255,0.1)",
-                color: (i === 0) === !on ? "#120d36" : "white",
-                transition: "all 0.4s",
-              }}
-            >
-              {label}
+  const ava = (l: string, c: string, size = 22) => (
+    <div style={{ width: size, height: size, borderRadius: "50%", background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: size * 0.4, color: "white", fontWeight: 700, flexShrink: 0 }}>{l}</div>
+  );
+
+  // ── Fases 0-1: diagrama de flujo de pagos por modo ──
+  if (phase <= 1) {
+    const direct = phase === 1;
+    return (
+      <div style={{ width: "100%", maxWidth: 280, margin: "0 auto" }}>
+        <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+            {[t("hero.modeSimplified"), t("hero.modeDirect")].map((label, i) => (
+              <div
+                key={label}
+                style={{
+                  borderRadius: 12, padding: "8px 6px", textAlign: "center", fontWeight: 800, fontSize: 12,
+                  background: (i === 1) === direct ? "white" : "rgba(255,255,255,0.1)",
+                  color: (i === 1) === direct ? "#120d36" : "white",
+                  transition: "all 0.4s",
+                }}
+              >
+                {label}
+              </div>
+            ))}
+          </div>
+          {/* Diagrama: quién le paga a quién */}
+          <div style={{ animation: "ob-fadeup 0.3s ease both", background: "rgba(0,0,0,0.15)", borderRadius: 12, padding: "14px 10px", marginBottom: 10 }}>
+            {!direct ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                {ava("P", "#dc2626")}
+                <span style={{ color: "#34d399", fontSize: 16 }}>→</span>
+                <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 13 }}>$18</span>
+                <span style={{ color: "#34d399", fontSize: 16 }}>→</span>
+                {ava("A", "#0891b2")}
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  {ava("P", "#dc2626", 18)}
+                  <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
+                  <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 11 }}>$14</span>
+                  <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
+                  {ava("S", "#7c3aed", 18)}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                  {ava("P", "#dc2626", 18)}
+                  <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
+                  <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 11 }}>$4</span>
+                  <span style={{ color: "#34d399", fontSize: 13 }}>→</span>
+                  {ava("A", "#0891b2", 18)}
+                </div>
+              </div>
+            )}
+            <div style={{ textAlign: "center", marginTop: 8, color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600 }}>
+              {direct ? t("onboard.demo.twoTransfers") : t("onboard.demo.oneTransfer")}
             </div>
-          ))}
+          </div>
+          <div style={{ animation: "ob-fadeup 0.3s ease both", color: "rgba(255,255,255,0.75)", fontSize: 11, lineHeight: 1.5 }}>
+            {!direct ? t("hero.modeInfoSimplified") : t("hero.modeInfoDirect")}
+          </div>
         </div>
-        <div style={{ animation: "ob-fadeup 0.3s ease both", color: "rgba(255,255,255,0.75)", fontSize: 11.5, lineHeight: 1.5, minHeight: 54 }}>
-          {!on ? t("hero.modeInfoSimplified") : t("hero.modeInfoDirect")}
+      </div>
+    );
+  }
+
+  // ── Fases 2-4: elegir qué gastos cubre el pago y verlo marcarse como pagado ──
+  return (
+    <div style={{ width: "100%", maxWidth: 290, margin: "0 auto" }}>
+      <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
+        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>{t("onboard.demo.toSettle")}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
+          {ava("P", "#dc2626")}
+          <b style={{ color: "white", fontSize: 12 }}>Patrick</b>
+          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 11 }}>{t("onboard.demo.paysTo")}</span>
+          {ava("S", "#0891b2")}
+          <b style={{ color: "white", fontSize: 12 }}>Siena</b>
+          <span style={{ marginLeft: "auto", fontFamily: "monospace", fontWeight: 800, color: "white", fontSize: 14 }}>$18</span>
         </div>
+        {phase === 2 && (
+          <div style={{ animation: "ob-fadeup 0.3s ease both" }}>
+            <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: 6, marginBottom: 8 }}>
+              {[["Cena", "$14"], ["Vino", "$4"]].map(([label, amt]) => (
+                <div key={label} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 4px" }}>
+                  <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#34d399", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#06281c", fontWeight: 900 }}>✓</div>
+                  <span style={{ color: "white", fontSize: 10.5, flex: 1 }}>{label}</span>
+                  <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 10.5, fontFamily: "monospace" }}>{amt}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <span style={{ background: "#34d399", color: "#06281c", fontWeight: 700, fontSize: 11, borderRadius: 999, padding: "5px 14px" }}>{t("pay.pay")}</span>
+              <span style={{ background: "rgba(255,255,255,0.14)", color: "white", fontWeight: 600, fontSize: 11, borderRadius: 999, padding: "5px 14px" }}>{t("pay.method")}</span>
+            </div>
+          </div>
+        )}
+        {phase === 3 && (
+          <div style={{ animation: "ob-fadeup 0.3s ease both", background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: "7px 10px", display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "rgba(255,255,255,0.85)" }}>
+            ⏳ {t("onboard.demo.markedPaid")}
+          </div>
+        )}
+        {phase >= 4 && (
+          <div style={{ animation: "ob-pop 0.4s cubic-bezier(.34,1.56,.64,1) both", background: "rgba(52,211,153,0.18)", border: "1px solid rgba(52,211,153,0.4)", borderRadius: 10, padding: "8px 10px", display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: "#34d399" }}>
+            ✓ {t("onboard.demo.validated")}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -243,13 +316,24 @@ function Slide3Anim() {
   const items = [
     { name: "Pasta carbonara", price: "$14.50", who: [["S", "#7c3aed"]] },
     { name: "Pizza margherita", price: "$12.00", who: [["A", "#0891b2"]] },
+    { name: "Ensalada césar",  price: "$9.00",  who: [["S", "#7c3aed"]] },
     { name: "Vino tinto ×2",   price: "$22.00", who: [["S", "#7c3aed"], ["A", "#0891b2"], ["P", "#dc2626"]] },
+    { name: "Tiramisú",        price: "$8.00",  who: [["S", "#7c3aed"], ["A", "#0891b2"], ["P", "#dc2626"]] },
     { name: "Agua con gas",    price: "$4.50",  who: [["P", "#dc2626"]] },
   ] as const;
 
   const ava = (l: string, c: string, key: number) => (
     <div key={key} style={{ width: 16, height: 16, borderRadius: "50%", background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7.5, color: "white", fontWeight: 700, marginLeft: key > 0 ? -4 : 0, border: "1.5px solid rgba(0,0,0,0.25)" }}>{l}</div>
   );
+
+  // Moneda secundaria + detección automática (Pro): aparece un instante
+  // después del resultado, para no competir con la asignación por ítem.
+  const [showFx, setShowFx] = useState(false);
+  useEffect(() => {
+    if (phase < 2) { setShowFx(false); return; }
+    const timer = setTimeout(() => setShowFx(true), 1400);
+    return () => clearTimeout(timer);
+  }, [phase]);
 
   if (phase >= 2) {
     return (
@@ -259,7 +343,7 @@ function Slide3Anim() {
           <div style={{ color: "white", fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{t("onboard.demo.restaurant")}</div>
           <div style={{ marginBottom: 10 }}>
             {items.map((item, i) => (
-              <div key={item.name} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, animation: `ob-fadeup 0.3s ease ${i * 0.1 + 0.1}s both` }}>
+              <div key={item.name} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, animation: `ob-fadeup 0.3s ease ${i * 0.08 + 0.1}s both` }}>
                 <span style={{ color: "white", fontSize: 10, flex: 1, minWidth: 0 }}>{item.name}</span>
                 <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontFamily: "monospace" }}>{item.price}</span>
                 <div style={{ display: "flex", marginLeft: 4 }}>
@@ -268,7 +352,12 @@ function Slide3Anim() {
               </div>
             ))}
           </div>
-          <div style={{ color: "#34d399", fontWeight: 800, fontSize: 20, fontFamily: "monospace", marginBottom: 10 }}>$53.00</div>
+          <div style={{ color: "#34d399", fontWeight: 800, fontSize: 20, fontFamily: "monospace", marginBottom: 8 }}>$70.00</div>
+          {showFx && (
+            <div style={{ animation: "ob-fadeup 0.3s ease both", display: "flex", alignItems: "center", gap: 5, color: "rgba(255,255,255,0.55)", fontSize: 9.5, marginBottom: 10 }}>
+              💱 {t("onboard.demo.fxDetected")}
+            </div>
+          )}
           <div style={{ background: "rgba(52,211,153,0.18)", borderRadius: 8, padding: "6px 8px", textAlign: "center", color: "#34d399", fontSize: 11, fontWeight: 700 }}>
             {t("onboard.demo.addGroup")}
           </div>
@@ -290,7 +379,7 @@ function Slide3Anim() {
           </div>
         ))}
         <div style={{ borderTop: "1px dashed #bbb", paddingTop: 5, marginTop: 4, display: "flex", justifyContent: "space-between", color: "#111", fontWeight: 700, fontSize: 11, fontFamily: "monospace" }}>
-          <span>TOTAL</span><span>$53.00</span>
+          <span>TOTAL</span><span>$70.00</span>
         </div>
       </div>
       {phase === 1 && (
@@ -374,67 +463,6 @@ function Slide4Anim() {
   );
 }
 
-// ── Slide 5: Settle up — pay with details, mark paid, validate ────────────────
-function Slide5Anim() {
-  const t = useT();
-  const [phase, setPhase] = useState(0);
-  useEffect(() => {
-    const delays = [1800, 2000, 2600];
-    const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 1800);
-    return () => clearTimeout(timer);
-  }, [phase]);
-
-  const ava = (l: string, c: string) => (
-    <div style={{ width: 22, height: 22, borderRadius: "50%", background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "white", fontWeight: 700 }}>{l}</div>
-  );
-
-  return (
-    <div style={{ width: "100%", maxWidth: 290, margin: "0 auto" }}>
-      <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
-        <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 10, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>{t("onboard.demo.toSettle")}</div>
-
-        {/* Patrick pays Siena $18 */}
-        <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
-          {ava("P", "#dc2626")}
-          <b style={{ color: "white", fontSize: 12 }}>Patrick</b>
-          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 11 }}>{t("onboard.demo.paysTo")}</span>
-          {ava("S", "#0891b2")}
-          <b style={{ color: "white", fontSize: 12 }}>Siena</b>
-          <span style={{ marginLeft: "auto", fontFamily: "monospace", fontWeight: 800, color: "white", fontSize: 14 }}>$18</span>
-        </div>
-
-        {/* actions → states */}
-        {phase === 0 && (
-          <div style={{ animation: "ob-fadeup 0.3s ease both" }}>
-            <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: 6, marginBottom: 8 }}>
-              {[["Cena", "$14"], ["Vino", "$4"]].map(([label, amt]) => (
-                <div key={label} style={{ display: "flex", alignItems: "center", gap: 6, padding: "3px 4px" }}>
-                  <div style={{ width: 14, height: 14, borderRadius: "50%", background: "#34d399", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#06281c", fontWeight: 900 }}>✓</div>
-                  <span style={{ color: "white", fontSize: 10.5, flex: 1 }}>{label}</span>
-                  <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 10.5, fontFamily: "monospace" }}>{amt}</span>
-                </div>
-              ))}
-            </div>
-            <div style={{ display: "flex", gap: 6 }}>
-              <span style={{ background: "#34d399", color: "#06281c", fontWeight: 700, fontSize: 11, borderRadius: 999, padding: "5px 14px" }}>{t("pay.pay")}</span>
-              <span style={{ background: "rgba(255,255,255,0.14)", color: "white", fontWeight: 600, fontSize: 11, borderRadius: 999, padding: "5px 14px" }}>{t("pay.method")}</span>
-            </div>
-          </div>
-        )}
-        {phase === 1 && (
-          <div style={{ animation: "ob-fadeup 0.3s ease both", background: "rgba(255,255,255,0.1)", borderRadius: 10, padding: "7px 10px", display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "rgba(255,255,255,0.85)" }}>
-            ⏳ {t("onboard.demo.markedPaid")}
-          </div>
-        )}
-        {phase >= 2 && (
-          <div style={{ animation: "ob-pop 0.4s cubic-bezier(.34,1.56,.64,1) both", background: "rgba(52,211,153,0.18)", border: "1px solid rgba(52,211,153,0.4)", borderRadius: 10, padding: "8px 10px", display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: "#34d399" }}>
-            ✓ {t("onboard.demo.validated")}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // ── Slide 6: More features — staggered grid ──────────────────────────────────
 function Slide6Anim() {
@@ -515,12 +543,10 @@ function SlideTypeAnim() {
 const SLIDES = [
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #120d36 18%, #3d2fa0 100%)", Animation: Slide1Anim, titleKey: "onboard.s1t", descKey: "onboard.s1d" },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #082a28 18%, #0a7060 100%)", Animation: Slide2Anim, titleKey: "onboard.s2t", descKey: "onboard.s2d" },
-  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #3d0a2a 18%, #be185d 100%)", Animation: SlideSplitAnim, titleKey: "onboard.sSplitT", descKey: "onboard.sSplitD" },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #3d1005 18%, #c2410c 100%)", Animation: Slide3Anim, titleKey: "onboard.s3t", descKey: "onboard.s3d", ai: true },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #08153d 18%, #0369a1 100%)", Animation: Slide4Anim, titleKey: "onboard.s4t", descKey: "onboard.s4d", ai: true },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #2a0a3d 18%, #7c3aed 100%)", Animation: SlideTypeAnim, titleKey: "onboard.sTypeT", descKey: "onboard.sTypeD", ai: true },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #3d2905 18%, #b45309 100%)", Animation: SlideModeAnim, titleKey: "onboard.sModeT", descKey: "onboard.sModeD" },
-  { gradient: "linear-gradient(160deg, #0b0a1f 0%, #032014 18%, #059669 100%)", Animation: Slide5Anim, titleKey: "onboard.s5t", descKey: "onboard.s5d" },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #160836 18%, #6d28d9 100%)", Animation: Slide6Anim, titleKey: "onboard.s6t", descKey: "onboard.s6d" },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #061a33 18%, #0e7490 100%)", Animation: InstallDemoAnim, titleKey: "install.guideTitle", descKey: "install.guideDesc", guide: true },
 ];
