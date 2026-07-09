@@ -815,7 +815,6 @@ const DICT: Record<string, { es: string; en: string }> = {
   "trial.manageError":       { es: "Error al abrir el portal. Inténtalo de nuevo.", en: "Failed to open portal. Please try again." },
   "trial.noSubscription":    { es: "Plan activado por código — sin suscripción Stripe.", en: "Plan activated by code — no Stripe subscription." },
   "paywall.betaNote":        { es: "¿Tienes un código de acceso?", en: "Have an access code?" },
-  "paywall.webOnly":         { es: "Para suscribirte a Pro, entra a app.settlia.app desde un navegador. Aquí solo puedes canjear un código de acceso.", en: "To subscribe to Pro, open app.settlia.app in a web browser. Here you can only redeem an access code." },
   "paywall.priceNote":       { es: "Pro: $7/mes · $60/año (próximamente)", en: "Pro: $7/mo · $60/year (coming soon)" },
 
   "code.label":       { es: "Código de acceso", en: "Access code" },

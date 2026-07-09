@@ -8,9 +8,10 @@ const FEATURES = ["paywall.f1", "paywall.f2", "paywall.f3", "paywall.f4"];
 
 export function Paywall({ onClose, reason }: { onClose: () => void; reason?: string }) {
   const t = useT();
-  // Apple no permite ofrecer un checkout externo (Stripe) para desbloquear
-  // contenido digital dentro de la app nativa — en iOS/Android empaquetado
-  // solo se ve la sección de código de acceso, nunca el botón de pago.
+  // Apple prohíbe tanto el checkout externo como cualquier mención de cómo
+  // pagar fuera de la app (guideline 3.1.1) — en iOS/Android empaquetado no
+  // se muestra ni el botón de pago ni ningún texto al respecto, solo el
+  // canje de código de acceso.
   const native = isNativePlatform();
   const [billing, setBilling] = useState<"annual" | "monthly">("annual");
   const [code, setCode] = useState("");
@@ -118,12 +119,7 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
           </div>
         ) : (
           <>
-            {native ? (
-              // En iOS/Android empaquetado no se ofrece ningún checkout externo
-              // (Apple guideline 3.1.1) — solo se puede pasar a Pro con un
-              // código de acceso, o suscribiéndose desde la web.
-              <p className="text-xs text-center text-muted mb-4">{t("paywall.webOnly")}</p>
-            ) : (
+            {native ? null : (
               <>
                 {/* Billing toggle */}
                 <div className="flex rounded-2xl overflow-hidden mb-4" style={{ background: "var(--glass)" }}>
