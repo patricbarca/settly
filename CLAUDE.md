@@ -138,6 +138,12 @@ SettliA (brand styled **Settl·iA**, the "iA" highlighted = AI) is a PWA for spl
 - iOS home-screen PWAs cache aggressively — to force an update: force-quit twice, or delete+re-add, or clear Safari website data for the domain
 - CI deploys from `master` branch only (`.github/workflows/`)
 
+## iOS App Store / TestFlight status
+- **Codemagic → TestFlight pipeline works**: first build (`codemagic.yaml`, workflow `ios-testflight`) was pushed to `master`, built, and auto-submitted to TestFlight successfully (after debugging signing/provisioning in PRs #79–#84).
+- **iOS packaging blockers fixed** (PR #181): missing `Info.plist` usage-description keys (camera/mic/photo library — would've crashed on first use), default Capacitor placeholder icon/splash replaced with navy `#0D1B2A` + real logo (matches Android).
+- **Stripe hidden on native builds** (branch `claude/supabase-connection-status-21oiu1`, not yet merged to `master` as of 2026-07-09): Apple guideline 3.1.1 forbids an external payment checkout inside a native app. `Paywall.tsx`/`AccountModal.tsx` now gate the Stripe checkout/portal buttons behind `Capacitor.isNativePlatform()` (`src/lib/plan.ts`'s `isNativePlatform()`) — native shows only the access-code redemption path. **Must be merged to `master` before any build submitted for real App Store review**, since Codemagic only builds off `master`.
+- **Beta App Review rejected (Guideline 2.1(a), build 1.0/1, 2026-07-09)**: Apple couldn't sign in — the app only supports Google OAuth, email OTP (one-time code, no fixed password), and a non-persistent guest mode, so there's no way to give reviewers a fixed "User Name"/"Password" for the Beta App Review Information form in App Store Connect. **Not yet fixed.** Planned approach: add a hidden email+password sign-in path (Supabase supports `signInWithPassword` alongside OTP) for one seeded demo account with sample data, and enter those credentials in TestFlight → Test Information → Beta App Review Information.
+
 ## Pending / known issues
 > Plan completo y fases en **`ROADMAP.md`**.
 - **Receipt/proof images:** scanned receipts are now stored in **Supabase Storage** (private bucket `receipts`, `Expense.receiptPath`, signed URLs, member-only RLS — `src/lib/storage.ts`; run `migrate_v5_receipts_storage.sql`). Still pending: **payment proof** is still a **base64 data URL in the group JSON** (`settlement.proof`) — migrate it to Storage too + migrate legacy base64; and **show the receipt in the report** (embed thumbnail in the print PDF; CSV = yes/no, signed links expire). (ROADMAP Fase 1.)

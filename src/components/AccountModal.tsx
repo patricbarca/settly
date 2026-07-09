@@ -9,7 +9,7 @@ import { memberPays, payLink } from "../lib/pay";
 import { countryList, dialCode, isValidPhone, normalizePhone } from "../lib/countries";
 import { useT, useLang } from "../lib/i18n";
 import { useTimezonePref, setTimezone, resolveTz, TIMEZONES } from "../lib/tz";
-import { usePlan, FREE_AI_QUOTA, startPortal, useHasStripeSubscription } from "../lib/plan";
+import { usePlan, FREE_AI_QUOTA, startPortal, useHasStripeSubscription, isNativePlatform } from "../lib/plan";
 import { Icon } from "./Icon";
 import { Paywall } from "./Paywall";
 import { FeedbackModal } from "./FeedbackModal";
@@ -318,7 +318,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
               >
                 {t("pro.upgrade")}
               </button>
-            ) : hasStripe ? (
+            ) : hasStripe && !isNativePlatform() ? (
               <div className="flex flex-col items-end gap-1 shrink-0">
                 <button
                   onClick={handlePortal}

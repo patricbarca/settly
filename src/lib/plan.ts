@@ -10,7 +10,14 @@
 // The monthly AI quota stays client-side for now (good enough until the LLM
 // endpoint enforces it server-side).
 import { useSyncExternalStore } from "react";
+import { Capacitor } from "@capacitor/core";
 import { supabase } from "./supabase";
+
+/** Apple prohíbe ofrecer un pago/checkout externo (Stripe) para desbloquear
+ *  contenido digital DENTRO de la app nativa (guideline 3.1.1) — el Pro solo
+ *  se puede comprar por web o desbloquear con un código de acceso mientras
+ *  corre empaquetada en iOS/Android. */
+export const isNativePlatform = () => Capacitor.isNativePlatform();
 
 export type Plan = "free" | "pro";
 /** Tipos de uso de IA con cuota propia. */
