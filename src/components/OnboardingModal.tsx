@@ -519,7 +519,7 @@ const SLIDES = [
 ];
 
 // ── Main component ────────────────────────────────────────────────────────────
-export function OnboardingModal({ onDone }: { onDone: () => void }) {
+export function OnboardingModal({ onDone, canSkip = true }: { onDone: () => void; canSkip?: boolean }) {
   const t = useT();
   const [step, setStep] = useState(0);
   const touchStartX = useRef(0);
@@ -574,13 +574,15 @@ export function OnboardingModal({ onDone }: { onDone: () => void }) {
         <div className="w-full max-w-sm flex items-center justify-between px-7 pt-2 pb-4 shrink-0">
           <div className="flex gap-1.5">
             {SLIDES.map((_, i) => (
-              <button key={i} onClick={() => setStep(i)}
+              <button
+                key={i}
+                onClick={() => (canSkip || i <= step) && setStep(i)}
                 className="h-1.5 rounded-full transition-all duration-300"
                 style={{ width: i === step ? 28 : 8, background: i === step ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.25)" }}
               />
             ))}
           </div>
-          {!isLast && (
+          {!isLast && canSkip && (
             <button onClick={onDone} className="text-sm font-medium transition-colors" style={{ color: "rgba(255,255,255,0.5)" }}>
               {t("onboard.skip")}
             </button>

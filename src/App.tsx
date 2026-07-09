@@ -32,6 +32,9 @@ export default function App() {
   const group = useActiveGroup();
   const allGroups = useGroups();
   const [showOnboarding, setShowOnboarding] = useState(false);
+  // true = primera vez en la historia del usuario (no se puede saltar, hay
+  // que verlo completo); false = reabierto a mano con el botón "?" (libre).
+  const [onboardingForced, setOnboardingForced] = useState(false);
   const [showAccount, setShowAccount] = useState(false);
   const [showFaq, setShowFaq] = useState(false);
   const [showActivity, setShowActivity] = useState(false);
@@ -123,6 +126,7 @@ export default function App() {
     try {
       if (localStorage.getItem("settly.onboarded")) return;
     } catch {}
+    setOnboardingForced(true);
     setShowOnboarding(true);
   }, [phase]);
 
@@ -176,7 +180,7 @@ export default function App() {
             </button>
           )}
           <button
-            onClick={() => setShowOnboarding(true)}
+            onClick={() => { setOnboardingForced(false); setShowOnboarding(true); }}
             className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift"
             title={t("onboard.replay")}
           >
@@ -256,6 +260,7 @@ export default function App() {
 
       {showOnboarding && (
         <OnboardingModal
+          canSkip={!onboardingForced}
           onDone={() => {
             try { localStorage.setItem("settly.onboarded", "1"); } catch {}
             setShowOnboarding(false);
