@@ -175,6 +175,14 @@ export async function verifyOtp(email: string, token: string) {
   if (error) throw error;
 }
 
+/** Login por email+contraseña. Solo pensado para la cuenta demo de Apple
+ *  Beta App Review (necesitan un usuario/contraseña fijos; el resto de la
+ *  app usa OTP/OAuth, que no sirve para ese formulario). */
+export async function signInPassword(email: string, password: string) {
+  const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+  if (error) throw error;
+}
+
 /** Login OAuth: en la app nativa abre el navegador in-app y vuelve por el
  *  deep link (appUrlOpen la intercepta); en web es la redirección normal. */
 async function oauthSignIn(provider: "google" | "apple", queryParams?: Record<string, string>) {
