@@ -97,7 +97,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "onboard.sSplitT": { es: "Elige quién participa", en: "Choose who's in" },
   "onboard.sSplitD": { es: "Marca quién pagó (uno o varios) y entre quiénes se reparte. Partes iguales, porcentajes, montos exactos o partes — tú eliges.", en: "Mark who paid (one or several people) and who shares the cost. Equal parts, percentages, exact amounts, or shares — you choose." },
   "onboard.s3t": { es: "Escanea el ticket", en: "Scan the receipt" },
-  "onboard.s3d": { es: "Haz una foto al recibo. La IA lee cada artículo y genera el gasto automáticamente. Tú solo confirmas.", en: "Take a photo of the receipt. AI reads each item and creates the expense automatically. You just confirm." },
+  "onboard.s3d": { es: "Haz una foto al recibo. La IA lee cada artículo y arma el gasto. Después ajustas quién consumió cada ítem, para que cada uno pague justo lo suyo.", en: "Take a photo of the receipt. AI reads each item and builds the expense. Then you adjust who consumed each item, so everyone pays exactly for what they had." },
   "onboard.s4t": { es: "Solo habla", en: "Just speak" },
   "onboard.s4d": { es: "«Cena con Alexa y Patrick, pagué 90». Settlia lo entiende, crea el gasto y lo reparte. Sin tocar nada.", en: "«Dinner with Alexa and Patrick. I paid 90». Settlia understands, creates the expense, and splits it. Hands-free." },
   "onboard.sModeT": { es: "Simplificado o Directo", en: "Simplified or Direct" },
