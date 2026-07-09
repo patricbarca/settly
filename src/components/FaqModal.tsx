@@ -28,6 +28,7 @@ function useFaqSections(): { title: string; items: FaqItem[] }[] {
       items: [
         { q: t("faq.q.modes"), a: t("faq.a.modes") },
         { q: t("faq.q.markPaid"), a: t("faq.a.markPaid") },
+        { q: t("faq.q.simplifiedPayee"), a: t("faq.a.simplifiedPayee") },
         { q: t("faq.q.paidBadge"), a: t("faq.a.paidBadge") },
         { q: t("faq.q.log"), a: t("faq.a.log") },
       ],
