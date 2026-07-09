@@ -45,6 +45,27 @@ export function Home({ tab }: { tab: HomeTab }) {
     setShowPaywall(true);
   }
 
+  // Pestaña Amigos: pantalla propia con cabecera fija (igual que Actividad),
+  // en vez de scrollear junto con el resto del contenido de Grupos.
+  if (tab === "contacts") {
+    return (
+      <div
+        className="fixed inset-0 z-30 flex flex-col anim-up"
+        style={{ background: "var(--bg)", paddingTop: "env(safe-area-inset-top)" }}
+      >
+        <div className="max-w-2xl mx-auto w-full px-4 pt-5 flex-1 flex flex-col min-h-0">
+          <h2 className="font-display text-2xl font-bold mb-4 shrink-0">{t("nav.friends")}</h2>
+          <div
+            className="flex-1 overflow-y-auto"
+            style={{ paddingBottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 24px)" }}
+          >
+            <ContactsView />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const hasGroup = active.length > 0;
   const hasExpense = active.some((g) => g.expenses.length > 0);
   const hasSettlement = active.some((g) => (g.settlements ?? []).some((s) => s.status === "confirmed"));
@@ -110,12 +131,6 @@ export function Home({ tab }: { tab: HomeTab }) {
         </>
       )}
 
-      {tab === "contacts" ? (
-        <div className="pt-4">
-          <h2 className="font-display text-2xl font-bold mb-4">{t("nav.friends")}</h2>
-          <ContactsView />
-        </div>
-      ) : (
       <>
       {/* Getting started checklist — shows until all 3 steps done */}
       {!allDone && (
@@ -263,7 +278,6 @@ export function Home({ tab }: { tab: HomeTab }) {
         </div>
       )}
       </>
-      )}
 
       {creating && <CreateGroupModal onClose={() => setCreating(false)} />}
       {showPaywall && <Paywall reason={paywallReason} onClose={() => setShowPaywall(false)} />}
