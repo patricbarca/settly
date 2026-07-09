@@ -285,7 +285,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "members.addManual": { es: "Añadir sin cuenta", en: "Add without account" },
   "members.manualHint": { es: "No necesitan tener Settlia instalado. Separa varios nombres con coma.", en: "They don't need to have Settlia installed. Separate multiple names with a comma." },
   "members.backSearch": { es: "← Buscar por email/teléfono", en: "← Search by email/phone" },
-  "members.unclaimed": { es: "Sin cuenta vinculada", en: "No account linked yet" },
+  "members.unclaimed": { es: "Sin cuenta", en: "No account yet" },
   "members.claimLink": { es: "Copiar link para que vincule su cuenta", en: "Copy link for them to link their account" },
 
   "add.oneTime":       { es: "Gasto puntual", en: "One-time" },

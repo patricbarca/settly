@@ -194,12 +194,18 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
                   {memberInitials(m)}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">
-                    {m.name}
-                    {m.id === group.meId && <span className="text-muted text-xs ml-1">({t("members.you")})</span>}
+                  <div className="font-medium text-sm truncate flex items-center gap-1.5">
+                    <span className="truncate">{m.name}</span>
+                    {m.id === group.meId && <span className="text-muted text-xs shrink-0">({t("members.you")})</span>}
                   </div>
                   {m.claimed === false && (
-                    <div className="text-[11px] text-muted">{t("members.unclaimed")}</div>
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide mt-0.5"
+                      style={{ background: "rgba(232,146,12,0.15)", color: "var(--amber)" }}
+                    >
+                      <Icon name="clock" size={10} />
+                      {t("members.unclaimed")}
+                    </span>
                   )}
                 </div>
                 <div
