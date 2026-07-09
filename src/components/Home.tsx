@@ -112,6 +112,7 @@ export function Home({ tab }: { tab: HomeTab }) {
 
       {tab === "contacts" ? (
         <div className="pt-4">
+          <h2 className="font-display text-2xl font-bold mb-4">{t("nav.friends")}</h2>
           <ContactsView />
         </div>
       ) : (

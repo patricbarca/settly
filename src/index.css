@@ -89,6 +89,13 @@ body::before {
   pointer-events: none;
 }
 
+/* El splash de carga fuerza su propio fondo navy fijo (ver App.tsx) — la
+ * franja de arriba se apaga ahí para no mostrar un color del tema (blanco o
+ * gris) desentonando encima del navy. */
+body.splash-active::before {
+  display: none;
+}
+
 .font-display { font-family: 'Baloo 2', sans-serif; letter-spacing: -0.02em; }
 .font-mono { font-family: 'Baloo 2', sans-serif; }
 .text-muted { color: var(--muted); }
