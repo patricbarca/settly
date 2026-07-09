@@ -453,6 +453,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "pay.full": { es: "Total", en: "Full" },
   "pay.remaining": { es: "Quedará pendiente {amt}", en: "{amt} will remain" },
   "pay.whichExpenses": { es: "¿Qué gastos cubre este pago?", en: "Which expenses does this cover?" },
+  "pay.whichExpensesSimplified": { es: "Elige tus gastos pendientes a saldar", en: "Choose your pending expenses to settle" },
   "pay.selectedTotal": { es: "Total seleccionado", en: "Selected total" },
   "pay.attach": { es: "Adjuntar comprobante (opcional)", en: "Attach proof (optional)" },
   "pay.confirmPay": { es: "Marcar pagado", en: "Mark as paid" },
