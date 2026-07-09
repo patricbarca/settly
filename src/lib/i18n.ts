@@ -670,13 +670,21 @@ const DICT: Record<string, { es: string; en: string }> = {
   },
   "faq.q.markPaid": { es: "¿Cómo marco que pagué?", en: "How do I mark that I paid?" },
   "faq.a.markPaid": {
-    es: "En Balances, el botón \"Pagar\" abre el flujo para marcarlo — en modo Directo puedes elegir exactamente qué gastos cubre el pago. Queda pendiente hasta que la otra persona confirme que lo recibió; el botón \"Método de pago\" solo te muestra cómo cobra, sin registrar nada.",
-    en: "In Balances, the \"Pay\" button opens the mark-as-paid flow — in Direct mode you can pick exactly which expenses the payment covers. It stays pending until the other person confirms they received it; the \"Payment method\" button just shows you how they get paid, without recording anything.",
+    es: "En Balances, el botón \"Pagar\" abre el flujo para marcarlo. En ambos modos eliges qué gastos cubre el pago (en Directo, los que compartes con esa persona; en Simplificado, tus propios gastos pendientes, sin importar quién los pagó) — así el monto a pagar siempre es una suma exacta de gastos reales. Queda pendiente hasta que la otra persona confirme que lo recibió; el botón \"Método de pago\" solo te muestra cómo cobra, sin registrar nada.",
+    en: "In Balances, the \"Pay\" button opens the mark-as-paid flow. In both modes you pick which expenses the payment covers (in Direct, the ones you share with that person; in Simplified, your own pending expenses regardless of who paid them) — so the amount is always an exact sum of real expenses. It stays pending until the other person confirms they received it; the \"Payment method\" button just shows you how they get paid, without recording anything.",
   },
   "faq.q.paidBadge": { es: "¿Qué significa el badge \"Pagado\"/\"Pendiente\" en un gasto?", en: "What does the \"Paid\"/\"Pending\" badge on an expense mean?" },
   "faq.a.paidBadge": {
-    es: "Solo aparece en modo Directo. \"Pagado\" significa que todos los que debían ese gasto ya lo saldaron con un pago confirmado; \"Pendiente\" significa que a alguien todavía le falta pagarlo.",
-    en: "Only shows up in Direct mode. \"Paid\" means everyone who owed on that expense has settled it with a confirmed payment; \"Pending\" means someone still owes on it.",
+    es: "\"Pagado\" significa que todos los que debían ese gasto ya lo saldaron con un pago confirmado que lo referencia; \"Pendiente\" significa que a alguien todavía le falta pagarlo. Aparece en ambos modos.",
+    en: "\"Paid\" means everyone who owed on that expense has settled it with a confirmed payment that references it; \"Pending\" means someone still owes on it. Shows up in both modes.",
+  },
+  "faq.q.simplifiedPayee": {
+    es: "En Simplificado, si elijo qué gastos saldar, ¿a quién le llega la plata?",
+    en: "In Simplified mode, if I choose which expenses to settle, who actually gets the money?",
+  },
+  "faq.a.simplifiedPayee": {
+    es: "A la persona que Settle Up ya decidió, sin importar qué gastos elijas marcar. Ejemplo: Ana, Beto y Caro comparten Cena ($30, la pagó Beto), Taxi ($12, lo pagó Caro) y Super ($18, lo pagó Ana). Al calcular los saldos netos, Simplificado arma las transferencias mínimas: \"Caro paga a Beto $10\" y \"Ana paga a Beto $4\" — aunque el Taxi lo haya pagado Caro, no Beto. Si Ana elige saldar el Taxi ($6, gasto que en realidad le debía a Caro) para pagarle a Beto, el pago igual se registra como Ana→Beto: es solo para que el monto sea exacto, no un mapeo real de \"esta plata pagó este gasto\". Los saldos totales igual cuadran porque se ajustan por el neto de cada persona, no gasto por gasto. En Directo esto no pasa: ahí solo ves y saldas gastos que compartiste de verdad con esa persona.",
+    en: "Whoever Settle Up already decided on, regardless of which expenses you check off. Example: Ana, Beto and Caro share Dinner ($30, paid by Beto), Taxi ($12, paid by Caro) and Groceries ($18, paid by Ana). Netting out the balances, Simplified builds the fewest transfers: \"Caro pays Beto $10\" and \"Ana pays Beto $4\" — even though Beto never paid for the Taxi, Caro did. If Ana picks the Taxi ($6, an expense she actually owed to Caro) to settle her payment to Beto, it still gets recorded as Ana→Beto: that's just so the amount is exact, not a real mapping of \"this money paid for this expense.\" The totals still balance because everything nets out per person, not expense by expense. This doesn't happen in Direct mode: there you only see and settle expenses you actually shared with that specific person.",
   },
   "faq.q.log": { es: "¿Dónde veo el historial de pagos?", en: "Where can I see the payment history?" },
   "faq.a.log": {
