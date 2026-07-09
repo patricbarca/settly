@@ -293,6 +293,24 @@ export function ItemizedExpenseEditor({
         />
       </div>
 
+      <div>
+        <label className="text-xs font-semibold text-muted">{t("form.paid")}</label>
+        <select value={payerId} onChange={(e) => setPayerId(e.target.value)} className="glass rounded-xl px-3 py-2 text-sm w-full mt-1">
+          {members.map((m) => (
+            <option key={m.id} value={m.id}>{m.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="text-xs font-semibold text-muted">{t("form.category")}</label>
+        <select value={category} onChange={(e) => setCategory(e.target.value as Category)} className="glass rounded-xl px-3 py-2 text-sm w-full mt-1">
+          {CATEGORIES.map((c) => (
+            <option key={c.id} value={c.id}>{t(`cat.${c.id}`)}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="flex items-center justify-between gap-2">
         <div className="text-xs font-semibold text-muted">{t("scan.items")}</div>
         {canToggle && (
@@ -404,15 +422,6 @@ export function ItemizedExpenseEditor({
         )}
       </div>
 
-      <div>
-        <label className="text-xs font-semibold text-muted">{t("form.category")}</label>
-        <select value={category} onChange={(e) => setCategory(e.target.value as Category)} className="glass rounded-xl px-3 py-2 text-sm w-full mt-1">
-          {CATEGORIES.map((c) => (
-            <option key={c.id} value={c.id}>{t(`cat.${c.id}`)}</option>
-          ))}
-        </select>
-      </div>
-
       {category === "comida" && (
         <div className="glass rounded-3xl p-3 flex items-center justify-between">
           <div>
@@ -446,15 +455,6 @@ export function ItemizedExpenseEditor({
         <span className="font-mono font-bold text-lg">
           {showOriginal && canToggle ? money(originalTotal, originalCurrency) : money(total, group.currency)}
         </span>
-      </div>
-
-      <div>
-        <label className="text-xs font-semibold text-muted">{t("form.paid")}</label>
-        <select value={payerId} onChange={(e) => setPayerId(e.target.value)} className="glass rounded-xl px-3 py-2 text-sm w-full mt-1">
-          {members.map((m) => (
-            <option key={m.id} value={m.id}>{m.name}</option>
-          ))}
-        </select>
       </div>
 
       <div className="glass rounded-3xl p-3">
