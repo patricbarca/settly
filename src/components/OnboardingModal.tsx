@@ -241,27 +241,34 @@ function Slide3Anim() {
   }, [phase]);
 
   const items = [
-    { name: "Pasta carbonara", price: "$14.50" },
-    { name: "Pizza margherita", price: "$12.00" },
-    { name: "Vino tinto ×2",   price: "$22.00" },
-    { name: "Agua con gas",    price: "$4.50"  },
-  ];
+    { name: "Pasta carbonara", price: "$14.50", who: [["S", "#7c3aed"]] },
+    { name: "Pizza margherita", price: "$12.00", who: [["A", "#0891b2"]] },
+    { name: "Vino tinto ×2",   price: "$22.00", who: [["S", "#7c3aed"], ["A", "#0891b2"], ["P", "#dc2626"]] },
+    { name: "Agua con gas",    price: "$4.50",  who: [["P", "#dc2626"]] },
+  ] as const;
+
+  const ava = (l: string, c: string, key: number) => (
+    <div key={key} style={{ width: 16, height: 16, borderRadius: "50%", background: c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7.5, color: "white", fontWeight: 700, marginLeft: key > 0 ? -4 : 0, border: "1.5px solid rgba(0,0,0,0.25)" }}>{l}</div>
+  );
 
   if (phase >= 2) {
     return (
       <div style={{ width: "100%", maxWidth: 260, margin: "0 auto", animation: "ob-pop 0.5s cubic-bezier(.34,1.56,.64,1) both" }}>
         <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
           <div style={{ color: "rgba(255,255,255,0.5)", fontSize: 9, fontWeight: 600, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{t("onboard.demo.detected")}</div>
-          <div style={{ color: "white", fontWeight: 700, fontSize: 15, marginBottom: 2 }}>{t("onboard.demo.restaurant")}</div>
-          <div style={{ color: "#34d399", fontWeight: 800, fontSize: 24, fontFamily: "monospace", marginBottom: 10 }}>$53.00</div>
-          <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
-            {[[t("onboard.demo.you"),"$17.67","#7c3aed"],["Siena","$17.67","#0891b2"],["Alexa","$17.66","#dc2626"]].map(([n,a,c],i) => (
-              <div key={i} style={{ flex: 1, background: `${c}22`, border: `1px solid ${c}44`, borderRadius: 8, padding: "5px 4px", textAlign: "center", animation: `ob-fadeup 0.3s ease ${i * 0.1 + 0.1}s both` }}>
-                <div style={{ color: "white", fontSize: 9, fontWeight: 700 }}>{n}</div>
-                <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 9, fontFamily: "monospace" }}>{a}</div>
+          <div style={{ color: "white", fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{t("onboard.demo.restaurant")}</div>
+          <div style={{ marginBottom: 10 }}>
+            {items.map((item, i) => (
+              <div key={item.name} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 5, animation: `ob-fadeup 0.3s ease ${i * 0.1 + 0.1}s both` }}>
+                <span style={{ color: "white", fontSize: 10, flex: 1, minWidth: 0 }}>{item.name}</span>
+                <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 10, fontFamily: "monospace" }}>{item.price}</span>
+                <div style={{ display: "flex", marginLeft: 4 }}>
+                  {item.who.map(([l, c], wi) => ava(l, c, wi))}
+                </div>
               </div>
             ))}
           </div>
+          <div style={{ color: "#34d399", fontWeight: 800, fontSize: 20, fontFamily: "monospace", marginBottom: 10 }}>$53.00</div>
           <div style={{ background: "rgba(52,211,153,0.18)", borderRadius: 8, padding: "6px 8px", textAlign: "center", color: "#34d399", fontSize: 11, fontWeight: 700 }}>
             {t("onboard.demo.addGroup")}
           </div>
