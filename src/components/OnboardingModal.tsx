@@ -85,7 +85,7 @@ function Slide2Anim() {
   const t = useT();
   const [phase, setPhase] = useState(0);
   // 0: escribir nombre · 1: tocar Crear · 2-4: personas apareciendo · 5: link
-  const delays = [1500, 700, 650, 650, 650, 2200];
+  const delays = [1500, 1000, 950, 950, 950, 3200];
   useEffect(() => {
     const timer = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 900);
     return () => clearTimeout(timer);
@@ -187,7 +187,7 @@ function AiBadge() {
 function SlideModeAnim() {
   const t = useT();
   const [phase, setPhase] = useState(0);
-  const delays = [2200, 2200, 1800, 2000, 2600];
+  const delays = [3000, 3000, 2600, 2800, 3600];
   useEffect(() => {
     const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 1800);
     return () => clearTimeout(timer);
@@ -308,7 +308,7 @@ function Slide3Anim() {
   const t = useT();
   const [phase, setPhase] = useState(0);
   useEffect(() => {
-    const delays = [600, 2000, 3200, 2400];
+    const delays = [800, 2200, 4400, 3400];
     const timer = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 600);
     return () => clearTimeout(timer);
   }, [phase]);
@@ -425,7 +425,7 @@ function Slide4Anim() {
   const [typed, setTyped] = useState("");
 
   useEffect(() => {
-    const delays = [800, 2000, 2900, 2400];
+    const delays = [1000, 2400, 3600, 3200];
     const timer = setTimeout(() => setPhase(p => (p + 1) % delays.length), delays[phase] ?? 800);
     return () => clearTimeout(timer);
   }, [phase]);
@@ -523,7 +523,7 @@ function SlideTypeAnim() {
   const [phase, setPhase] = useState(0);
   const [typed, setTyped] = useState("");
   useEffect(() => {
-    const delays = [1800, 2000, 2600];
+    const delays = [2200, 2600, 3400];
     const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 700);
     return () => clearTimeout(timer);
   }, [phase]);
@@ -676,10 +676,18 @@ export function OnboardingModal({ onDone, canSkip = true }: { onDone: () => void
               <InstallGuide dark />
             </div>
           )}
-          <button onClick={next} className="w-full rounded-full py-4 font-bold text-base hover-lift"
-            style={{ background: "rgba(255,255,255,0.95)", color: "#120d36" }}>
-            {isLast ? t("onboard.start") : t("onboard.next")}
-          </button>
+          <div className="flex gap-2">
+            {step > 0 && (
+              <button onClick={prev} className="rounded-full py-4 px-6 font-bold text-base hover-lift"
+                style={{ background: "rgba(255,255,255,0.14)", color: "white" }}>
+                {t("onboard.back")}
+              </button>
+            )}
+            <button onClick={next} className="flex-1 rounded-full py-4 font-bold text-base hover-lift"
+              style={{ background: "rgba(255,255,255,0.95)", color: "#120d36" }}>
+              {isLast ? t("onboard.start") : t("onboard.next")}
+            </button>
+          </div>
         </div>
       </div>
     </>
