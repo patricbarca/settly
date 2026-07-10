@@ -428,15 +428,25 @@ function GroupCard({
               {t("home.meta", { p: g.members.length, amt: money(total, g.currency), e: g.expenses.length })}
             </div>
             <div className="flex flex-wrap gap-1 mt-2">
-              {g.members.slice(0, 5).map((m) => (
-                <span
-                  key={m.id}
-                  className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold border-2"
-                  style={{ background: personColor(m.name) + "33", borderColor: "var(--ring)" }}
-                >
-                  {memberInitials(m)}
-                </span>
-              ))}
+              {g.members.slice(0, 5).map((m) =>
+                m.avatar && /^(https?:|data:|blob:)/.test(m.avatar) ? (
+                  <img
+                    key={m.id}
+                    src={m.avatar}
+                    alt=""
+                    className="h-7 w-7 rounded-full object-cover border-2"
+                    style={{ borderColor: "var(--ring)" }}
+                  />
+                ) : (
+                  <span
+                    key={m.id}
+                    className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold border-2"
+                    style={{ background: personColor(m.name) + "33", borderColor: "var(--ring)" }}
+                  >
+                    {memberInitials(m)}
+                  </span>
+                )
+              )}
               {g.members.length > 5 && (
                 <span
                   className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold border-2 text-muted"

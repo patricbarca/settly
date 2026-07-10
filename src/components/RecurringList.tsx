@@ -7,6 +7,7 @@ import { parseExpense } from "../lib/parse";
 import { useSpeech } from "../lib/speech";
 import { useT, useLang } from "../lib/i18n";
 import { Icon } from "./Icon";
+import { MemberBubble } from "./MemberBubble";
 import { Overlay } from "./Overlay";
 import { ConfirmModal } from "./ConfirmModal";
 
@@ -217,12 +218,12 @@ export function RecurringList({ group }: { group: Group }) {
                     </div>
                     <div className="text-xs text-muted mt-0.5 flex items-center gap-1.5">
                       {payer && (
-                        <span
-                          className="h-4 w-4 rounded-full flex items-center justify-center text-[8px] font-bold"
-                          style={{ background: labels[payer.id].color + "22", color: labels[payer.id].color }}
-                        >
-                          {labels[payer.id].label}
-                        </span>
+                        <MemberBubble
+                          avatar={payer.avatar}
+                          label={labels[payer.id].label}
+                          color={labels[payer.id].color}
+                          size={16}
+                        />
                       )}
                       <span>{name(r.payerId)}</span>
                       <span>·</span>
@@ -235,18 +236,15 @@ export function RecurringList({ group }: { group: Group }) {
                     {participants.length > 0 && (
                       <div className="flex items-center flex-wrap gap-1 mt-1.5">
                         {participants.slice(0, 7).map((pid) => (
-                          <span
+                          <MemberBubble
                             key={pid}
                             title={name(pid)}
-                            className="h-5 w-5 rounded-full flex items-center justify-center text-[8px] font-semibold"
-                            style={{
-                              background: (labels[pid]?.color ?? "#888") + "22",
-                              color: labels[pid]?.color ?? "#888",
-                              boxShadow: "0 0 0 1.5px var(--surface)",
-                            }}
-                          >
-                            {labels[pid]?.label ?? "?"}
-                          </span>
+                            avatar={group.members.find((m) => m.id === pid)?.avatar}
+                            label={labels[pid]?.label ?? "?"}
+                            color={labels[pid]?.color}
+                            size={20}
+                            ring="0 0 0 1.5px var(--surface)"
+                          />
                         ))}
                         {participants.length > 7 && (
                           <span className="text-[10px] text-muted ml-0.5">+{participants.length - 7}</span>
