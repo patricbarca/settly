@@ -264,9 +264,10 @@ function SlideModeAnim() {
 function SlideSettleAnim() {
   const t = useT();
   const [phase, setPhase] = useState(0);
-  // Directo: 0 elegir · 1 marcado+total · 2 pagando · 3 verificado · 4 pagado
-  // Simplificado: 5 antes · 6 pagando · 7 después
-  const delays = [2400, 3000, 2200, 1600, 3000, 3000, 2400, 3400];
+  // Flujo de saldo (idéntico en Directo y Simplificado — la diferencia de modos
+  // se explica en su propio slide): 0 elegir gastos · 1 marcado + total ·
+  // 2 pagando · 3 verificado · 4 pagado.
+  const delays = [2400, 3000, 2200, 1600, 3000];
   useEffect(() => {
     const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 2000);
     return () => clearTimeout(timer);
@@ -286,19 +287,15 @@ function SlideSettleAnim() {
     </span>
   );
 
-  // ── Fases 0-4: modo Directo — elegir gastos (+ total), pagar, verificar y
-  // verlos pasar de Pendiente a Pagado ──
-  if (phase <= 4) {
-    const checking = phase >= 1; // se van tildando
-    const paying = phase === 2; // ⏳ esperando confirmación
-    const verifying = phase === 3; // ✓ verificado, un instante antes de Pagado
-    const settled = phase >= 4; // ya confirmado: Pendiente -> Pagado
-    return (
+  // Flujo de saldo: eliges qué gastos cubre el pago, pagas, se verifica y pasan
+  // de Pendiente a Pagado. Es el mismo flujo en Directo y Simplificado.
+  const checking = phase >= 1; // se van tildando
+  const paying = phase === 2; // ⏳ esperando confirmación
+  const verifying = phase === 3; // ✓ verificado, un instante antes de Pagado
+  const settled = phase >= 4; // ya confirmado: Pendiente -> Pagado
+  return (
       <div style={{ width: "100%", maxWidth: 290, margin: "0 auto" }}>
         <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
-          <div style={{ display: "inline-block", marginBottom: 10, borderRadius: 999, padding: "3px 10px", fontSize: 10, fontWeight: 800, background: "white", color: "#120d36" }}>
-            {t("hero.modeDirect")}
-          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
             {ava("P", "#dc2626")}
             <b style={{ color: "white", fontSize: 12 }}>Patrick</b>
@@ -367,53 +364,6 @@ function SlideSettleAnim() {
         </div>
       </div>
     );
-  }
-
-  // ── Fases 5-7: modo Simplificado — se asignan solos, del más antiguo al
-  // más nuevo, y el total pendiente baja ──
-  const paidCount = phase === 5 ? 0 : 2; // se cubren 2 de 3 con $18 (más antiguos primero)
-  const simItems = [
-    { label: t("onboard.demo.billWifi"), date: "Jul 1", amt: 12, paid: paidCount >= 1 },
-    { label: t("onboard.demo.billWater"), date: "Jul 3", amt: 6, paid: paidCount >= 2 },
-    { label: t("onboard.demo.billElec"), date: "Jul 8", amt: 20, paid: false },
-  ];
-  const remaining = simItems.filter((it) => !it.paid).reduce((s, it) => s + it.amt, 0);
-  return (
-    <div style={{ width: "100%", maxWidth: 290, margin: "0 auto" }}>
-      <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
-        <div style={{ display: "inline-block", marginBottom: 10, borderRadius: 999, padding: "3px 10px", fontSize: 10, fontWeight: 800, background: "white", color: "#120d36" }}>
-          {t("hero.modeSimplified")}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-          <span style={{ color: "rgba(255,255,255,0.55)", fontSize: 10.5 }}>{t("onboard.demo.totalOwed")}</span>
-          <span style={{ color: remaining > 0 ? "#f0b429" : "#34d399", fontWeight: 800, fontFamily: "monospace", fontSize: 16, transition: "color 0.3s" }}>
-            ${remaining}
-          </span>
-        </div>
-        <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: 6, marginBottom: 8 }}>
-          {simItems.map((it) => (
-            <div key={it.label} style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 4px", transition: "opacity 0.3s" }}>
-              <div
-                style={{
-                  width: 14, height: 14, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 900, transition: "background 0.3s",
-                  background: it.paid ? "#34d399" : "transparent", border: it.paid ? "none" : "1.5px solid rgba(255,255,255,0.4)", color: "#06281c",
-                }}
-              >
-                {it.paid && "✓"}
-              </div>
-              <span style={{ color: "white", fontSize: 10.5, flex: 1 }}>{it.label}</span>
-              <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 9.5, fontFamily: "monospace", marginRight: 4 }}>{it.date}</span>
-              <span style={{ color: "rgba(255,255,255,0.7)", fontSize: 10.5, fontFamily: "monospace" }}>${it.amt}</span>
-              {badge(it.paid)}
-            </div>
-          ))}
-        </div>
-        <div style={{ color: "rgba(255,255,255,0.6)", fontSize: 10.5, lineHeight: 1.4 }}>
-          {phase === 5 ? t("onboard.demo.simBefore") : phase === 6 ? t("onboard.demo.simPaying") : t("onboard.demo.simAfter")}
-        </div>
-      </div>
-    </div>
-  );
 }
 
 // ── Slide 3: Receipt scan ────────────────────────────────────────────────────
