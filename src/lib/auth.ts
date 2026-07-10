@@ -17,19 +17,20 @@ if (Capacitor.isNativePlatform()) {
   CapApp.addListener("appUrlOpen", async ({ url }) => {
     if (!url.startsWith(NATIVE_OAUTH_REDIRECT)) return;
     await Browser.close().catch(() => {});
-    // supabase-js espera SOLO el código de autorización, no la URL completa
-    // (lo manda tal cual como `auth_code` al servidor). El código puede venir
-    // en la query (?code=) o, según config, en el fragmento (#code=).
-    const code = /[?&#]code=([^&]+)/.exec(url)?.[1];
-    if (!code) {
-      // DIAGNÓSTICO TEMPORAL: mostrar en pantalla por qué no completa el login
-      // (no hay consola visible en TestFlight). Se quita al identificar la causa.
-      alert("Login · no llegó 'code' en la URL de retorno:\n" + url);
+    // Implicit flow (nativo): los tokens vuelven en el fragmento del deep link
+    // (#access_token=...&refresh_token=...). Los aplicamos con setSession.
+    const hash = url.includes("#") ? url.slice(url.indexOf("#") + 1) : "";
+    const params = new URLSearchParams(hash);
+    const access_token = params.get("access_token");
+    const refresh_token = params.get("refresh_token");
+    if (!access_token || !refresh_token) {
+      // DIAGNÓSTICO TEMPORAL (no hay consola visible en TestFlight).
+      alert("Login · no llegaron tokens en la URL de retorno:\n" + url);
       return;
     }
-    const { error } = await supabase.auth.exchangeCodeForSession(decodeURIComponent(code));
+    const { error } = await supabase.auth.setSession({ access_token, refresh_token });
     if (error) {
-      alert("Login · error al canjear el código:\n" + error.message);
+      alert("Login · error al crear la sesión:\n" + error.message);
     }
   });
 }
