@@ -13,6 +13,7 @@ workflows:
         XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
         BUNDLE_ID: "app.settlia.pwa"
+        APP_APPLE_ID: "6787267468"
     integrations:
       app_store_connect: codemagic_appstore
     triggering:
@@ -33,7 +34,11 @@ workflows:
       - name: Increment build number
         script: |
           cd $CM_BUILD_DIR/ios/App
-          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-app-store-build-number "$BUNDLE_ID")
+          # Usa el último build de TestFlight (no el de App Store, que está vacío
+          # hasta el primer lanzamiento público y devolvía 0 → build 1 → choque
+          # con el 1.1(1) ya subido). Toma el ID numérico de la app, no el bundle id.
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_APPLE_ID")
+          if [ -z "$LATEST_BUILD_NUMBER" ]; then LATEST_BUILD_NUMBER=0; fi
           agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
       - name: Build ipa for distribution
         script: |
