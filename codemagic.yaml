@@ -31,15 +31,16 @@ workflows:
         script: npx cap sync ios
       - name: Set up code signing settings on Xcode project
         script: xcode-project use-profiles
-      - name: Increment build number
+      - name: Set build number
         script: |
           cd $CM_BUILD_DIR/ios/App
-          # Usa el último build de TestFlight (no el de App Store, que está vacío
-          # hasta el primer lanzamiento público y devolvía 0 → build 1 → choque
-          # con el 1.1(1) ya subido). Toma el ID numérico de la app, no el bundle id.
-          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_APPLE_ID")
-          if [ -z "$LATEST_BUILD_NUMBER" ]; then LATEST_BUILD_NUMBER=0; fi
-          agvtool new-version -all $(($LATEST_BUILD_NUMBER + 1))
+          # Build number derivado del tiempo (minutos desde una época fija):
+          # siempre creciente, siempre único, y sin depender de
+          # get-latest-*-build-number, que devolvía valores erróneos (encontraba
+          # "1" aunque ya existiera el build 2) y provocaba colisiones 409 al
+          # reintentar el mismo número. Queda holgadamente por debajo de 2^32.
+          BUILD_NUM=$(( ($(date +%s) - 1780000000) / 60 ))
+          agvtool new-version -all $BUILD_NUM
       - name: Build ipa for distribution
         script: |
           xcode-project build-ipa \
