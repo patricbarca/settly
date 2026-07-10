@@ -24,14 +24,11 @@ if (Capacitor.isNativePlatform()) {
     const access_token = params.get("access_token");
     const refresh_token = params.get("refresh_token");
     if (!access_token || !refresh_token) {
-      // DIAGNÓSTICO TEMPORAL (no hay consola visible en TestFlight).
-      alert("Login · no llegaron tokens en la URL de retorno:\n" + url);
+      console.error("[auth] no tokens in callback url:", url);
       return;
     }
     const { error } = await supabase.auth.setSession({ access_token, refresh_token });
-    if (error) {
-      alert("Login · error al crear la sesión:\n" + error.message);
-    }
+    if (error) console.error("[auth] setSession:", error.message);
   });
 }
 

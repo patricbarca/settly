@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { Capacitor } from "@capacitor/core";
 import { useT } from "../lib/i18n";
 import { Logo } from "./Logo";
 import { InstallGuide } from "./InstallGuide";
@@ -680,7 +681,7 @@ function SlideTypeAnim() {
 // Todos los slides comparten el MISMO color arriba (#0b0a1f) para que la barra
 // de estado de iOS —que no se actualiza por slide— coincida siempre con el top.
 // El color característico de cada slide entra a partir del ~18%.
-const SLIDES = [
+const ALL_SLIDES = [
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #120d36 18%, #3d2fa0 100%)", Animation: Slide1Anim, titleKey: "onboard.s1t", descKey: "onboard.s1d" },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #082a28 18%, #0a7060 100%)", Animation: Slide2Anim, titleKey: "onboard.s2t", descKey: "onboard.s2d" },
   { gradient: "linear-gradient(160deg, #0b0a1f 0%, #3d1005 18%, #c2410c 100%)", Animation: Slide3Anim, titleKey: "onboard.s3t", descKey: "onboard.s3d", ai: true },
@@ -695,6 +696,8 @@ const SLIDES = [
 // ── Main component ────────────────────────────────────────────────────────────
 export function OnboardingModal({ onDone, canSkip = true }: { onDone: () => void; canSkip?: boolean }) {
   const t = useT();
+  // En la app nativa se omite el slide de "instalar app" (ya está instalada).
+  const SLIDES = ALL_SLIDES.filter((s) => !("guide" in s && s.guide && Capacitor.isNativePlatform()));
   const [step, setStep] = useState(0);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
