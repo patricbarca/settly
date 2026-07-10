@@ -17,9 +17,16 @@ if (Capacitor.isNativePlatform()) {
   CapApp.addListener("appUrlOpen", async ({ url }) => {
     if (!url.startsWith(NATIVE_OAUTH_REDIRECT)) return;
     await Browser.close().catch(() => {});
-    await supabase.auth.exchangeCodeForSession(url).catch((e) => {
-      console.error("[auth] exchangeCodeForSession:", e);
-    });
+    // supabase-js espera SOLO el código de autorización, no la URL completa
+    // (lo manda tal cual como `auth_code` al servidor). Pasarle la URL entera
+    // hacía que el canje fallara silenciosamente y el login no completara.
+    const code = /[?&]code=([^&]+)/.exec(url)?.[1];
+    if (!code) {
+      console.error("[auth] no auth code in callback url:", url);
+      return;
+    }
+    const { error } = await supabase.auth.exchangeCodeForSession(decodeURIComponent(code));
+    if (error) console.error("[auth] exchangeCodeForSession:", error.message);
   });
 }
 
