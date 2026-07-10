@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Capacitor } from "@capacitor/core";
 import { isStandalone } from "../lib/pwa";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -8,6 +9,9 @@ import { InstallGuide } from "./InstallGuide";
 export function InstallButton({ className }: { className?: string }) {
   const t = useT();
   const [show, setShow] = useState(false);
+
+  // En la app nativa (iOS/Android) ya está instalada — no aplica el flujo PWA.
+  if (Capacitor.isNativePlatform()) return null;
 
   // Ya instalada → nada que hacer.
   if (isStandalone()) return null;
