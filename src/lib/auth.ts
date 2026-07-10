@@ -18,15 +18,19 @@ if (Capacitor.isNativePlatform()) {
     if (!url.startsWith(NATIVE_OAUTH_REDIRECT)) return;
     await Browser.close().catch(() => {});
     // supabase-js espera SOLO el código de autorización, no la URL completa
-    // (lo manda tal cual como `auth_code` al servidor). Pasarle la URL entera
-    // hacía que el canje fallara silenciosamente y el login no completara.
-    const code = /[?&]code=([^&]+)/.exec(url)?.[1];
+    // (lo manda tal cual como `auth_code` al servidor). El código puede venir
+    // en la query (?code=) o, según config, en el fragmento (#code=).
+    const code = /[?&#]code=([^&]+)/.exec(url)?.[1];
     if (!code) {
-      console.error("[auth] no auth code in callback url:", url);
+      // DIAGNÓSTICO TEMPORAL: mostrar en pantalla por qué no completa el login
+      // (no hay consola visible en TestFlight). Se quita al identificar la causa.
+      alert("Login · no llegó 'code' en la URL de retorno:\n" + url);
       return;
     }
     const { error } = await supabase.auth.exchangeCodeForSession(decodeURIComponent(code));
-    if (error) console.error("[auth] exchangeCodeForSession:", error.message);
+    if (error) {
+      alert("Login · error al canjear el código:\n" + error.message);
+    }
   });
 }
 
