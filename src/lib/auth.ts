@@ -5,6 +5,7 @@ import { App as CapApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { supabase } from "./supabase";
 import { uid } from "./format";
+import { getLang } from "./i18n";
 import type { PayMethod } from "./types";
 
 // Deep link de retorno del login OAuth dentro de la app nativa (Capacitor).
@@ -213,7 +214,7 @@ export async function signInApple() {
 }
 
 export function signInGuest() {
-  const user: User = { id: "guest_" + uid(), name: "Invitado", avatar: "", provider: "guest" };
+  const user: User = { id: "guest_" + uid(), name: getLang() === "es" ? "Invitado" : "Guest", avatar: "", provider: "guest" };
   state = { phase: "guest", user };
   emit();
 }
