@@ -14,6 +14,7 @@ import { ConfirmModal } from "./ConfirmModal";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 import { ItemizedExpenseEditor, type ItemizedResult } from "./ItemizedExpenseEditor";
 import { ReceiptButton } from "./ReceiptButton";
+import { MemberBubble } from "./MemberBubble";
 import { RecurringList } from "./RecurringList";
 import { makeNotif } from "../lib/notifications";
 import { makeActivity } from "../lib/activity";
@@ -611,17 +612,14 @@ function ExpenseRow({
             <div className="text-[11px] text-muted leading-tight mt-0.5 flex items-center gap-1 flex-wrap">
               <span className="flex items-center gap-0.5 shrink-0">
                 {payerIds.slice(0, 5).map((id) => (
-                  <span
+                  <MemberBubble
                     key={id}
                     title={name(id)}
-                    className="h-4 w-4 rounded-full flex items-center justify-center text-[7px] font-semibold"
-                    style={{
-                      background: (labels[id]?.color ?? "#888") + "22",
-                      color: labels[id]?.color ?? "#888",
-                    }}
-                  >
-                    {labels[id]?.label ?? "?"}
-                  </span>
+                    avatar={group.members.find((m) => m.id === id)?.avatar}
+                    label={labels[id]?.label ?? "?"}
+                    color={labels[id]?.color}
+                    size={16}
+                  />
                 ))}
               </span>
               {participants.length > 0 && (
@@ -632,18 +630,15 @@ function ExpenseRow({
               {participants.length > 0 && (
                 <span className="flex items-center gap-0.5 shrink-0">
                   {participants.slice(0, 5).map((id) => (
-                    <span
+                    <MemberBubble
                       key={id}
                       title={bubblePaid(id) ? `${name(id)} · ${t("exp.paid")}` : name(id)}
-                      className="h-4 w-4 rounded-full flex items-center justify-center text-[7px] font-semibold"
-                      style={{
-                        background: (labels[id]?.color ?? "#888") + "22",
-                        color: labels[id]?.color ?? "#888",
-                        boxShadow: bubblePaid(id) ? "0 0 0 1.5px #0A8B5E" : undefined,
-                      }}
-                    >
-                      {labels[id]?.label ?? "?"}
-                    </span>
+                      avatar={group.members.find((m) => m.id === id)?.avatar}
+                      label={labels[id]?.label ?? "?"}
+                      color={labels[id]?.color}
+                      size={16}
+                      ring={bubblePaid(id) ? "0 0 0 1.5px #0A8B5E" : undefined}
+                    />
                   ))}
                   {participants.length > 5 && (
                     <span className="text-[10px] text-muted font-semibold">+{participants.length - 5}</span>
