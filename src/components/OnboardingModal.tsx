@@ -312,9 +312,9 @@ function SlideSettleAnim() {
           )}
           <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 10, padding: 6, marginBottom: 8 }}>
             {[
-              { label: "Wifi", date: "Jul 1", amt: "$12", picked: true },
-              { label: "Agua", date: "Jul 3", amt: "$6", picked: true },
-              { label: "Electricidad", date: "Jul 8", amt: "$20", picked: false },
+              { label: t("onboard.demo.billWifi"), date: "Jul 1", amt: "$12", picked: true },
+              { label: t("onboard.demo.billWater"), date: "Jul 3", amt: "$6", picked: true },
+              { label: t("onboard.demo.billElec"), date: "Jul 8", amt: "$20", picked: false },
             ].map((it, i) => {
               const on = checking && it.picked;
               return (
@@ -373,9 +373,9 @@ function SlideSettleAnim() {
   // más nuevo, y el total pendiente baja ──
   const paidCount = phase === 5 ? 0 : 2; // se cubren 2 de 3 con $18 (más antiguos primero)
   const simItems = [
-    { label: "Wifi", date: "Jul 1", amt: 12, paid: paidCount >= 1 },
-    { label: "Agua", date: "Jul 3", amt: 6, paid: paidCount >= 2 },
-    { label: "Electricidad", date: "Jul 8", amt: 20, paid: false },
+    { label: t("onboard.demo.billWifi"), date: "Jul 1", amt: 12, paid: paidCount >= 1 },
+    { label: t("onboard.demo.billWater"), date: "Jul 3", amt: 6, paid: paidCount >= 2 },
+    { label: t("onboard.demo.billElec"), date: "Jul 8", amt: 20, paid: false },
   ];
   const remaining = simItems.filter((it) => !it.paid).reduce((s, it) => s + it.amt, 0);
   return (
@@ -594,9 +594,23 @@ function Slide4Anim() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <div style={{ color: "white", fontWeight: 700, fontSize: 13 }}>{t("onboard.demo.voiceTitle")}</div>
-              <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 10 }}>{t("onboard.demo.voiceMeta")}</div>
+              <div style={{ color: "rgba(255,255,255,0.55)", fontSize: 10 }}>{t("onboard.demo.voiceSplit")}</div>
             </div>
             <div style={{ color: "#34d399", fontWeight: 800, fontSize: 18, fontFamily: "monospace" }}>$90</div>
+          </div>
+          {/* Reparto: $90 ÷ 3 = $30 c/u */}
+          <div style={{ marginTop: 8, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.12)", display: "flex", justifyContent: "space-around" }}>
+            {[
+              { l: t("onboard.demo.you"), a: "Y", c: "#0891b2" },
+              { l: "Alexa", a: "A", c: "#dc2626" },
+              { l: "Patrick", a: "P", c: "#7c3aed" },
+            ].map((p) => (
+              <div key={p.l} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                <div style={{ width: 22, height: 22, borderRadius: "50%", background: p.c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "white", fontWeight: 700 }}>{p.a}</div>
+                <span style={{ color: "rgba(255,255,255,0.75)", fontSize: 9 }}>{p.l}</span>
+                <span style={{ color: "white", fontWeight: 800, fontFamily: "monospace", fontSize: 11 }}>$30</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
