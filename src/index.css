@@ -96,6 +96,13 @@ body.splash-active::before {
   display: none;
 }
 
+/* Durante el splash, el propio <body> también va navy: en iOS el splash es
+ * `fixed inset-0` pero la franja del home-indicator (safe-area inferior) deja
+ * ver el fondo del body — si es claro, aparece una barra blanca abajo. */
+body.splash-active {
+  background: #0D1B2A !important;
+}
+
 .font-display { font-family: 'Baloo 2', sans-serif; letter-spacing: -0.02em; }
 .font-mono { font-family: 'Baloo 2', sans-serif; }
 .text-muted { color: var(--muted); }
