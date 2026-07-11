@@ -17,6 +17,7 @@ import { FaqModal } from "./components/FaqModal";
 import { NotificationsBell } from "./components/NotificationsBell";
 import { BottomNav, type NavKey } from "./components/BottomNav";
 import { countUnread } from "./lib/notifications";
+import { refreshNativePush } from "./lib/nativePush";
 import { FeedbackModal } from "./components/FeedbackModal";
 import { registerAppOpen, shouldShowFeedbackPrompt, markFeedbackPromptShown } from "./lib/feedbackPrompt";
 import { AdminDashboard } from "./components/AdminDashboard";
@@ -125,6 +126,12 @@ export default function App() {
       if (g) { addGroup(g); setActiveGroup(g.id); }
     });
   }
+
+  useEffect(() => {
+    // Refresca el token de push nativo al iniciar sesión (Apple puede rotarlo).
+    // No-op en web o si el usuario no lo activó.
+    if (phase === "authenticated") void refreshNativePush();
+  }, [phase]);
 
   useEffect(() => {
     // El onboarding se muestra una sola vez (flag persistente). Se puede
