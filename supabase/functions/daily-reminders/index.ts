@@ -62,6 +62,73 @@ if (VAPID_PUBLIC && VAPID_PRIVATE) {
   webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
 }
 
+// ---- Push NATIVO iOS (APNs) --------------------------------------------------
+// Mismo mecanismo que send-push: JWT ES256 firmado con la clave .p8 de Apple.
+const APNS_KEY_P8 = Deno.env.get("APNS_KEY_P8") ?? "";
+const APNS_KEY_ID = Deno.env.get("APNS_KEY_ID") ?? "";
+const APNS_TEAM_ID = Deno.env.get("APNS_TEAM_ID") ?? "";
+const APNS_BUNDLE_ID = Deno.env.get("APNS_BUNDLE_ID") ?? "app.settlia.pwa";
+const APNS_ENV = (Deno.env.get("APNS_ENV") ?? "production").trim();
+const apnsConfigured = !!(APNS_KEY_P8 && APNS_KEY_ID && APNS_TEAM_ID);
+
+function b64url(bytes: Uint8Array): string {
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+function pemToDer(pem: string): Uint8Array {
+  const b64 = pem.replace(/-----BEGIN[^-]+-----/, "").replace(/-----END[^-]+-----/, "").replace(/\s+/g, "");
+  const raw = atob(b64);
+  const der = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) der[i] = raw.charCodeAt(i);
+  return der;
+}
+let apnsJwtCache: { token: string; iat: number } | null = null;
+async function apnsJwt(): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+  if (apnsJwtCache && now - apnsJwtCache.iat < 3000) return apnsJwtCache.token;
+  const key = await crypto.subtle.importKey(
+    "pkcs8", pemToDer(APNS_KEY_P8), { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"],
+  );
+  const header = b64url(new TextEncoder().encode(JSON.stringify({ alg: "ES256", kid: APNS_KEY_ID })));
+  const payload = b64url(new TextEncoder().encode(JSON.stringify({ iss: APNS_TEAM_ID, iat: now })));
+  const sig = new Uint8Array(
+    await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, new TextEncoder().encode(`${header}.${payload}`)),
+  );
+  const token = `${header}.${payload}.${b64url(sig)}`;
+  apnsJwtCache = { token, iat: now };
+  return token;
+}
+async function sendApnsOne(
+  admin: ReturnType<typeof createClient>,
+  tk: string,
+  title: string,
+  body: string,
+  url: string,
+): Promise<boolean> {
+  if (!apnsConfigured) return false;
+  const host = APNS_ENV === "sandbox" ? "api.sandbox.push.apple.com" : "api.push.apple.com";
+  const jwt = await apnsJwt();
+  const payload = JSON.stringify({ aps: { alert: { title, body }, sound: "default" }, url });
+  try {
+    const res = await fetch(`https://${host}/3/device/${tk}`, {
+      method: "POST",
+      headers: {
+        authorization: `bearer ${jwt}`,
+        "apns-topic": APNS_BUNDLE_ID,
+        "apns-push-type": "alert",
+        "content-type": "application/json",
+      },
+      body: payload,
+    });
+    if (res.ok) return true;
+    if (res.status === 410 || res.status === 400) {
+      await admin.from("device_push_tokens").delete().eq("token", tk);
+    }
+  } catch (e) {
+    console.error("[apns] send error", e);
+  }
+  return false;
+}
+
 // ---- tipos mínimos (espejo de src/lib/types.ts) ----
 interface Member { id: string; name: string }
 interface Expense {
@@ -137,7 +204,9 @@ function buildBody(t: Target, lang: string): string {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
-    if (!VAPID_PRIVATE || !SERVICE_ROLE) return json({ error: "not_configured" }, 503);
+    if (!SERVICE_ROLE || (!VAPID_PRIVATE && !apnsConfigured)) {
+      return json({ error: "not_configured" }, 503);
+    }
     // Solo el cron (o quien tenga el secreto) puede dispararlo.
     const auth = (req.headers.get("Authorization") ?? "").replace("Bearer ", "").trim();
     if (!CRON_SECRET || auth !== CRON_SECRET) return json({ error: "unauthorized" }, 401);
@@ -238,7 +307,29 @@ Deno.serve(async (req) => {
       })
     );
 
-    return json({ sent, users: userIds.length });
+    // ---- Push NATIVO iOS (APNs) — mismos targets, mismo filtro de hora/semana.
+    let apnsSent = 0;
+    if (apnsConfigured) {
+      const { data: devices } = await admin
+        .from("device_push_tokens")
+        .select("token, user_id, lang, tz")
+        .eq("platform", "ios")
+        .in("user_id", userIds);
+      await Promise.all(
+        (devices ?? []).map(async (d: { token: string; user_id: string; lang?: string; tz?: string }) => {
+          const tgt = targets.get(d.user_id);
+          if (!tgt) return;
+          const tz = d.tz || "UTC";
+          if (!force && localHour(tz) !== REMINDER_HOUR) return;
+          if (!force && tgt.weekly && !isLocalMonday(tz)) return;
+          const body = buildBody(tgt, d.lang ?? "es");
+          const ok = await sendApnsOne(admin, d.token, "Settlia", body, APP_URL);
+          if (ok) apnsSent++;
+        })
+      );
+    }
+
+    return json({ sent: sent + apnsSent, web: sent, apns: apnsSent, users: userIds.length });
   } catch (e) {
     console.error(e);
     return json({ error: "internal" }, 500);
