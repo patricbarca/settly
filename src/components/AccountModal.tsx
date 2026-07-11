@@ -5,6 +5,7 @@ import { useAllGroups, updateMyMember } from "../lib/store";
 import { fileToAvatarDataUrl } from "../lib/image";
 import { personColor, memberInitials } from "../lib/format";
 import { enablePush, disablePush, isPushEnabled, pushSupported } from "../lib/push";
+import { enableNativePush, disableNativePush, isNativePushOn, nativePushSupported } from "../lib/nativePush";
 import { memberPays, payLink } from "../lib/pay";
 import { countryList, dialCode, isValidPhone, normalizePhone } from "../lib/countries";
 import { useT, useLang } from "../lib/i18n";
@@ -91,7 +92,9 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   };
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [pushOn, setPushOn] = useState(isPushEnabled());
+  // En la app nativa el push va por APNs/FCM (nativePush); en la web, Web Push.
+  const nativePush = nativePushSupported();
+  const [pushOn, setPushOn] = useState(nativePush ? isNativePushOn() : isPushEnabled());
   const [pushBusy, setPushBusy] = useState(false);
   const [pushMsg, setPushMsg] = useState("");
   const [delConfirm, setDelConfirm] = useState(false);
@@ -113,10 +116,11 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
     setPushBusy(true);
     setPushMsg("");
     if (pushOn) {
-      await disablePush();
+      if (nativePush) await disableNativePush();
+      else await disablePush();
       setPushOn(false);
     } else {
-      const r = await enablePush();
+      const r = nativePush ? await enableNativePush() : await enablePush();
       if (r === "ok") setPushOn(true);
       else if (r === "denied") setPushMsg(t("account.notifDenied"));
       else if (r === "unsupported") setPushMsg(t("account.notifUnsupported"));
@@ -434,7 +438,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
         </div>
 
         {/* Push notifications */}
-        {pushSupported() && (
+        {(nativePush || pushSupported()) && (
           <div className="mb-6">
             <label className="text-xs font-semibold text-muted">{t("account.notifications")}</label>
             <div className="glass rounded-xl p-3 mt-1 flex items-center justify-between gap-2">
