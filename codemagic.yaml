@@ -45,7 +45,12 @@ workflows:
         script: |
           xcode-project build-ipa \
             --project "$XCODE_PROJECT" \
-            --scheme "$XCODE_SCHEME"
+            --scheme "$XCODE_SCHEME" || {
+              echo "===== ARCHIVE FALLÓ — errores de xcodebuild ====="
+              grep -h -B1 -A4 -i "error:" /tmp/xcodebuild_logs/*.log 2>/dev/null | tail -150 || true
+              echo "===== fin de errores ====="
+              exit 1
+            }
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
