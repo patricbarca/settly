@@ -58,7 +58,8 @@ Return a JSON object with exactly these keys:
 {"label":"short title","amount":0,"currency":"XXX","payments":[{"memberId":"<member id>","amount":0}],"participantIds":["<member id>",...],"category":"<one allowed category>","interval":null}
 
 Rules:
-- amount: numeric TOTAL only (no currency symbol; use a dot for decimals).
+- amount: numeric TOTAL only (no currency symbol; use a dot for decimals). A number written as a PERCENTAGE (followed by "%", or clearly a share like "60 percent") is NEVER the amount — it describes how the cost or payment is split. The amount is the real money figure. Example: in "supermarket 45, I paid 60% and Ana 40%", the amount is 45 (NOT 60).
+- percentages for payers: if the note says who paid using percentages ("I paid 60%, Ana 40%", "yo el 60% y Ana el 40%"), convert each percentage to a money amount = percentage/100 × total, and put those in payments (they must still sum to the total).
 - currency: ISO 4217 code (3 letters) of the currency the amount is stated in. Detect words/symbols in the note (e.g. "dong"/"₫"→VND, "dollars"/"USD"/"$"→USD, "euros"/"€"→EUR, "pounds"/"£"→GBP, "yen"/"¥"→JPY, "pesos argentinos"→ARS). If the note does NOT mention a currency, or it matches the group's currency, use the group's currency shown above (${currency}). Never guess an exchange rate yourself — only report which currency the number is in.
 - PER-PERSON amounts: if the note states the amount PER PERSON ("X each", "X cada uno", "X c/u", "X por cabeza", "X por persona", "X apiece"), then the TOTAL amount = that number multiplied by the number of participantIds. Example: "Cinema 12 each" with 4 participants -> amount 48.
 - payments: who actually PAID and how much. One entry per payer; the amounts MUST sum to the total amount. If paid evenly between payers, divide the total. If unclear who paid, use a single entry: [{"memberId":"${meId}","amount":<total>}].
@@ -75,6 +76,7 @@ Examples (sample roster — a: Ana, b: Luis, c: Me; "me"=c; assume the group's c
 - "Netflix 15 mensual" -> {"label":"Netflix","amount":15,"currency":"USD","payments":[{"memberId":"c","amount":15}],"participantIds":["a","b","c"],"category":"servicios","interval":"monthly"}
 - "Cena 100 menos Luis" -> {"label":"Cena","amount":100,"currency":"USD","payments":[{"memberId":"c","amount":100}],"participantIds":["a","c"],"category":"comida","interval":null}
 - "Fideos 200000 dong" -> {"label":"Fideos","amount":200000,"currency":"VND","payments":[{"memberId":"c","amount":200000}],"participantIds":["a","b","c"],"category":"comida","interval":null}
+- "Súper 45, yo 60% y Ana 40%" -> {"label":"Súper","amount":45,"currency":"USD","payments":[{"memberId":"c","amount":27},{"memberId":"a","amount":18}],"participantIds":["a","b","c"],"category":"mercado","interval":null}
 - "¿qué tiempo hace?" -> {"label":"","amount":0,"currency":"USD","payments":[],"participantIds":[],"category":"otros","interval":null}`;
 
     const res = await fetch(API_URL, {

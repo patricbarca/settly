@@ -40,8 +40,11 @@ export function parseExpense(
 ): ParsedExpense {
   const t = " " + text.toLowerCase() + " ";
 
-  // Monto: el número más grande del texto.
-  const nums = (text.match(/\d+(?:[.,]\d+)?/g) || []).map((s) =>
+  // Monto: el número más grande del texto, IGNORANDO porcentajes (números
+  // seguidos de %, que son reparto — "60% / 40%" — no el importe). Sin esto,
+  // "supermarket 45, yo 60% el otro 40%" agarraba el 60 en vez del 45.
+  const noPct = text.replace(/\d+(?:[.,]\d+)?\s*%/g, " ");
+  const nums = (noPct.match(/\d+(?:[.,]\d+)?/g) || []).map((s) =>
     Number(s.replace(/\.(?=\d{3}\b)/g, "").replace(",", "."))
   );
   const amount = nums.length ? Math.max(...nums) : 0;
