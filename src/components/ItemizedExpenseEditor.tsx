@@ -105,6 +105,21 @@ export function ItemizedExpenseEditor({
   const [fees, setFees] = useState<Fee[]>(() =>
     (initial.fees ?? []).map((f) => ({ id: uid(), name: f.name, amount: f.amount, originalAmount: f.originalAmount }))
   );
+  // Modo del editor: "items" (por defecto, reparto por ítem/plato) o "total"
+  // (desactivar la itemización → un solo monto repartido en partes iguales; se
+  // guarda como gasto normal, sin items). El monto total se pre-rellena con la
+  // suma de los ítems al cambiar de modo.
+  const [mode, setMode] = useState<"items" | "total">("items");
+  const [totalAmount, setTotalAmount] = useState<number | string>("");
+  const [totalWho, setTotalWho] = useState<Set<string>>(new Set(allIds));
+  function toggleTotalWho(mid: string) {
+    setTotalWho((prev) => {
+      const next = new Set(prev);
+      if (next.has(mid)) next.delete(mid);
+      else next.add(mid);
+      return next;
+    });
+  }
 
   function toggle(itemId: string, mid: string) {
     setItems((arr) =>
@@ -217,7 +232,8 @@ export function ItemizedExpenseEditor({
   const itemsTotal = items.reduce((s, it) => s + (Number(it.price) || 0), 0);
   const feesTotal = fees.reduce((s, f) => s + (Number(f.amount) || 0), 0);
   const tipNum = Number(tip) || 0;
-  const total = r2(itemsTotal + feesTotal + tipNum);
+  const isTotalMode = mode === "total";
+  const total = isTotalMode ? r2(Number(totalAmount) || 0) : r2(itemsTotal + feesTotal + tipNum);
   const originalTotal = canToggle
     ? r2(
         items.reduce((s, it) => s + (Number(it.originalPrice ?? (Number(it.price) || 0) / fxRate!) || 0), 0) +
@@ -231,19 +247,28 @@ export function ItemizedExpenseEditor({
 
   const splits: Record<string, number> = {};
   allIds.forEach((id) => (splits[id] = 0));
-  items.forEach((it) => {
-    const who = [...it.who];
-    if (!who.length) return;
-    const per = (Number(it.price) || 0) / who.length;
-    who.forEach((id) => (splits[id] += per));
-  });
-  const itemParticipants = allIds.filter((id) => splits[id] > 0.001);
-  if (feesTotal > 0 && itemsTotal > 0) {
-    itemParticipants.forEach((id) => (splits[id] += feesTotal * (splits[id] / itemsTotal)));
-  }
-  if (tipNum > 0 && itemParticipants.length) {
-    const perTip = tipNum / itemParticipants.length;
-    itemParticipants.forEach((id) => (splits[id] += perTip));
+  if (isTotalMode) {
+    // Modo "solo total": reparto en partes iguales entre los seleccionados.
+    const who = [...totalWho];
+    if (who.length && total > 0) {
+      const per = total / who.length;
+      who.forEach((id) => (splits[id] += per));
+    }
+  } else {
+    items.forEach((it) => {
+      const who = [...it.who];
+      if (!who.length) return;
+      const per = (Number(it.price) || 0) / who.length;
+      who.forEach((id) => (splits[id] += per));
+    });
+    const itemParticipants = allIds.filter((id) => splits[id] > 0.001);
+    if (feesTotal > 0 && itemsTotal > 0) {
+      itemParticipants.forEach((id) => (splits[id] += feesTotal * (splits[id] / itemsTotal)));
+    }
+    if (tipNum > 0 && itemParticipants.length) {
+      const perTip = tipNum / itemParticipants.length;
+      itemParticipants.forEach((id) => (splits[id] += perTip));
+    }
   }
   const participants = allIds.filter((id) => splits[id] > 0.001);
 
@@ -258,22 +283,27 @@ export function ItemizedExpenseEditor({
       participantIds: participants,
       category,
       splits: rounded,
-      items: items
-        .filter((it) => (Number(it.price) || 0) > 0 || it.name.trim())
-        .map((it) => ({
-          name: it.name.trim(),
-          price: Number(it.price) || 0,
-          participantIds: [...it.who],
-          ...(it.originalPrice != null && it.originalPrice !== "" ? { originalPrice: Number(it.originalPrice) } : {}),
-        })),
-      fees: fees
-        .filter((f) => Math.abs(Number(f.amount) || 0) > 0.0001)
-        .map((f) => ({
-          name: f.name.trim(),
-          amount: Number(f.amount) || 0,
-          ...(f.originalAmount != null && f.originalAmount !== "" ? { originalAmount: Number(f.originalAmount) } : {}),
-        })),
-      tip: tipNum,
+      // En modo "solo total" no se guardan ítems/recargos/propina → gasto normal.
+      items: isTotalMode
+        ? []
+        : items
+            .filter((it) => (Number(it.price) || 0) > 0 || it.name.trim())
+            .map((it) => ({
+              name: it.name.trim(),
+              price: Number(it.price) || 0,
+              participantIds: [...it.who],
+              ...(it.originalPrice != null && it.originalPrice !== "" ? { originalPrice: Number(it.originalPrice) } : {}),
+            })),
+      fees: isTotalMode
+        ? []
+        : fees
+            .filter((f) => Math.abs(Number(f.amount) || 0) > 0.0001)
+            .map((f) => ({
+              name: f.name.trim(),
+              amount: Number(f.amount) || 0,
+              ...(f.originalAmount != null && f.originalAmount !== "" ? { originalAmount: Number(f.originalAmount) } : {}),
+            })),
+      tip: isTotalMode ? 0 : tipNum,
       allowEdits,
     });
   }
@@ -316,6 +346,65 @@ export function ItemizedExpenseEditor({
         </select>
       </div>
 
+      {/* Modo: reparto por ítem (por defecto) o desactivar itemización → un
+          solo monto repartido en partes iguales (se guarda como gasto normal) */}
+      <div className="flex rounded-2xl overflow-hidden glass p-0.5">
+        {(["items", "total"] as const).map((mo) => (
+          <button
+            key={mo}
+            onClick={() => {
+              if (mo === "total" && totalAmount === "") setTotalAmount(total ? String(total) : "");
+              setMode(mo);
+            }}
+            className="flex-1 py-2 text-sm font-semibold rounded-xl transition-all"
+            style={mode === mo ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : { color: "var(--muted)" }}
+          >
+            {t(mo === "items" ? "scan.byItems" : "scan.byTotal")}
+          </button>
+        ))}
+      </div>
+
+      {mode === "total" && (
+        <>
+          <div>
+            <label className="text-xs font-semibold text-muted">{t("scan.totalAmount")}</label>
+            <div className="glass rounded-xl px-3 py-2 flex items-center gap-1 mt-1">
+              <input
+                value={totalAmount}
+                onChange={(e) => setTotalAmount(e.target.value)}
+                inputMode="decimal"
+                placeholder="0"
+                className="bg-transparent text-sm flex-1 min-w-0 font-mono"
+              />
+              <span className="text-muted text-[11px]">{cur}</span>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-muted">{t("scan.splitAmong")}</label>
+            <div className="flex gap-1 flex-wrap mt-1">
+              {members.map((m) => {
+                const on = totalWho.has(m.id);
+                return (
+                  <button
+                    key={m.id}
+                    onClick={() => toggleTotalWho(m.id)}
+                    className={`rounded-full pl-0.5 pr-2.5 py-0.5 text-xs flex items-center gap-1 border ${on ? "surface" : "glass"}`}
+                    style={{ borderColor: on ? personColor(m.name) : "transparent", opacity: on ? 1 : 0.5 }}
+                  >
+                    <span className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-semibold" style={{ background: personColor(m.name) + "22" }}>
+                      {memberInitials(m)}
+                    </span>
+                    {m.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {mode === "items" && (
+        <>
       <div className="flex items-center justify-between gap-2">
         <div className="text-xs font-semibold text-muted">{t("scan.items")}</div>
         {canToggle && (
@@ -453,6 +542,8 @@ export function ItemizedExpenseEditor({
             {showOriginal && canToggle ? money(originalItemsTotal, originalCurrency) : money(itemsTotal, group.currency)}
           </span>
         </div>
+      )}
+        </>
       )}
 
       <div className="glass rounded-3xl p-3 flex items-center justify-between">
