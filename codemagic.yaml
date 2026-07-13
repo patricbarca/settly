@@ -16,12 +16,16 @@ workflows:
         APP_APPLE_ID: "6787267468"
     integrations:
       app_store_connect: codemagic_appstore
+    # Sin build automático: Codemagic solo construye cuando se lanza a mano
+    # (Start new build) o por API. Así los cambios web pueden ir a `master`
+    # (deploy de la PWA) sin generar un build de iOS. Para reactivar el build
+    # en cada push a master, pon `include: true`.
     triggering:
       events:
         - push
       branch_patterns:
         - pattern: master
-          include: true
+          include: false
     scripts:
       - name: Install npm dependencies
         script: npm install
