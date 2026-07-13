@@ -38,11 +38,14 @@ const PROMPT = `You are a receipt/document parser. Read this image (restaurant b
 {"description":"...","subtotal":0.00,"total":0.00,"category":"...","currency":"AUD","items":[{"name":"...","qty":1,"unitPrice":0.00,"price":0.00}],"fees":[{"name":"...","amount":0.00}],"tax":{"amount":0.00,"rate":0,"included":true}}
 
 Rules:
-- description: short label for the expense (e.g. "Dinner at Bunny Beans", "Electricity bill"). Max 60 chars.
+- description: short label for the expense (e.g. "Dinner at Bunny Beans", "Electricity bill", "Aldi groceries"). Max 60 chars.
 - items: ONE entry per LINE ITEM that has its OWN price printed in the price column.
+  - ALIGNMENT IS CRITICAL: read each row LEFT-TO-RIGHT as one line. The item name is on the left; its price is the RIGHTMOST money value on that SAME horizontal line. Supermarket receipts (Aldi, Coles, Woolworths…) leave a WIDE gap between the name and the price and list many rows — do NOT shift a price up or down to the wrong row. If two adjacent rows look swapped, re-check which price sits on which line.
+  - Do NOT emit the SUBTOTAL, TOTAL, AMOUNT, GST/TAX summary, change, or payment/card lines as items — those are totals, not line items.
   - qty: the quantity of that line. Detect it from "x 2", a leading "2 ...", or from "($X each)" vs the line total. Default 1.
   - unitPrice: price for a SINGLE unit if shown (e.g. "$6.80 each" / "($23.90 each)"). If not shown, use price/qty.
   - price: the LINE TOTAL printed on the right (for the whole quantity).
+  - SELF-CHECK: the sum of all item prices should equal the printed subtotal. If your extracted items don't add up to the subtotal, you misread a price or an alignment — fix it before answering.
   - CRITICAL: DO NOT create items for modifiers/options/sub-lines that are INCLUDED in an item's price and have NO price in the right price column — e.g. "Fresh Fruit", "Medium, Lacfree", "Scrambled", "Chorizo", "(... each)", size/extras. Ignore them, or append to the parent item's name. Only emit lines that carry a real price on the right.
   - For non-itemized receipts (utility/invoice) return [].
 - fees: extra charges added ON TOP of the items — surcharge, service charge, card/payment surcharge, delivery, weekend/public-holiday surcharge. Each {name, amount}. Do NOT put tax, tip, subtotal or total in fees.

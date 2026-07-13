@@ -30,6 +30,9 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
   const [scanError, setScanError] = useState(false);
   const [initial, setInitial] = useState<ItemizedInitial>({});
   const [tax, setTax] = useState<ScanTax | null>(null);
+  // Total impreso en el ticket (convertido a la moneda del grupo) para avisar
+  // si la suma de los ítems leídos no cuadra con él.
+  const [scannedTotal, setScannedTotal] = useState<number | undefined>(undefined);
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [fx, setFx] = useState<FxInfo | null>(null);
@@ -94,6 +97,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
       }
     }
     const conv = (n: number) => r2(n * rate);
+    setScannedTotal(res.total ? conv(res.total) : undefined);
 
     // Un "x24" ya NO se explota automáticamente en 24 líneas: queda como una
     // sola fila con `qty` adjunto (botón "Partir en N" en el editor, para
@@ -338,6 +342,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
               group={group}
               initial={initial}
               taxInfo={tax}
+              scannedTotal={scannedTotal}
               banner={scanError ? t("scan.error") : undefined}
               submitLabel={t("scan.save")}
               submitting={saving}
