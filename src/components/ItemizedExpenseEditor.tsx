@@ -60,6 +60,7 @@ export function ItemizedExpenseEditor({
   submitLabel,
   banner,
   taxInfo,
+  scannedTotal,
   submitting,
   onSubmit,
   onCancel,
@@ -69,6 +70,9 @@ export function ItemizedExpenseEditor({
   submitLabel: string;
   banner?: string;
   taxInfo?: ScanTax | null;
+  /** Total impreso en el ticket (en la moneda del grupo). Si la suma de los
+   *  ítems no cuadra con él, se avisa — así se detecta un escaneo mal leído. */
+  scannedTotal?: number;
   submitting?: boolean;
   onSubmit: (r: ItemizedResult) => void;
   onCancel: () => void;
@@ -544,6 +548,17 @@ export function ItemizedExpenseEditor({
         </div>
       )}
         </>
+      )}
+
+      {/* Descuadre: la suma de los ítems no coincide con el total impreso en
+          el ticket → probablemente el escaneo leyó mal un precio. */}
+      {!isTotalMode && scannedTotal != null && scannedTotal > 0 && Math.abs(total - scannedTotal) > 0.02 && (
+        <div
+          className="rounded-2xl px-4 py-3 text-xs"
+          style={{ background: "rgba(232,146,12,.12)", color: "var(--amber)", border: "1px solid rgba(232,146,12,.3)" }}
+        >
+          {t("scan.totalMismatch", { scanned: money(scannedTotal, group.currency), sum: money(total, group.currency) })}
+        </div>
       )}
 
       <div className="glass rounded-3xl p-3 flex items-center justify-between">
