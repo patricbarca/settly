@@ -68,9 +68,11 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ **Link de pago / split sin registro (estilo BillBoss)** — el amigo abre un enlace y ve su parte + datos de pago **sin instalar ni registrarse**. Hoy hay que crear cuenta para unirse a un grupo = fricción. Evaluar un flujo ligero de "pagar por link" para gastos puntuales.
 
 ## Fase 3 — Google Play (~25 USD único)
-- ⬜ Empaquetar **TWA** (Bubblewrap / PWABuilder) + `assetlinks.json`.
-- ⬜ Cuenta de desarrollador; **20 testers durante 14 días** (prueba cerrada) antes de producción.
-- ⬜ Política de privacidad, "Seguridad de los datos", clasificación de contenido, target API.
+- ✅ Empaquetado con **Capacitor** (no TWA) — `android/` scaffolded (mismo appId `app.settlia.pwa`), íconos/splash de marca, deep link `app.settlia.pwa://` para OAuth, firma release por Gradle properties. CI `.github/workflows/android-release.yml` (build `.aab` firmado) — **necesita 4 secrets** (`ANDROID_RELEASE_KEYSTORE_BASE64`, `ANDROID_RELEASE_STORE_PASSWORD`, `ANDROID_RELEASE_KEY_ALIAS=settlia`, `ANDROID_RELEASE_KEY_PASSWORD`).
+- ⬜ **Cuenta Google Play Console** ($25 único) + crear el app listing (capturas, feature graphic, política de privacidad, cuestionario de clasificación de contenido, "Seguridad de los datos", target API).
+- ⬜ **Primer `.aab` se sube a mano** (Play lo exige la primera vez); auto-publish vía service-account JSON queda como TODO comentado en el workflow.
+- ⬜ **20 testers durante 14 días** (prueba cerrada) antes de producción.
+- ⬜ `assetlinks.json` si se quiere verificación de dominio / app links.
 
 ## Fase 4 — App Store (~99 USD/año)
 - ✅ Empaquetar con **Capacitor** (WKWebView + plugins) — `ios/App` scaffolded, `codemagic.yaml` con workflow `ios-testflight` (build + auto-submit a TestFlight). Íconos/splash nativos reemplazados (placeholder de Capacitor → navy `#0D1B2A` + logo real); permisos `NSCameraUsageDescription`/`NSMicrophoneUsageDescription`/`NSPhotoLibraryUsageDescription` agregados a `Info.plist` (faltaban — hubieran causado crash/rechazo).
@@ -78,7 +80,12 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ Borrar cuenta in-app (Fase 0, ya implementado) + **App Privacy label** (cuestionario en App Store Connect), capturas de pantalla por tamaño de dispositivo, descripción/keywords — todo pendiente en App Store Connect.
 - ⬜ **Cuenta de Apple Developer Program** ($99/año) + registrar el app record en App Store Connect (`app.settlia.pwa`) + integración `codemagic_appstore` en Codemagic (API key de App Store Connect: Issuer ID + Key ID + .p8).
 - ⚠️ Cuidar guía 4.2 ("minimum functionality"): el push/offline/instalación ayudan.
-- ⚠️ Verificar si Web Push funciona de forma confiable dentro del WKWebView empaquetado (funciona en el PWA instalado vía Safari, pero el comportamiento dentro de la app nativa de Capacitor no está confirmado).
+- ✅ **Push en la app nativa** — resuelto con **APNs directo** (`@capacitor/push-notifications` + `device_push_tokens` + `send-push`/`daily-reminders` firmando JWT ES256 con la `.p8`). El Web Push no funciona en WKWebView; APNs es el canal nativo. Secrets `APNS_KEY_P8`/`APNS_KEY_ID`/`APNS_TEAM_ID` puestos; `daily-reminders` **pendiente de re-deploy manual** con el código APNs.
+- 🚀 **Enviado a App Store review (2026-07)** — build con push nativo subido, screenshots iPhone + iPad 13", App Privacy, Pricing (Free), cuenta demo `demo.review@settlia.app`. Esperando veredicto de Apple.
+
+### Pendientes técnicos / CI (anotados 2026-07)
+- 🔧 **Codemagic ya NO construye automáticamente en push a `master`** (`codemagic.yaml` → `branch_patterns include: false`). Solo build manual (Start new build) o por API. Motivo: poder desplegar cambios de la PWA a `master` sin generar builds de iOS mientras la app está en review. **Para reactivar el auto-build:** volver a poner `include: true`.
+- ⚠️ **No lanzar un build de iOS a Codemagic mientras la app siga "In Review"** (subiría un build nuevo a TestFlight; no rompe la review pero conviene esperar el veredicto).
 
 ## Fase 4.5 — Vault personal de gastos (idea a evaluar)
 > Inspirado en Easy Expense. Complementa el core de gastos grupales con un módulo **personal** para rastrear gastos individuales deducibles de impuestos. Especialmente relevante para Australia (año fiscal ATO: 1 jul → 30 jun).
