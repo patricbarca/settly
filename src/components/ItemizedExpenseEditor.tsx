@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Group, Category, ExpenseItem } from "../lib/types";
+import type { Group, Category, ExpenseItem, SplitMode } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
 import type { ScanTax } from "../lib/ai";
 import { uid, money, personColor, memberInitials, sortedMembers } from "../lib/format";
@@ -21,6 +21,24 @@ type Item = {
 type Fee = { id: string; name: string; amount: number | string; originalAmount?: number | string };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
+
+/** Inicializa los valores de reparto (%, importe o partes) para un modo, una
+ *  lista de participantes y un total dado. El resto va al último. */
+function initSplitVals(mode: SplitMode, ids: string[], total: number): Record<string, number> {
+  const n = ids.length;
+  const vals: Record<string, number> = {};
+  if (n === 0) return vals;
+  if (mode === "percent") {
+    const base = Math.floor(100 / n);
+    ids.forEach((id, i) => (vals[id] = base + (i === n - 1 ? 100 - base * n : 0)));
+  } else if (mode === "exact") {
+    const base = Math.floor((total / n) * 100) / 100;
+    ids.forEach((id, i) => (vals[id] = i === n - 1 ? r2(total - base * (n - 1)) : base));
+  } else if (mode === "shares") {
+    ids.forEach((id) => (vals[id] = 1));
+  }
+  return vals;
+}
 
 export type ItemizedResult = {
   label: string;
@@ -116,11 +134,48 @@ export function ItemizedExpenseEditor({
   const [mode, setMode] = useState<"items" | "total">("items");
   const [totalAmount, setTotalAmount] = useState<number | string>("");
   const [totalWho, setTotalWho] = useState<Set<string>>(new Set(allIds));
+  // Reparto del modo "total": = (partes iguales), % , importe exacto, ×partes.
+  const [splitMode, setSplitMode] = useState<SplitMode>("equal");
+  const [splitVals, setSplitVals] = useState<Record<string, number>>({});
+  // Lista ordenada (según el orden de miembros) de quién participa en el total.
+  const totalWhoIds = members.map((m) => m.id).filter((id) => totalWho.has(id));
+
+  function reinitSplit(mode: SplitMode, whoIds: string[], amt: number) {
+    setSplitVals(mode === "equal" ? {} : initSplitVals(mode, whoIds, amt));
+  }
+  function changeSplitMode(mode: SplitMode) {
+    setSplitMode(mode);
+    reinitSplit(mode, totalWhoIds, r2(Number(totalAmount) || 0));
+  }
   function toggleTotalWho(mid: string) {
     setTotalWho((prev) => {
       const next = new Set(prev);
       if (next.has(mid)) next.delete(mid);
       else next.add(mid);
+      const whoIds = members.map((m) => m.id).filter((id) => next.has(id));
+      if (splitMode !== "equal") reinitSplit(splitMode, whoIds, r2(Number(totalAmount) || 0));
+      return next;
+    });
+  }
+  function onTotalAmountChange(raw: string) {
+    setTotalAmount(raw);
+    if (splitMode === "exact" || splitMode === "percent") {
+      reinitSplit(splitMode, totalWhoIds, r2(Number(raw) || 0));
+    }
+  }
+  // Edita un valor de reparto; en % / importe autocompleta el último con el resto.
+  function setSplitVal(id: string, val: number) {
+    setSplitVals((prev) => {
+      const next = { ...prev, [id]: val };
+      if ((splitMode === "exact" || splitMode === "percent") && totalWhoIds.length >= 2) {
+        const lastId = totalWhoIds[totalWhoIds.length - 1];
+        if (id !== lastId) {
+          const cap = splitMode === "percent" ? 100 : r2(Number(totalAmount) || 0);
+          const others = totalWhoIds.filter((x) => x !== lastId).reduce((a, x) => a + (Number(next[x]) || 0), 0);
+          const rem = r2(cap - others);
+          next[lastId] = rem > 0 ? rem : 0;
+        }
+      }
       return next;
     });
   }
@@ -252,11 +307,20 @@ export function ItemizedExpenseEditor({
   const splits: Record<string, number> = {};
   allIds.forEach((id) => (splits[id] = 0));
   if (isTotalMode) {
-    // Modo "solo total": reparto en partes iguales entre los seleccionados.
-    const who = [...totalWho];
+    // Modo "solo total": reparto entre los seleccionados según splitMode.
+    const who = totalWhoIds;
     if (who.length && total > 0) {
-      const per = total / who.length;
-      who.forEach((id) => (splits[id] += per));
+      if (splitMode === "equal") {
+        const per = total / who.length;
+        who.forEach((id) => (splits[id] += per));
+      } else if (splitMode === "percent") {
+        who.forEach((id) => (splits[id] += ((Number(splitVals[id]) || 0) / 100) * total));
+      } else if (splitMode === "exact") {
+        who.forEach((id) => (splits[id] += Number(splitVals[id]) || 0));
+      } else if (splitMode === "shares") {
+        const ts = who.reduce((a, id) => a + (Number(splitVals[id]) || 0), 0);
+        if (ts > 0) who.forEach((id) => (splits[id] += ((Number(splitVals[id]) || 0) / ts) * total));
+      }
     }
   } else {
     items.forEach((it) => {
@@ -276,8 +340,24 @@ export function ItemizedExpenseEditor({
   }
   const participants = allIds.filter((id) => splits[id] > 0.001);
 
+  // Validez del reparto en modo total con % / importe exacto: la suma debe
+  // cuadrar (100% o el total). En = y × siempre es válido si hay participantes.
+  let totalSplitValid = true;
+  let totalSplitHint: string | null = null;
+  if (isTotalMode && (splitMode === "percent" || splitMode === "exact") && totalWhoIds.length > 0) {
+    const sum = totalWhoIds.reduce((a, id) => a + (Number(splitVals[id]) || 0), 0);
+    if (splitMode === "percent") {
+      totalSplitValid = Math.abs(sum - 100) < 0.5;
+      totalSplitHint = `${sum.toFixed(1)}% / 100%`;
+    } else {
+      totalSplitValid = Math.abs(sum - total) < 0.02;
+      totalSplitHint = `${money(sum, group.currency)} / ${money(total, group.currency)}`;
+    }
+  }
+  const canSubmit = total > 0 && participants.length > 0 && totalSplitValid;
+
   function submit() {
-    if (total <= 0 || participants.length === 0) return;
+    if (!canSubmit) return;
     const rounded: Record<string, number> = {};
     allIds.forEach((id) => (rounded[id] = r2(splits[id])));
     onSubmit({
@@ -375,7 +455,7 @@ export function ItemizedExpenseEditor({
             <div className="glass rounded-xl px-3 py-2 flex items-center gap-1 mt-1">
               <input
                 value={totalAmount}
-                onChange={(e) => setTotalAmount(e.target.value)}
+                onChange={(e) => onTotalAmountChange(e.target.value)}
                 inputMode="decimal"
                 placeholder="0"
                 className="bg-transparent text-sm flex-1 min-w-0 font-mono"
@@ -384,7 +464,26 @@ export function ItemizedExpenseEditor({
             </div>
           </div>
           <div>
-            <label className="text-xs font-semibold text-muted">{t("scan.splitAmong")}</label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-muted">{t("scan.splitAmong")}</label>
+              <div className="flex gap-0.5">
+                {([
+                  { m: "equal", l: "=" },
+                  { m: "percent", l: "%" },
+                  { m: "exact", l: cur },
+                  { m: "shares", l: "×" },
+                ] as const).map(({ m, l }) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => changeSplitMode(m)}
+                    className={`px-2 py-0.5 text-xs rounded ${splitMode === m ? "surface font-bold" : "glass text-muted"}`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="flex gap-1 flex-wrap mt-1">
               {members.map((m) => {
                 const on = totalWho.has(m.id);
@@ -403,6 +502,39 @@ export function ItemizedExpenseEditor({
                 );
               })}
             </div>
+            {/* Inputs de valor por participante (solo % / importe / partes) */}
+            {splitMode !== "equal" && totalWhoIds.length > 0 && (
+              <div className="mt-2 space-y-1">
+                {totalWhoIds.map((id) => {
+                  const m = group.members.find((x) => x.id === id);
+                  if (!m) return null;
+                  const val = splitVals[id] ?? 0;
+                  const ts = totalWhoIds.reduce((a, x) => a + (Number(splitVals[x]) || 0), 0);
+                  const implied = splitMode === "shares" && ts > 0 ? (val / ts) * total : null;
+                  return (
+                    <div key={id} className="flex items-center gap-2">
+                      <span className="text-sm flex-1 min-w-0 truncate">{m.name}</span>
+                      {implied !== null && <span className="text-xs text-muted font-mono">{money(implied, group.currency)}</span>}
+                      <div className="glass rounded-lg px-2 py-1 flex items-center gap-1 w-24 shrink-0">
+                        <input
+                          value={val === 0 ? "" : val}
+                          onChange={(e) => setSplitVal(id, Number(e.target.value) || 0)}
+                          inputMode="decimal"
+                          placeholder="0"
+                          className="bg-transparent text-sm w-full text-right font-mono"
+                        />
+                        <span className="text-muted text-xs">{splitMode === "percent" ? "%" : splitMode === "shares" ? "×" : cur}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+                {totalSplitHint && (
+                  <div className={`text-xs mt-0.5 ${totalSplitValid ? "text-green-600" : "text-red-500"}`}>
+                    {totalSplitValid ? `✓ ${totalSplitHint}` : totalSplitHint}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}
@@ -617,7 +749,7 @@ export function ItemizedExpenseEditor({
       </button>
 
       <div className="flex gap-2">
-        <button onClick={submit} disabled={submitting} className="glass-strong rounded-full px-5 py-2.5 font-medium hover-lift disabled:opacity-50">
+        <button onClick={submit} disabled={submitting || !canSubmit} className="glass-strong rounded-full px-5 py-2.5 font-medium hover-lift disabled:opacity-50">
           {submitting ? t("scan.saving") : submitLabel}
         </button>
         <button onClick={onCancel} className="glass rounded-full px-5 py-2.5 text-muted hover-lift">{t("common.cancel")}</button>
