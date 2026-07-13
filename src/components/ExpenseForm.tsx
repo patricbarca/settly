@@ -54,19 +54,22 @@ function initSplitValues(
 /** Convert a draft to final expense fields */
 export function draftToExpenseFields(d: ExpenseDraft): {
   payerId: string;
-  payments?: { memberId: string; amount: number }[];
+  // `null` (no `undefined`) cuando NO hay multi-pago, para que el patch al
+  // servidor incluya la clave y limpie los pagadores anteriores (un `undefined`
+  // se pierde en JSON.stringify y el merge JSONB conservaría el valor viejo).
+  payments: { memberId: string; amount: number }[] | null;
   splits: Record<string, number> | null;
 } {
   const totalAmt = Number(d.amount) || 0;
 
   // Payments
   let payerId = d.payerId;
-  let payments: { memberId: string; amount: number }[] | undefined;
+  let payments: { memberId: string; amount: number }[] | null = null;
   if (d.multiPay) {
     const arr = Object.entries(d.payments)
       .filter(([, amt]) => amt > 0)
       .map(([memberId, amount]) => ({ memberId, amount }));
-    payments = arr.length ? arr : undefined;
+    payments = arr.length ? arr : null;
     if (arr.length > 0) {
       // primary payer = who paid most
       const top = arr.reduce((a, b) => (b.amount > a.amount ? b : a));
@@ -168,9 +171,26 @@ export function ExpenseForm({
     });
   }
 
-  // Update a single splitValue
+  // Update a single splitValue. En modos "exact"/"percent", al editar a
+  // cualquiera que NO sea el último participante, el último se autocompleta con
+  // el resto (total − suma de los demás), para no tener que calcularlo a mano.
+  // Editar directamente el último lo respeta (permite sobrescribir).
   function setSplitValue(id: string, val: number) {
-    setF((s) => ({ ...s, splitValues: { ...s.splitValues, [id]: val } }));
+    setF((s) => {
+      const next = { ...s.splitValues, [id]: val };
+      if ((s.splitMode === "exact" || s.splitMode === "percent") && s.participantIds.length >= 2) {
+        const lastId = s.participantIds[s.participantIds.length - 1];
+        if (id !== lastId) {
+          const total = s.splitMode === "percent" ? 100 : Number(s.amount) || 0;
+          const others = s.participantIds
+            .filter((x) => x !== lastId)
+            .reduce((a, x) => a + (Number(next[x]) || 0), 0);
+          const rem = Math.round((total - others) * 100) / 100;
+          next[lastId] = rem > 0 ? rem : 0;
+        }
+      }
+      return { ...s, splitValues: next };
+    });
   }
 
   // Update a payment amount

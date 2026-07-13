@@ -23,7 +23,7 @@ export interface RecurringExpense {
   label: string;
   amount: number;
   payerId: string;
-  payments?: { memberId: string; amount: number }[];
+  payments?: { memberId: string; amount: number }[] | null;
   participantIds: string[];
   splits?: Record<string, number> | null;
   category: Category;
@@ -71,8 +71,8 @@ export interface Expense {
   note?: string;
   /** custom split memberId -> amount; null/undefined = partes iguales */
   splits?: Record<string, number> | null;
-  /** multiple payers: who paid how much */
-  payments?: { memberId: string; amount: number }[];
+  /** multiple payers: who paid how much (null en un patch = limpiar) */
+  payments?: { memberId: string; amount: number }[] | null;
   reviewRequested?: boolean;
   /** se pidió borrar el gasto; espera la aprobación del creador. */
   deleteRequested?: boolean;
