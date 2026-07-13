@@ -1,7 +1,7 @@
 # Settly — Claude Context
 
 ## What this app is
-SettliA (brand styled **Settl·iA**, the "iA" highlighted = AI) is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScript + Tailwind CSS v4. Deployed via GitHub Actions to GitHub Pages on the custom domain **`app.settlia.app`** (Vite `base: "/"`). The marketing landing is **`settlia.app`**.
+Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's just **Settlia** everywhere now) is a PWA for splitting group expenses. Stack: React 18 + Vite 6 + TypeScript + Tailwind CSS v4. Deployed via GitHub Actions to GitHub Pages on the custom domain **`app.settlia.app`** (Vite `base: "/"`). The marketing landing is **`settlia.app`**.
 
 > **Rebrand history:** was "Settly", briefly "Cow.ai", now **SettliA** with Settly's original colors/logo (teal `#0FA3A3` / indigo `#5B5BF0`, two-circle+check mark). The pre-rebrand state is preserved on the `settly-original` branch of both repos.
 
