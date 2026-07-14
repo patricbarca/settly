@@ -35,7 +35,14 @@ export function ReceiptButton({ path }: { path: string }) {
       </button>
       {open && (
         <Overlay onClose={() => setOpen(false)}>
-          <div className="anim-pop max-w-lg w-full" onClick={(e) => e.stopPropagation()}>
+          <div className="anim-pop max-w-lg w-full relative" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setOpen(false)}
+              aria-label={t("common.close")}
+              className="absolute -top-2 -right-2 z-10 glass-strong rounded-full h-9 w-9 flex items-center justify-center hover-lift shadow-lg"
+            >
+              <Icon name="close" size={16} />
+            </button>
             {loading && <div className="glass-strong rounded-3xl p-8 text-center text-muted">…</div>}
             {error && <div className="glass-strong rounded-3xl p-8 text-center text-muted">{t("exp.receiptError")}</div>}
             {url && <img src={url} alt="" className="w-full rounded-3xl" />}
