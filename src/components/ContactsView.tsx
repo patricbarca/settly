@@ -1,21 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
 import { getNetwork, type Contact } from "../lib/contacts";
 import { useHiddenContacts } from "../lib/hiddenContacts";
-import { personColor, initials } from "../lib/format";
+import { personColor, initials, money } from "../lib/format";
 import { useT } from "../lib/i18n";
+import { usePlan } from "../lib/plan";
+import { useFriends, type Friend } from "../lib/friends";
 import { Icon } from "./Icon";
+import { SettleFriendModal } from "./SettleFriendModal";
+import { Paywall } from "./Paywall";
 
 // Pestaña "Contacts": personas con las que has interactuado en algún grupo (tu
 // red). Puedes ocultar las que no quieras ver (filtro local reversible) sin
 // perder la opción de volver a añadirlas a un grupo (restauras o buscas por email).
 export function ContactsView() {
   const t = useT();
+  const plan = usePlan();
   const { hidden, hide, unhide } = useHiddenContacts();
+  const { friends } = useFriends();
   const [network, setNetwork] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [showHidden, setShowHidden] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [settleFriend, setSettleFriend] = useState<Friend | null>(null);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   useEffect(() => {
     getNetwork()
@@ -79,8 +87,69 @@ export function ContactsView() {
     );
   }
 
+  const friendsWithBalance = friends.filter((f) =>
+    Object.values(f.netByCurrency).some((v) => Math.abs(v) > 0.005)
+  );
+
   return (
     <div className="space-y-3">
+      {/* Saldos por amigo (Pro): lo que le debes / te debe agregado por grupos,
+          con opción de saldar en un solo lugar. Free ve un upsell. */}
+      {plan === "pro"
+        ? friendsWithBalance.length > 0 && (
+            <div className="space-y-1.5">
+              <div className="text-xs font-semibold text-muted px-1">{t("friends.balances")}</div>
+              {friendsWithBalance.map((f) => {
+                const entries = Object.entries(f.netByCurrency).filter(([, v]) => Math.abs(v) > 0.005);
+                const iOweAny = entries.some(([, v]) => v > 0.005);
+                return (
+                  <div key={f.userId} className="glass rounded-3xl px-3 py-2.5 flex items-center gap-3">
+                    {f.avatar ? (
+                      <img src={f.avatar} alt="" className="h-9 w-9 rounded-full object-cover shrink-0" />
+                    ) : (
+                      <span className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: personColor(f.name) + "22" }}>
+                        {initials(f.name)}
+                      </span>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm truncate">{f.name}</div>
+                      <div className="text-[11px] font-mono">
+                        {entries.map(([sym, v]) => (
+                          <span key={sym} style={{ color: v > 0 ? "var(--coral)" : "#0A8B5E" }}>
+                            {v > 0 ? t("friends.youOwe", { amt: money(v, sym) }) : t("friends.theyOwe", { amt: money(-v, sym) })}{" "}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    {iOweAny && (
+                      <button
+                        onClick={() => setSettleFriend(f)}
+                        className="glass rounded-full px-3 py-1.5 text-xs font-semibold hover-lift shrink-0"
+                        style={{ color: "var(--teal)" }}
+                      >
+                        {t("friends.settle")}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )
+        : (
+            <button
+              onClick={() => setShowPaywall(true)}
+              className="w-full glass rounded-3xl px-4 py-3 text-left hover-lift flex items-center gap-3"
+            >
+              <span className="h-9 w-9 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(91,91,240,.13)", color: "var(--indigo)" }}>
+                <Icon name="sparkles" size={18} />
+              </span>
+              <div className="min-w-0">
+                <div className="font-semibold text-sm">{t("friends.proTitle")}</div>
+                <div className="text-[11px] text-muted">{t("friends.proUpsell")}</div>
+              </div>
+            </button>
+          )}
+
       <button
         onClick={inviteFriends}
         className="w-full rounded-full px-4 py-3 font-semibold text-white hover-lift inline-flex items-center justify-center gap-2"
@@ -167,6 +236,9 @@ export function ContactsView() {
           )}
         </div>
       )}
+
+      {settleFriend && <SettleFriendModal friend={settleFriend} onClose={() => setSettleFriend(null)} />}
+      {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
     </div>
   );
 }
