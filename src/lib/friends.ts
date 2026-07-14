@@ -9,8 +9,20 @@ import { supabase } from "./supabase";
 import { useGroups } from "./store";
 import { expenseDebtsBetween, type ExpenseDebt } from "./split";
 import { getNetwork } from "./contacts";
+import { memberPays } from "./pay";
+import type { PayMethod } from "./types";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
+
+/** Un pago que ESTE amigo dice haber hecho y que espera tu confirmación
+ *  (tú eres el cobrador). Se puede confirmar/rechazar desde la vista Friends. */
+export type PendingConfirm = {
+  groupId: string;
+  groupName: string;
+  settlementId: string;
+  amount: number;
+  currency: string;
+};
 
 export type FriendGroupDebt = {
   groupId: string;
@@ -32,6 +44,10 @@ export type Friend = {
   groups: FriendGroupDebt[];
   /** Neto por moneda: + = le debes, − = te debe. */
   netByCurrency: Record<string, number>;
+  /** Métodos de pago del amigo (PayID/banco…) para mostrarlos al saldar. */
+  pays: PayMethod[];
+  /** Pagos que este amigo hizo y esperan tu confirmación (tú cobras). */
+  toConfirm: PendingConfirm[];
 };
 
 /** Agrega saldos por amigo cruzando todos los grupos activos del usuario. */
@@ -80,19 +96,38 @@ export function useFriends(): { friends: Friend[]; loading: boolean } {
             const theyOwe = expenseDebtsBetween(g.members, g.expenses, settlements, friendMemberId, myMemberId);
             const iOweTotal = r2(iOwe.reduce((s, d) => s + d.amount, 0));
             const theyOweTotal = r2(theyOwe.reduce((s, d) => s + d.amount, 0));
-            if (iOweTotal < 0.005 && theyOweTotal < 0.005) continue;
+            // Pagos de este amigo pendientes de MI confirmación en este grupo.
+            const pendingConfirm = settlements.filter(
+              (s) => s.status === "pending" && s.to === myMemberId && s.from === friendMemberId
+            );
+            if (iOweTotal < 0.005 && theyOweTotal < 0.005 && pendingConfirm.length === 0) continue;
             let f = byFriend.get(friendUserId);
             if (!f) {
               const c = info.get(friendUserId);
+              const friendMember = g.members.find((m) => m.id === friendMemberId);
               f = {
                 userId: friendUserId,
-                name: c?.name ?? g.members.find((m) => m.id === friendMemberId)?.name ?? "Usuario",
+                name: c?.name ?? friendMember?.name ?? "Usuario",
                 avatar: c?.avatar ?? "",
                 groups: [],
                 netByCurrency: {},
+                pays: memberPays(friendMember),
+                toConfirm: [],
               };
               byFriend.set(friendUserId, f);
             }
+            // Si aún no tenemos métodos de pago del amigo, tomarlos de este grupo.
+            if (f.pays.length === 0) f.pays = memberPays(g.members.find((m) => m.id === friendMemberId));
+            for (const s of pendingConfirm) {
+              f.toConfirm.push({
+                groupId: g.id,
+                groupName: g.name,
+                settlementId: s.id,
+                amount: Number(s.amount || 0),
+                currency: g.currency,
+              });
+            }
+            if (iOweTotal < 0.005 && theyOweTotal < 0.005) continue;
             f.groups.push({
               groupId: g.id,
               groupName: g.name,

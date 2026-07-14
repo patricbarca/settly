@@ -39,7 +39,8 @@ export function ExpenseList({ group }: { group: Group }) {
   const [fPart, setFPart] = useState<string | null>(null);
   const [fCat, setFCat] = useState<Category | null>(null);
   const [fMonth, setFMonth] = useState<string | null>(null);
-  const activeFilters = (fPayer ? 1 : 0) + (fPart ? 1 : 0) + (fCat ? 1 : 0) + (fMonth ? 1 : 0);
+  const [fText, setFText] = useState("");
+  const activeFilters = (fPayer ? 1 : 0) + (fPart ? 1 : 0) + (fCat ? 1 : 0) + (fMonth ? 1 : 0) + (fText.trim() ? 1 : 0);
 
   // ¿Quién pagó este gasto? (incluye multi-pagador). ¿Quién comparte el coste?
   function paidBy(e: Group["expenses"][number], pid: string): boolean {
@@ -66,12 +67,14 @@ export function ExpenseList({ group }: { group: Group }) {
   }, [group.expenses]);
   const monthOptions = useMemo(() => monthsWithExpenses(group), [group]);
 
+  const qText = fText.trim().toLowerCase();
   const visible = group.expenses.filter(
     (e) =>
       (!fPayer || paidBy(e, fPayer)) &&
       (!fPart || sharedBy(e, fPart)) &&
       (!fCat || e.category === fCat) &&
-      (!fMonth || monthKey(e.date) === fMonth)
+      (!fMonth || monthKey(e.date) === fMonth) &&
+      (!qText || e.label.toLowerCase().includes(qText))
   );
 
   function clearFilters() {
@@ -79,6 +82,7 @@ export function ExpenseList({ group }: { group: Group }) {
     setFPart(null);
     setFCat(null);
     setFMonth(null);
+    setFText("");
   }
 
   // Estas mutaciones usan las operaciones atómicas de store.ts (RPCs que
@@ -239,6 +243,21 @@ export function ExpenseList({ group }: { group: Group }) {
 
       {showFilters && group.expenses.length > 0 && (
         <div className="glass rounded-3xl p-3 space-y-3 anim-pop">
+          {/* Búsqueda por texto en el concepto del gasto */}
+          <div className="relative">
+            <Icon name="search" size={15} className="text-muted absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              value={fText}
+              onChange={(e) => setFText(e.target.value)}
+              placeholder={t("filter.searchPh")}
+              className="glass rounded-xl pl-9 pr-8 py-2 text-sm w-full"
+            />
+            {fText && (
+              <button onClick={() => setFText("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted hover-lift">
+                <Icon name="close" size={14} />
+              </button>
+            )}
+          </div>
           {/* Pagador: en qué gastos puso el dinero (lo que le deben) */}
           {payerOptions.length > 0 && (
             <div>

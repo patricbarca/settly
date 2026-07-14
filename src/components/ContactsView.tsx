@@ -4,7 +4,9 @@ import { useHiddenContacts } from "../lib/hiddenContacts";
 import { personColor, initials, money } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { usePlan } from "../lib/plan";
-import { useFriends, type Friend } from "../lib/friends";
+import { useFriends, type Friend, type PendingConfirm } from "../lib/friends";
+import { useGroups, updateGroup } from "../lib/store";
+import { notifyGroup } from "../lib/push";
 import { Icon } from "./Icon";
 import { SettleFriendModal } from "./SettleFriendModal";
 import { Paywall } from "./Paywall";
@@ -99,6 +101,33 @@ export function ContactsView() {
 
   const r2 = (n: number) => Math.round(n * 100) / 100;
   const friendById = useMemo(() => new Map(friends.map((f) => [f.userId, f])), [friends]);
+  const groups = useGroups();
+  const [reminded, setReminded] = useState<Set<string>>(new Set());
+
+  // Confirmar un pago que el amigo dice haber hecho (yo cobro) → status confirmed.
+  function confirmPayment(pc: PendingConfirm) {
+    updateGroup(pc.groupId, (g) => ({
+      ...g,
+      settlements: (g.settlements ?? []).map((s) => (s.id === pc.settlementId ? { ...s, status: "confirmed" as const } : s)),
+    }));
+  }
+  // Rechazar un pago pendiente → se elimina el settlement.
+  function rejectPayment(pc: PendingConfirm) {
+    updateGroup(pc.groupId, (g) => ({
+      ...g,
+      settlements: (g.settlements ?? []).filter((s) => s.id !== pc.settlementId),
+    }));
+  }
+  // Recordar (push) a quien te debe, vía el grupo donde más te debe.
+  function remind(f: Friend) {
+    const g = [...f.groups].sort((a, b) => b.theyOweTotal - a.theyOweTotal)[0];
+    if (!g) return;
+    const grp = groups.find((x) => x.id === g.groupId);
+    const myName = grp?.members.find((m) => m.id === g.myMemberId)?.name ?? "";
+    notifyGroup(g.groupId, g.groupName, t("friends.remindPush", { name: myName }));
+    setReminded((prev) => new Set(prev).add(f.userId));
+    setTimeout(() => setReminded((prev) => { const n = new Set(prev); n.delete(f.userId); return n; }), 2500);
+  }
 
   return (
     <div className="space-y-3">
@@ -161,13 +190,16 @@ export function ContactsView() {
               const entries = f ? Object.entries(f.netByCurrency).filter(([, v]) => Math.abs(v) > 0.005) : [];
               const hasBalance = entries.length > 0;
               const iOweAny = entries.some(([, v]) => v > 0.005);
+              const theyOweAny = entries.some(([, v]) => v < -0.005);
+              const toConfirm = f?.toConfirm ?? [];
+              const hasDetail = hasBalance || toConfirm.length > 0;
               const open = expanded === c.userId;
               return (
                 <div key={c.userId} className="glass rounded-3xl px-3 py-2.5">
                   <div className="flex items-center gap-3">
                     <div
-                      onClick={hasBalance ? () => setExpanded(open ? null : c.userId) : undefined}
-                      className={`flex items-center gap-3 flex-1 min-w-0 ${hasBalance ? "cursor-pointer" : ""}`}
+                      onClick={hasDetail ? () => setExpanded(open ? null : c.userId) : undefined}
+                      className={`flex items-center gap-3 flex-1 min-w-0 ${hasDetail ? "cursor-pointer" : ""}`}
                     >
                       <Avatar c={c} />
                       <div className="flex-1 min-w-0">
@@ -180,11 +212,13 @@ export function ContactsView() {
                               </span>
                             ))}
                           </div>
+                        ) : toConfirm.length > 0 ? (
+                          <div className="text-[11px]" style={{ color: "var(--amber)" }}>{t("friends.pendingConfirm", { n: String(toConfirm.length) })}</div>
                         ) : (
                           c.email && <div className="text-[11px] text-muted truncate">{c.email}</div>
                         )}
                       </div>
-                      {hasBalance && (
+                      {hasDetail && (
                         <Icon name="chevron" size={14} className="text-muted shrink-0" style={{ transform: open ? "rotate(180deg)" : "none" }} />
                       )}
                     </div>
@@ -197,9 +231,25 @@ export function ContactsView() {
                     </button>
                   </div>
 
-                  {/* Desglose por grupos */}
                   {open && f && (
                     <div className="mt-2 pt-2 border-t border-black/5 space-y-1">
+                      {/* Pagos por confirmar (yo cobro) */}
+                      {toConfirm.map((pc) => (
+                        <div key={pc.settlementId} className="flex items-center gap-2 rounded-xl px-1 py-1" style={{ background: "rgba(232,146,12,.10)" }}>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-medium truncate leading-relaxed">{t("friends.paidYou", { amt: money(pc.amount, pc.currency) })}</div>
+                            <div className="text-[10px] text-muted truncate leading-relaxed">{pc.groupName}</div>
+                          </div>
+                          <button onClick={() => confirmPayment(pc)} className="glass rounded-full px-2.5 py-1 text-[11px] font-semibold hover-lift shrink-0" style={{ color: "#0A8B5E" }}>
+                            {t("pay.confirm")}
+                          </button>
+                          <button onClick={() => rejectPayment(pc)} className="glass rounded-full h-7 w-7 flex items-center justify-center hover-lift lk-danger text-muted shrink-0">
+                            <Icon name="close" size={12} />
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Desglose por grupos */}
                       {f.groups.map((g) => {
                         const net = r2(g.iOweTotal - g.theyOweTotal);
                         if (Math.abs(net) < 0.005) return null;
@@ -212,15 +262,27 @@ export function ContactsView() {
                           </div>
                         );
                       })}
-                      {iOweAny && (
-                        <button
-                          onClick={() => setSettleFriend(f)}
-                          className="w-full glass-strong rounded-full px-4 py-2 text-sm font-semibold hover-lift mt-1.5"
-                          style={{ color: "var(--teal)" }}
-                        >
-                          {t("friends.settle")}
-                        </button>
-                      )}
+
+                      <div className="flex gap-2 mt-1.5">
+                        {iOweAny && (
+                          <button
+                            onClick={() => setSettleFriend(f)}
+                            className="flex-1 glass-strong rounded-full px-4 py-2 text-sm font-semibold hover-lift"
+                            style={{ color: "var(--teal)" }}
+                          >
+                            {t("friends.settle")}
+                          </button>
+                        )}
+                        {theyOweAny && (
+                          <button
+                            onClick={() => remind(f)}
+                            disabled={reminded.has(f.userId)}
+                            className="flex-1 glass rounded-full px-4 py-2 text-sm font-semibold hover-lift text-muted disabled:opacity-60"
+                          >
+                            {reminded.has(f.userId) ? t("friends.reminded") : t("friends.remind")}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
