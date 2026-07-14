@@ -142,7 +142,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
       res.subtotal > 0 && res.total > 0 && res.total - res.subtotal > Math.max(0.01, res.tax.amount * 0.5);
     const taxIncluded = !res.tax || res.tax.amount <= 0 || res.tax.included || !gapCoversTax;
     const taxNotIncluded = res.tax && res.tax.amount > 0 && !taxIncluded;
-    const fees = taxNotIncluded
+    const baseFees = taxNotIncluded
       ? [
           ...scannedFees,
           {
@@ -152,6 +152,33 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
           },
         ]
       : scannedFees;
+    // Recargo automático (p. ej. surcharge por tarjeta de crédito): si los
+    // ítems cuadran con el SUBTOTAL impreso pero el TOTAL pagado es mayor, ese
+    // hueco es un cargo real que no vino como línea (recargo de tarjeta,
+    // redondeo, levy…). Se añade como recargo editable para que "Total a
+    // repartir" = lo que de verdad se pagó, y se reparte proporcional al
+    // consumo. Solo cuando (a) los ítems reconcilian con el subtotal y (b) el
+    // hueco es pequeño (≤3% o ≤$2) — un hueco grande es un misread y se deja
+    // que salte el aviso, sin taparlo.
+    const itemsSum = itemRows.reduce((s, it) => s + (Number(it.price) || 0), 0);
+    const baseFeesSum = baseFees.reduce((s, f) => s + (Number(f.amount) || 0), 0);
+    const totalConv = res.total ? conv(res.total) : 0;
+    const subtotalConv = res.subtotal ? conv(res.subtotal) : 0;
+    const residual = r2(totalConv - r2(itemsSum + baseFeesSum));
+    const itemsMatchSubtotal =
+      subtotalConv > 0 && Math.abs(itemsSum - subtotalConv) <= Math.max(0.02, subtotalConv * 0.005);
+    const surchargeCap = Math.max(2, totalConv * 0.03);
+    const fees =
+      itemsMatchSubtotal && residual > 0.02 && residual <= surchargeCap
+        ? [
+            ...baseFees,
+            {
+              name: t("scan.surchargeAuto"),
+              amount: residual,
+              ...(rate !== 1 ? { originalAmount: r2(residual / rate) } : {}),
+            },
+          ]
+        : baseFees;
     setInitial({
       label: res.description || "",
       category: res.category || "comida",
