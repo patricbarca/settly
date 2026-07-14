@@ -7,6 +7,7 @@ import { uid, money } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { getDailyRate } from "../lib/fxCache";
 import { CURRENCIES, resolveToCode, currencySymbol } from "../lib/currencies";
+import { payClipboardText } from "../lib/pay";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 import type { Friend } from "../lib/friends";
@@ -31,6 +32,12 @@ export function SettleFriendModal({ friend, onClose }: { friend: Friend; onClose
     return init;
   });
   const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState<number | null>(null);
+  function copyPay(i: number, value: string) {
+    navigator.clipboard?.writeText(value).catch(() => {});
+    setCopied(i);
+    setTimeout(() => setCopied((c) => (c === i ? null : c)), 1600);
+  }
 
   // Conversión opcional a una moneda (Pro). "" = mostrar por moneda.
   const [target, setTarget] = useState<string>("");
@@ -230,6 +237,34 @@ export function SettleFriendModal({ friend, onClose }: { friend: Friend; onClose
                 <div className="text-[11px] text-muted mt-1">{t("friends.convertNote", { cur: currencySymbol(resolveToCode(target)) })}</div>
               )}
             </div>
+
+            {/* Métodos de pago del amigo, para pagarle sin salir */}
+            {friend.pays.length > 0 && (
+              <div className="glass rounded-2xl p-3 mt-3">
+                <div className="text-xs font-semibold text-muted mb-1.5">{t("friends.payWith", { name: friend.name })}</div>
+                <div className="space-y-1.5">
+                  {friend.pays.map((pm, i) => (
+                    <button
+                      key={i}
+                      onClick={() => copyPay(i, payClipboardText(pm))}
+                      className="w-full flex items-center gap-2 text-left glass rounded-xl px-3 py-2 hover-lift"
+                    >
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[10px] text-muted uppercase tracking-wide">{t(`pay.label.${pm.type}`)}</span>
+                        <span className="block font-mono text-sm truncate">{pm.value}{pm.value2 ? ` · ${pm.value2}` : ""}</span>
+                      </span>
+                      <span className="shrink-0 inline-flex items-center gap-1 text-xs text-muted">
+                        {copied === i ? (
+                          <><Icon name="check" size={14} style={{ color: "#0A8B5E" }} /> {t("pay.copied.short")}</>
+                        ) : (
+                          <><Icon name="copy" size={14} /> {t("pay.copy")}</>
+                        )}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-2 mt-4">
               <button
