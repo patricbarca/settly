@@ -29,7 +29,7 @@ export function Hero({ group }: { group: Group }) {
       <div className="relative z-10 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="text-white/70 text-[11px] uppercase tracking-widest font-mono mb-1">{t("hero.groupLabel")}</div>
-          <div className="text-white font-display text-2xl font-extrabold truncate leading-tight">{group.name}</div>
+          <div className="text-white font-display text-2xl font-extrabold truncate leading-relaxed">{group.name}</div>
           <div className="flex items-center gap-1.5 mt-2">
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold"

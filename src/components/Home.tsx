@@ -215,7 +215,7 @@ export function Home({ tab }: { tab: HomeTab }) {
                 return (
                   <div key={g.id} className="glass rounded-3xl p-3 flex items-center gap-2" style={{ opacity: 0.8 }}>
                     <button onClick={() => setActiveGroup(g.id)} className="flex-1 text-left min-w-0">
-                      <div className="font-semibold truncate">{g.name}</div>
+                      <div className="font-semibold truncate leading-relaxed">{g.name}</div>
                       <div className="text-xs text-muted">
                         {t("home.meta", { p: g.members.length, amt: money(total, g.currency), e: g.expenses.length })}
                       </div>
@@ -253,7 +253,7 @@ export function Home({ tab }: { tab: HomeTab }) {
                 return (
                   <div key={g.id} className="glass rounded-3xl p-3 flex items-center gap-2" style={{ opacity: 0.8 }}>
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold truncate">{g.name}</div>
+                      <div className="font-semibold truncate leading-relaxed">{g.name}</div>
                       <div className="text-xs text-muted">{t("home.trashDays", { n: String(daysLeft) })}</div>
                     </div>
                     <button
@@ -423,7 +423,7 @@ function GroupCard({
             <SettleRing value={groupSettleScore(g)} size={44} stroke={5} color="#0FA3A3" track="var(--line)" />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-display text-lg font-bold truncate">{g.name}</div>
+            <div className="font-display text-lg font-bold truncate leading-relaxed">{g.name}</div>
             <div className="text-xs text-muted mt-0.5">
               {t("home.meta", { p: g.members.length, amt: money(total, g.currency), e: g.expenses.length })}
             </div>
