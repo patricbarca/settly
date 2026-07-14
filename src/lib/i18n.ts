@@ -421,6 +421,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "scan.addItem": { es: "+ artículo", en: "+ item" },
   "scan.total": { es: "Total a repartir", en: "Total to split" },
   "scan.totalMismatch": { es: "El ticket marca {scanned} pero los ítems suman {sum}. Revisa los precios: el escaneo pudo leer alguno mal.", en: "The receipt says {scanned} but the items add up to {sum}. Check the prices — the scan may have misread one." },
+  "scan.surchargeAuto": { es: "Recargo (tarjeta/ajuste)", en: "Surcharge (card/adjustment)" },
   "scan.subtotal": { es: "Subtotal (artículos)", en: "Subtotal (items)" },
   "scan.save": { es: "Añadir gasto", en: "Add expense" },
   "scan.saving": { es: "Guardando…", en: "Saving…" },
