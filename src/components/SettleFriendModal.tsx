@@ -164,7 +164,7 @@ export function SettleFriendModal({ friend, onClose }: { friend: Friend; onClose
               {owedGroups.map((g) => (
                 <div key={g.groupId} className="glass rounded-2xl p-3">
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-semibold text-sm truncate">{g.groupName}</span>
+                    <span className="font-semibold text-sm truncate leading-relaxed">{g.groupName}</span>
                     <span className="font-mono font-bold text-sm shrink-0">{money(groupTotal(g), g.currency)}</span>
                   </div>
                   <div className="space-y-0.5">

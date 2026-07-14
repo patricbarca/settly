@@ -204,8 +204,8 @@ export function ContactsView() {
                         const net = r2(g.iOweTotal - g.theyOweTotal);
                         if (Math.abs(net) < 0.005) return null;
                         return (
-                          <div key={g.groupId} className="flex items-center justify-between text-xs">
-                            <span className="text-muted truncate">{g.groupName}</span>
+                          <div key={g.groupId} className="flex items-center justify-between text-xs leading-relaxed">
+                            <span className="text-muted truncate leading-relaxed">{g.groupName}</span>
                             <span className="font-mono" style={{ color: net > 0 ? "var(--coral)" : "#0A8B5E" }}>
                               {net > 0 ? t("friends.youOwe", { amt: money(net, g.currency) }) : t("friends.theyOwe", { amt: money(-net, g.currency) })}
                             </span>
