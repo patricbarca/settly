@@ -10,6 +10,7 @@ import { useGroups } from "./store";
 import { expenseDebtsBetween, type ExpenseDebt } from "./split";
 import { getNetwork } from "./contacts";
 import { memberPays } from "./pay";
+import { loadArchivedGroups } from "./archivedGroups";
 import type { PayMethod } from "./types";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -61,7 +62,8 @@ export function useFriends(): { friends: Friend[]; loading: boolean } {
     (async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        const active = groups.filter((g) => !g.archived && !g.deletedAt);
+        const localArch = loadArchivedGroups();
+        const active = groups.filter((g) => !g.archived && !g.deletedAt && !localArch.has(g.id));
         if (!user || active.length === 0) {
           if (!cancelled) { setFriends([]); setLoading(false); }
           return;
