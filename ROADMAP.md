@@ -11,7 +11,7 @@ Leyenda: ✅ hecho · 🔧 código listo, falta desplegar · ⬜ por hacer
 Bloquean lanzamiento serio / publicación en stores.
 
 - ✅ **Web Push** — desplegado (`send-push` + `push_subscriptions` + VAPID).
-- ✅ **Recordatorios diarios** — desplegados (`daily-reminders` + `CRON_SECRET` + cron).
+- ⚠️ **Recordatorios diarios** — código listo; **despliegue SIN VERIFICAR (2026-07-15)**. Comprobar en el dashboard: función `daily-reminders` en la lista, `select jobname, schedule, active from cron.job;` con un job activo, y secret `CRON_SECRET`. (Distinto del botón manual "Recordar" en Friends, que es one-shot vía `send-push` y sí está desplegado.)
 - ✅ **`parse-expense`** — desplegado con "por persona" forzado + few-shot.
 - ✅ **`scan-receipt`** — desplegado, escaneo de tickets funcionando (Groq Llama 4 Scout).
 - ✅ **Supabase Auth** — Site URL + Redirect URLs en `https://app.settlia.app`; origen Google OAuth añadido.
