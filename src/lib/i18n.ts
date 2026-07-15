@@ -217,7 +217,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "friends.settle": { es: "Saldar", en: "Settle" },
   "friends.remind": { es: "Recordar", en: "Remind" },
   "friends.reminded": { es: "Enviado ✓", en: "Sent ✓" },
-  "friends.remindPush": { es: "{name} te recuerda saldar cuentas 💸", en: "{name} reminds you to settle up 💸" },
+  "friends.remindPush": { es: "Un recordatorio para saldar cuentas con {name} 💸", en: "A reminder to settle up with {name} 💸" },
   "friends.pendingConfirm": { es: "{n} pago(s) por confirmar", en: "{n} payment(s) to confirm" },
   "friends.paidYou": { es: "Dice que te pagó {amt}", en: "Says they paid you {amt}" },
   "friends.payWith": { es: "Pagar a {name} con", en: "Pay {name} with" },

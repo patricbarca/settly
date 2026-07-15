@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useGroups, useTrashedGroups, setActiveGroup, archiveGroup, recoverGroup, purgeGroup } from "../lib/store";
+import { useArchivedGroups } from "../lib/archivedGroups";
 import { computeSettle, shareFor } from "../lib/split";
 import { groupSettleScore } from "../lib/gamification";
 import { money, personColor, memberInitials } from "../lib/format";
@@ -25,11 +26,15 @@ export function Home({ tab }: { tab: HomeTab }) {
   const [showArch, setShowArch] = useState(false);
   const [showTrash, setShowTrash] = useState(false);
   const trashed = useTrashedGroups();
+  const { archived: localArchived, archive: localArchiveGroup, unarchive: localUnarchive } = useArchivedGroups();
   const [showPaywall, setShowPaywall] = useState(false);
   const [paywallReason, setPaywallReason] = useState<string | undefined>(undefined);
 
-  const active = groups.filter((g) => !g.archived);
-  const archived = groups.filter((g) => g.archived);
+  // Archivado POR PERSONA (local). Se respeta también el `g.archived` legado
+  // (compartido) para grupos archivados antes de este cambio.
+  const isArch = (g: (typeof groups)[number]) => localArchived.has(g.id) || !!g.archived;
+  const active = groups.filter((g) => !isArch(g));
+  const archived = groups.filter((g) => isArch(g));
 
   // Plan gratis: máx. 3 grupos activos. Al intentar crear el 4º → Paywall.
   function startCreate() {
@@ -195,7 +200,7 @@ export function Home({ tab }: { tab: HomeTab }) {
           <div className="glass rounded-3xl p-8 text-center text-muted">{t("home.empty")}</div>
         )}
         {active.map((g) => (
-          <GroupCard key={g.id} g={g} t={t} money={money} onOpen={() => setActiveGroup(g.id)} onArchive={() => archiveGroup(g.id, true)} />
+          <GroupCard key={g.id} g={g} t={t} money={money} onOpen={() => setActiveGroup(g.id)} onArchive={() => localArchiveGroup(g.id)} />
         ))}
       </div>
 
@@ -221,7 +226,7 @@ export function Home({ tab }: { tab: HomeTab }) {
                       </div>
                     </button>
                     <button
-                      onClick={() => archiveGroup(g.id, false)}
+                      onClick={() => { localUnarchive(g.id); if (g.archived) archiveGroup(g.id, false); }}
                       className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted shrink-0"
                     >
                       {t("home.restore")}
