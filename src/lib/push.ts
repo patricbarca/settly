@@ -93,3 +93,10 @@ export async function disablePush(): Promise<void> {
 export function notifyGroup(groupId: string, title: string, body: string): void {
   supabase.functions.invoke("send-push", { body: { groupId, title, body } }).catch(() => {});
 }
+
+/** Como notifyGroup pero SOLO a una persona del grupo (por su userId). Se usa
+ *  para el recordatorio 1-a-1 ("Recordar" en Friends). Requiere el `send-push`
+ *  con soporte de `toUserId` (si no está desplegado, cae a todo el grupo). */
+export function notifyUser(groupId: string, toUserId: string, title: string, body: string): void {
+  supabase.functions.invoke("send-push", { body: { groupId, toUserId, title, body } }).catch(() => {});
+}
