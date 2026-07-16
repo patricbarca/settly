@@ -5,7 +5,7 @@ import { computeSettle, shareFor } from "../lib/split";
 import { groupSettleScore } from "../lib/gamification";
 import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
-import { usePlan, FREE_GROUP_LIMIT } from "../lib/plan";
+import { usePlan, FREE_GROUP_LIMIT, isNativePlatform } from "../lib/plan";
 import { TrialBanner } from "./TrialBanner";
 import { Logo } from "./Logo";
 import { Icon } from "./Icon";
@@ -116,14 +116,18 @@ export function Home({ tab }: { tab: HomeTab }) {
           {/* Install + upgrade row (each hides itself when not applicable) */}
           <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
             <InstallButton />
+            {/* En nativo no se muestra el CTA de "Upgrade" (guideline 3.1.1):
+                Pro se gestiona desde la web; la app solo refleja el plan. */}
             {plan === "free" ? (
-              <button
-                onClick={openUpgrade}
-                className="rounded-full px-3 py-1.5 text-sm font-semibold hover-lift inline-flex items-center gap-1.5 text-white"
-                style={{ background: "linear-gradient(180deg,#6e6cf5,#5b5bf0)" }}
-              >
-                <Icon name="sparkles" size={15} /> {t("pro.upgrade")}
-              </button>
+              isNativePlatform() ? null : (
+                <button
+                  onClick={openUpgrade}
+                  className="rounded-full px-3 py-1.5 text-sm font-semibold hover-lift inline-flex items-center gap-1.5 text-white"
+                  style={{ background: "linear-gradient(180deg,#6e6cf5,#5b5bf0)" }}
+                >
+                  <Icon name="sparkles" size={15} /> {t("pro.upgrade")}
+                </button>
+              )
             ) : (
               <span
                 className="rounded-full px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5"
