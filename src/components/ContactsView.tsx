@@ -6,10 +6,28 @@ import { useT } from "../lib/i18n";
 import { usePlan } from "../lib/plan";
 import { useFriends, type Friend, type PendingConfirm } from "../lib/friends";
 import { useGroups, updateGroup } from "../lib/store";
-import { notifyGroup } from "../lib/push";
+import { notifyUser } from "../lib/push";
 import { Icon } from "./Icon";
 import { SettleFriendModal } from "./SettleFriendModal";
 import { Paywall } from "./Paywall";
+
+// Avatar de un contacto — a NIVEL DE MÓDULO (no dentro del componente): si se
+// define dentro, React lo ve como un tipo nuevo en cada render y remonta TODAS
+// las fotos en cada re-render, lo que (con la carga/caché de imágenes) hacía que
+// a veces se mostrara la foto de otra persona. El `key={avatar}` en el <img>
+// evita además que React reutilice un nodo con un src viejo.
+function Avatar({ c }: { c: { avatar: string; name: string } }) {
+  return c.avatar ? (
+    <img key={c.avatar} src={c.avatar} alt="" className="h-9 w-9 rounded-full object-cover shrink-0" />
+  ) : (
+    <span
+      className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
+      style={{ background: personColor(c.name) + "22" }}
+    >
+      {initials(c.name)}
+    </span>
+  );
+}
 
 // Pestaña "Contacts": personas con las que has interactuado en algún grupo (tu
 // red). Puedes ocultar las que no quieras ver (filtro local reversible) sin
@@ -72,19 +90,6 @@ export function ContactsView() {
     [network, hidden]
   );
 
-  function Avatar({ c }: { c: Contact }) {
-    return c.avatar ? (
-      <img src={c.avatar} alt="" className="h-9 w-9 rounded-full object-cover shrink-0" />
-    ) : (
-      <span
-        className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-        style={{ background: personColor(c.name) + "22" }}
-      >
-        {initials(c.name)}
-      </span>
-    );
-  }
-
   // Rellena la lista con "espacios libres" hasta un mínimo de filas — así la
   // vista no se ve vacía/incompleta mientras aún no tienes (muchos) contactos.
   const MIN_SLOTS = 5;
@@ -124,7 +129,8 @@ export function ContactsView() {
     if (!g) return;
     const grp = groups.find((x) => x.id === g.groupId);
     const myName = grp?.members.find((m) => m.id === g.myMemberId)?.name ?? "";
-    notifyGroup(g.groupId, g.groupName, t("friends.remindPush", { name: myName }));
+    // Recordatorio 1-a-1: solo a este amigo (por su userId), no a todo el grupo.
+    notifyUser(g.groupId, f.userId, g.groupName, t("friends.remindPush", { name: myName }));
     setReminded((prev) => new Set(prev).add(f.userId));
     setTimeout(() => setReminded((prev) => { const n = new Set(prev); n.delete(f.userId); return n; }), 2500);
   }

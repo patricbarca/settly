@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
       return json({ error: "not_configured" }, 503);
     }
 
-    const { groupId, title, body, url } = await req.json();
+    const { groupId, title, body, url, toUserId } = await req.json();
     if (!groupId) return json({ error: "no_group" }, 400);
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
@@ -128,9 +128,12 @@ Deno.serve(async (req) => {
       .from("group_members")
       .select("user_id")
       .eq("group_id", groupId);
-    const userIds = [
+    let userIds = [
       ...new Set((members ?? []).map((m) => m.user_id).filter((id) => id && id !== callerId)),
     ];
+    // Recordatorio 1-a-1: si viene toUserId, notificar SOLO a esa persona
+    // (siempre que sea miembro del grupo y no sea el propio emisor).
+    if (toUserId) userIds = userIds.filter((id) => id === toUserId);
     if (!userIds.length) return json({ sent: 0 });
 
     // Push nativo (APNs) a los dispositivos iOS de esos usuarios.
