@@ -315,13 +315,16 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
               </div>
             </div>
             {plan === "free" ? (
-              <button
-                onClick={() => setShowPaywall(true)}
-                className="rounded-full px-3 py-1.5 text-xs font-semibold text-white shrink-0 hover-lift"
-                style={{ background: "var(--indigo)" }}
-              >
-                {t("pro.upgrade")}
-              </button>
+              // Guideline 3.1.1: sin CTA de compra en nativo.
+              isNativePlatform() ? null : (
+                <button
+                  onClick={() => setShowPaywall(true)}
+                  className="rounded-full px-3 py-1.5 text-xs font-semibold text-white shrink-0 hover-lift"
+                  style={{ background: "var(--indigo)" }}
+                >
+                  {t("pro.upgrade")}
+                </button>
+              )
             ) : hasStripe && !isNativePlatform() ? (
               <div className="flex flex-col items-end gap-1 shrink-0">
                 <button

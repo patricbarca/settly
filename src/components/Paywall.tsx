@@ -8,10 +8,11 @@ const FEATURES = ["paywall.f1", "paywall.f2", "paywall.f3", "paywall.f4"];
 
 export function Paywall({ onClose, reason }: { onClose: () => void; reason?: string }) {
   const t = useT();
-  // Apple prohíbe tanto el checkout externo como cualquier mención de cómo
-  // pagar fuera de la app (guideline 3.1.1) — en iOS/Android empaquetado no
-  // se muestra ni el botón de pago ni ningún texto al respecto, solo el
-  // canje de código de acceso.
+  // Guideline 3.1.1: en la app EMPAQUETADA (iOS/Android) no se puede desbloquear
+  // funcionalidad de pago con nada que no sea IAP — ni checkout externo, ni
+  // canje de código, ni enlaces/menciones a comprar fuera. Modelo multiplataforma
+  // (como Notion/Trello): Pro se activa solo si la cuenta YA es Pro (comprada en
+  // la web); en nativo el paywall solo informa, sin ningún mecanismo de compra.
   const native = isNativePlatform();
   const [billing, setBilling] = useState<"annual" | "monthly">("annual");
   const [code, setCode] = useState("");
@@ -159,19 +160,26 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
               </>
             )}
 
-            {/* Divider + access code section */}
-            <div className="flex items-center gap-2 mb-3">
-              <div className="flex-1 h-px" style={{ background: "var(--glass)" }} />
-              <button
-                onClick={() => setShowCode(!showCode)}
-                className="text-xs text-muted"
-              >
-                {t("paywall.betaNote")}
-              </button>
-              <div className="flex-1 h-px" style={{ background: "var(--glass)" }} />
-            </div>
+            {/* En nativo: nota neutra, sin compra ni código (guideline 3.1.1) */}
+            {native && (
+              <p className="text-xs text-muted text-center">{t("paywall.nativeNote")}</p>
+            )}
 
-            {(showCode || native) && (
+            {/* Divider + access code section (solo web) */}
+            {!native && (
+              <div className="flex items-center gap-2 mb-3">
+                <div className="flex-1 h-px" style={{ background: "var(--glass)" }} />
+                <button
+                  onClick={() => setShowCode(!showCode)}
+                  className="text-xs text-muted"
+                >
+                  {t("paywall.betaNote")}
+                </button>
+                <div className="flex-1 h-px" style={{ background: "var(--glass)" }} />
+              </div>
+            )}
+
+            {showCode && !native && (
               <>
                 <label className="text-xs font-semibold text-muted">{t("code.label")}</label>
                 <div className="flex gap-2 mt-1">
