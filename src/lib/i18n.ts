@@ -849,6 +849,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "trial.noSubscription":    { es: "Plan activado por código — sin suscripción Stripe.", en: "Plan activated by code — no Stripe subscription." },
   "paywall.betaNote":        { es: "¿Tienes un código de acceso?", en: "Have an access code?" },
   "paywall.nativeNote":      { es: "Las funciones Pro están incluidas en las cuentas Pro.", en: "Pro features are included with a Pro account." },
+  "paywall.nativeTitle":     { es: "Función Pro", en: "Pro feature" },
   "paywall.priceNote":       { es: "Pro: $7/mes · $60/año (próximamente)", en: "Pro: $7/mo · $60/year (coming soon)" },
 
   "code.label":       { es: "Código de acceso", en: "Access code" },
