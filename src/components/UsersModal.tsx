@@ -11,6 +11,7 @@ import { useHiddenContacts } from "../lib/hiddenContacts";
 import { createInviteLink } from "../lib/invite";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
+import { ShareLinkModal } from "./ShareLinkModal";
 
 type AddMode = "idle" | "search" | "found" | "notfound" | "manual";
 
@@ -22,6 +23,7 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
   const [searching, setSearching] = useState(false);
   const [inviteCopied, setInviteCopied] = useState(false);
   const [inviteErr, setInviteErr] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
   const [manualName, setManualName] = useState("");
   // Sugeridos: tu red (registrados) menos quienes ya están en este grupo.
   const [network, setNetwork] = useState<Contact[]>([]);
@@ -140,14 +142,21 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
 
   async function copyInvite() {
     setInviteErr(false);
+    let link: string;
     try {
-      const link = await createInviteLink(group);
+      link = await createInviteLink(group);
+    } catch {
+      setInviteErr(true);
+      setTimeout(() => setInviteErr(false), 2500);
+      return;
+    }
+    // Copia directa; en iOS el gesto se perdió con el await → abre el modal.
+    try {
       await navigator.clipboard.writeText(link);
       setInviteCopied(true);
       setTimeout(() => setInviteCopied(false), 2500);
     } catch {
-      setInviteErr(true);
-      setTimeout(() => setInviteErr(false), 2500);
+      setShareLink(link);
     }
   }
 
@@ -377,6 +386,7 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
           </div>
         )}
       </div>
+      {shareLink && <ShareLinkModal link={shareLink} title={group.name} onClose={() => setShareLink(null)} />}
     </Overlay>
   );
 }
