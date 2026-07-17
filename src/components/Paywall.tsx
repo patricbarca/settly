@@ -100,21 +100,21 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
           </div>
         )}
 
-        {/* En nativo: sin subtítulo ni lista de beneficios (suenan a upsell).
-            Solo información neutra — ver la nota al final (guideline 3.1.1). */}
-        {!native && (
-          <>
-            <p className="text-sm text-muted mb-4">{t("paywall.subtitle")}</p>
-            <div className="space-y-2.5 mb-5">
-              {FEATURES.map((k) => (
-                <div key={k} className="flex items-start gap-2.5 text-sm">
-                  <Icon name="check" size={16} style={{ color: "var(--teal)", flex: "0 0 auto", marginTop: 2 }} />
-                  <span>{t(k)}</span>
-                </div>
-              ))}
-            </div>
-          </>
+        {/* Web: subtítulo de venta. Nativo: etiqueta neutra "Pro incluye"
+            (informativa, estilo Spotify), sin verbos de compra ni precio. */}
+        {native ? (
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted mb-2 mt-1">{t("paywall.proIncludes")}</p>
+        ) : (
+          <p className="text-sm text-muted mb-4">{t("paywall.subtitle")}</p>
         )}
+        <div className="space-y-2.5 mb-5">
+          {FEATURES.map((k) => (
+            <div key={k} className="flex items-start gap-2.5 text-sm">
+              <Icon name="check" size={16} style={{ color: "var(--teal)", flex: "0 0 auto", marginTop: 2 }} />
+              <span>{t(k)}</span>
+            </div>
+          ))}
+        </div>
 
         {ok ? (
           <div
