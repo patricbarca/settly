@@ -18,6 +18,7 @@ import { GroupSettings } from "./GroupSettings";
 import { UsersModal } from "./UsersModal";
 import { ReportModal } from "./ReportModal";
 import { Paywall } from "./Paywall";
+import { ShareLinkModal } from "./ShareLinkModal";
 import { isPro } from "../lib/plan";
 
 type Tab = "expenses" | "balances" | "stats" | "achievements";
@@ -31,6 +32,7 @@ export function GroupView({ group }: { group: Group }) {
   const [tab, setTab] = useState<Tab>("expenses");
   const [copied, setCopied] = useState(false);
   const [inviteError, setInviteError] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
 
   function openReport() {
     if (isPro()) setShowReport(true);
@@ -42,20 +44,24 @@ export function GroupView({ group }: { group: Group }) {
 
   async function share() {
     setInviteError(false);
+    let link: string;
     try {
-      const link = await createInviteLink(group);
-      if (navigator.share) {
-        await navigator.share({ title: group.name, text: t("group.shareText", { name: group.name }), url: link });
-      } else {
-        await navigator.clipboard.writeText(link);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
-      }
-    } catch (e: any) {
-      if (e?.name !== "AbortError") {
-        setInviteError(true);
-        setTimeout(() => setInviteError(false), 2500);
-      }
+      link = await createInviteLink(group);
+    } catch {
+      // El fallo AQUÍ sí es "no se pudo crear el link" (red / sin sesión).
+      setInviteError(true);
+      setTimeout(() => setInviteError(false), 2500);
+      return;
+    }
+    // Copia directa (funciona en escritorio/dentro de gesto). En iOS el gesto se
+    // perdió con el await anterior → clipboard/share lanzan; caemos al modal,
+    // donde el botón Copiar corre en su propio gesto y sí funciona.
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      setShareLink(link);
     }
   }
 
@@ -160,6 +166,7 @@ export function GroupView({ group }: { group: Group }) {
       {showSettings && <GroupSettings group={group} onClose={() => setShowSettings(false)} />}
       {showReport && <ReportModal group={group} onClose={() => setShowReport(false)} />}
       {paywall && <Paywall onClose={() => setPaywall(false)} reason={t("report.proReason")} />}
+      {shareLink && <ShareLinkModal link={shareLink} title={group.name} onClose={() => setShareLink(null)} />}
 
     </div>
   );
