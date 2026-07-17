@@ -81,7 +81,7 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
             >
               <Icon name="sparkles" size={18} />
             </span>
-            <h3 className="font-display text-xl font-bold">{t("paywall.title")}</h3>
+            <h3 className="font-display text-xl font-bold">{native ? t("paywall.nativeTitle") : t("paywall.title")}</h3>
           </div>
           <button
             onClick={onClose}
@@ -100,16 +100,21 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
           </div>
         )}
 
-        <p className="text-sm text-muted mb-4">{t("paywall.subtitle")}</p>
-
-        <div className="space-y-2.5 mb-5">
-          {FEATURES.map((k) => (
-            <div key={k} className="flex items-start gap-2.5 text-sm">
-              <Icon name="check" size={16} style={{ color: "var(--teal)", flex: "0 0 auto", marginTop: 2 }} />
-              <span>{t(k)}</span>
+        {/* En nativo: sin subtítulo ni lista de beneficios (suenan a upsell).
+            Solo información neutra — ver la nota al final (guideline 3.1.1). */}
+        {!native && (
+          <>
+            <p className="text-sm text-muted mb-4">{t("paywall.subtitle")}</p>
+            <div className="space-y-2.5 mb-5">
+              {FEATURES.map((k) => (
+                <div key={k} className="flex items-start gap-2.5 text-sm">
+                  <Icon name="check" size={16} style={{ color: "var(--teal)", flex: "0 0 auto", marginTop: 2 }} />
+                  <span>{t(k)}</span>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
 
         {ok ? (
           <div
@@ -162,7 +167,7 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
 
             {/* En nativo: nota neutra, sin compra ni código (guideline 3.1.1) */}
             {native && (
-              <p className="text-xs text-muted text-center">{t("paywall.nativeNote")}</p>
+              <p className="text-sm text-muted text-center py-2">{t("paywall.nativeNote")}</p>
             )}
 
             {/* Divider + access code section (solo web) */}
