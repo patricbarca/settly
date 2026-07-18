@@ -26,13 +26,15 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-const API_KEY =
-  Deno.env.get("AI_VISION_API_KEY") ?? Deno.env.get("STT_API_KEY") ?? "";
-const API_URL =
-  Deno.env.get("AI_VISION_API_URL") ??
-  "https://api.groq.com/openai/v1/chat/completions";
-const MODEL =
-  Deno.env.get("AI_VISION_MODEL") ?? "meta-llama/llama-4-scout-17b-16e-instruct";
+// Override de proveedor de visión SOLO si AI_VISION_API_KEY está puesto. Así,
+// si quedó un AI_VISION_API_URL/MODEL suelto de un experimento (p. ej. Gemini/
+// OpenRouter) pero sin key, NO rompe: cae a Groq completo con STT_API_KEY.
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
+const OVERRIDE_KEY = Deno.env.get("AI_VISION_API_KEY") ?? "";
+const API_KEY = OVERRIDE_KEY || (Deno.env.get("STT_API_KEY") ?? "");
+const API_URL = OVERRIDE_KEY ? (Deno.env.get("AI_VISION_API_URL") ?? GROQ_URL) : GROQ_URL;
+const MODEL = OVERRIDE_KEY ? (Deno.env.get("AI_VISION_MODEL") ?? GROQ_MODEL) : GROQ_MODEL;
 
 const PROMPT = `You are a receipt/document parser. Read this image (restaurant bill, café, supermarket, utility/phone bill, invoice, etc.) and extract the fields. Respond with ONLY a JSON object, no prose, no markdown:
 {"description":"...","subtotal":0.00,"total":0.00,"category":"...","currency":"AUD","items":[{"name":"...","qty":1,"unitPrice":0.00,"price":0.00}],"fees":[{"name":"...","amount":0.00}],"tax":{"amount":0.00,"rate":0,"included":true}}
