@@ -19,6 +19,8 @@ import { BottomNav, type NavKey } from "./components/BottomNav";
 import { countUnread } from "./lib/notifications";
 import { refreshNativePush } from "./lib/nativePush";
 import { FeedbackModal } from "./components/FeedbackModal";
+import { AIConsentModal } from "./components/AIConsentModal";
+import { registerAIConsentOpener, resolveAIConsent } from "./lib/aiConsent";
 import { registerAppOpen, shouldShowFeedbackPrompt, markFeedbackPromptShown } from "./lib/feedbackPrompt";
 import { AdminDashboard } from "./components/AdminDashboard";
 
@@ -41,6 +43,7 @@ export default function App() {
   const [showActivity, setShowActivity] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showAIConsent, setShowAIConsent] = useState(false);
   const [joinPreview, setJoinPreview] = useState<{
     token: string;
     groupName: string;
@@ -61,6 +64,12 @@ export default function App() {
   useEffect(() => {
     const id = setTimeout(() => setMinLoadDone(true), 3000);
     return () => clearTimeout(id);
+  }, []);
+
+  // Abre el modal de consentimiento de IA cuando alguna función lo requiere.
+  useEffect(() => {
+    registerAIConsentOpener(() => setShowAIConsent(true));
+    return () => registerAIConsentOpener(null);
   }, []);
   const showLoading = phase === "loading" || !minLoadDone;
 
@@ -271,6 +280,11 @@ export default function App() {
       {showFaq && <FaqModal onClose={() => setShowFaq(false)} />}
 
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
+      {showAIConsent && (
+        <AIConsentModal
+          onDecide={(ok) => { resolveAIConsent(ok); setShowAIConsent(false); }}
+        />
+      )}
 
       {showOnboarding && (
         <OnboardingModal

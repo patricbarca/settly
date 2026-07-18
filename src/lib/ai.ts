@@ -4,6 +4,7 @@
 // degrada con elegancia (p. ej. el escaneo cae a su demo local).
 import { supabase } from "./supabase";
 import { fileToScanImage } from "./image";
+import { requestAIConsent, AIConsentDeclined } from "./aiConsent";
 import type { Member, Category, RecurrenceInterval } from "./types";
 
 export type AIParsedExpense = {
@@ -26,6 +27,7 @@ export async function parseExpenseAI(
   currency: string,
   categories: string[]
 ): Promise<AIParsedExpense> {
+  if (!(await requestAIConsent())) throw new AIConsentDeclined();
   const { data, error } = await supabase.functions.invoke("parse-expense", {
     body: {
       text,
@@ -60,6 +62,7 @@ export type ScanResult = {
 /** Lee una imagen de ticket vía la función `scan-receipt` (modelo de visión).
  *  La foto se redimensiona/comprime antes de enviarla (ver fileToScanImage). */
 export async function scanReceipt(file: File): Promise<ScanResult> {
+  if (!(await requestAIConsent())) throw new AIConsentDeclined();
   const { base64, mediaType } = await fileToScanImage(file);
   const { data, error } = await supabase.functions.invoke("scan-receipt", {
     body: { image: base64, mediaType },
@@ -98,6 +101,7 @@ export async function scanReceipt(file: File): Promise<ScanResult> {
 
 /** Transcribe un clip de audio vía la función `transcribe` (Whisper). */
 export async function transcribeAudio(blob: Blob, lang = "es"): Promise<string> {
+  if (!(await requestAIConsent())) throw new AIConsentDeclined();
   const form = new FormData();
   const ext = blob.type.includes("mp4") ? "mp4" : "webm";
   form.append("file", blob, `audio.${ext}`);

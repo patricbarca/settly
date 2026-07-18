@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { transcribeAudio } from "./ai";
+import { requestAIConsent } from "./aiConsent";
 import { isIOS } from "./pwa";
 
 /** Tope de grabación: evita que el mic se quede abierto por error (o alguien
@@ -52,13 +53,16 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
   const supported = useNative || canRecord;
 
   // ---- Ruta 1: Web Speech API (nativa, sin servidor) ----
-  function toggleNative() {
+  async function toggleNative() {
     if (listening) {
       try {
         recRef.current?.stop();
       } catch {}
       return;
     }
+    // Web Speech envía el audio a un servicio de terceros (Google) al iniciar →
+    // pedir consentimiento antes de arrancar (Apple 5.1.1(i)/5.1.2(i)).
+    if (!(await requestAIConsent())) return;
     try {
       // Aborta cualquier reconocimiento previo que se haya quedado colgado
       // (si onend no llegó a dispararse, listening se quedaría en true).
@@ -108,8 +112,9 @@ export function useSpeech(onText: (t: string) => void, lang: "es" | "en" = "es")
           const text = await transcribeAudio(blob, lang);
           if (text) emitText(text);
           else setError("stt");
-        } catch {
-          setError("stt");
+        } catch (e) {
+          // Declinó el consentimiento de IA → sin error, simplemente no transcribe.
+          if ((e as Error)?.name !== "AIConsentDeclined") setError("stt");
         } finally {
           setBusy(false);
         }

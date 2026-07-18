@@ -61,7 +61,9 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         setOtherCurrency(detected);
         setStage("currency");
         return;
-      } catch {
+      } catch (e) {
+        // El usuario declinó el consentimiento de IA → volver a elegir, sin error.
+        if ((e as Error)?.name === "AIConsentDeclined") { setStage("pick"); return; }
         setScanError(true);
         setInitial({ items: [{ name: "", price: 0, participantIds: allIds }], category: "comida" });
         setTax(null);
