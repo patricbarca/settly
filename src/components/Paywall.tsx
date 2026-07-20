@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { redeemCode, startCheckout, reloadPlan, isNativePlatform } from "../lib/plan";
+import { getProducts, purchase, restore, type IAPProduct } from "../lib/iap";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -21,6 +22,44 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
   const [ok, setOk] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [showCode, setShowCode] = useState(false);
+  // IAP (nativo): productos reales de la tienda vía RevenueCat.
+  const [products, setProducts] = useState<IAPProduct[]>([]);
+  const [restoring, setRestoring] = useState(false);
+
+  useEffect(() => {
+    if (!native) return;
+    getProducts().then(setProducts);
+  }, [native]);
+
+  const selected = products.find((p) => p.billing === billing) ?? products[0];
+
+  async function handlePurchase() {
+    if (redirecting || !selected) return;
+    setRedirecting(true);
+    setErr(null);
+    const res = await purchase(selected.packageIdentifier);
+    setRedirecting(false);
+    if (res.ok) {
+      setOk(true);
+      setTimeout(onClose, 1100);
+    } else if (!res.cancelled) {
+      setErr(t("paywall.checkoutError"));
+    }
+  }
+
+  async function handleRestore() {
+    if (restoring) return;
+    setRestoring(true);
+    setErr(null);
+    const active = await restore();
+    setRestoring(false);
+    if (active) {
+      setOk(true);
+      setTimeout(onClose, 1100);
+    } else {
+      setErr(t("paywall.restoreNone"));
+    }
+  }
 
   // Handle ?upgraded=1 param after Stripe redirect
   useEffect(() => {
@@ -165,9 +204,54 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
               </>
             )}
 
-            {/* En nativo: nota neutra, sin compra ni código (guideline 3.1.1) */}
+            {/* En nativo: compra In-App (RevenueCat / App Store / Play). */}
             {native && (
-              <p className="text-sm text-muted text-center py-2">{t("paywall.nativeNote")}</p>
+              <>
+                {products.length >= 1 && (
+                  <div className="flex rounded-2xl overflow-hidden mb-4" style={{ background: "var(--glass)" }}>
+                    {products.map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => setBilling(p.billing)}
+                        className="flex-1 py-2.5 text-sm font-semibold transition-all"
+                        style={p.billing === selected?.billing
+                          ? { background: "var(--indigo)", color: "#fff", borderRadius: "1rem" }
+                          : { color: "var(--muted)" }
+                        }
+                      >
+                        {p.billing === "annual"
+                          ? `${p.priceString}/${t("paywall.year")}`
+                          : `${p.priceString}/${t("paywall.month")}`}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <button
+                  onClick={handlePurchase}
+                  disabled={redirecting || !selected}
+                  className="w-full rounded-2xl py-3.5 font-semibold text-white hover-lift disabled:opacity-60 mb-2"
+                  style={{ background: "linear-gradient(135deg, var(--indigo), var(--teal))" }}
+                >
+                  {redirecting
+                    ? t("paywall.redirecting")
+                    : selected
+                      ? `${t("paywall.subscribe")} · ${selected.priceString}`
+                      : t("paywall.subscribe")}
+                </button>
+
+                <button
+                  onClick={handleRestore}
+                  disabled={restoring}
+                  className="w-full rounded-2xl py-2.5 text-sm font-semibold text-muted disabled:opacity-60 mb-3"
+                >
+                  {restoring ? t("paywall.restoring") : t("paywall.restore")}
+                </button>
+
+                <p className="text-[11px] text-muted text-center mb-3">{t("paywall.terms")}</p>
+
+                {err && <p className="text-red-500 text-xs text-center mb-3">{err}</p>}
+              </>
             )}
 
             {/* Divider + access code section (solo web) */}

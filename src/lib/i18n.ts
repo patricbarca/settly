@@ -863,6 +863,10 @@ const DICT: Record<string, { es: string; en: string }> = {
   "paywall.nativeNote":      { es: "Las funciones Pro están incluidas en las cuentas Pro.", en: "Pro features are included with a Pro account." },
   "paywall.nativeTitle":     { es: "Settlia Pro", en: "Settlia Pro" },
   "paywall.proIncludes":     { es: "Pro incluye", en: "What Pro includes" },
+  "paywall.subscribe":       { es: "Suscribirse", en: "Subscribe" },
+  "paywall.restore":         { es: "Restaurar compras", en: "Restore purchases" },
+  "paywall.restoring":       { es: "Restaurando…", en: "Restoring…" },
+  "paywall.restoreNone":     { es: "No se encontró ninguna compra para restaurar.", en: "No previous purchase found to restore." },
   "paywall.priceNote":       { es: "Pro: $7/mes · $60/año (próximamente)", en: "Pro: $7/mo · $60/year (coming soon)" },
 
   "code.label":       { es: "Código de acceso", en: "Access code" },
