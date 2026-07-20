@@ -18,6 +18,7 @@ import { NotificationsBell } from "./components/NotificationsBell";
 import { BottomNav, type NavKey } from "./components/BottomNav";
 import { countUnread } from "./lib/notifications";
 import { refreshNativePush } from "./lib/nativePush";
+import { initIAP } from "./lib/iap";
 import { FeedbackModal } from "./components/FeedbackModal";
 import { AIConsentModal } from "./components/AIConsentModal";
 import { registerAIConsentOpener, resolveAIConsent } from "./lib/aiConsent";
@@ -139,7 +140,10 @@ export default function App() {
   useEffect(() => {
     // Refresca el token de push nativo al iniciar sesión (Apple puede rotarlo).
     // No-op en web o si el usuario no lo activó.
-    if (phase === "authenticated") void refreshNativePush();
+    if (phase === "authenticated") {
+      void refreshNativePush();
+      void initIAP(); // RevenueCat: sincroniza el entitlement Pro (no-op en web)
+    }
   }, [phase]);
 
   useEffect(() => {

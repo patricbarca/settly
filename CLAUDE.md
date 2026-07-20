@@ -162,6 +162,21 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 ## iOS App Store submission progress (in App Store Connect, user-side)
 - App record exists (Apple ID **6787267468**, `app.settlia.pwa`). Screenshots (1284×2778), description/keywords, **App Privacy** questionnaire, Support URL (`https://settlia.app/#faq`) and Privacy Policy URL (`https://settlia.app/privacy.html`) all completed/published. Demo reviewer account seeded: `demo.review@settlia.app` (email+password sign-in path added just for Apple Beta/App Review). **New build with native push uploaded to App Store Connect successfully (2026-07-11)** after fixing the provisioning-profile/push signing issue (see native-push section). Still pending user-side: Age Rating, Category (Finance), Pricing (Free, no IAP), select the latest build, App Review Information (demo account creds), then **Add for Review**.
 
+## In-App Purchases (RevenueCat) — IAP for Pro on native (branch `claude/supabase-connection-status-21oiu1`)
+- **Why:** Apple guideline 3.1.1 requires digital content (Settlia Pro) sold *inside* the native app to use IAP. The old "reader model" native paywall (info-only, no purchase) was insufficient — Apple wants an actual in-app purchase. So native now sells Pro via **RevenueCat** (`@revenuecat/purchases-capacitor` v13.2.3) over StoreKit / Play Billing. **Web keeps Stripe + access codes unchanged.**
+- **Prices:** **$6.99/month** and **$59.99/year** (auto-renewable). Net after Apple/Google Small Business Program (15%): ~$5.94/mo, ~$50.99/yr. AI cost per user ~$0.05/mo (negligible).
+- **Code:**
+  - `src/lib/iap.ts` — RevenueCat wrapper, all guarded by `isNativePlatform()` (no-op on web), plugin lazy-`import()`ed so the web bundle doesn't carry it. `initIAP()` (configure + logIn with the Supabase user id for cross-device Pro), `getProducts()` (offering → `IAPProduct[]` with localized `priceString`), `purchase(pkgId)`, `restore()`, `syncEntitlement()`. Entitlement id = **`"pro"`**.
+  - `src/lib/plan.ts` — added `nativePro` flag + `setNativePro()`; `effectivePlan()` = Supabase entitlement **OR** RevenueCat `pro`. `isPro`/`usePlan`/AI quota all use it.
+  - `src/App.tsx` — calls `initIAP()` on `authenticated` (next to `refreshNativePush`).
+  - `src/components/Paywall.tsx` — native branch now shows real store prices (monthly/annual toggle), **Subscribe** (`purchase`) and **Restore purchases** (`restore`, required by Apple) buttons. i18n: `paywall.subscribe/restore/restoring/restoreNone`.
+- **Build:** RevenueCat plugin registers via `npx cap sync` (Codemagic/Android CI already run sync). `npm run build` (web) verified. Cannot test IAP end-to-end here (needs a real device + sandbox + store products + RC key).
+- **NEEDS (user-side, before it works):**
+  - **App Store Connect:** subscription group "Settlia Pro" with two auto-renewables — monthly `$6.99`, annual `$59.99`. Same two products in **Google Play Console**.
+  - **RevenueCat:** project with entitlement **`pro`** linked to both products; a default **offering** with monthly + annual packages. Provide the public API keys via build env: **`VITE_RC_IOS_KEY`** (`appl_…`) and **`VITE_RC_ANDROID_KEY`** (`goog_…`).
+  - Enroll both stores' **Small Business Program** (15% commission).
+  - iOS Pricing in App Store Connect: Free app **with IAP** (not "no IAP"); resubmit a Codemagic build from `master` once IAP products + RC keys exist.
+
 ## Pending / known issues
 > Plan completo y fases en **`ROADMAP.md`**.
 - **Receipt/proof images:** scanned receipts are now stored in **Supabase Storage** (private bucket `receipts`, `Expense.receiptPath`, signed URLs, member-only RLS — `src/lib/storage.ts`; run `migrate_v5_receipts_storage.sql`). Still pending: **payment proof** is still a **base64 data URL in the group JSON** (`settlement.proof`) — migrate it to Storage too + migrate legacy base64; and **show the receipt in the report** (embed thumbnail in the print PDF; CSV = yes/no, signed links expire). (ROADMAP Fase 1.)

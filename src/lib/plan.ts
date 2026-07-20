@@ -35,6 +35,10 @@ let plan: Plan = "free";
 let planReady = false;
 let trialEndsAt: Date | null = null;
 let hasStripe = false;
+/** Pro desbloqueado por una compra In-App (RevenueCat, solo nativo). Se combina
+ *  (OR) con el entitlement de Supabase: en iOS/Android la suscripción se compra
+ *  vía App Store / Play (guideline 3.1.1) y RevenueCat es la fuente de verdad. */
+let nativePro = false;
 let usage: Usage = loadUsage();
 const listeners = new Set<() => void>();
 
@@ -85,12 +89,24 @@ supabase.auth.onAuthStateChange((_event, session) => {
   }
 });
 
+/** Plan efectivo = entitlement de Supabase OR compra In-App nativa (RevenueCat). */
+function effectivePlan(): Plan {
+  return plan === "pro" || nativePro ? "pro" : "free";
+}
+
 export function isPro(): boolean {
-  return plan === "pro";
+  return effectivePlan() === "pro";
 }
 
 export function usePlan(): Plan {
-  return useSyncExternalStore(sub, () => plan, () => plan);
+  return useSyncExternalStore(sub, effectivePlan, effectivePlan);
+}
+
+/** Fija el estado Pro proveniente de una compra In-App (llamado por iap.ts). */
+export function setNativePro(active: boolean): void {
+  if (nativePro === active) return;
+  nativePro = active;
+  emit();
 }
 
 export function usePlanReady(): boolean {
@@ -211,7 +227,7 @@ function rollover() {
 }
 
 function quota(kind: AIKind): number {
-  return plan === "pro" ? PRO_AI_QUOTA[kind] : FREE_AI_QUOTA;
+  return effectivePlan() === "pro" ? PRO_AI_QUOTA[kind] : FREE_AI_QUOTA;
 }
 
 /** Usos de IA restantes este mes para un tipo concreto. */
