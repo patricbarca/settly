@@ -867,7 +867,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "paywall.restore":         { es: "Restaurar compras", en: "Restore purchases" },
   "paywall.restoring":       { es: "Restaurando…", en: "Restoring…" },
   "paywall.restoreNone":     { es: "No se encontró ninguna compra para restaurar.", en: "No previous purchase found to restore." },
-  "paywall.priceNote":       { es: "Pro: $7/mes · $60/año (próximamente)", en: "Pro: $7/mo · $60/year (coming soon)" },
+  "paywall.priceNote":       { es: "Pro: $6.99/mes · $59.99/año", en: "Pro: $6.99/mo · $59.99/year" },
 
   "code.label":       { es: "Código de acceso", en: "Access code" },
   "code.placeholder": { es: "Tu código", en: "Your code" },
