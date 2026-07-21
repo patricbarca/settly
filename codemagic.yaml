@@ -9,6 +9,12 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: app.settlia.pwa
+      groups:
+        # Variables definidas en Codemagic UI → Environment variables (grupo
+        # "revenuecat"). Debe contener VITE_RC_IOS_KEY (la Public SDK key
+        # appl_… de RevenueCat) para que `npm run build` la inyecte en el
+        # bundle (Vite lee las VITE_* en tiempo de compilación).
+        - revenuecat
       vars:
         XCODE_PROJECT: "ios/App/App.xcodeproj"
         XCODE_SCHEME: "App"
