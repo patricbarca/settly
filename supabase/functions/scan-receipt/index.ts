@@ -104,6 +104,7 @@ Rules:
   - CRITICAL: many receipts (Australia/NZ especially) print a "GST Sales" / "GST Amount" (or "Tax Sales" / "Tax Amount") breakdown near the bottom purely as a statutory disclosure of the tax portion ALREADY inside the prices — it is NOT an extra charge to add. If the printed subtotal equals (or is within a cent of) the final total/amount paid, the tax is included: set included:true. Only set included:false when the tax amount is clearly added ON TOP — i.e. subtotal + tax ≈ total, with total strictly greater than subtotal.
 - subtotal: items subtotal before fees/tax. total: the FINAL amount paid.
 - category: one of exactly these — comida, mercado, bebidas, transporte, viajes, alojamiento, ocio, compras, salud, servicios, suscripciones, seguros, regalos, otros.
+  - VENUE MATTERS: "comida" = a restaurant/café/diner/food-truck with a prepared meal (a bill you'd tip on). "bebidas" = a bar/pub/coffee shop mainly selling drinks. "mercado" = a SUPERMARKET / grocery store (Aldi, Coles, Woolworths, IGA, corner shop) — many packaged products, NO table service and NO tip. If the receipt is a supermarket/grocery run, use "mercado", never "comida", even if it contains food items.
 - currency: ISO 4217 code detected (AUD, USD, EUR, GBP, ARS, CLP, COP, MXN…). Default EUR.
 - If you cannot read the image at all: {"description":"","subtotal":0,"total":0,"category":"otros","currency":"EUR","items":[],"fees":[],"tax":{"amount":0,"rate":0,"included":true}}`;
 

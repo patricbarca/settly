@@ -652,7 +652,7 @@ export function ItemizedExpenseEditor({
         )}
       </div>
 
-      {category === "comida" && (
+      {(category === "comida" || category === "bebidas") && (
         <div className="glass rounded-3xl p-3 flex items-center justify-between">
           <div>
             <div className="text-sm font-medium">{t("scan.tip")}</div>
