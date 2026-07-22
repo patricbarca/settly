@@ -86,6 +86,7 @@ export type IAPProduct = {
   id: string;
   billing: "monthly" | "annual";
   priceString: string; // ya localizado por la tienda, p. ej. "$6.99"
+  currencyCode: string; // moneda real del precio, p. ej. "USD", "AUD"
   packageIdentifier: string;
 };
 
@@ -107,6 +108,7 @@ export async function getProducts(): Promise<IAPProduct[]> {
         id: p.identifier,
         billing,
         priceString: p.priceString,
+        currencyCode: (p as { currencyCode?: string }).currencyCode ?? "",
         packageIdentifier: pkg.identifier,
       });
     }

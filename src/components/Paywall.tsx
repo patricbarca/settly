@@ -227,6 +227,14 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
                   </div>
                 )}
 
+                {/* Deja claro en qué moneda se cobra (USD, AUD, EUR…), tomada
+                    del propio producto de la tienda para que sea siempre exacta. */}
+                {selected?.currencyCode && (
+                  <p className="text-[11px] text-center text-muted mb-3">
+                    {t("paywall.pricesIn", { cur: selected.currencyCode })}
+                  </p>
+                )}
+
                 <button
                   onClick={handlePurchase}
                   disabled={redirecting || !selected}
