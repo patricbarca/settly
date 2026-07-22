@@ -22,7 +22,7 @@
 //   BACKUP (solo activo si defines la key):
 //     AI_VISION_BACKUP_API_KEY  (p. ej. una key de OpenRouter sk-or-... o Gemini)
 //     AI_VISION_BACKUP_API_URL  (def. https://openrouter.ai/api/v1/chat/completions)
-//     AI_VISION_BACKUP_MODEL    (def. google/gemini-2.0-flash-001)
+//     AI_VISION_BACKUP_MODEL    (def. qwen/qwen2.5-vl-72b-instruct)
 // ============================================================
 
 // CORS inline (sin import de ../_shared) para poder pegar este único archivo
@@ -72,7 +72,9 @@ function buildProviders(): Provider[] {
       name: "backup",
       key: backupKey,
       url: Deno.env.get("AI_VISION_BACKUP_API_URL") || OPENROUTER_URL,
-      model: Deno.env.get("AI_VISION_BACKUP_MODEL") || "google/gemini-2.0-flash-001",
+      // Qwen2.5-VL 72B en OpenRouter (confirmado disponible en la cuenta). Se
+      // puede sobreescribir con AI_VISION_BACKUP_MODEL.
+      model: Deno.env.get("AI_VISION_BACKUP_MODEL") || "qwen/qwen2.5-vl-72b-instruct",
     });
   }
 
@@ -116,8 +118,11 @@ Deno.serve(async (req) => {
     if (!image) return json({ error: "no_image" }, 400);
 
     const dataUrl = `data:${mediaType || "image/jpeg"};base64,${image}`;
-    const body = JSON.stringify({
-      max_tokens: 1500,
+    // max_tokens holgado: qwen3.6-27b puede "pensar" antes de responder; damos
+    // margen para que el JSON final no salga cortado (y en Groq desactivamos el
+    // thinking abajo con reasoning_effort:"none").
+    const basePayload = {
+      max_tokens: 3000,
       temperature: 0,
       messages: [
         {
@@ -128,13 +133,13 @@ Deno.serve(async (req) => {
           ],
         },
       ],
-    });
+    };
 
     // Failover: prueba cada proveedor en orden; el primero que responda un JSON
     // válido gana. Si uno falla (HTTP, timeout o parse), se prueba el siguiente.
     let lastError = "";
     for (const p of providers) {
-      const parsed = await callProvider(p, body);
+      const parsed = await callProvider(p, basePayload);
       if (parsed.ok) {
         return json({
           _provider: p.name, // útil para depurar cuál respondió
@@ -164,11 +169,17 @@ Deno.serve(async (req) => {
  *  error legible para poder pasar al siguiente proveedor. */
 async function callProvider(
   p: Provider,
-  body: string,
+  basePayload: Record<string, unknown>,
 ): Promise<{ ok: true; value: Record<string, unknown> } | { ok: false; error: string }> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), PER_PROVIDER_TIMEOUT_MS);
   try {
+    // Inyecta el modelo de ESTE proveedor. En Groq desactivamos el "thinking"
+    // (reasoning_effort:"none") para que devuelva el JSON directo y rápido; los
+    // modelos Qwen3 de Groq razonan por defecto y se comen los tokens de salida.
+    const payload: Record<string, unknown> = { model: p.model, ...basePayload };
+    if (/groq\.com/.test(p.url)) payload.reasoning_effort = "none";
+
     const res = await fetch(p.url, {
       method: "POST",
       signal: ctrl.signal,
@@ -176,8 +187,7 @@ async function callProvider(
         authorization: `Bearer ${p.key}`,
         "content-type": "application/json",
       },
-      // Inyecta el modelo de ESTE proveedor sobre el body común.
-      body: JSON.stringify({ model: p.model, ...JSON.parse(body) }),
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
@@ -241,7 +251,11 @@ function sanitizeTax(tax: unknown): { amount: number; rate: number; included: bo
 }
 
 function extractJson(text: string): Record<string, unknown> | null {
-  const m = text.match(/\{[\s\S]*\}/);
+  // Quita bloques de "thinking" (<think>…</think>) y fences de código que
+  // algunos modelos añaden, para dejar solo el JSON.
+  let t = text.replace(/<think>[\s\S]*?<\/think>/gi, "");
+  t = t.replace(/```(?:json)?/gi, "");
+  const m = t.match(/\{[\s\S]*\}/);
   if (!m) return null;
   try {
     return JSON.parse(m[0]);
