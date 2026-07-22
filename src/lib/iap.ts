@@ -144,6 +144,23 @@ export async function purchase(packageIdentifier: string): Promise<PurchaseResul
   }
 }
 
+/** Abre la hoja nativa de gestión de suscripciones (App Store / Play) para que
+ *  el usuario cambie de plan o cancele. Apple espera este acceso en apps con
+ *  suscripciones. No-op en web. */
+export async function manageSubscriptions(): Promise<void> {
+  if (!isNativePlatform()) return;
+  try {
+    const { Purchases } = await rc();
+    await Purchases.showManageSubscriptions();
+  } catch (e) {
+    console.error("manageSubscriptions", e);
+    // Fallback: página de suscripciones de Apple.
+    try {
+      window.open("https://apps.apple.com/account/subscriptions", "_blank");
+    } catch {}
+  }
+}
+
 /** Restaura compras previas (obligatorio para Apple). Devuelve si quedó Pro. */
 export async function restore(): Promise<boolean> {
   if (!isNativePlatform() || !initialized) return false;

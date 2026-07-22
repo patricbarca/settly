@@ -11,6 +11,7 @@ import { countryList, dialCode, isValidPhone, normalizePhone } from "../lib/coun
 import { useT, useLang } from "../lib/i18n";
 import { useTimezonePref, setTimezone, resolveTz, TIMEZONES } from "../lib/tz";
 import { usePlan, FREE_AI_QUOTA, startPortal, useHasStripeSubscription, isNativePlatform } from "../lib/plan";
+import { manageSubscriptions } from "../lib/iap";
 import { Icon } from "./Icon";
 import { Paywall } from "./Paywall";
 import { FeedbackModal } from "./FeedbackModal";
@@ -337,6 +338,16 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
                 </button>
                 {portalErr && <p className="text-xs text-red-500">{portalErr}</p>}
               </div>
+            ) : isNativePlatform() ? (
+              // Pro comprado por IAP: enlaza a la gestión nativa (App Store /
+              // Play) para cambiar de plan o cancelar. Apple lo espera.
+              <button
+                onClick={() => void manageSubscriptions()}
+                className="rounded-full px-3 py-1.5 text-xs font-semibold hover-lift shrink-0"
+                style={{ background: "rgba(91,91,240,0.12)", color: "var(--indigo)" }}
+              >
+                {t("trial.manage")}
+              </button>
             ) : (
               <span
                 className="rounded-full px-3 py-1.5 text-xs font-semibold shrink-0"
