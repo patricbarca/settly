@@ -179,15 +179,15 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
                       }
                     >
                       {b === "annual"
-                        ? `$5/${t("paywall.month")} · ${t("paywall.annualSave")}`
-                        : `$7/${t("paywall.month")}`}
+                        ? `$4.99/${t("paywall.month")} · ${t("paywall.annualSave")}`
+                        : `$6.99/${t("paywall.month")}`}
                     </button>
                   ))}
                 </div>
 
-                {billing === "annual" && (
-                  <p className="text-xs text-center text-muted mb-3">{t("paywall.billedAnnually")}</p>
-                )}
+                <p className="text-xs text-center text-muted mb-3">
+                  {billing === "annual" ? t("paywall.billedAnnually") : t("paywall.billedMonthly")}
+                </p>
 
                 <button
                   onClick={handleCheckout}
