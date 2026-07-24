@@ -153,10 +153,16 @@ export async function manageSubscriptions(): Promise<void> {
   if (!isNativePlatform()) return;
   try {
     const { Purchases } = await rc();
-    await Purchases.showManageSubscriptions();
+    // showManageSubscriptions no está tipado en todas las versiones del plugin;
+    // si existe lo usamos, si no caemos a la URL de gestión de Apple.
+    const p = Purchases as unknown as { showManageSubscriptions?: () => Promise<void> };
+    if (typeof p.showManageSubscriptions === "function") {
+      await p.showManageSubscriptions();
+      return;
+    }
+    window.open("https://apps.apple.com/account/subscriptions", "_blank");
   } catch (e) {
     console.error("manageSubscriptions", e);
-    // Fallback: página de suscripciones de Apple.
     try {
       window.open("https://apps.apple.com/account/subscriptions", "_blank");
     } catch {}

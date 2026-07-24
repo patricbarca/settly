@@ -512,10 +512,16 @@ function ExpenseRow({
   // referencia este gasto en `expenseIds` — en modo Directo por elección
   // manual (picker), en Simplificado por asignación automática de más
   // antiguo a más nuevo (`fifoExpenseIdsForAmount`).
-  const { debtorIds, settledIds } = expenseSettledStatus(e, ids, group.settlements ?? []);
+  const { debtorIds, settledIds, partialIds } = expenseSettledStatus(e, ids, group.settlements ?? []);
   const pendingCount = debtorIds.filter((id) => !settledIds.has(id)).length;
-  const paidStatus: "paid" | "pending" | null =
-    debtorIds.length > 0 ? (pendingCount === 0 ? "paid" : "pending") : null;
+  const paidStatus: "paid" | "partial" | "pending" | null =
+    debtorIds.length === 0
+      ? null
+      : pendingCount === 0
+        ? "paid"
+        : partialIds.size > 0 || settledIds.size > 0
+          ? "partial"
+          : "pending";
   // Anillo verde en la burbuja: ya saldó su parte (o no debía, por ser pagador).
   const bubblePaid = (id: string) => payerIds.includes(id) || settledIds.has(id);
 
@@ -620,11 +626,13 @@ function ExpenseRow({
                   style={
                     paidStatus === "paid"
                       ? { background: "#0A8B5E22", color: "#0A8B5E" }
-                      : { background: "#E8920C22", color: "#9A6B00" }
+                      : paidStatus === "partial"
+                        ? { background: "#5B5BF022", color: "#5B5BF0" }
+                        : { background: "#E8920C22", color: "#9A6B00" }
                   }
                 >
                   <Icon name={paidStatus === "paid" ? "check" : "clock"} size={11} />
-                  {t(paidStatus === "paid" ? "exp.paid" : "exp.pending")}
+                  {t(paidStatus === "paid" ? "exp.paid" : paidStatus === "partial" ? "expense.partlyPaid" : "exp.pending")}
                 </span>
               )}
             </div>

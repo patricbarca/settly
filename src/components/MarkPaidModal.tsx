@@ -60,6 +60,24 @@ export function MarkPaidModal({
   });
   const usingPicker = debts.length > 0;
 
+  // Monto a pagar POR gasto (editable). Por defecto = el pendiente de cada gasto
+  // (100%), pero el pagador puede bajarlo para pagar solo una parte (ej. $1000
+  // de $2000). El máximo por gasto es su pendiente (no se puede pagar de más).
+  const [amounts, setAmounts] = useState<Record<string, string>>(() =>
+    Object.fromEntries(debts.map((d) => [d.expenseId, String(d.amount)]))
+  );
+  const debtById = useMemo(
+    () => Object.fromEntries(debts.map((d) => [d.expenseId, d])),
+    [debts]
+  );
+  /** Monto válido (clamp 0..pendiente) que se pagará de un gasto. */
+  function amtFor(id: string): number {
+    const cap = debtById[id]?.amount ?? 0;
+    const raw = Number(amounts[id] ?? cap);
+    if (!Number.isFinite(raw) || raw < 0) return 0;
+    return Math.round(Math.min(raw, cap) * 100) / 100;
+  }
+
   function toggleExpense(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -69,7 +87,7 @@ export function MarkPaidModal({
     });
   }
 
-  const pickedTotal = Math.round(debts.filter((d) => selected.has(d.expenseId)).reduce((s, d) => s + d.amount, 0) * 100) / 100;
+  const pickedTotal = Math.round(debts.filter((d) => selected.has(d.expenseId)).reduce((s, d) => s + amtFor(d.expenseId), 0) * 100) / 100;
 
   // Monto a registrar: la suma de los gastos elegidos, PERO nunca más de lo que
   // realmente le debes a esta persona (`max`). En modo Simplificado la deuda
@@ -97,6 +115,17 @@ export function MarkPaidModal({
   function confirm() {
     if (!valid) return;
     const paidAmt = Math.round(value * 100) / 100;
+    // Desglose por gasto (parcial o total) + los cubiertos ENTEROS para el
+    // indicador "pagado" del listado.
+    const picks = usingPicker
+      ? debts
+          .filter((d) => selected.has(d.expenseId))
+          .map((d) => ({ expenseId: d.expenseId, amount: amtFor(d.expenseId) }))
+          .filter((p) => p.amount > 0.005)
+      : [];
+    const fullyCovered = picks
+      .filter((p) => p.amount >= (debtById[p.expenseId]?.amount ?? 0) - 0.005)
+      .map((p) => p.expenseId);
     updateGroup(group.id, (g) => ({
       ...g,
       settlements: [
@@ -111,7 +140,8 @@ export function MarkPaidModal({
           // cobra lo confirme o lo rechace. Puede ser un pago PARCIAL.
           status: "pending",
           proof,
-          ...(usingPicker ? { expenseIds: [...selected] } : {}),
+          ...(fullyCovered.length ? { expenseIds: fullyCovered } : {}),
+          ...(picks.length ? { expensePayments: picks } : {}),
         },
       ],
       notifications: withNotif(g, {
@@ -161,26 +191,48 @@ export function MarkPaidModal({
             <div className="glass rounded-2xl p-1.5 mt-1 space-y-0.5 max-h-56 overflow-y-auto">
               {debts.map((d) => {
                 const on = selected.has(d.expenseId);
+                const partial = on && amtFor(d.expenseId) < d.amount - 0.005;
                 return (
-                  <button
+                  <div
                     key={d.expenseId}
-                    onClick={() => toggleExpense(d.expenseId)}
-                    className="w-full flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover-lift"
+                    className="rounded-xl px-2.5 py-2"
                     style={on ? { background: "var(--surface-soft)" } : undefined}
                   >
-                    <span
-                      className="h-5 w-5 rounded-full flex items-center justify-center shrink-0"
-                      style={{
-                        background: on ? "var(--teal)" : "transparent",
-                        border: on ? "none" : "1.5px solid var(--line)",
-                        color: "#fff",
-                      }}
-                    >
-                      {on && <Icon name="check" size={12} />}
-                    </span>
-                    <span className="text-sm flex-1 min-w-0 truncate">{d.label || "—"}</span>
-                    <span className="text-sm font-mono font-semibold shrink-0">{money(d.amount, group.currency)}</span>
-                  </button>
+                    <div className="flex items-center gap-2.5">
+                      <button
+                        onClick={() => toggleExpense(d.expenseId)}
+                        className="flex items-center gap-2.5 flex-1 min-w-0 text-left hover-lift"
+                      >
+                        <span
+                          className="h-5 w-5 rounded-full flex items-center justify-center shrink-0"
+                          style={{
+                            background: on ? "var(--teal)" : "transparent",
+                            border: on ? "none" : "1.5px solid var(--line)",
+                            color: "#fff",
+                          }}
+                        >
+                          {on && <Icon name="check" size={12} />}
+                        </span>
+                        <span className="text-sm flex-1 min-w-0 truncate">{d.label || "—"}</span>
+                      </button>
+                      {on ? (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <input
+                            value={amounts[d.expenseId] ?? String(d.amount)}
+                            onChange={(e) => setAmounts((p) => ({ ...p, [d.expenseId]: e.target.value }))}
+                            inputMode="decimal"
+                            className="glass rounded-lg px-2 py-1 text-right text-sm font-mono w-20"
+                          />
+                          <span className="text-[10px] text-muted shrink-0">/ {money(d.amount, group.currency)}</span>
+                        </div>
+                      ) : (
+                        <span className="text-sm font-mono font-semibold shrink-0">{money(d.amount, group.currency)}</span>
+                      )}
+                    </div>
+                    {partial && (
+                      <p className="text-[10px] text-muted mt-1 ml-7">{t("pay.partialOf", { total: money(d.amount, group.currency) })}</p>
+                    )}
+                  </div>
                 );
               })}
             </div>

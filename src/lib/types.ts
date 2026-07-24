@@ -124,6 +124,12 @@ export interface Settlement {
    *  a gastos reales compartidos entre estas dos personas). Al confirmarse,
    *  esos gastos se marcan como pagados por `from` en el listado de gastos. */
   expenseIds?: string[];
+  /** Pago PARCIAL por gasto: cuánto de este pago se aplica a cada gasto. Permite
+   *  pagar solo una parte de un gasto (ej. $1000 de $2000). `expenseIds` sigue
+   *  llevando los gastos cubiertos ENTEROS (para el indicador "pagado" del
+   *  listado); `expensePayments` lleva el monto exacto por gasto (parcial o
+   *  total). El `amount` del settlement = suma de estos. */
+  expensePayments?: { expenseId: string; amount: number }[];
 }
 
 export type NotificationType = "expense_added" | "payment_made" | "review_requested" | "delete_requested" | "recurring_generated";

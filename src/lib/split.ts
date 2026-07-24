@@ -156,6 +156,30 @@ export interface ExpenseDebt {
   amount: number;
 }
 
+/** Monto ya saldado (por pagos CONFIRMADOS de `fromId`) hacia un gasto concreto.
+ *  Cuenta pagos parciales (`expensePayments`) y, por compatibilidad, pagos
+ *  antiguos que solo referencian `expenseIds` (se toman como cobertura total =
+ *  `owedShare`). Si se pasa `toId`, solo cuenta pagos a ese acreedor. */
+function paidTowardExpense(
+  settlements: Settlement[],
+  fromId: string,
+  expenseId: string,
+  owedShare: number,
+  toId?: string,
+  excludeSettlementId?: string
+): number {
+  let paid = 0;
+  for (const s of settlements) {
+    if (s.id === excludeSettlementId) continue;
+    if (s.status !== "confirmed" || s.from !== fromId) continue;
+    if (toId && s.to !== toId) continue;
+    const ep = s.expensePayments?.find((x) => x.expenseId === expenseId);
+    if (ep) paid += Number(ep.amount || 0);
+    else if (s.expenseIds?.includes(expenseId)) paid += owedShare; // legacy: entero
+  }
+  return Math.round(paid * 100) / 100;
+}
+
 /** Desglose de qué gastos concretos componen lo que 'fromId' le debe a
  *  'toId' (modo Directo) — excluye los ya cubiertos por un pago CONFIRMADO
  *  entre ese mismo par que los referencia en `expenseIds`. Se usa para dejar
@@ -172,17 +196,8 @@ export function expenseDebtsBetween(
   excludeSettlementId?: string
 ): ExpenseDebt[] {
   const ids = members.map((m) => m.id);
-  const paidExpenseIds = new Set<string>();
-  for (const s of settlements) {
-    if (s.id === excludeSettlementId) continue;
-    if (s.status === "confirmed" && s.from === fromId && s.to === toId) {
-      (s.expenseIds ?? []).forEach((id) => paidExpenseIds.add(id));
-    }
-  }
-
   const out: ExpenseDebt[] = [];
   for (const e of expenses) {
-    if (paidExpenseIds.has(e.id)) continue;
     const sh = shareFor(e, ids);
     const owedShare = sh[fromId] || 0;
     if (owedShare <= 0.001) continue;
@@ -193,8 +208,12 @@ export function expenseDebtsBetween(
     const toPay = pays.find((p) => p.memberId === toId);
     if (!toPay) continue;
     const frac = Number(toPay.amount || 0) / totalPaid;
-    const amount = Math.round(owedShare * frac * 100) / 100;
-    if (amount > 0.01) out.push({ expenseId: e.id, label: e.label, amount });
+    const owedToCreditor = Math.round(owedShare * frac * 100) / 100;
+    if (owedToCreditor <= 0.01) continue;
+    // Resta lo ya pagado hacia este gasto (a este acreedor) → queda el pendiente.
+    const paid = paidTowardExpense(settlements, fromId, e.id, owedToCreditor, toId, excludeSettlementId);
+    const remaining = Math.round((owedToCreditor - paid) * 100) / 100;
+    if (remaining > 0.01) out.push({ expenseId: e.id, label: e.label, amount: remaining });
   }
   return out;
 }
@@ -207,15 +226,20 @@ export function expenseSettledStatus(
   e: Expense,
   memberIds: string[],
   settlements: Settlement[]
-): { debtorIds: string[]; settledIds: Set<string> } {
+): { debtorIds: string[]; settledIds: Set<string>; partialIds: Set<string> } {
   const sh = shareFor(e, memberIds);
   const payerIds = new Set(e.payments?.length ? e.payments.map((p) => p.memberId) : [e.payerId]);
   const debtorIds = memberIds.filter((id) => (sh[id] || 0) > 0.001 && !payerIds.has(id));
+  // "settled" = pagó su parte ENTERA; "partial" = pagó algo pero no todo.
   const settledIds = new Set<string>();
-  for (const s of settlements) {
-    if (s.status === "confirmed" && s.expenseIds?.includes(e.id)) settledIds.add(s.from);
+  const partialIds = new Set<string>();
+  for (const id of debtorIds) {
+    const owedShare = sh[id] || 0;
+    const paid = paidTowardExpense(settlements, id, e.id, owedShare);
+    if (paid >= owedShare - 0.01) settledIds.add(id);
+    else if (paid > 0.01) partialIds.add(id);
   }
-  return { debtorIds, settledIds };
+  return { debtorIds, settledIds, partialIds };
 }
 
 /** Modo Simplificado: una transferencia es una optimización agregada que no
@@ -271,22 +295,17 @@ export function myPendingExpenses(
   fromId: string
 ): ExpenseDebt[] {
   const ids = members.map((m) => m.id);
-  const alreadySettled = new Set<string>();
-  for (const s of settlements) {
-    if (s.status === "confirmed" && s.from === fromId) {
-      (s.expenseIds ?? []).forEach((id) => alreadySettled.add(id));
-    }
-  }
-
   const sorted = [...expenses].sort((a, b) => a.date.localeCompare(b.date));
   const out: ExpenseDebt[] = [];
   for (const e of sorted) {
-    if (alreadySettled.has(e.id)) continue;
     const payerIds = new Set(e.payments?.length ? e.payments.map((p) => p.memberId) : [e.payerId]);
     if (payerIds.has(fromId)) continue;
     const owedShare = shareFor(e, ids)[fromId] || 0;
     if (owedShare <= 0.005) continue;
-    out.push({ expenseId: e.id, label: e.label, amount: owedShare });
+    // Descuenta lo ya pagado hacia este gasto (parcial o total) → pendiente.
+    const paid = paidTowardExpense(settlements, fromId, e.id, owedShare);
+    const remaining = Math.round((owedShare - paid) * 100) / 100;
+    if (remaining > 0.005) out.push({ expenseId: e.id, label: e.label, amount: remaining });
   }
   return out;
 }
