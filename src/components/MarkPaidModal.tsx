@@ -66,6 +66,17 @@ export function MarkPaidModal({
   const [amounts, setAmounts] = useState<Record<string, string>>(() =>
     Object.fromEntries(debts.map((d) => [d.expenseId, String(d.amount)]))
   );
+  // Por defecto se paga el monto COMPLETO de cada gasto (solo lectura); el botón
+  // de lápiz habilita el input para pagar una parte.
+  const [editing, setEditing] = useState<Set<string>>(new Set());
+  function toggleEdit(id: string) {
+    setEditing((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
   const debtById = useMemo(
     () => Object.fromEntries(debts.map((d) => [d.expenseId, d])),
     [debts]
@@ -224,18 +235,30 @@ export function MarkPaidModal({
                         </span>
                         <span className="text-sm flex-1 min-w-0 truncate">{d.label || "—"}</span>
                       </button>
-                      {on ? (
+                      {on && editing.has(d.expenseId) ? (
                         <div className="flex items-center gap-1 shrink-0">
                           <input
                             value={amounts[d.expenseId] ?? String(d.amount)}
                             onChange={(e) => setAmounts((p) => ({ ...p, [d.expenseId]: e.target.value }))}
                             inputMode="decimal"
+                            autoFocus
                             className="glass rounded-lg px-2 py-1 text-right text-sm font-mono w-20"
                           />
                           <span className="text-[10px] text-muted shrink-0">/ {money(d.amount, group.currency)}</span>
                         </div>
                       ) : (
-                        <span className="text-sm font-mono font-semibold shrink-0">{money(d.amount, group.currency)}</span>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-sm font-mono font-semibold">{money(amtFor(d.expenseId), group.currency)}</span>
+                          {on && (
+                            <button
+                              onClick={() => toggleEdit(d.expenseId)}
+                              className="text-muted hover-lift p-0.5"
+                              aria-label={t("common.edit")}
+                            >
+                              <Icon name="edit" size={13} />
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                     {partial && (

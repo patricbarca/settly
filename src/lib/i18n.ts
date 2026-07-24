@@ -357,6 +357,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "form.sumMustBe100": { es: "Debe sumar 100%", en: "Must add up to 100%" },
   "common.save": { es: "Guardar", en: "Save" },
   "common.cancel": { es: "Cancelar", en: "Cancel" },
+  "common.edit": { es: "Editar", en: "Edit" },
   "common.done": { es: "Listo", en: "Done" },
   "common.back": { es: "Volver", en: "Back" },
   "common.close": { es: "Cerrar", en: "Close" },
