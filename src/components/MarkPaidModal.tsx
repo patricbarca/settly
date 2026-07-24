@@ -89,6 +89,15 @@ export function MarkPaidModal({
 
   const pickedTotal = Math.round(debts.filter((d) => selected.has(d.expenseId)).reduce((s, d) => s + amtFor(d.expenseId), 0) * 100) / 100;
 
+  // Si el usuario cubre TODOS los gastos al 100%, es un pago total: registramos
+  // exactamente lo adeudado (`max`), no la suma de las partes por gasto. Cada
+  // parte se redondea a céntimos y su suma puede quedar unos céntimos por debajo
+  // del saldo real → sin esto quedaban restos tipo $0.10 sin saldar.
+  const allFull =
+    usingPicker &&
+    debts.length > 0 &&
+    debts.every((d) => selected.has(d.expenseId) && amtFor(d.expenseId) >= d.amount - 0.005);
+
   // Monto a registrar: la suma de los gastos elegidos, PERO nunca más de lo que
   // realmente le debes a esta persona (`max`). En modo Simplificado la deuda
   // está neteada entre varias personas, así que la suma bruta de tus gastos
@@ -96,7 +105,7 @@ export function MarkPaidModal({
   // registraría un pago de más. Si no hay gastos (caso borde) se usa el monto
   // escrito a mano.
   const value = usingPicker
-    ? Math.min(pickedTotal, max)
+    ? (allFull ? max : Math.min(pickedTotal, max))
     : Math.min(Math.max(0, Number(amt) || 0), max);
   const valid = value > 0.005;
   const remaining = Math.round((max - value) * 100) / 100;
