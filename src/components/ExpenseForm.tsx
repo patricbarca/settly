@@ -15,10 +15,13 @@ export interface ExpenseDraft {
   amount: number | string;
   payerId: string;
   multiPay: boolean;
-  payments: Record<string, number>;      // memberId -> amount paid (form state)
+  // Se guarda el TEXTO crudo mientras se escribe (no un número) para no perder
+  // el punto decimal al teclear (ej. "33." → "33.5"); se convierte con Number()
+  // al consumir. Igual que `amount` arriba (number | string).
+  payments: Record<string, number | string>;      // memberId -> amount paid (form state)
   participantIds: string[];
   splitMode: SplitMode;
-  splitValues: Record<string, number>;   // %, exact amounts, or share counts
+  splitValues: Record<string, number | string>;   // %, exact amounts, or share counts
   category: Category;
   /** Si true, cualquier participante puede editar este gasto (no solo el creador). */
   allowEdits?: boolean;
@@ -67,8 +70,8 @@ export function draftToExpenseFields(d: ExpenseDraft): {
   let payments: { memberId: string; amount: number }[] | null = null;
   if (d.multiPay) {
     const arr = Object.entries(d.payments)
-      .filter(([, amt]) => amt > 0)
-      .map(([memberId, amount]) => ({ memberId, amount }));
+      .map(([memberId, amount]) => ({ memberId, amount: Number(amount) || 0 }))
+      .filter((p) => p.amount > 0);
     payments = arr.length ? arr : null;
     if (arr.length > 0) {
       // primary payer = who paid most
@@ -82,19 +85,21 @@ export function draftToExpenseFields(d: ExpenseDraft): {
   if (d.splitMode === "equal") {
     splits = null;
   } else if (d.splitMode === "exact") {
-    splits = { ...d.splitValues };
+    const result: Record<string, number> = {};
+    for (const id of d.participantIds) result[id] = Number(d.splitValues[id]) || 0;
+    splits = result;
   } else if (d.splitMode === "percent") {
     const result: Record<string, number> = {};
     for (const id of d.participantIds) {
-      const pct = d.splitValues[id] ?? 0;
+      const pct = Number(d.splitValues[id]) || 0;
       result[id] = Math.round((pct / 100) * totalAmt * 100) / 100;
     }
     splits = result;
   } else if (d.splitMode === "shares") {
-    const totalShares = d.participantIds.reduce((sum, id) => sum + (d.splitValues[id] ?? 0), 0);
+    const totalShares = d.participantIds.reduce((sum, id) => sum + (Number(d.splitValues[id]) || 0), 0);
     const result: Record<string, number> = {};
     for (const id of d.participantIds) {
-      const sh = d.splitValues[id] ?? 0;
+      const sh = Number(d.splitValues[id]) || 0;
       result[id] = totalShares > 0 ? Math.round((sh / totalShares) * totalAmt * 100) / 100 : 0;
     }
     splits = result;
@@ -175,9 +180,10 @@ export function ExpenseForm({
   // cualquiera que NO sea el último participante, el último se autocompleta con
   // el resto (total − suma de los demás), para no tener que calcularlo a mano.
   // Editar directamente el último lo respeta (permite sobrescribir).
-  function setSplitValue(id: string, val: number) {
+  function setSplitValue(id: string, val: string) {
     setF((s) => {
-      const next = { ...s.splitValues, [id]: val };
+      // `val` es el texto crudo tecleado (conserva "33.", "33.5", …).
+      const next: Record<string, number | string> = { ...s.splitValues, [id]: val };
       if ((s.splitMode === "exact" || s.splitMode === "percent") && s.participantIds.length >= 2) {
         const lastId = s.participantIds[s.participantIds.length - 1];
         if (id !== lastId) {
@@ -193,14 +199,15 @@ export function ExpenseForm({
     });
   }
 
-  // Update a payment amount
-  function setPaymentAmt(memberId: string, val: number) {
+  // Update a payment amount — guarda el texto crudo (no re-parsea en cada tecla,
+  // así se puede escribir el punto decimal).
+  function setPaymentAmt(memberId: string, val: string) {
     setF((s) => ({ ...s, payments: { ...s.payments, [memberId]: val } }));
   }
 
   // Validation
   const paymentSum = f.multiPay
-    ? Object.values(f.payments).reduce((a, b) => a + (Number(b) || 0), 0)
+    ? Object.values(f.payments).reduce<number>((a, b) => a + (Number(b) || 0), 0)
     : amt;
   const paymentValid = !f.multiPay || Math.abs(paymentSum - amt) < 0.01;
 
@@ -211,11 +218,11 @@ export function ExpenseForm({
   if (f.splitMode === "equal") {
     splitValid = f.participantIds.length > 0;
   } else if (f.splitMode === "percent") {
-    const sum = f.participantIds.reduce((a, id) => a + (f.splitValues[id] ?? 0), 0);
+    const sum = f.participantIds.reduce((a, id) => a + (Number(f.splitValues[id]) || 0), 0);
     splitValid = Math.abs(sum - 100) < 0.5;
     splitSumDisplay = sum.toFixed(1) + "%";
   } else if (f.splitMode === "exact") {
-    const sum = f.participantIds.reduce((a, id) => a + (f.splitValues[id] ?? 0), 0);
+    const sum = f.participantIds.reduce((a, id) => a + (Number(f.splitValues[id]) || 0), 0);
     splitValid = Math.abs(sum - amt) < 0.01;
     splitSumDisplay = money(sum, currencyCode);
   } else if (f.splitMode === "shares") {
@@ -324,7 +331,7 @@ export function ExpenseForm({
                 <div className="glass rounded-lg px-2 py-1 flex items-center gap-1 w-28 shrink-0">
                   <input
                     value={f.payments[m.id] ?? ""}
-                    onChange={(e) => setPaymentAmt(m.id, Number(e.target.value) || 0)}
+                    onChange={(e) => setPaymentAmt(m.id, e.target.value)}
                     inputMode="decimal"
                     placeholder="0"
                     className="bg-transparent text-sm w-full text-right font-mono"
@@ -401,12 +408,12 @@ export function ExpenseForm({
               if (!member) return null;
               const val = f.splitValues[id] ?? 0;
               const totalShares = f.participantIds.reduce(
-                (s, pid) => s + (f.splitValues[pid] ?? 0),
+                (s, pid) => s + (Number(f.splitValues[pid]) || 0),
                 0
               );
               const impliedAmt =
                 f.splitMode === "shares" && totalShares > 0
-                  ? (val / totalShares) * amt
+                  ? (Number(val) / totalShares) * amt
                   : null;
               return (
                 <div key={id} className="flex items-center gap-2">
@@ -420,7 +427,7 @@ export function ExpenseForm({
                   <div className="glass rounded-lg px-2 py-1 flex items-center gap-1 w-28 shrink-0">
                     <input
                       value={val === 0 ? "" : val}
-                      onChange={(e) => setSplitValue(id, Number(e.target.value) || 0)}
+                      onChange={(e) => setSplitValue(id, e.target.value)}
                       inputMode="decimal"
                       placeholder="0"
                       className="bg-transparent text-sm w-full text-right font-mono"
@@ -441,7 +448,7 @@ export function ExpenseForm({
                 : f.splitMode === "exact"
                 ? splitSumDisplay !== null
                   ? t("form.remaining", {
-                      amt: money(amt - f.participantIds.reduce((a, pid) => a + (f.splitValues[pid] ?? 0), 0), currencyCode),
+                      amt: money(amt - f.participantIds.reduce((a, pid) => a + (Number(f.splitValues[pid]) || 0), 0), currencyCode),
                     })
                   : ""
                 : ""}

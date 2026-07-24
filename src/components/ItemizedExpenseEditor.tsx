@@ -136,7 +136,9 @@ export function ItemizedExpenseEditor({
   const [totalWho, setTotalWho] = useState<Set<string>>(new Set(allIds));
   // Reparto del modo "total": = (partes iguales), % , importe exacto, ×partes.
   const [splitMode, setSplitMode] = useState<SplitMode>("equal");
-  const [splitVals, setSplitVals] = useState<Record<string, number>>({});
+  // Texto crudo por participante (no número) para no perder el punto decimal al
+  // teclear; se convierte con Number() al consumir.
+  const [splitVals, setSplitVals] = useState<Record<string, number | string>>({});
   // Lista ordenada (según el orden de miembros) de quién participa en el total.
   const totalWhoIds = members.map((m) => m.id).filter((id) => totalWho.has(id));
 
@@ -164,9 +166,9 @@ export function ItemizedExpenseEditor({
     }
   }
   // Edita un valor de reparto; en % / importe autocompleta el último con el resto.
-  function setSplitVal(id: string, val: number) {
+  function setSplitVal(id: string, val: string) {
     setSplitVals((prev) => {
-      const next = { ...prev, [id]: val };
+      const next: Record<string, number | string> = { ...prev, [id]: val };
       if ((splitMode === "exact" || splitMode === "percent") && totalWhoIds.length >= 2) {
         const lastId = totalWhoIds[totalWhoIds.length - 1];
         if (id !== lastId) {
@@ -510,7 +512,7 @@ export function ItemizedExpenseEditor({
                   if (!m) return null;
                   const val = splitVals[id] ?? 0;
                   const ts = totalWhoIds.reduce((a, x) => a + (Number(splitVals[x]) || 0), 0);
-                  const implied = splitMode === "shares" && ts > 0 ? (val / ts) * total : null;
+                  const implied = splitMode === "shares" && ts > 0 ? (Number(val) / ts) * total : null;
                   return (
                     <div key={id} className="flex items-center gap-2">
                       <span className="text-sm flex-1 min-w-0 truncate">{m.name}</span>
@@ -518,7 +520,7 @@ export function ItemizedExpenseEditor({
                       <div className="glass rounded-lg px-2 py-1 flex items-center gap-1 w-24 shrink-0">
                         <input
                           value={val === 0 ? "" : val}
-                          onChange={(e) => setSplitVal(id, Number(e.target.value) || 0)}
+                          onChange={(e) => setSplitVal(id, e.target.value)}
                           inputMode="decimal"
                           placeholder="0"
                           className="bg-transparent text-sm w-full text-right font-mono"
