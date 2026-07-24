@@ -2,6 +2,18 @@ import { supabase } from "./supabase";
 import type { Group } from "./types";
 import { uid } from "./format";
 import { withActivity } from "./activity";
+import { isNativePlatform } from "./plan";
+
+/** Origen web canónico para los links de invitación. En la app nativa
+ *  `window.location.origin` es `capacitor://localhost` (no compartible), así que
+ *  siempre usamos la URL web real para que el enlace lo pueda abrir cualquiera. */
+export const WEB_ORIGIN = "https://app.settlia.app";
+
+/** URL base compartible (web real incluso en la app nativa). */
+export function shareBaseUrl(): string {
+  const origin = isNativePlatform() ? WEB_ORIGIN : window.location.origin;
+  return (origin + import.meta.env.BASE_URL).replace(/\/$/, "");
+}
 
 export async function createInviteLink(group: Group, claimMemberId?: string): Promise<string> {
   const { data: { user } } = await supabase.auth.getUser();
@@ -26,8 +38,7 @@ export async function createInviteLink(group: Group, claimMemberId?: string): Pr
     .select("token")
     .single();
   if (error || !data) throw error ?? new Error("No se pudo crear el link");
-  const base = window.location.origin + import.meta.env.BASE_URL;
-  return `${base.replace(/\/$/, "")}/?join=${data.token}`;
+  return `${shareBaseUrl()}/?join=${data.token}`;
 }
 
 /**

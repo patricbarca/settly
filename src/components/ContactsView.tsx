@@ -5,6 +5,7 @@ import { personColor, initials, money } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { usePlan } from "../lib/plan";
 import { useFriends, type Friend, type PendingConfirm } from "../lib/friends";
+import { shareBaseUrl } from "../lib/invite";
 import { useGroups, updateGroup } from "../lib/store";
 import { notifyUser } from "../lib/push";
 import { Icon } from "./Icon";
@@ -57,7 +58,7 @@ export function ContactsView() {
   // usa el share sheet nativo si existe; si el usuario lo cancela no hace nada;
   // si no hay share o falla, copia el enlace al portapapeles y avisa ("Copiado").
   async function inviteFriends() {
-    const link = window.location.origin + import.meta.env.BASE_URL;
+    const link = shareBaseUrl();
     const text = t("contacts.inviteText");
     try {
       if (navigator.share) {
