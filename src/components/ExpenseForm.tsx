@@ -54,6 +54,24 @@ function initSplitValues(
   return vals;
 }
 
+/** Ajusta el descuadre de redondeo (±1 céntimo típico al redondear cada parte a
+ *  2 decimales por separado) sumándoselo/restándoselo a la persona con la parte
+ *  más grande, para que la suma de las partes sea EXACTAMENTE el total. */
+function fixRoundingToTotal(
+  result: Record<string, number>,
+  ids: string[],
+  totalAmt: number
+): Record<string, number> {
+  if (!ids.length) return result;
+  const sumCents = ids.reduce((a, id) => a + Math.round((result[id] || 0) * 100), 0);
+  let diff = Math.round(totalAmt * 100) - sumCents; // en céntimos
+  if (diff === 0) return result;
+  // Aplica el ajuste a la parte más grande (redondea de forma natural).
+  const target = ids.reduce((best, id) => ((result[id] || 0) > (result[best] || 0) ? id : best), ids[0]);
+  result[target] = Math.round(((result[target] || 0) * 100 + diff)) / 100;
+  return result;
+}
+
 /** Convert a draft to final expense fields */
 export function draftToExpenseFields(d: ExpenseDraft): {
   payerId: string;
@@ -94,7 +112,7 @@ export function draftToExpenseFields(d: ExpenseDraft): {
       const pct = Number(d.splitValues[id]) || 0;
       result[id] = Math.round((pct / 100) * totalAmt * 100) / 100;
     }
-    splits = result;
+    splits = fixRoundingToTotal(result, d.participantIds, totalAmt);
   } else if (d.splitMode === "shares") {
     const totalShares = d.participantIds.reduce((sum, id) => sum + (Number(d.splitValues[id]) || 0), 0);
     const result: Record<string, number> = {};
@@ -102,7 +120,7 @@ export function draftToExpenseFields(d: ExpenseDraft): {
       const sh = Number(d.splitValues[id]) || 0;
       result[id] = totalShares > 0 ? Math.round((sh / totalShares) * totalAmt * 100) / 100 : 0;
     }
-    splits = result;
+    splits = fixRoundingToTotal(result, d.participantIds, totalAmt);
   }
 
   return { payerId, payments, splits };

@@ -362,6 +362,17 @@ export function ItemizedExpenseEditor({
     if (!canSubmit) return;
     const rounded: Record<string, number> = {};
     allIds.forEach((id) => (rounded[id] = r2(splits[id])));
+    // Corrige el descuadre de redondeo (±1 céntimo) para que la suma de las
+    // partes sea EXACTAMENTE el total: el resto va a la parte más grande.
+    const withShare = allIds.filter((id) => rounded[id] > 0.001);
+    if (withShare.length) {
+      const sumCents = withShare.reduce((a, id) => a + Math.round(rounded[id] * 100), 0);
+      const diff = Math.round(total * 100) - sumCents;
+      if (diff !== 0) {
+        const target = withShare.reduce((b, id) => (rounded[id] > rounded[b] ? id : b), withShare[0]);
+        rounded[target] = r2(rounded[target] + diff / 100);
+      }
+    }
     onSubmit({
       label: label.trim() || "Ticket",
       amount: total,
