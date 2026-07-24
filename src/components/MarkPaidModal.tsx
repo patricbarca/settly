@@ -71,12 +71,20 @@ export function MarkPaidModal({
 
   const pickedTotal = Math.round(debts.filter((d) => selected.has(d.expenseId)).reduce((s, d) => s + d.amount, 0) * 100) / 100;
 
-  // Monto a registrar: siempre la suma exacta de los gastos elegidos. Solo si
-  // no hay ningún gasto propio pendiente (caso raro/borde) se cae a un monto
-  // escrito a mano, sin desglose por gasto.
-  const value = usingPicker ? pickedTotal : Math.min(Math.max(0, Number(amt) || 0), max);
+  // Monto a registrar: la suma de los gastos elegidos, PERO nunca más de lo que
+  // realmente le debes a esta persona (`max`). En modo Simplificado la deuda
+  // está neteada entre varias personas, así que la suma bruta de tus gastos
+  // pendientes puede superar lo que le debes a ESTE acreedor — sin este tope se
+  // registraría un pago de más. Si no hay gastos (caso borde) se usa el monto
+  // escrito a mano.
+  const value = usingPicker
+    ? Math.min(pickedTotal, max)
+    : Math.min(Math.max(0, Number(amt) || 0), max);
   const valid = value > 0.005;
   const remaining = Math.round((max - value) * 100) / 100;
+  // La selección supera lo adeudado (típico en Simplificado): se registrará
+  // solo `max`, y lo avisamos para que el usuario no se confunda.
+  const capped = usingPicker && pickedTotal > max + 0.005;
 
   function onFile(e: ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -178,8 +186,13 @@ export function MarkPaidModal({
             </div>
             <div className="flex items-center justify-between mt-2 text-sm">
               <span className="text-muted">{t("pay.selectedTotal")}</span>
-              <span className="font-mono font-bold">{money(pickedTotal, group.currency)}</span>
+              <span className="font-mono font-bold">{money(value, group.currency)}</span>
             </div>
+            {capped && (
+              <p className="text-[11px] text-muted mt-1.5">
+                {t("pay.cappedNote", { amt: money(max, group.currency), to: name(to) })}
+              </p>
+            )}
           </>
         ) : (
           <>
