@@ -81,9 +81,34 @@ function buildProviders(): Provider[] {
   return providers;
 }
 
-// Tiempo máximo por proveedor antes de pasar al siguiente (evita que un
-// proveedor colgado bloquee el failover).
-const PER_PROVIDER_TIMEOUT_MS = 20_000;
+// Tiempo máximo por proveedor (aborta uno realmente colgado).
+const PER_PROVIDER_TIMEOUT_MS = 25_000;
+// Si el primario no responde en este tiempo, se dispara el backup EN PARALELO
+// (hedging) y gana el primero que conteste — reduce la cola de latencia cuando
+// el primario se cuelga, sin esperar a que agote su timeout completo.
+const HEDGE_MS = 7_000;
+
+type ProviderResult =
+  | { ok: true; value: Record<string, unknown> }
+  | { ok: false; error: string };
+
+/** Resuelve con el PRIMER resultado ok de las promesas; si todas fallan,
+ *  devuelve el último error. */
+function firstOk(promises: Promise<ProviderResult>[]): Promise<ProviderResult> {
+  return new Promise((resolve) => {
+    let remaining = promises.length;
+    let last: ProviderResult = { ok: false, error: "no_providers" };
+    for (const pr of promises) {
+      pr.then((r) => {
+        if (r.ok) resolve(r);
+        else {
+          last = r;
+          if (--remaining === 0) resolve(last);
+        }
+      });
+    }
+  });
+}
 
 const PROMPT = `You are a receipt/document parser. Read this image (restaurant bill, café, supermarket, utility/phone bill, invoice, etc.) and extract the fields. Respond with ONLY a JSON object, no prose, no markdown:
 {"description":"...","subtotal":0.00,"total":0.00,"category":"...","currency":"AUD","items":[{"name":"...","qty":1,"unitPrice":0.00,"price":0.00}],"fees":[{"name":"...","amount":0.00}],"tax":{"amount":0.00,"rate":0,"included":true}}
@@ -136,30 +161,46 @@ Deno.serve(async (req) => {
       ],
     };
 
-    // Failover: prueba cada proveedor en orden; el primero que responda un JSON
-    // válido gana. Si uno falla (HTTP, timeout o parse), se prueba el siguiente.
-    let lastError = "";
-    for (const p of providers) {
-      const parsed = await callProvider(p, basePayload);
-      if (parsed.ok) {
-        return json({
-          _provider: p.name, // útil para depurar cuál respondió
-          description: String(parsed.value.description ?? "").trim().slice(0, 60),
-          subtotal: Number(parsed.value.subtotal) || 0,
-          total: Number(parsed.value.total) || 0,
-          category: sanitizeCategory(parsed.value.category),
-          items: sanitizeItems(parsed.value.items),
-          fees: sanitizeFees(parsed.value.fees),
-          tax: sanitizeTax(parsed.value.tax),
-          currency: parsed.value.currency,
-        });
-      }
-      lastError = parsed.error;
-      console.error(`vision provider "${p.name}" failed:`, parsed.error);
+    const ok = (r: Record<string, unknown>) =>
+      json({
+        description: String(r.description ?? "").trim().slice(0, 60),
+        subtotal: Number(r.subtotal) || 0,
+        total: Number(r.total) || 0,
+        category: sanitizeCategory(r.category),
+        items: sanitizeItems(r.items),
+        fees: sanitizeFees(r.fees),
+        tax: sanitizeTax(r.tax),
+        currency: r.currency,
+      });
+
+    // Un solo proveedor → directo.
+    if (providers.length === 1) {
+      const r = await callProvider(providers[0], basePayload);
+      if (r.ok) return ok(r.value);
+      console.error(`vision "${providers[0].name}" failed:`, r.error);
+      return json({ error: "upstream", detail: r.error }, 502);
     }
 
-    // Todos los proveedores fallaron.
-    return json({ error: "upstream", detail: lastError }, 502);
+    // Dos proveedores → HEDGING: arranca el primario; si no responde en HEDGE_MS,
+    // dispara el backup en paralelo y gana el primero que conteste OK.
+    const [primary, backup] = providers;
+    const pPrimary = callProvider(primary, basePayload);
+    const hedged = await Promise.race([
+      pPrimary,
+      new Promise<"HEDGE">((res) => setTimeout(() => res("HEDGE"), HEDGE_MS)),
+    ]);
+
+    let result: ProviderResult;
+    if (hedged !== "HEDGE" && hedged.ok) {
+      result = hedged; // el primario ganó rápido
+    } else {
+      const pBackup = callProvider(backup, basePayload);
+      result = await firstOk([pPrimary, pBackup]);
+    }
+
+    if (result.ok) return ok(result.value);
+    console.error("vision all providers failed:", result.error);
+    return json({ error: "upstream", detail: result.error }, 502);
   } catch (e) {
     console.error(e);
     return json({ error: "internal" }, 500);
