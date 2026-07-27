@@ -348,8 +348,6 @@ const DICT: Record<string, { es: string; en: string }> = {
   "form.allowEdits": { es: "Permitir que otros participantes editen este gasto", en: "Allow other participants to edit this expense" },
   "form.between": { es: "Entre", en: "Between" },
   "form.each": { es: "c/u", en: "each" },
-  "form.selectAll": { es: "Seleccionar todos", en: "Select all" },
-  "form.clearAll": { es: "Quitar todos", en: "Clear all" },
   "form.attachReceipt": { es: "Adjuntar recibo (opcional)", en: "Attach receipt (optional)" },
   "form.receiptAttached": { es: "Recibo adjunto", en: "Receipt attached" },
   "common.remove": { es: "Quitar", en: "Remove" },

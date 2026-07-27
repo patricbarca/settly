@@ -436,23 +436,6 @@ export function ExpenseForm({
           </div>
         </div>
 
-        {/* Seleccionar / deseleccionar todos */}
-        {members.length > 1 && (
-          <div className="flex items-center justify-between mt-1.5">
-            <span className="text-[11px] text-muted">
-              {f.participantIds.length}/{members.length}
-            </span>
-            <button
-              type="button"
-              onClick={() => setAllParticipants(f.participantIds.length < members.length)}
-              className="text-xs font-semibold"
-              style={{ color: "var(--indigo)" }}
-            >
-              {f.participantIds.length < members.length ? t("form.selectAll") : t("form.clearAll")}
-            </button>
-          </div>
-        )}
-
         {/* Participant pill toggles */}
         <div className="flex gap-1.5 flex-wrap mt-1">
           {members.map((m) => {
@@ -470,6 +453,14 @@ export function ExpenseForm({
             );
           })}
         </div>
+
+        {/* Seleccionar / deseleccionar todos (mismo estilo que el escaneo) */}
+        {members.length > 1 && (
+          <div className="flex gap-2 mt-1">
+            <button type="button" onClick={() => setAllParticipants(true)} className="lk text-[11px] text-muted">{t("scan.selectAll")}</button>
+            <button type="button" onClick={() => setAllParticipants(false)} className="lk text-[11px] text-muted">{t("scan.deselectAll")}</button>
+          </div>
+        )}
 
         {/* Value inputs for non-equal modes */}
         {f.splitMode !== "equal" && f.participantIds.length > 0 && (
