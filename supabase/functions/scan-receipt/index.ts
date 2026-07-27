@@ -124,6 +124,7 @@ Rules:
   - price: the LINE TOTAL printed on the right (for the whole quantity).
   - SELF-CHECK: the sum of all item prices should equal the printed subtotal. If your extracted items don't add up to the subtotal, you misread a price or an alignment — fix it before answering.
   - CRITICAL: DO NOT create items for modifiers/options/sub-lines that are INCLUDED in an item's price and have NO price in the right price column — e.g. "Fresh Fruit", "Medium, Lacfree", "Scrambled", "Chorizo", "(... each)", size/extras. Ignore them, or append to the parent item's name. Only emit lines that carry a real price on the right.
+  - NEVER emit an item with price 0 or a missing price. A LONG item name may WRAP onto two (or more) printed lines — that is still ONE item with ONE price on the right: join the wrapped text into a single item name, do NOT create a separate line with price 0 for the overflow text. If a line genuinely has no price on the right, it is a wrap/modifier — merge it into the item above or ignore it. Every item you output MUST have a real non-zero price.
   - For non-itemized receipts (utility/invoice) return [].
 - fees: extra charges added ON TOP of the items — surcharge, service charge, card/payment surcharge, delivery, weekend/public-holiday surcharge. Each {name, amount}. Do NOT put tax, tip, subtotal or total in fees.
 - tax: the tax/GST/VAT line if present — {amount, rate (percent as a number), included (true if the tax is already inside the total, e.g. "10% Tax Included")}. If no tax is shown use {"amount":0,"rate":0,"included":true}.
@@ -275,7 +276,9 @@ function sanitizeItems(items: unknown): { name: string; qty: number; unitPrice: 
       if (!unitPrice && qty > 0) unitPrice = Math.round((price / qty) * 100) / 100;
       return { name, qty, unitPrice, price };
     })
-    .filter((it) => it.name || it.price);
+    // Descarta líneas sin precio real (0) — suelen ser nombres largos partidos en
+    // dos renglones o modificadores que el modelo emitió por error.
+    .filter((it) => it.price > 0.005);
 }
 
 function sanitizeFees(fees: unknown): { name: string; amount: number }[] {
