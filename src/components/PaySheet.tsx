@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Group, PayMethod } from "../lib/types";
-import { memberPays, payLink } from "../lib/pay";
+import { memberPays, payLink, fetchMemberProfilePays } from "../lib/pay";
 import { money } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -22,7 +22,21 @@ export function PaySheet({
 }) {
   const t = useT();
   const payee = group.members.find((m) => m.id === to);
-  const methods = memberPays(payee);
+  const localMethods = memberPays(payee);
+  // Fallback: si el registro del miembro en el grupo no tiene métodos de pago
+  // sincronizados, los buscamos en su perfil (enlazado vía group_members).
+  const [profilePays, setProfilePays] = useState<PayMethod[]>([]);
+  useEffect(() => {
+    if (localMethods.length > 0 || !to) return;
+    let alive = true;
+    fetchMemberProfilePays(group.id, to).then((p) => {
+      if (alive) setProfilePays(p);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [group.id, to, localMethods.length]);
+  const methods = localMethods.length > 0 ? localMethods : profilePays;
   const [copied, setCopied] = useState<string | null>(null);
 
   function copy(key: string, value: string) {

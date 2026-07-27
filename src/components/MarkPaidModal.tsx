@@ -5,7 +5,7 @@ import { withNotif } from "../lib/notifications";
 import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { uid, money } from "../lib/format";
-import { expenseDebtsBetween, myPendingExpenses } from "../lib/split";
+import { expenseDebtsBetween, fifoExpenseIdsForAmount } from "../lib/split";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -29,36 +29,25 @@ export function MarkPaidModal({
   const [proof, setProof] = useState<string | undefined>();
   const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
 
-  // Selección por gasto: en Directo son los gastos reales compartidos entre
-  // estas dos personas; en Simplificado (la transferencia es una optimización
-  // agregada que puede no corresponder a ningún gasto real con ESTA persona)
-  // se listan los propios gastos pendientes del deudor sin importar quién los
-  // pagó — así el monto a pagar siempre es una suma exacta de gastos reales,
-  // nunca un número escrito a mano que podría no cuadrar con nada.
+  // Selección por gasto SOLO en modo Directo: ahí cada transferencia SÍ
+  // corresponde a gastos reales compartidos entre estas dos personas, así que
+  // se puede dejar elegir cuáles saldar. En modo Simplificado la transferencia
+  // es una optimización agregada y neteada (puede no corresponder a ningún
+  // gasto real con ESTA persona en concreto), por lo que mostrar una lista de
+  // gastos confundía: aparecían los mismos gastos para acreedores distintos y
+  // el total no cuadraba con lo adeudado. En Simplificado solo se paga el monto
+  // neto que se le debe a esta persona (con opción de pago parcial).
   const direct = group.simplifyDebts === false;
   const debts = useMemo(
     () =>
       direct
         ? expenseDebtsBetween(group.members, group.expenses, group.settlements ?? [], from, to)
-        : myPendingExpenses(group.members, group.expenses, group.settlements ?? [], from),
+        : [],
     [direct, group.members, group.expenses, group.settlements, from, to]
   );
-  // Preselección: en Directo, todo lo que compone la deuda con esta persona.
-  // En Simplificado, los más antiguos hasta cubrir el monto sugerido (FIFO) —
-  // el usuario puede ajustar la selección libremente después.
-  const [selected, setSelected] = useState<Set<string>>(() => {
-    if (direct) return new Set(debts.map((d) => d.expenseId));
-    let remaining = amount;
-    const ids: string[] = [];
-    for (const d of debts) {
-      if (d.amount <= remaining + 0.005) {
-        ids.push(d.expenseId);
-        remaining -= d.amount;
-      } else break;
-    }
-    return new Set(ids);
-  });
-  const usingPicker = debts.length > 0;
+  // Preselección (solo Directo): todo lo que compone la deuda con esta persona.
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(debts.map((d) => d.expenseId)));
+  const usingPicker = direct && debts.length > 0;
 
   // Monto a pagar POR gasto (editable). Por defecto = el pendiente de cada gasto
   // (100%), pero el pagador puede bajarlo para pagar solo una parte (ej. $1000
@@ -143,9 +132,15 @@ export function MarkPaidModal({
           .map((d) => ({ expenseId: d.expenseId, amount: amtFor(d.expenseId) }))
           .filter((p) => p.amount > 0.005)
       : [];
-    const fullyCovered = picks
-      .filter((p) => p.amount >= (debtById[p.expenseId]?.amount ?? 0) - 0.005)
-      .map((p) => p.expenseId);
+    // Directo: los gastos cubiertos enteros por la selección. Simplificado: no
+    // hay selección de gastos, así que se asignan automáticamente los gastos
+    // pendientes del deudor del más antiguo al más nuevo hasta cubrir el monto
+    // pagado (FIFO) — solo para el indicador "pagado" del listado de gastos.
+    const fullyCovered = usingPicker
+      ? picks
+          .filter((p) => p.amount >= (debtById[p.expenseId]?.amount ?? 0) - 0.005)
+          .map((p) => p.expenseId)
+      : fifoExpenseIdsForAmount(group.members, group.expenses, group.settlements ?? [], from, paidAmt);
     updateGroup(group.id, (g) => ({
       ...g,
       settlements: [
