@@ -174,6 +174,7 @@ export function ExpenseList({ group }: { group: Group }) {
         category: d.category,
         splits,
         allowEdits: d.allowEdits ?? false,
+        ...(d.receiptPath ? { receiptPath: d.receiptPath } : {}),
       },
       {
         activity: makeActivity({
@@ -446,6 +447,7 @@ export function ExpenseList({ group }: { group: Group }) {
                 splitValues: editing.splits ?? {},
                 category: editing.category,
                 allowEdits: editing.allowEdits ?? false,
+                receiptPath: editing.receiptPath,
               }}
               onSave={(d) => saveEdit(editing.id, d)}
               onCancel={() => setEditId(null)}

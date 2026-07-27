@@ -5,6 +5,7 @@ import { CATEGORIES } from "../lib/types";
 import { personColor, money, sortedMembers } from "../lib/format";
 import { Avatar } from "./Avatar";
 import { currencySymbol } from "../lib/currencies";
+import { uploadReceipt } from "../lib/storage";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 
@@ -25,6 +26,8 @@ export interface ExpenseDraft {
   category: Category;
   /** Si true, cualquier participante puede editar este gasto (no solo el creador). */
   allowEdits?: boolean;
+  /** Ruta del recibo adjunto en Storage (si se adjuntó uno). */
+  receiptPath?: string;
 }
 
 /** Initialize splitValues for a given mode, participant list, and total amount */
@@ -150,6 +153,21 @@ export function ExpenseForm({
   const currencyCode = amountCurrency || group.currency;
   const sym = currencySymbol(currencyCode);
   const [f, setF] = useState<ExpenseDraft>(initial);
+  // Recibo adjunto (opcional) — para gastos manuales, por voz o texto. La foto
+  // se sube a Storage al guardar y se guarda solo la ruta en el gasto.
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [savingReceipt, setSavingReceipt] = useState(false);
+  function onReceiptPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setReceiptFile(file);
+    setReceiptPreview(URL.createObjectURL(file));
+  }
+  function clearReceipt() {
+    setReceiptFile(null);
+    setReceiptPreview(null);
+  }
   const up = <K extends keyof ExpenseDraft>(k: K, v: ExpenseDraft[K]) =>
     setF((s) => ({ ...s, [k]: v }));
 
@@ -266,9 +284,15 @@ export function ExpenseForm({
     paymentValid &&
     splitValid;
 
-  function save() {
-    if (!valid) return;
-    onSave({ ...f, amount: amt });
+  async function save() {
+    if (!valid || savingReceipt) return;
+    let receiptPath = f.receiptPath;
+    if (receiptFile) {
+      setSavingReceipt(true);
+      receiptPath = (await uploadReceipt(group.id, receiptFile)) ?? f.receiptPath;
+      setSavingReceipt(false);
+    }
+    onSave({ ...f, amount: amt, receiptPath });
   }
 
   const members = sortedMembers(group.members);
@@ -522,15 +546,37 @@ export function ExpenseForm({
         </span>
       </button>
 
+      {/* Adjuntar recibo (opcional) — sirve para gastos manuales, por voz o texto */}
+      <div>
+        <label className="text-xs font-semibold text-muted">{t("form.attachReceipt")}</label>
+        {receiptPreview || f.receiptPath ? (
+          <div className="flex items-center gap-2 mt-1">
+            {receiptPreview && <img src={receiptPreview} alt="" className="h-14 w-14 rounded-lg object-cover" />}
+            {!receiptPreview && f.receiptPath && (
+              <span className="text-sm text-muted flex items-center gap-1"><Icon name="check" size={14} style={{ color: "#0A8B5E" }} /> {t("form.receiptAttached")}</span>
+            )}
+            <button type="button" onClick={clearReceipt} className="glass rounded-full px-3 py-1.5 text-xs text-muted hover-lift">
+              {t("common.remove")}
+            </button>
+          </div>
+        ) : (
+          <label className="glass rounded-xl px-3 py-3 text-sm w-full mt-1 flex items-center justify-center gap-2 cursor-pointer text-muted hover-lift">
+            <Icon name="paperclip" size={16} />
+            {t("form.attachReceipt")}
+            <input type="file" accept="image/*" className="hidden" onChange={onReceiptPick} />
+          </label>
+        )}
+      </div>
+
       {children}
 
       <div className="flex gap-2 pt-1">
         <button
           onClick={save}
-          disabled={!valid}
+          disabled={!valid || savingReceipt}
           className="glass-strong rounded-full px-5 py-2.5 font-medium hover-lift disabled:opacity-50"
         >
-          {submitLabel ?? t("common.save")}
+          {savingReceipt ? t("scan.saving") : submitLabel ?? t("common.save")}
         </button>
         <button onClick={onCancel} className="glass rounded-full px-5 py-2.5 hover-lift text-muted">
           {t("common.cancel")}

@@ -271,6 +271,7 @@ export function AddExpense({ group }: { group: Group }) {
           date: new Date().toISOString().slice(0, 10),
           createdBy: group.meId,
           allowEdits: d.allowEdits ?? false,
+          ...(d.receiptPath ? { receiptPath: d.receiptPath } : {}),
           ...(effectiveFx ? { originalAmount: effectiveFx.originalAmount, originalCurrency: effectiveFx.originalCurrency, fxRate: effectiveFx.fxRate } : {}),
         },
         {
