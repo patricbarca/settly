@@ -22,7 +22,7 @@
 //   BACKUP (solo activo si defines la key):
 //     AI_VISION_BACKUP_API_KEY  (p. ej. una key de OpenRouter sk-or-... o Gemini)
 //     AI_VISION_BACKUP_API_URL  (def. https://openrouter.ai/api/v1/chat/completions)
-//     AI_VISION_BACKUP_MODEL    (def. qwen/qwen2.5-vl-72b-instruct)
+//     AI_VISION_BACKUP_MODEL    (def. openai/gpt-4o-mini)
 // ============================================================
 
 // CORS inline (sin import de ../_shared) para poder pegar este único archivo
@@ -72,9 +72,10 @@ function buildProviders(): Provider[] {
       name: "backup",
       key: backupKey,
       url: Deno.env.get("AI_VISION_BACKUP_API_URL") || OPENROUTER_URL,
-      // Qwen2.5-VL 72B en OpenRouter (confirmado disponible en la cuenta). Se
-      // puede sobreescribir con AI_VISION_BACKUP_MODEL.
-      model: Deno.env.get("AI_VISION_BACKUP_MODEL") || "qwen/qwen2.5-vl-72b-instruct",
+      // gpt-4o-mini en OpenRouter: rápido (~2-4s), barato y buen OCR de tickets,
+      // sin depender de la data policy (a diferencia de Gemini). Rescata rápido
+      // cuando Groq se cuelga. Sobreescribible con AI_VISION_BACKUP_MODEL.
+      model: Deno.env.get("AI_VISION_BACKUP_MODEL") || "openai/gpt-4o-mini",
     });
   }
 
