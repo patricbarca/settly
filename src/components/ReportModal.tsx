@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { Group } from "../lib/types";
 import { useT, useLang } from "../lib/i18n";
-import { money, personColor, memberInitials, sortedMembers } from "../lib/format";
+import { money, memberInitials, sortedMembers } from "../lib/format";
+import { Avatar } from "./Avatar";
 import {
   buildReport,
   monthsWithExpenses,
@@ -132,12 +133,7 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
                     return (
                       <div key={m.id} className="flex items-center justify-between text-sm gap-2">
                         <span className="flex items-center gap-2 min-w-0">
-                          <span
-                            className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0"
-                            style={{ background: personColor(m.name) + "22", color: personColor(m.name) }}
-                          >
-                            {memberInitials(m)}
-                          </span>
+                          <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={24} />
                           <span className="truncate">
                             {m.name}{" "}
                             <span className="text-muted text-xs">· {t("report.paidLabel", { amt: money(r.paid[m.id] || 0, cur) })}</span>

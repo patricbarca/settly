@@ -1,6 +1,7 @@
-import { personColor, initials } from "../lib/format";
+import { initials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
+import { Avatar } from "./Avatar";
 import { Overlay } from "./Overlay";
 
 export function ClaimMemberModal({
@@ -9,7 +10,7 @@ export function ClaimMemberModal({
   onPick,
 }: {
   groupName: string;
-  unclaimed: { id: string; name: string }[];
+  unclaimed: { id: string; name: string; avatar?: string }[];
   onPick: (memberId?: string) => void;
 }) {
   const t = useT();
@@ -29,12 +30,7 @@ export function ClaimMemberModal({
               onClick={() => onPick(m.id)}
               className="w-full flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left hover-lift glass"
             >
-              <span
-                className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
-                style={{ background: personColor(m.name) + "22" }}
-              >
-                {initials(m.name)}
-              </span>
+              <Avatar name={m.name} avatar={m.avatar} initials={initials(m.name)} size={36} />
               <span className="text-sm font-medium flex-1 min-w-0 truncate">{m.name}</span>
               <Icon name="chevron" size={16} className="text-muted shrink-0" />
             </button>

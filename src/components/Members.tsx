@@ -3,9 +3,10 @@ import type { Group, Member } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
-import { personColor, memberInitials, sortedMembers } from "../lib/format";
+import { memberInitials, sortedMembers } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
+import { Avatar } from "./Avatar";
 import { ProfileModal } from "./ProfileModal";
 
 export function Members({ group }: { group: Group }) {
@@ -49,11 +50,11 @@ export function Members({ group }: { group: Group }) {
             <div key={m.id} className="glass rounded-full pl-1 pr-2.5 py-1 flex items-center gap-1.5 text-sm shrink-0">
               <button onClick={() => setProfile(m)} className="flex items-center gap-1.5">
                 <span
-                  className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold"
+                  className="rounded-full shrink-0"
                   title={paid ? "Al día" : "Pendiente"}
-                  style={{ background: personColor(m.name) + "22", boxShadow: `0 0 0 2px ${paid ? "#0A8B5E" : "#E0A400"}` }}
+                  style={{ boxShadow: `0 0 0 2px ${paid ? "#0A8B5E" : "#E0A400"}` }}
                 >
-                  {memberInitials(m)}
+                  <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={28} />
                 </span>
                 <span className="font-medium">
                   {m.name}

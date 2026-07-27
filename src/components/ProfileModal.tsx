@@ -1,9 +1,10 @@
 import type { Group, Member } from "../lib/types";
 import { memberStats } from "../lib/gamification";
-import { money, personColor, memberInitials } from "../lib/format";
+import { money, memberInitials } from "../lib/format";
 import { countryName } from "../lib/countries";
 import { useT, useLang } from "../lib/i18n";
 import { Icon } from "./Icon";
+import { Avatar } from "./Avatar";
 import { Overlay } from "./Overlay";
 import { SettleRing } from "./SettleRing";
 
@@ -29,12 +30,7 @@ export function ProfileModal({
       >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <span
-              className="h-12 w-12 rounded-full flex items-center justify-center text-base font-bold"
-              style={{ background: personColor(member.name) + "22" }}
-            >
-              {memberInitials(member)}
-            </span>
+            <Avatar name={member.name} avatar={member.avatar} initials={memberInitials(member)} size={48} />
             <div>
               <div className="font-display text-xl font-bold">
                 {member.name}

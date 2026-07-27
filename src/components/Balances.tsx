@@ -3,10 +3,11 @@ import type { Group, Settlement } from "../lib/types";
 import { computeSettle, directTransfers } from "../lib/split";
 import { updateGroup } from "../lib/store";
 import { useUser } from "../lib/auth";
-import { personColor, memberInitials, sortedMembers, fmtDate } from "../lib/format";
+import { memberInitials, sortedMembers, fmtDate } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useGroupMoney } from "../lib/displayCurrency";
 import { Icon } from "./Icon";
+import { Avatar } from "./Avatar";
 import { MarkPaidModal } from "./MarkPaidModal";
 import { PaySheet } from "./PaySheet";
 import { EditPaymentExpensesModal } from "./EditPaymentExpensesModal";
@@ -109,12 +110,7 @@ export function Balances({ group }: { group: Group }) {
             return (
               <div key={m.id} className="flex items-center justify-between text-sm gap-2">
                 <span className="flex items-center gap-2 min-w-0">
-                  <span
-                    className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold shrink-0"
-                    style={{ background: personColor(m.name) + "22" }}
-                  >
-                    {memberInitials(m)}
-                  </span>
+                  <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={24} />
                   <span className="truncate">
                     {m.name}{" "}
                     <span className="text-muted text-xs">
@@ -147,20 +143,10 @@ export function Balances({ group }: { group: Group }) {
             {transfers.map((tr, i) => (
               <div key={i} className="text-sm">
                 <div className="flex items-center gap-2">
-                  <span
-                    className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0"
-                    style={{ background: personColor(name(tr.from)) }}
-                  >
-                    {memberInitials(member(tr.from) ?? { name: name(tr.from) })}
-                  </span>
+                  <Avatar name={name(tr.from)} avatar={member(tr.from)?.avatar} initials={memberInitials(member(tr.from) ?? { name: name(tr.from) })} size={24} />
                   <b>{name(tr.from)}</b>
                   <span className="text-muted">{t("bal.paysTo")}</span>
-                  <span
-                    className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0"
-                    style={{ background: personColor(name(tr.to)) }}
-                  >
-                    {memberInitials(member(tr.to) ?? { name: name(tr.to) })}
-                  </span>
+                  <Avatar name={name(tr.to)} avatar={member(tr.to)?.avatar} initials={memberInitials(member(tr.to) ?? { name: name(tr.to) })} size={24} />
                   <b>{name(tr.to)}</b>
                   <span className="font-mono font-bold ml-auto">{money(tr.amount)}</span>
                 </div>
@@ -244,20 +230,10 @@ export function Balances({ group }: { group: Group }) {
               return (
                 <div key={s.id} className="text-sm border-b border-[color:var(--line)] last:border-0 pb-2.5 last:pb-0">
                   <div className="flex items-center gap-2">
-                    <span
-                      className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0"
-                      style={{ background: personColor(name(s.from)) }}
-                    >
-                      {memberInitials(member(s.from) ?? { name: name(s.from) })}
-                    </span>
+                    <Avatar name={name(s.from)} avatar={member(s.from)?.avatar} initials={memberInitials(member(s.from) ?? { name: name(s.from) })} size={24} />
                     <b>{name(s.from)}</b>
                     <span className="text-muted">{t("bal.paysTo")}</span>
-                    <span
-                      className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-semibold text-white shrink-0"
-                      style={{ background: personColor(name(s.to)) }}
-                    >
-                      {memberInitials(member(s.to) ?? { name: name(s.to) })}
-                    </span>
+                    <Avatar name={name(s.to)} avatar={member(s.to)?.avatar} initials={memberInitials(member(s.to) ?? { name: name(s.to) })} size={24} />
                     <b>{name(s.to)}</b>
                     <span className="font-mono font-bold ml-auto">{money(s.amount)}</span>
                   </div>

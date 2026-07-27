@@ -1,6 +1,7 @@
 import type { Group } from "../lib/types";
 import { catOf } from "../lib/types";
 import { money, personColor, memberInitials, fmtDate } from "../lib/format";
+import { Avatar } from "./Avatar";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 
@@ -86,12 +87,7 @@ export function Analytics({ group }: { group: Group }) {
           <div className="text-xs text-muted font-semibold uppercase tracking-wide mb-1">{t("stats.topPayer")}</div>
           {topPayer ? (
             <div className="flex items-center gap-2 mt-1">
-              <span
-                className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
-                style={{ background: personColor(topPayer.name) + "22" }}
-              >
-                {memberInitials(topPayer)}
-              </span>
+              <Avatar name={topPayer.name} avatar={topPayer.avatar} initials={memberInitials(topPayer)} size={28} />
               <span className="font-semibold text-sm truncate">{topPayer.name}</span>
             </div>
           ) : <span className="text-muted">—</span>}
@@ -139,12 +135,7 @@ export function Analytics({ group }: { group: Group }) {
               <div key={m.id}>
                 <div className="flex items-center justify-between text-sm mb-1.5">
                   <span className="flex items-center gap-2">
-                    <span
-                      className="h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold"
-                      style={{ background: personColor(m.name) + "22" }}
-                    >
-                      {memberInitials(m)}
-                    </span>
+                    <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={24} />
                     {m.name}
                     {m.id === group.meId && <span className="text-muted text-xs">· {t("members.you")}</span>}
                   </span>

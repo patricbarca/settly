@@ -248,6 +248,7 @@ export default function App() {
         active={navActive}
         unread={unread}
         userName={user.name}
+        userAvatar={user.avatar}
         onGroups={() => {
           setActiveGroup(null);
           setHomeTab("groups");

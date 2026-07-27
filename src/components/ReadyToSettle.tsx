@@ -1,9 +1,10 @@
 import type { Group } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { withActivity } from "../lib/activity";
-import { personColor, memberInitials, sortedMembers } from "../lib/format";
+import { memberInitials, sortedMembers } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
+import { Avatar } from "./Avatar";
 
 export function ReadyToSettle({ group }: { group: Group }) {
   const t = useT();
@@ -36,12 +37,7 @@ export function ReadyToSettle({ group }: { group: Group }) {
           const isReady = ready.includes(m.id);
           return (
             <div key={m.id} className="flex items-center gap-2 text-sm">
-              <span
-                className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0"
-                style={{ background: personColor(m.name) + "22" }}
-              >
-                {memberInitials(m)}
-              </span>
+              <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={28} />
               <span className="truncate">
                 {m.name}
                 {m.id === group.meId && <span className="text-muted text-xs"> · {t("members.you")}</span>}

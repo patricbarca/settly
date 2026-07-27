@@ -3,6 +3,7 @@ import type { Group, Category, ExpenseItem, SplitMode } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
 import type { ScanTax } from "../lib/ai";
 import { uid, money, personColor, memberInitials, sortedMembers } from "../lib/format";
+import { Avatar } from "./Avatar";
 import { currencySymbol } from "../lib/currencies";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -507,9 +508,7 @@ export function ItemizedExpenseEditor({
                     className={`rounded-full pl-0.5 pr-2.5 py-0.5 text-xs flex items-center gap-1 border ${on ? "surface" : "glass"}`}
                     style={{ borderColor: on ? personColor(m.name) : "transparent", opacity: on ? 1 : 0.5 }}
                   >
-                    <span className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-semibold" style={{ background: personColor(m.name) + "22" }}>
-                      {memberInitials(m)}
-                    </span>
+                    <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={20} />
                     {m.name}
                   </button>
                 );
@@ -611,9 +610,7 @@ export function ItemizedExpenseEditor({
                     className={`rounded-full pl-0.5 pr-2.5 py-0.5 text-xs flex items-center gap-1 border ${on ? "surface" : "glass"}`}
                     style={{ borderColor: on ? personColor(m.name) : "transparent", opacity: on ? 1 : 0.5 }}
                   >
-                    <span className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-semibold" style={{ background: personColor(m.name) + "22" }}>
-                      {memberInitials(m)}
-                    </span>
+                    <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={20} />
                     {m.name}
                   </button>
                 );

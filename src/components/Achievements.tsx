@@ -1,9 +1,10 @@
 import { useState } from "react";
 import type { Group, Member } from "../lib/types";
 import { memberStats } from "../lib/gamification";
-import { personColor, memberInitials, sortedMembers } from "../lib/format";
+import { memberInitials, sortedMembers } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
+import { Avatar } from "./Avatar";
 import { ProfileModal } from "./ProfileModal";
 
 export function Achievements({ group }: { group: Group }) {
@@ -22,12 +23,7 @@ export function Achievements({ group }: { group: Group }) {
               onClick={() => setOpen(m)}
               className="w-full flex items-center gap-3 text-left rounded-2xl p-2 hover-lift"
             >
-              <span
-                className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0"
-                style={{ background: personColor(m.name) + "22" }}
-              >
-                {memberInitials(m)}
-              </span>
+              <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={36} />
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-sm truncate">
                   {m.name}

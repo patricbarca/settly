@@ -1,6 +1,7 @@
 import { useT } from "../lib/i18n";
-import { personColor, initials } from "../lib/format";
+import { initials } from "../lib/format";
 import { Icon, type IconName } from "./Icon";
+import { Avatar } from "./Avatar";
 
 export type NavKey = "groups" | "friends" | "activity" | "profile";
 
@@ -11,6 +12,7 @@ export function BottomNav({
   active,
   unread,
   userName,
+  userAvatar,
   onGroups,
   onFriends,
   onActivity,
@@ -19,6 +21,7 @@ export function BottomNav({
   active: NavKey;
   unread: number;
   userName: string;
+  userAvatar?: string;
   onGroups: () => void;
   onFriends: () => void;
   onActivity: () => void;
@@ -71,13 +74,10 @@ export function BottomNav({
           style={{ color: active === "profile" ? "var(--teal)" : "var(--muted)" }}
         >
           <span
-            className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold"
-            style={{
-              background: personColor(userName) + "33",
-              border: active === "profile" ? "1.5px solid var(--teal)" : "1.5px solid transparent",
-            }}
+            className="rounded-full shrink-0"
+            style={{ border: active === "profile" ? "1.5px solid var(--teal)" : "1.5px solid transparent" }}
           >
-            {initials(userName)}
+            <Avatar name={userName} avatar={userAvatar} initials={initials(userName)} size={20} />
           </span>
           <span className="text-[11px] font-medium">{t("nav.profile")}</span>
         </button>

@@ -4,7 +4,8 @@ import { updateGroup, deleteGroup, leaveGroup } from "../lib/store";
 import { useUser } from "../lib/auth";
 import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
-import { money, personColor, memberInitials, sortedMembers } from "../lib/format";
+import { money, memberInitials, sortedMembers } from "../lib/format";
+import { Avatar } from "./Avatar";
 import { useT, useLang } from "../lib/i18n";
 import { usePlan } from "../lib/plan";
 import { CURRENCIES, currencyOf, localCurrencyName, resolveToCode } from "../lib/currencies";
@@ -265,12 +266,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
               const canRemove = m.id !== group.meId && !referenced.has(m.id);
               return (
                 <div key={m.id} className="flex items-center gap-2.5">
-                  <span
-                    className="h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-semibold shrink-0"
-                    style={{ background: personColor(m.name) + "22" }}
-                  >
-                    {memberInitials(m)}
-                  </span>
+                  <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={28} />
                   <span className="text-sm font-medium flex-1 truncate">
                     {m.name}
                     {m.id === group.meId && <span className="text-muted text-xs"> · {t("members.you")}</span>}
