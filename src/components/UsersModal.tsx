@@ -12,6 +12,7 @@ import { createInviteLink } from "../lib/invite";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 import { ShareLinkModal } from "./ShareLinkModal";
+import { Avatar } from "./Avatar";
 
 type AddMode = "idle" | "search" | "found" | "notfound" | "manual";
 
@@ -196,12 +197,7 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
             const removable = !referenced.has(m.id) && m.id !== group.meId;
             return (
               <div key={m.id} className="flex items-center gap-3 py-2">
-                <span
-                  className="h-9 w-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0"
-                  style={{ background: personColor(m.name) + "22" }}
-                >
-                  {memberInitials(m)}
-                </span>
+                <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={36} />
                 <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm truncate flex items-center gap-1.5">
                     <span className="truncate">{m.name}</span>

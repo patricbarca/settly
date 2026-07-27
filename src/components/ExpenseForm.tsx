@@ -170,6 +170,18 @@ export function ExpenseForm({
     });
   }
 
+  // Selecciona o deselecciona TODOS los participantes de golpe.
+  function setAllParticipants(all: boolean) {
+    setF((s) => {
+      const newIds = all ? members.map((m) => m.id) : [];
+      const newSplitValues =
+        s.splitMode === "equal"
+          ? s.splitValues
+          : initSplitValues(s.splitMode, newIds, Number(s.amount) || 0);
+      return { ...s, participantIds: newIds, splitValues: newSplitValues };
+    });
+  }
+
   // When splitMode changes, reinitialize splitValues
   function changeSplitMode(mode: SplitMode) {
     setF((s) => ({
@@ -399,6 +411,23 @@ export function ExpenseForm({
             ))}
           </div>
         </div>
+
+        {/* Seleccionar / deseleccionar todos */}
+        {members.length > 1 && (
+          <div className="flex items-center justify-between mt-1.5">
+            <span className="text-[11px] text-muted">
+              {f.participantIds.length}/{members.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => setAllParticipants(f.participantIds.length < members.length)}
+              className="text-xs font-semibold"
+              style={{ color: "var(--indigo)" }}
+            >
+              {f.participantIds.length < members.length ? t("form.selectAll") : t("form.clearAll")}
+            </button>
+          </div>
+        )}
 
         {/* Participant pill toggles */}
         <div className="flex gap-1.5 flex-wrap mt-1">

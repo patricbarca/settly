@@ -10,6 +10,7 @@ import { fmtRate } from "../lib/fx";
 import { monthKey, monthsWithExpenses, monthLabel } from "../lib/report";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
+import { Avatar } from "./Avatar";
 import { ConfirmModal } from "./ConfirmModal";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 import { ItemizedExpenseEditor, type ItemizedResult } from "./ItemizedExpenseEditor";
@@ -758,14 +759,15 @@ function ExpenseRow({
                   <div key={id} className="flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2">
                       <span
-                        className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-semibold"
-                        style={{
-                          background: (labels[id]?.color ?? "#888") + "22",
-                          color: labels[id]?.color ?? "#888",
-                          boxShadow: bubblePaid(id) ? "0 0 0 1.5px #0A8B5E" : undefined,
-                        }}
+                        className="rounded-full inline-flex"
+                        style={{ boxShadow: bubblePaid(id) ? "0 0 0 1.5px #0A8B5E" : undefined }}
                       >
-                        {labels[id]?.label ?? "?"}
+                        <Avatar
+                          name={name(id)}
+                          avatar={group.members.find((m) => m.id === id)?.avatar}
+                          initials={labels[id]?.label}
+                          size={20}
+                        />
                       </span>
                       {name(id)}
                     </span>

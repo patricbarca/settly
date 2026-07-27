@@ -262,6 +262,13 @@ export async function setProfileAvatar(dataUrl: string) {
     state = { ...state, user: { ...state.user, avatar: dataUrl } };
     emit();
   }
+  // Propaga la foto al propio miembro en todos los grupos, para que se vea en
+  // gastos/participantes (y los demás la vean vía sync). Import dinámico para
+  // evitar cualquier ciclo de inicialización con el store.
+  try {
+    const { updateMyMember } = await import("./store");
+    updateMyMember({ avatar: dataUrl });
+  } catch {}
 }
 
 /** Guarda los datos de perfil (fuente única) en la tabla profiles. */
