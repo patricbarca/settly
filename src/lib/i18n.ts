@@ -676,6 +676,12 @@ const DICT: Record<string, { es: string; en: string }> = {
     es: "No se pierde nada al cambiar: los gastos y pagos ya confirmados quedan igual. Pero la lista de \"para saldar\" se recalcula con el nuevo modo, así que quién le debe a quién puede cambiar.",
     en: "Nothing is lost when you switch: existing expenses and confirmed payments stay as they are. But the \"to settle up\" list is recalculated under the new mode, so who owes whom can change.",
   },
+  "settings.payModeSwitchTitle": { es: "¿Cambiar el modo de pago?", en: "Switch payment mode?" },
+  "settings.payModeSwitchConfirm": {
+    es: "Ya hay pagos confirmados en este grupo. No se pierde dinero y el saldo neto de cada persona se mantiene, pero las transferencias sugeridas pueden reordenarse y los pagos hechos en el modo anterior podrían no calzar exactamente con los gastos. ¿Continuar?",
+    en: "This group already has confirmed payments. No money is lost and each person's net balance stays the same, but the suggested transfers may be reordered and payments made in the previous mode might not map exactly to expenses. Continue?",
+  },
+  "settings.payModeSwitchOk": { es: "Sí, cambiar", en: "Yes, switch" },
   "settings.saved":    { es: "Guardado", en: "Saved" },
 
   "account.title":   { es: "Mi cuenta", en: "My account" },

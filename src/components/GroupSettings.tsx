@@ -12,6 +12,7 @@ import { CURRENCIES, currencyOf, localCurrencyName, resolveToCode } from "../lib
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 import { Paywall } from "./Paywall";
+import { ConfirmModal } from "./ConfirmModal";
 
 const COMMON_CODES = ["EUR", "USD", "GBP", "AUD", "CAD", "CHF", "MXN", "BRL", "COP", "ARS", "JPY"];
 
@@ -24,6 +25,16 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
   const [currency, setCurrency] = useState(() => resolveToCode(group.currency));
   const [kind, setKind] = useState<GroupKind>(group.kind ?? "trip");
   const [simplify, setSimplify] = useState(group.simplifyDebts !== false);
+  // Confirmación al cambiar de modo de pago si ya hay pagos confirmados (las
+  // transferencias sugeridas pueden reordenarse; ver aviso).
+  const [pendingMode, setPendingMode] = useState<boolean | null>(null);
+  const hasConfirmedPayments = (group.settlements ?? []).some((s) => s.status === "confirmed");
+  const savedMode = group.simplifyDebts !== false;
+  function chooseMode(s: boolean) {
+    if (s === simplify) return;
+    if (s !== savedMode && hasConfirmedPayments) setPendingMode(s);
+    else setSimplify(s);
+  }
   const [secondaryCurrency, setSecondaryCurrency] = useState(group.secondaryCurrency ?? "");
   const [displayCurrency, setDisplayCurrency] = useState(group.displayCurrency ?? group.currency);
   const [saved, setSaved] = useState(false);
@@ -237,7 +248,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
               return (
                 <button
                   key={String(s)}
-                  onClick={() => setSimplify(s)}
+                  onClick={() => chooseMode(s)}
                   className={`rounded-2xl p-2.5 text-sm font-semibold text-center hover-lift ${on ? "" : "glass"}`}
                   style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
                 >
@@ -340,6 +351,16 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
         </div>
       </div>
       {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
+      {pendingMode !== null && (
+        <ConfirmModal
+          danger={false}
+          title={t("settings.payModeSwitchTitle")}
+          message={t("settings.payModeSwitchConfirm")}
+          confirmLabel={t("settings.payModeSwitchOk")}
+          onConfirm={() => setSimplify(pendingMode)}
+          onClose={() => setPendingMode(null)}
+        />
+      )}
     </Overlay>
   );
 }
