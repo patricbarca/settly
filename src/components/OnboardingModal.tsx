@@ -259,14 +259,15 @@ function SlideModeAnim() {
   );
 }
 
-// ── Slide: Settle up — Direct (pick expenses, Pending → Paid) then
-// Simplified (FIFO auto-assign, running total) ───────────────────────────────
+// ── Slide: Settle up — the Direct-mode flow (pick which expenses a payment
+// covers, Pending → Paid). Simplified mode (pay the net amount, no per-expense
+// picker) is explained on its own slide (SlideModeAnim). ─────────────────────
 function SlideSettleAnim() {
   const t = useT();
   const [phase, setPhase] = useState(0);
-  // Flujo de saldo (idéntico en Directo y Simplificado — la diferencia de modos
-  // se explica en su propio slide): 0 elegir gastos · 1 marcado + total ·
-  // 2 pagando · 3 verificado · 4 pagado.
+  // Flujo de saldo del modo Directo (Simplificado se explica en su propio
+  // slide): 0 elegir gastos · 1 marcado + total · 2 pagando · 3 verificado ·
+  // 4 pagado.
   const delays = [2400, 3000, 2200, 1600, 3000];
   useEffect(() => {
     const timer = setTimeout(() => setPhase((p) => (p + 1) % delays.length), delays[phase] ?? 2000);
@@ -287,8 +288,8 @@ function SlideSettleAnim() {
     </span>
   );
 
-  // Flujo de saldo: eliges qué gastos cubre el pago, pagas, se verifica y pasan
-  // de Pendiente a Pagado. Es el mismo flujo en Directo y Simplificado.
+  // Flujo de saldo (modo Directo): eliges qué gastos cubre el pago, pagas, se
+  // verifica y pasan de Pendiente a Pagado.
   const checking = phase >= 1; // se van tildando
   const paying = phase === 2; // ⏳ esperando confirmación
   const verifying = phase === 3; // ✓ verificado, un instante antes de Pagado
@@ -296,6 +297,9 @@ function SlideSettleAnim() {
   return (
       <div style={{ width: "100%", maxWidth: 290, margin: "0 auto" }}>
         <div style={{ background: "rgba(255,255,255,0.13)", borderRadius: 16, padding: 14, backdropFilter: "blur(8px)" }}>
+          <div style={{ marginBottom: 10 }}>
+            <span style={{ fontSize: 8.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, borderRadius: 999, padding: "2px 8px", background: "rgba(91,91,240,0.28)", color: "#c7c7ff" }}>{t("onboard.demo.directMode")}</span>
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 10 }}>
             {ava("P", "#dc2626")}
             <b style={{ color: "white", fontSize: 12 }}>Patrick</b>
