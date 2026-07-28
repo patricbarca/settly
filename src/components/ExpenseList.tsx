@@ -515,10 +515,18 @@ function ExpenseRow({
   // referencia este gasto en `expenseIds` — en modo Directo por elección
   // manual (picker), en Simplificado por asignación automática de más
   // antiguo a más nuevo (`fifoExpenseIdsForAmount`).
+  // En modo Simplificado los pagos son transferencias NETEADAS que no mapean a
+  // gastos concretos: proyectar "pagado/parcial/pendiente" por gasto sería
+  // engañoso (un pago a X aparecería "cubriendo" un gasto que puso Y). Por eso
+  // el estado por-gasto solo se muestra en modo DIRECTO, donde cada pago sí
+  // corresponde a gastos reales entre ese par. En Simplificado el estado real
+  // vive en los saldos/liquidación (pestaña Balances), no aquí.
+  const directMode = group.simplifyDebts === false;
   const { debtorIds, settledIds, partialIds } = expenseSettledStatus(e, ids, group.settlements ?? []);
   const pendingCount = debtorIds.filter((id) => !settledIds.has(id)).length;
-  const paidStatus: "paid" | "partial" | "pending" | null =
-    debtorIds.length === 0
+  const paidStatus: "paid" | "partial" | "pending" | null = !directMode
+    ? null
+    : debtorIds.length === 0
       ? null
       : pendingCount === 0
         ? "paid"
@@ -526,7 +534,9 @@ function ExpenseRow({
           ? "partial"
           : "pending";
   // Anillo verde en la burbuja: ya saldó su parte (o no debía, por ser pagador).
-  const bubblePaid = (id: string) => payerIds.includes(id) || settledIds.has(id);
+  // En Simplificado solo el pagador lleva anillo (no debe); no se marca a los
+  // deudores porque su "saldado" no es por-gasto sino neteado.
+  const bubblePaid = (id: string) => payerIds.includes(id) || (directMode && settledIds.has(id));
 
   const [swipeX, setSwipeX] = useState(0);
   // Al escanear un ticket en otra moneda, permite ver los ítems en la moneda
