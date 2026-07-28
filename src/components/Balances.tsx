@@ -224,9 +224,13 @@ export function Balances({ group }: { group: Group }) {
         ) : (
           <div className="mt-3 space-y-2.5">
             {filteredLog.map((s) => {
-              const covered = (s.expenseIds ?? [])
-                .map((id) => group.expenses.find((e) => e.id === id)?.label)
-                .filter(Boolean);
+              // En Simplificado el pago es neteado y no corresponde a gastos
+              // concretos, así que no listamos "cubre: …" (sería engañoso).
+              const covered = direct
+                ? (s.expenseIds ?? [])
+                    .map((id) => group.expenses.find((e) => e.id === id)?.label)
+                    .filter(Boolean)
+                : [];
               return (
                 <div key={s.id} className="text-sm border-b border-[color:var(--line)] last:border-0 pb-2.5 last:pb-0">
                   <div className="flex items-center gap-2">

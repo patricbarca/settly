@@ -74,7 +74,7 @@ export function BottomNav({
           style={{ color: active === "profile" ? "var(--teal)" : "var(--muted)" }}
         >
           <span
-            className="rounded-full shrink-0"
+            className="rounded-full shrink-0 inline-flex items-center justify-center leading-none"
             style={{ border: active === "profile" ? "1.5px solid var(--teal)" : "1.5px solid transparent" }}
           >
             <Avatar name={userName} avatar={userAvatar} initials={initials(userName)} size={20} />
