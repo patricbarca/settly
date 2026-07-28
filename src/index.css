@@ -52,6 +52,9 @@
 
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
+/* PWA iOS: evita que el rebote elástico (overscroll/rubber-band) al llegar al
+   tope arrastre la barra inferior fija (BottomNav). */
+html, body { overscroll-behavior: none; }
 
 body {
   font-family: 'Baloo 2', system-ui, sans-serif;
