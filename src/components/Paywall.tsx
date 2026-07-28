@@ -33,6 +33,30 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
 
   const selected = products.find((p) => p.billing === billing) ?? products[0];
 
+  // Enlaces legales funcionales (obligatorio para suscripciones auto-renovables:
+  // Términos de uso/EULA + Política de privacidad, tappables). App Review 3.1.2.
+  const legalLinks = (
+    <div className="flex items-center justify-center gap-3 text-[11px] mb-4">
+      <a
+        href="https://settlia.app/terms.html"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-muted underline"
+      >
+        {t("paywall.termsOfUse")}
+      </a>
+      <span className="text-muted">·</span>
+      <a
+        href="https://settlia.app/privacy.html"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-muted underline"
+      >
+        {t("paywall.privacy")}
+      </a>
+    </div>
+  );
+
   async function handlePurchase() {
     if (redirecting || !selected) return;
     setRedirecting(true);
@@ -198,7 +222,8 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
                   {redirecting ? t("paywall.redirecting") : t("paywall.cta")}
                 </button>
 
-                <p className="text-[11px] text-muted text-center mb-4">{t("paywall.terms")}</p>
+                <p className="text-[11px] text-muted text-center mb-2">{t("paywall.terms")}</p>
+                {legalLinks}
 
                 {err && <p className="text-red-500 text-xs text-center mb-3">{err}</p>}
               </>
@@ -256,7 +281,8 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
                   {restoring ? t("paywall.restoring") : t("paywall.restore")}
                 </button>
 
-                <p className="text-[11px] text-muted text-center mb-3">{t("paywall.terms")}</p>
+                <p className="text-[11px] text-muted text-center mb-2">{t("paywall.terms")}</p>
+                {legalLinks}
 
                 {err && <p className="text-red-500 text-xs text-center mb-3">{err}</p>}
               </>

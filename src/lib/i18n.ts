@@ -837,7 +837,9 @@ const DICT: Record<string, { es: string; en: string }> = {
   "paywall.month":    { es: "mes", en: "month" },
   "paywall.or":       { es: "o", en: "or" },
   "paywall.cta":      { es: "Empezar prueba de 7 días", en: "Start 7-day trial" },
-  "paywall.terms":    { es: "7 días gratis · se pide tarjeta · cancela cuando quieras", en: "7-day free trial · card required · cancel anytime" },
+  "paywall.terms":    { es: "Suscripción de renovación automática. Se cobra a tu cuenta de Apple ID y se renueva salvo que la canceles al menos 24 h antes del fin del periodo. Cancela cuando quieras en los ajustes de tu cuenta.", en: "Auto-renewable subscription. Billed to your Apple ID and renews unless cancelled at least 24 h before the period ends. Cancel anytime in your account settings." },
+  "paywall.termsOfUse": { es: "Términos de uso", en: "Terms of Use" },
+  "paywall.privacy":  { es: "Privacidad", en: "Privacy Policy" },
 
   "install.btn":      { es: "Instalar app", en: "Install app" },
   "install.iosTitle": { es: "Instala Settlia", en: "Install Settlia" },
