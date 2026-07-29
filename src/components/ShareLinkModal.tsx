@@ -32,7 +32,10 @@ export function ShareLinkModal({ link, title, onClose }: { link: string; title?:
 
   async function nativeShare() {
     try {
-      if (navigator.share) await navigator.share({ title: title || "Settlia", url: link });
+      // Muchos destinos (WhatsApp, Telegram…) ignoran `title` y solo muestran
+      // `text` + `url`, así que metemos el nombre del grupo en el propio mensaje.
+      const text = title ? t("share.inviteText", { name: title }) : undefined;
+      if (navigator.share) await navigator.share({ title: title || "Settlia", text, url: link });
     } catch { /* usuario canceló */ }
   }
 

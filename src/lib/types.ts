@@ -113,12 +113,17 @@ export interface ExpenseItem {
 
 export interface Settlement {
   id: string;
-  from: string; // memberId que paga
+  from: string; // memberId cuya deuda se salda (el deudor de registro)
   to: string; // memberId que cobra
   amount: number;
   date: string;
   status: "pending" | "confirmed";
   proof?: string; // dataURL del comprobante (opcional)
+  /** memberId de quien REALMENTE puso el dinero, cuando alguien salda la deuda
+   *  de otro (p. ej. Juan paga lo de Ana). Si está ausente o == `from`, lo pagó
+   *  el propio deudor. Solo afecta a la visualización/registro; el saldo que se
+   *  limpia sigue siendo el de `from`. */
+  settledBy?: string;
   /** Gastos concretos que cubre este pago (solo modo Directo — en Simplificado
    *  la transferencia es una optimización agregada que no siempre corresponde
    *  a gastos reales compartidos entre estas dos personas). Al confirmarse,
