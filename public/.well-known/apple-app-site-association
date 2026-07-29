@@ -1,0 +1,17 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "KY72Q4Y3V3.app.settlia.pwa",
+        "components": [
+          {
+            "/": "/",
+            "?": { "join": "?*" },
+            "comment": "Solo abre la app en links de invitacion (?join=...); el resto del dominio sigue en el navegador."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -49,6 +49,33 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Settle on behalf + creditor "mark received" + pay-methods when paying (Balances)
+- **`Settlement.settledBy?`** (optional, JSON — no SQL): memberId de quien realmente puso el dinero cuando alguien salda la deuda de otro. Ausente/== `from` = lo pagó el propio deudor.
+- **Pagar por otro (`MarkPaidModal` + `Balances`):** el modal ahora separa `from` (deudor cuyo saldo se limpia) de `payer` (quien pone el dinero). Tres flujos:
+  1. **Tu deuda** → botón "Pagar" (pendiente → el acreedor confirma).
+  2. **Pagar por otro** → en las filas de otros deudores hacia un tercero, botón **"Pagar por {nombre}"** (`settledBy = yo`). También puedes cubrir **varias deudas al mismo acreedor** en una sola transferencia (sección "¿Pagas también lo de otros?" con checkboxes + "Total a transferir").
+  3. **Me pagaron** → en las filas donde te deben a ti, botón verde **"{nombre} me pagó"** → crea el pago **ya confirmado** (`confirmReceipt` mode, sin `settledBy`); puedes marcar varios que te pagaron a la vez.
+- El log de pagos muestra **"(cubierto por X)"** cuando `settledBy` difiere del deudor.
+- **Métodos de pago al pagar por otro:** la fila "Pagar por {nombre}" tiene también el botón **"método"** → abre `PaySheet` con el acreedor (a quién transfieres).
+
+### Configuración de notificaciones por usuario (feed + push) — DEPLOYED
+- **4 categorías** (`src/lib/notifPrefs.ts`): **Gastos** (expense_added, recurring_generated) · **Pagos** (payment_made) · **Solicitudes** (review_requested, delete_requested) · **Recordatorios diarios**. Toggles en `AccountModal` → "Qué notificaciones recibir". Modelo **opt-out** (sin preferencia = todo activado).
+- Prefs en **`profiles.notif_prefs jsonb`** (Supabase, cross-device) + caché en localStorage. Cargadas en `auth.ts` (`applyNotifPrefsFromDB`).
+- **Feed in-app** filtra en cliente (`buildFeed` usa `categoryOf`/`isCategoryOn`). **Push** filtra en servidor: `notifyGroup(...,category)` pasa la categoría; `send-push` y `daily-reminders` leen `profiles.notif_prefs` y omiten a quien la desactivó.
+- **Aplicado en Supabase vía conector MCP:** migración `notif_prefs` aplicada; `send-push` (v40) y `daily-reminders` (v40) re-desplegadas con el filtro. SQL fuente en `supabase/migrate_v6_notif_prefs.sql`.
+
+### Compartir grupo: nombre en el mensaje + Terms/EULA + logo legales
+- **`ShareLinkModal`** ahora pasa `text` con el nombre del grupo al `navigator.share` (`share.inviteText`), porque muchos destinos (WhatsApp/Telegram) ignoran `title`.
+- **Landing (`settly-landing`):** `terms.html` ahora incluye las cláusulas de **suscripción auto-renovable** requeridas por Apple 3.1.2 (precios $6.99/mes · $59.99/año, cobro a Apple ID/Google, auto-renovación, cancelación, reembolsos). `privacy.html` + `terms.html` actualizados al **logo nuevo** (`assets/logo-s.png`, antes SVG viejo).
+
+### ⏳ PENDIENTE — Universal Links: link de invitación abre la app en iOS
+- **Problema:** `https://app.settlia.app/?join=<token>` en iOS abre Safari (la PWA), no la app nativa.
+- **Hecho:** `public/.well-known/apple-app-site-association` (AASA) creado — appID `KY72Q4Y3V3.app.settlia.pwa`, `components` que **solo** capturan links con `?join=` (el resto del dominio sigue en el navegador). Se copia a `dist/.well-known/` en el build.
+- **Falta (coordinado, NO meter en el build de submission de IAP sin hacer el paso Apple, o el archive falla igual que con Push):**
+  1. **Entitlement** `com.apple.developer.associated-domains` = `applinks:app.settlia.app` en `ios/App/App/App.entitlements`.
+  2. **Apple Developer:** activar capability **Associated Domains** en el App ID `app.settlia.pwa` → **regenerar el provisioning profile** → reemplazarlo en Codemagic (misma trampa que Push).
+  3. **App:** en `src/lib/auth.ts` `appUrlOpen`, captar la URL universal-link con `?join=` y disparar el flujo de unirse (hoy el join se lee de `window.location.search` en `App.tsx`, que en nativo es `capacitor://localhost` → no llega el token).
+
 ### Android platform scaffolded (Capacitor)
 - **`android/` added** via `npx cap add android` (Capacitor v8, same appId `app.settlia.pwa`). Real app branding wired in: adaptive launcher icon (navy `#0D1B2A` background + `logo-s.png` foreground, generated at all densities), legacy launcher icons from `icon-512.png`, and native splash background replaced with solid navy (matches the web/PWA splash). Default Capacitor blue-robot icon is gone.
 - **OAuth deep link**: added the `app.settlia.pwa://` intent-filter to `AndroidManifest.xml` (`MainActivity`) — Android didn't get this automatically like iOS's `Info.plist` did. Needed for the Google/Apple native login flow (`src/lib/auth.ts`) to work on Android too.
