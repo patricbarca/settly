@@ -3,6 +3,7 @@
 // resto del grupo. El estado "leído" es por dispositivo (localStorage).
 import type { AppNotification, Group } from "./types";
 import { uid } from "./format";
+import { isCategoryOn, categoryOf } from "./notifPrefs";
 
 /** Crea una notificación con id + timestamp. */
 export function makeNotif(n: Omit<AppNotification, "id" | "ts">): AppNotification {
@@ -24,6 +25,7 @@ export function buildFeed(groups: Group[]): FeedItem[] {
     for (const n of g.notifications ?? []) {
       if (n.actorId && n.actorId === g.meId) continue; // no me notifico a mí mismo
       if (n.type === "delete_requested" && n.toId !== g.meId) continue; // solo al creador
+      if (!isCategoryOn(categoryOf(n.type))) continue; // categoría desactivada por el usuario
       items.push({ ...n, groupId: g.id, groupName: g.name, currency: g.currency });
     }
   }

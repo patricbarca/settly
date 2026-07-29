@@ -143,7 +143,7 @@ export function ExpenseList({ group }: { group: Group }) {
       notifAdd: makeNotif({ type: "review_requested", label: exp.label, expenseId: id }),
       activity: makeActivity({ type: "review_requested", label: exp.label }),
     });
-    notifyGroup(group.id, group.name, t("notif.review_requested", { label: exp.label }));
+    notifyGroup(group.id, group.name, t("notif.review_requested", { label: exp.label }), "requests");
   }
   // El creador del gasto marca que ya lo revisó (resuelve la solicitud).
   function markReviewed(id: string) {

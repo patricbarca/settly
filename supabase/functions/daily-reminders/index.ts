@@ -275,8 +275,27 @@ Deno.serve(async (req) => {
       }
     }
 
-    const userIds = [...targets.keys()];
+    let userIds = [...targets.keys()];
     if (userIds.length === 0) return json({ sent: 0, users: 0 });
+
+    // Preferencias: excluir a quien desactivó los recordatorios diarios.
+    // Modelo opt-out (sin fila/clave = activado).
+    {
+      const { data: profs } = await admin
+        .from("profiles")
+        .select("id, notif_prefs")
+        .in("id", userIds);
+      const off = new Set(
+        (profs ?? [])
+          .filter((p: { notif_prefs?: Record<string, unknown> }) => p.notif_prefs && p.notif_prefs.reminders === false)
+          .map((p: { id: string }) => p.id)
+      );
+      if (off.size) {
+        userIds = userIds.filter((id) => !off.has(id));
+        for (const id of off) targets.delete(id);
+      }
+      if (userIds.length === 0) return json({ sent: 0, users: 0 });
+    }
 
     const { data: subs } = await admin
       .from("push_subscriptions")

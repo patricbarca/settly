@@ -609,7 +609,8 @@ export function processRecurring(groupId: string) {
     notifyGroup(
       groupId,
       groupName,
-      tr("notif.recurring_generated", { label: p.label, amt: money(p.amount, p.currency), payer: p.payerName })
+      tr("notif.recurring_generated", { label: p.label, amt: money(p.amount, p.currency), payer: p.payerName }),
+      "expenses"
     );
   }
 }

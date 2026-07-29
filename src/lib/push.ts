@@ -90,8 +90,8 @@ export async function disablePush(): Promise<void> {
 
 /** Dispara un push a los demás miembros del grupo (la Edge Function resuelve
  *  los destinatarios y excluye al emisor). Fire-and-forget. */
-export function notifyGroup(groupId: string, title: string, body: string): void {
-  supabase.functions.invoke("send-push", { body: { groupId, title, body } }).catch(() => {});
+export function notifyGroup(groupId: string, title: string, body: string, category?: string): void {
+  supabase.functions.invoke("send-push", { body: { groupId, title, body, category } }).catch(() => {});
 }
 
 /** Como notifyGroup pero SOLO a una persona del grupo (por su userId). Se usa

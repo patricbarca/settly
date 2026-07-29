@@ -6,6 +6,7 @@ import { fileToAvatarDataUrl } from "../lib/image";
 import { personColor, memberInitials } from "../lib/format";
 import { enablePush, disablePush, isPushEnabled, pushSupported } from "../lib/push";
 import { enableNativePush, disableNativePush, isNativePushOn, nativePushSupported } from "../lib/nativePush";
+import { useNotifPrefs, setNotifPref, NOTIF_CATEGORIES } from "../lib/notifPrefs";
 import { memberPays, payLink } from "../lib/pay";
 import { countryList, dialCode, isValidPhone, normalizePhone } from "../lib/countries";
 import { useT, useLang } from "../lib/i18n";
@@ -95,6 +96,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const [saved, setSaved] = useState(false);
   // En la app nativa el push va por APNs/FCM (nativePush); en la web, Web Push.
   const nativePush = nativePushSupported();
+  const notifPrefs = useNotifPrefs();
   const [pushOn, setPushOn] = useState(nativePush ? isNativePushOn() : isPushEnabled());
   const [pushBusy, setPushBusy] = useState(false);
   const [pushMsg, setPushMsg] = useState("");
@@ -480,6 +482,34 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
             {pushMsg && <p className="text-xs mt-1" style={{ color: "var(--coral)" }}>{pushMsg}</p>}
           </div>
         )}
+
+        {/* Qué categorías de notificación recibir (feed in-app + push) */}
+        <div className="mb-6">
+          <label className="text-xs font-semibold text-muted">{t("account.notifTypes")}</label>
+          <div className="glass rounded-xl mt-1 divide-y" style={{ borderColor: "var(--line)" }}>
+            {NOTIF_CATEGORIES.map((cat) => {
+              const on = notifPrefs[cat] !== false;
+              return (
+                <div key={cat} className="flex items-center justify-between gap-2 px-3 py-2.5">
+                  <div className="text-sm">{t(`account.notifCat.${cat}`)}</div>
+                  <button
+                    onClick={() => setNotifPref(cat, !on)}
+                    role="switch"
+                    aria-checked={on}
+                    className="relative h-6 w-11 rounded-full shrink-0 transition-colors"
+                    style={{ background: on ? "var(--teal)" : "var(--glass)" }}
+                  >
+                    <span
+                      className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all"
+                      style={{ left: on ? "22px" : "2px" }}
+                    />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-xs text-muted mt-1">{t("account.notifTypesHint")}</p>
+        </div>
 
         {/* Preguntas frecuentes */}
         <button

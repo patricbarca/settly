@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import { App as CapApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { supabase } from "./supabase";
+import { applyNotifPrefsFromDB } from "./notifPrefs";
 import { uid } from "./format";
 import { getLang } from "./i18n";
 import type { PayMethod } from "./types";
@@ -79,7 +80,7 @@ async function fromSession(session: Session) {
   {
     const full = await supabase
       .from("profiles")
-      .select("name, phone, phone_verified, avatar, country, initials, pays")
+      .select("name, phone, phone_verified, avatar, country, initials, pays, notif_prefs")
       .eq("id", au.id)
       .single();
     if (full.error) {
@@ -93,6 +94,9 @@ async function fromSession(session: Session) {
       profile = full.data;
     }
   }
+
+  // Preferencias de notificaciones (qué categorías quiere recibir el usuario).
+  applyNotifPrefsFromDB(profile?.notif_prefs);
 
   // Avatar: foto guardada en el perfil, o por defecto la de Google.
   const googleAvatar = au.user_metadata?.avatar_url || "";

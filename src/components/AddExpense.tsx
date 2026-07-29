@@ -294,7 +294,8 @@ export function AddExpense({ group }: { group: Group }) {
       notifyGroup(
         group.id,
         group.name,
-        t("notif.expense_added", { name: meName, label: d.label.trim(), amt: money(amount, group.currency) })
+        t("notif.expense_added", { name: meName, label: d.label.trim(), amt: money(amount, group.currency) }),
+        "expenses"
       );
     }
     setDraft(null);

@@ -141,7 +141,8 @@ export function SettleFriendModal({ friend, onClose }: { friend: Friend; onClose
       notifyGroup(
         fg.groupId,
         fg.groupName,
-        t("notif.payment_made", { name: name(fg.myMemberId), amt: money(amount, fg.currency), to: name(fg.friendMemberId) })
+        t("notif.payment_made", { name: name(fg.myMemberId), amt: money(amount, fg.currency), to: name(fg.friendMemberId) }),
+        "payments"
       );
     }
     onClose();

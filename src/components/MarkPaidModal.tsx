@@ -230,7 +230,8 @@ export function MarkPaidModal({
     notifyGroup(
       group.id,
       group.name,
-      t("notif.payment_made", { name: name(from), amt: money(paidAmt, group.currency), to: name(to) })
+      t("notif.payment_made", { name: name(from), amt: money(paidAmt, group.currency), to: name(to) }),
+      "payments"
     );
     onClose();
   }

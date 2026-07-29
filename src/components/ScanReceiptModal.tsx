@@ -242,7 +242,8 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     notifyGroup(
       group.id,
       group.name,
-      t("notif.expense_added", { name: meName, label: "Ticket", amt: money(r.amount, group.currency) })
+      t("notif.expense_added", { name: meName, label: "Ticket", amt: money(r.amount, group.currency) }),
+      "expenses"
     );
     onClose();
   }

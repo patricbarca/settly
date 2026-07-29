@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
       return json({ error: "not_configured" }, 503);
     }
 
-    const { groupId, title, body, url, toUserId } = await req.json();
+    const { groupId, title, body, url, toUserId, category } = await req.json();
     if (!groupId) return json({ error: "no_group" }, 400);
 
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
@@ -135,6 +135,22 @@ Deno.serve(async (req) => {
     // (siempre que sea miembro del grupo y no sea el propio emisor).
     if (toUserId) userIds = userIds.filter((id) => id === toUserId);
     if (!userIds.length) return json({ sent: 0 });
+
+    // Preferencias de notificación: excluir a quien desactivó esta categoría.
+    // Modelo opt-out: si no hay fila/clave, se considera activada.
+    if (category) {
+      const { data: profs } = await admin
+        .from("profiles")
+        .select("id, notif_prefs")
+        .in("id", userIds);
+      const off = new Set(
+        (profs ?? [])
+          .filter((p) => p.notif_prefs && (p.notif_prefs as Record<string, unknown>)[category] === false)
+          .map((p) => p.id as string)
+      );
+      userIds = userIds.filter((id) => !off.has(id));
+      if (!userIds.length) return json({ sent: 0, apns: 0, web: 0 });
+    }
 
     // Push nativo (APNs) a los dispositivos iOS de esos usuarios.
     let apnsSent = 0;
