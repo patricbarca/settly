@@ -15,19 +15,24 @@ export function MarkPaidModal({
   from,
   to,
   amount,
+  payer = from,
   coverable = [],
   onClose,
 }: {
   group: Group;
-  from: string;
+  from: string; // deudor cuyo saldo se salda
   to: string;
   amount: number;
+  /** Quien REALMENTE pone el dinero. Si difiere de `from`, es un pago "por otro"
+   *  y se guarda como `settledBy`. Por defecto = el propio deudor. */
+  payer?: string;
   /** Otras deudas hacia el mismo acreedor que este pagador puede cubrir en el
    *  mismo pago (p. ej. pagar también lo de su pareja). Vacío = solo lo propio. */
   coverable?: { from: string; amount: number }[];
   onClose: () => void;
 }) {
   const t = useT();
+  const onBehalf = payer !== from;
   const max = Math.round(amount * 100) / 100;
   const [amt, setAmt] = useState(String(max));
   const [proof, setProof] = useState<string | undefined>();
@@ -174,6 +179,7 @@ export function MarkPaidModal({
           // cobra lo confirme o lo rechace. Puede ser un pago PARCIAL.
           status: "pending" as const,
           proof,
+          ...(onBehalf ? { settledBy: payer } : {}),
           ...(fullyCovered.length ? { expenseIds: fullyCovered } : {}),
           ...(picks.length ? { expensePayments: picks } : {}),
         },
@@ -184,7 +190,7 @@ export function MarkPaidModal({
           amount: c.amount,
           date: today,
           status: "pending" as const,
-          settledBy: from,
+          settledBy: payer,
           expenseIds: fifoExpenseIdsForAmount(g.members, g.expenses, g.settlements ?? [], c.from, c.amount),
         })),
       ];
@@ -227,7 +233,9 @@ export function MarkPaidModal({
       <div className="glass-strong rounded-3xl w-full max-w-sm p-6 anim-pop" onClick={(e) => e.stopPropagation()}>
         <h3 className="font-display text-xl font-bold mb-1">{t("pay.markTitle")}</h3>
         <p className="text-sm text-muted mb-4">
-          {t("pay.markDesc", { amt: money(max, group.currency), to: name(to) })}
+          {onBehalf
+            ? t("pay.markDescBehalf", { who: name(from), amt: money(max, group.currency), to: name(to) })
+            : t("pay.markDesc", { amt: money(max, group.currency), to: name(to) })}
         </p>
 
         {usingPicker ? (

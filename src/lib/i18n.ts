@@ -500,6 +500,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "pay.bizumCopied": { es: "Bizum copiado: {v}", en: "Bizum copied: {v}" },
   "pay.markTitle": { es: "Marcar como pagado", en: "Mark as paid" },
   "pay.markDesc": { es: "Debes {amt} a {to}. Indica cuánto pagaste; quedará pendiente de su confirmación.", en: "You owe {amt} to {to}. Enter how much you paid; it'll await their confirmation." },
+  "pay.markDescBehalf": { es: "Pagas por {who}: {amt} a {to}. Quedará pendiente de la confirmación de {to}.", en: "You're paying for {who}: {amt} to {to}. It'll await {to}'s confirmation." },
+  "pay.payForThem": { es: "Pagar por {who}", en: "Pay for {who}" },
   "pay.amountPaid": { es: "Monto pagado", en: "Amount paid" },
   "pay.full": { es: "Total", en: "Full" },
   "pay.remaining": { es: "Quedará pendiente {amt}", en: "{amt} will remain" },

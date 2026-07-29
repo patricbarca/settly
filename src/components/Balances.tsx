@@ -39,9 +39,10 @@ export function Balances({ group }: { group: Group }) {
   const [mark, setMark] = useState<{ from: string; to: string; amount: number } | null>(null);
   // Otras deudas hacia el MISMO acreedor que puedo cubrir en el mismo pago
   // (p. ej. pago lo mío y lo de mi pareja a la vez → una sola transferencia).
-  const coverableFor = (to: string) =>
+  // `exclude` = el deudor cuyo pago ya estoy registrando (para no repetirlo).
+  const coverableFor = (to: string, exclude: string) =>
     transfers
-      .filter((o) => o.to === to && o.from !== group.meId && !pendingFor(o.from, o.to))
+      .filter((o) => o.to === to && o.from !== exclude && !pendingFor(o.from, o.to))
       .map((o) => ({ from: o.from, amount: o.amount }));
   const [paySheet, setPaySheet] = useState<{ to: string; amount: number } | null>(null);
   const [editSettlement, setEditSettlement] = useState<Settlement | null>(null);
@@ -158,7 +159,7 @@ export function Balances({ group }: { group: Group }) {
                 </div>
                 {/* Solo el DEUDOR ve "Pagar" y "Marcar pagado". Si ya marcó, queda
                     a la espera de que el acreedor confirme. */}
-                {tr.from === group.meId && (
+                {tr.from === group.meId ? (
                   <div className="flex gap-2 mt-1.5 pl-8 items-center">
                     {pendingFor(tr.from, tr.to) ? (
                       <span className="text-xs text-muted inline-flex items-center gap-1">
@@ -182,6 +183,20 @@ export function Balances({ group }: { group: Group }) {
                       </>
                     )}
                   </div>
+                ) : (
+                  /* Deuda de OTRO: puedo pagarla por él/ella (settledBy = yo). Si
+                     ya hay un pago pendiente para esa deuda, no ofrezco nada. */
+                  group.meId && !pendingFor(tr.from, tr.to) && (
+                    <div className="flex gap-2 mt-1.5 pl-8 items-center">
+                      <button
+                        onClick={() => setMark({ from: tr.from, to: tr.to, amount: tr.amount })}
+                        className="glass rounded-full px-3 py-1 text-xs font-semibold hover-lift"
+                        style={{ color: "var(--teal)" }}
+                      >
+                        {t("pay.payForThem", { who: name(tr.from) })}
+                      </button>
+                    </div>
+                  )
                 )}
               </div>
             ))}
@@ -281,7 +296,8 @@ export function Balances({ group }: { group: Group }) {
           from={mark.from}
           to={mark.to}
           amount={mark.amount}
-          coverable={mark.from === group.meId ? coverableFor(mark.to) : []}
+          payer={group.meId}
+          coverable={group.meId ? coverableFor(mark.to, mark.from) : []}
           onClose={() => setMark(null)}
         />
       )}
