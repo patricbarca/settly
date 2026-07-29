@@ -17,6 +17,7 @@ export function MarkPaidModal({
   amount,
   payer = from,
   coverable = [],
+  confirmReceipt = false,
   onClose,
 }: {
   group: Group;
@@ -29,10 +30,14 @@ export function MarkPaidModal({
   /** Otras deudas hacia el mismo acreedor que este pagador puede cubrir en el
    *  mismo pago (p. ej. pagar también lo de su pareja). Vacío = solo lo propio. */
   coverable?: { from: string; amount: number }[];
+  /** Modo acreedor: "X me pagó". El pago se registra ya CONFIRMADO (yo, que
+   *  cobro, doy fe de haberlo recibido) y no lleva `settledBy` (pagó el deudor). */
+  confirmReceipt?: boolean;
   onClose: () => void;
 }) {
   const t = useT();
   const onBehalf = payer !== from;
+  const status = confirmReceipt ? ("confirmed" as const) : ("pending" as const);
   const max = Math.round(amount * 100) / 100;
   const [amt, setAmt] = useState(String(max));
   const [proof, setProof] = useState<string | undefined>();
@@ -175,9 +180,9 @@ export function MarkPaidModal({
           to,
           amount: paidAmt,
           date: today,
-          // Lo marca el deudor ("ya pagué") → queda PENDIENTE hasta que quien
-          // cobra lo confirme o lo rechace. Puede ser un pago PARCIAL.
-          status: "pending" as const,
+          // Deudor: queda PENDIENTE hasta que el acreedor confirme. Acreedor
+          // (confirmReceipt): ya CONFIRMADO. Puede ser un pago PARCIAL.
+          status,
           proof,
           ...(onBehalf ? { settledBy: payer } : {}),
           ...(fullyCovered.length ? { expenseIds: fullyCovered } : {}),
@@ -189,8 +194,10 @@ export function MarkPaidModal({
           to,
           amount: c.amount,
           date: today,
-          status: "pending" as const,
-          settledBy: payer,
+          status,
+          // En modo acreedor cada deudor pagó lo suyo → sin settledBy. En modo
+          // pagador (cubro a otros) el dinero lo pongo yo → settledBy = payer.
+          ...(confirmReceipt ? {} : { settledBy: payer }),
           expenseIds: fifoExpenseIdsForAmount(g.members, g.expenses, g.settlements ?? [], c.from, c.amount),
         })),
       ];
@@ -233,7 +240,9 @@ export function MarkPaidModal({
       <div className="glass-strong rounded-3xl w-full max-w-sm p-6 anim-pop" onClick={(e) => e.stopPropagation()}>
         <h3 className="font-display text-xl font-bold mb-1">{t("pay.markTitle")}</h3>
         <p className="text-sm text-muted mb-4">
-          {onBehalf
+          {confirmReceipt
+            ? t("pay.markDescReceipt", { who: name(from), amt: money(max, group.currency) })
+            : onBehalf
             ? t("pay.markDescBehalf", { who: name(from), amt: money(max, group.currency), to: name(to) })
             : t("pay.markDesc", { amt: money(max, group.currency), to: name(to) })}
         </p>
@@ -352,7 +361,9 @@ export function MarkPaidModal({
 
         {coverable.length > 0 && (
           <div className="mt-4">
-            <label className="text-xs font-semibold text-muted">{t("pay.coverOthers", { to: name(to) })}</label>
+            <label className="text-xs font-semibold text-muted">
+              {confirmReceipt ? t("pay.alsoPaidMe") : t("pay.coverOthers", { to: name(to) })}
+            </label>
             <div className="glass rounded-2xl p-1.5 mt-1 space-y-0.5">
               {coverable.map((c) => {
                 const on = covered.has(c.from);
@@ -402,7 +413,7 @@ export function MarkPaidModal({
             disabled={!valid}
             className="glass-strong rounded-full px-5 py-2.5 font-medium hover-lift disabled:opacity-40"
           >
-            {t("pay.confirmPay")}
+            {confirmReceipt ? t("pay.confirmReceived") : t("pay.confirmPay")}
           </button>
           <button onClick={onClose} className="glass rounded-full px-5 py-2.5 text-muted hover-lift">
             {t("common.cancel")}

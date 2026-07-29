@@ -36,7 +36,7 @@ export function Balances({ group }: { group: Group }) {
   // Pagos pendientes que ME toca confirmar (soy quien cobra).
   const toConfirm = pending.filter((s) => s.to === group.meId);
 
-  const [mark, setMark] = useState<{ from: string; to: string; amount: number } | null>(null);
+  const [mark, setMark] = useState<{ from: string; to: string; amount: number; confirmReceipt?: boolean } | null>(null);
   // Otras deudas hacia el MISMO acreedor que puedo cubrir en el mismo pago
   // (p. ej. pago lo mío y lo de mi pareja a la vez → una sola transferencia).
   // `exclude` = el deudor cuyo pago ya estoy registrando (para no repetirlo).
@@ -183,9 +183,24 @@ export function Balances({ group }: { group: Group }) {
                       </>
                     )}
                   </div>
+                ) : tr.to === group.meId ? (
+                  /* Me deben a MÍ: puedo registrar que ya me pagaron (queda
+                     confirmado directamente). Si ya hay un pago pendiente para
+                     esa deuda, no lo ofrezco (lo confirmo desde la caja de arriba). */
+                  !pendingFor(tr.from, tr.to) && (
+                    <div className="flex gap-2 mt-1.5 pl-8 items-center">
+                      <button
+                        onClick={() => setMark({ from: tr.from, to: tr.to, amount: tr.amount, confirmReceipt: true })}
+                        className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift"
+                        style={{ background: "#0A8B5E" }}
+                      >
+                        {t("pay.theyPaidMe", { who: name(tr.from) })}
+                      </button>
+                    </div>
+                  )
                 ) : (
-                  /* Deuda de OTRO: puedo pagarla por él/ella (settledBy = yo). Si
-                     ya hay un pago pendiente para esa deuda, no ofrezco nada. */
+                  /* Deuda de OTRO hacia un tercero: puedo pagarla por él/ella
+                     (settledBy = yo). Si ya hay un pago pendiente, no ofrezco nada. */
                   group.meId && !pendingFor(tr.from, tr.to) && (
                     <div className="flex gap-2 mt-1.5 pl-8 items-center">
                       <button
@@ -296,8 +311,9 @@ export function Balances({ group }: { group: Group }) {
           from={mark.from}
           to={mark.to}
           amount={mark.amount}
-          payer={group.meId}
-          coverable={group.meId ? coverableFor(mark.to, mark.from) : []}
+          payer={mark.confirmReceipt ? mark.from : group.meId}
+          confirmReceipt={mark.confirmReceipt}
+          coverable={coverableFor(mark.to, mark.from)}
           onClose={() => setMark(null)}
         />
       )}
