@@ -89,6 +89,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "group.shareBtn": { es: "Copiar enlace", en: "Copy link" },
   "share.title": { es: "Compartir grupo", en: "Share group" },
   "share.hint": { es: "Copia el enlace o compártelo para que otros se unan al grupo.", en: "Copy the link or share it so others can join the group." },
+  "share.inviteText": { es: "Únete a mi grupo «{name}» en Settlia para dividir los gastos:", en: "Join my group “{name}” on Settlia to split expenses:" },
   "share.copy": { es: "Copiar", en: "Copy" },
   "share.share": { es: "Compartir", en: "Share" },
   "join.whichAreYou": { es: "¿Cuál de estos eres tú?", en: "Which one of these are you?" },
