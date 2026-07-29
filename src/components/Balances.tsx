@@ -37,6 +37,12 @@ export function Balances({ group }: { group: Group }) {
   const toConfirm = pending.filter((s) => s.to === group.meId);
 
   const [mark, setMark] = useState<{ from: string; to: string; amount: number } | null>(null);
+  // Otras deudas hacia el MISMO acreedor que puedo cubrir en el mismo pago
+  // (p. ej. pago lo mío y lo de mi pareja a la vez → una sola transferencia).
+  const coverableFor = (to: string) =>
+    transfers
+      .filter((o) => o.to === to && o.from !== group.meId && !pendingFor(o.from, o.to))
+      .map((o) => ({ from: o.from, amount: o.amount }));
   const [paySheet, setPaySheet] = useState<{ to: string; amount: number } | null>(null);
   const [editSettlement, setEditSettlement] = useState<Settlement | null>(null);
   const [logFilter, setLogFilter] = useState<string>("all");
@@ -239,6 +245,9 @@ export function Balances({ group }: { group: Group }) {
                     <span className="text-muted">{t("bal.paysTo")}</span>
                     <Avatar name={name(s.to)} avatar={member(s.to)?.avatar} initials={memberInitials(member(s.to) ?? { name: name(s.to) })} size={24} />
                     <b>{name(s.to)}</b>
+                    {s.settledBy && s.settledBy !== s.from && (
+                      <span className="text-[10px] text-muted">({t("pay.coveredBy", { name: name(s.settledBy) })})</span>
+                    )}
                     <span className="font-mono font-bold ml-auto">{money(s.amount)}</span>
                   </div>
                   <div className="text-[11px] text-muted mt-1 pl-8 flex items-center gap-1.5 flex-wrap">
@@ -272,6 +281,7 @@ export function Balances({ group }: { group: Group }) {
           from={mark.from}
           to={mark.to}
           amount={mark.amount}
+          coverable={mark.from === group.meId ? coverableFor(mark.to) : []}
           onClose={() => setMark(null)}
         />
       )}

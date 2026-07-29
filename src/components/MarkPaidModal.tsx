@@ -15,12 +15,16 @@ export function MarkPaidModal({
   from,
   to,
   amount,
+  coverable = [],
   onClose,
 }: {
   group: Group;
   from: string;
   to: string;
   amount: number;
+  /** Otras deudas hacia el mismo acreedor que este pagador puede cubrir en el
+   *  mismo pago (p. ej. pagar también lo de su pareja). Vacío = solo lo propio. */
+  coverable?: { from: string; amount: number }[];
   onClose: () => void;
 }) {
   const t = useT();
@@ -28,6 +32,18 @@ export function MarkPaidModal({
   const [amt, setAmt] = useState(String(max));
   const [proof, setProof] = useState<string | undefined>();
   const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
+  // Miembros que elijo cubrir además de lo mío (se saldan enteros hacia `to`).
+  const [covered, setCovered] = useState<Set<string>>(new Set());
+  function toggleCovered(id: string) {
+    setCovered((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  const coveredTotal =
+    Math.round(coverable.filter((c) => covered.has(c.from)).reduce((s, c) => s + c.amount, 0) * 100) / 100;
 
   // Selección por gasto SOLO en modo Directo: ahí cada transferencia SÍ
   // corresponde a gastos reales compartidos entre estas dos personas, así que
@@ -141,41 +157,63 @@ export function MarkPaidModal({
           .filter((p) => p.amount >= (debtById[p.expenseId]?.amount ?? 0) - 0.005)
           .map((p) => p.expenseId)
       : fifoExpenseIdsForAmount(group.members, group.expenses, group.settlements ?? [], from, paidAmt);
-    updateGroup(group.id, (g) => ({
-      ...g,
-      settlements: [
-        ...(g.settlements ?? []),
+    const today = new Date().toISOString().slice(0, 10);
+    // Deudas de OTROS que este pagador cubre en el mismo movimiento (enteras).
+    // El saldo que se limpia sigue siendo el del deudor real (`from` de cada
+    // settlement); `settledBy` deja constancia de quién puso el dinero.
+    const coveredList = coverable.filter((c) => covered.has(c.from));
+    updateGroup(group.id, (g) => {
+      const newSettlements = [
         {
           id: uid(),
           from,
           to,
           amount: paidAmt,
-          date: new Date().toISOString().slice(0, 10),
+          date: today,
           // Lo marca el deudor ("ya pagué") → queda PENDIENTE hasta que quien
           // cobra lo confirme o lo rechace. Puede ser un pago PARCIAL.
-          status: "pending",
+          status: "pending" as const,
           proof,
           ...(fullyCovered.length ? { expenseIds: fullyCovered } : {}),
           ...(picks.length ? { expensePayments: picks } : {}),
         },
-      ],
-      notifications: withNotif(g, {
-        type: "payment_made",
-        actorId: from,
-        actorName: name(from),
-        toId: to,
-        toName: name(to),
-        amount: paidAmt,
-      }),
-      activity: withActivity(g, {
-        type: "payment_made",
-        actorId: from,
-        actorName: name(from),
-        toId: to,
-        toName: name(to),
-        amount: paidAmt,
-      }),
-    }));
+        ...coveredList.map((c) => ({
+          id: uid(),
+          from: c.from,
+          to,
+          amount: c.amount,
+          date: today,
+          status: "pending" as const,
+          settledBy: from,
+          expenseIds: fifoExpenseIdsForAmount(g.members, g.expenses, g.settlements ?? [], c.from, c.amount),
+        })),
+      ];
+      // Encadena una notificación por cada deudor saldado (el mío + los cubiertos).
+      let notifications = g.notifications ?? [];
+      for (const s of newSettlements) {
+        notifications = withNotif({ ...g, notifications }, {
+          type: "payment_made",
+          actorId: s.from,
+          actorName: name(s.from),
+          toId: to,
+          toName: name(to),
+          amount: s.amount,
+        });
+      }
+      return {
+        ...g,
+        settlements: [...(g.settlements ?? []), ...newSettlements],
+        notifications,
+        activity: withActivity(g, {
+          type: "payment_made",
+          actorId: from,
+          actorName: name(from),
+          toId: to,
+          toName: name(to),
+          amount: paidAmt + coveredTotal,
+        }),
+      };
+    });
     notifyGroup(
       group.id,
       group.name,
@@ -302,6 +340,44 @@ export function MarkPaidModal({
               </div>
             )}
           </>
+        )}
+
+        {coverable.length > 0 && (
+          <div className="mt-4">
+            <label className="text-xs font-semibold text-muted">{t("pay.coverOthers", { to: name(to) })}</label>
+            <div className="glass rounded-2xl p-1.5 mt-1 space-y-0.5">
+              {coverable.map((c) => {
+                const on = covered.has(c.from);
+                return (
+                  <button
+                    key={c.from}
+                    onClick={() => toggleCovered(c.from)}
+                    className="w-full flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-left hover-lift"
+                    style={on ? { background: "var(--surface-soft)" } : undefined}
+                  >
+                    <span
+                      className="h-5 w-5 rounded-full flex items-center justify-center shrink-0"
+                      style={{
+                        background: on ? "var(--teal)" : "transparent",
+                        border: on ? "none" : "1.5px solid var(--line)",
+                        color: "#fff",
+                      }}
+                    >
+                      {on && <Icon name="check" size={12} />}
+                    </span>
+                    <span className="text-sm flex-1 min-w-0 truncate">{name(c.from)}</span>
+                    <span className="text-sm font-mono font-semibold">{money(c.amount, group.currency)}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {coveredTotal > 0 && (
+              <div className="flex items-center justify-between mt-2 text-sm">
+                <span className="font-semibold">{t("pay.totalToTransfer")}</span>
+                <span className="font-mono font-bold">{money(value + coveredTotal, group.currency)}</span>
+              </div>
+            )}
+          </div>
         )}
 
         <label className="text-xs font-semibold text-muted block mt-4">{t("pay.attach")}</label>
