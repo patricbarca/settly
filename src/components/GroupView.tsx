@@ -53,9 +53,24 @@ export function GroupView({ group }: { group: Group }) {
       setTimeout(() => setInviteError(false), 2500);
       return;
     }
-    // Copia directa (funciona en escritorio/dentro de gesto). En iOS el gesto se
-    // perdió con el await anterior → clipboard/share lanzan; caemos al modal,
-    // donde el botón Copiar corre en su propio gesto y sí funciona.
+    // Preferimos el share sheet nativo con el NOMBRE del grupo en el mensaje
+    // (muchos destinos ignoran `title`, por eso va en `text`). En móvil abre el
+    // selector de apps; el usuario ve "Únete a mi grupo «X»…".
+    const shareText = t("share.inviteText", { name: group.name });
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await navigator.share({ title: group.name, text: shareText, url: link });
+        return;
+      } catch (e) {
+        // Cancelado por el usuario → no hacemos nada.
+        if ((e as Error)?.name === "AbortError") return;
+        // iOS pierde el "user gesture" tras el await de crear el link →
+        // NotAllowedError. Caemos al modal, cuyo botón corre en su propio gesto.
+        setShareLink(link);
+        return;
+      }
+    }
+    // Sin Web Share (escritorio): copia el enlace; si falla, abre el modal.
     try {
       await navigator.clipboard.writeText(link);
       setCopied(true);
