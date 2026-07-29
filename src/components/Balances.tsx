@@ -210,6 +210,12 @@ export function Balances({ group }: { group: Group }) {
                       >
                         {t("pay.payForThem", { who: name(tr.from) })}
                       </button>
+                      <button
+                        onClick={() => setPaySheet({ to: tr.to, amount: tr.amount })}
+                        className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted"
+                      >
+                        {t("pay.method")}
+                      </button>
                     </div>
                   )
                 )}
