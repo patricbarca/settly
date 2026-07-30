@@ -112,20 +112,29 @@ export default function App() {
 
   useEffect(() => {
     if (phase !== "authenticated" || !user) return;
-    const token = sessionStorage.getItem("settly.pendingJoin");
-    if (!token) return;
-    sessionStorage.removeItem("settly.pendingJoin");
-    getJoinPreview(token).then((preview) => {
-      if (preview && preview.unclaimed.length > 0) {
-        // Hay personas añadidas sin cuenta en el grupo: dejamos que el
-        // invitado elija "soy yo" en vez de crear un miembro nuevo directo.
-        setJoinPreview({ token, groupName: preview.groupName, unclaimed: preview.unclaimed });
-        return;
-      }
-      joinByToken(token, user.id).then((g) => {
-        if (g) { addGroup(g); setActiveGroup(g.id); }
+    // Procesa una invitación pendiente (settly.pendingJoin). En web el token lo
+    // deja el primer useEffect desde window.location.search; en nativo lo deja
+    // el listener de universal links (appUrlOpen en auth.ts), que además dispara
+    // "settly:pendingjoin" para cubrir el caso de que la app ya estuviera abierta.
+    const processPendingJoin = () => {
+      const token = sessionStorage.getItem("settly.pendingJoin");
+      if (!token) return;
+      sessionStorage.removeItem("settly.pendingJoin");
+      getJoinPreview(token).then((preview) => {
+        if (preview && preview.unclaimed.length > 0) {
+          // Hay personas añadidas sin cuenta en el grupo: dejamos que el
+          // invitado elija "soy yo" en vez de crear un miembro nuevo directo.
+          setJoinPreview({ token, groupName: preview.groupName, unclaimed: preview.unclaimed });
+          return;
+        }
+        joinByToken(token, user.id).then((g) => {
+          if (g) { addGroup(g); setActiveGroup(g.id); }
+        });
       });
-    });
+    };
+    processPendingJoin();
+    window.addEventListener("settly:pendingjoin", processPendingJoin);
+    return () => window.removeEventListener("settly:pendingjoin", processPendingJoin);
   }, [phase, user]);
 
   function resolveJoin(memberId?: string) {
