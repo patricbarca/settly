@@ -264,7 +264,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         {stage === "pick" && (
           <div>
             <p className="text-sm text-muted mb-4">{t("scan.pick")}</p>
-            <label className="flex items-center justify-center gap-2 w-full rounded-full px-4 py-3 font-medium text-white hover-lift cursor-pointer" style={{ background: "var(--ink)" }}>
+            <label className="flex items-center justify-center gap-2 w-full rounded-full px-4 py-3 font-medium text-white hover-lift cursor-pointer" style={{ background: "var(--ink)", color: "var(--surface)" }}>
               <Icon name="camera" size={18} />
               {t("scan.camera")}
               <input type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
@@ -305,7 +305,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
                     key={c}
                     onClick={() => confirmCurrency(c)}
                     className="flex-1 rounded-full px-4 py-3 font-semibold text-white hover-lift"
-                    style={{ background: "var(--ink)" }}
+                    style={{ background: "var(--ink)", color: "var(--surface)" }}
                   >
                     {c}
                   </button>

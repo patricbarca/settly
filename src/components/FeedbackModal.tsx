@@ -72,7 +72,7 @@ export function FeedbackModal({ onClose }: { onClose: () => void }) {
             </div>
             <p className="font-semibold text-lg">{t("feedback.thanks")}</p>
             <p className="text-sm text-muted mt-1">{t("feedback.thanksSub")}</p>
-            <button onClick={onClose} className="mt-5 rounded-full px-6 py-3 font-semibold text-white hover-lift" style={{ background: "var(--ink)" }}>
+            <button onClick={onClose} className="mt-5 rounded-full px-6 py-3 font-semibold text-white hover-lift" style={{ background: "var(--ink)", color: "var(--surface)" }}>
               {t("common.close")}
             </button>
           </div>
@@ -135,7 +135,7 @@ export function FeedbackModal({ onClose }: { onClose: () => void }) {
               onClick={submit}
               disabled={!canSend || sending}
               className="w-full rounded-full py-3.5 font-semibold text-white hover-lift disabled:opacity-50"
-              style={{ background: "var(--ink)" }}
+              style={{ background: "var(--ink)", color: "var(--surface)" }}
             >
               {sending ? t("feedback.sending") : t("feedback.send")}
             </button>

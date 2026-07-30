@@ -318,7 +318,7 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
                     onClick={redeem}
                     disabled={!code.trim() || busy}
                     className="rounded-full px-5 py-2.5 font-semibold text-white hover-lift disabled:opacity-50 shrink-0"
-                    style={{ background: "var(--ink)" }}
+                    style={{ background: "var(--ink)", color: "var(--surface)" }}
                   >
                     {busy ? t("code.redeeming") : t("code.redeem")}
                   </button>

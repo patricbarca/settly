@@ -126,7 +126,7 @@ export function Login() {
               onClick={verify}
               disabled={otp.length < 6 || loading}
               className="w-full rounded-full px-4 py-3 font-semibold text-white hover-lift disabled:opacity-50"
-              style={{ background: "var(--ink)" }}
+              style={{ background: "var(--ink)", color: "var(--surface)" }}
             >
               {loading ? t("login.verifying") : t("login.verify")}
             </button>
@@ -217,7 +217,7 @@ export function Login() {
               onClick={submit}
               disabled={(pwMode ? !password : false) || !email.trim() || loading}
               className="w-full rounded-full px-4 py-3 font-semibold text-white hover-lift disabled:opacity-50"
-              style={{ background: "var(--ink)" }}
+              style={{ background: "var(--ink)", color: "var(--surface)" }}
             >
               {loading
                 ? t("login.sending")

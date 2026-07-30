@@ -220,7 +220,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
             )}
             <span
               className="absolute bottom-0 right-0 h-7 w-7 rounded-full flex items-center justify-center text-white shadow-md"
-              style={{ background: "var(--ink)" }}
+              style={{ background: "var(--ink)", color: "var(--surface)" }}
             >
               <Icon name="camera" size={14} />
             </span>
@@ -544,8 +544,8 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
         <button
           onClick={save}
           disabled={saving || !name.trim() || !phoneOk || saved}
-          className="w-full rounded-full py-3 font-semibold text-white hover-lift disabled:opacity-60"
-          style={{ background: saved ? "#0A8B5E" : "var(--ink)" }}
+          className="w-full rounded-full py-3 font-semibold hover-lift disabled:opacity-60"
+          style={{ background: saved ? "#0A8B5E" : "var(--ink)", color: saved ? "#fff" : "var(--surface)" }}
         >
           {saved ? `✓ ${t("account.saved")}` : saving ? "…" : t("common.save")}
         </button>
