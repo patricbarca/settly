@@ -212,10 +212,17 @@ button:focus-visible, input:focus-visible, a:focus-visible, [role="button"]:focu
    Solo se imprime #report-print; el resto se oculta. Forzamos colores claros
    para que salga bien aunque la app esté en modo oscuro. */
 @media print {
-  @page { size: auto; margin: 12mm; }
+  @page { size: auto; margin: 14mm; }
   /* Fondo blanco en TODA la hoja (no solo el bloque imprimible). */
   html, body { background: #fff !important; height: auto !important; }
+  /* El modal del reporte se portaliza a <body> (fuera de #root). Ocultamos por
+     COMPLETO la app (#root) — display:none, no visibility:hidden — para que su
+     árbol no ocupe alto y no genere páginas en blanco antes del reporte. */
+  #root { display: none !important; }
+  /* Cinturón + tirantes: ocultar cualquier otro portal suelto en <body>
+     (toasts, otros modales) y dejar visible solo el reporte. */
   body * { visibility: hidden !important; }
+  #report-print, #report-print * { visibility: visible !important; }
 
   /* El reporte vive dentro de un modal position:fixed centrado (max-w-2xl).
      En impresión eso hace que width:100% se mida contra el viewport (p.ej.
@@ -227,8 +234,8 @@ button:focus-visible, input:focus-visible, a:focus-visible, [role="button"]:focu
     max-width: none !important; width: auto !important;
     margin: 0 !important; padding: 0 !important;
     overflow: visible !important; background: #fff !important;
+    display: block !important;
   }
-  #report-print, #report-print * { visibility: visible !important; }
   #report-print {
     position: static !important;
     width: 100% !important; max-width: none !important;
@@ -237,10 +244,19 @@ button:focus-visible, input:focus-visible, a:focus-visible, [role="button"]:focu
     background: #fff !important; color: #111 !important;
   }
   #report-print .text-muted { color: #555 !important; }
+  /* Cada tarjeta = una sección; que no se parta entre páginas. */
   #report-print .glass, #report-print .glass-strong {
     background: #fff !important; box-shadow: none !important;
     border: 1px solid #e5e7eb !important; backdrop-filter: none !important;
-    border-radius: 14px !important; break-inside: avoid;
+    border-radius: 14px !important;
+    break-inside: avoid; page-break-inside: avoid;
+    margin-bottom: 10px !important;
+  }
+  /* Filas individuales (saldos, gastos, pagos) no se cortan a la mitad. */
+  #report-print .glass > div > div { break-inside: avoid; page-break-inside: avoid; }
+  /* Preservar los colores (verde/rojo de saldos, marca) al imprimir. */
+  #report-print, #report-print * {
+    -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;
   }
   .no-print { display: none !important; }
 }

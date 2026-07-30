@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import type { Group } from "../lib/types";
 import { useT, useLang } from "../lib/i18n";
 import { money, memberInitials, sortedMembers } from "../lib/format";
@@ -35,7 +36,10 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
     downloadFile(reportFilename(group, period, "csv"), reportToCsv(group, period, t, lang));
   }
 
-  return (
+  // Portalizado a <body> (fuera de #root) para que la impresión pueda ocultar
+  // toda la app (#root) y dejar SOLO el reporte en el flujo — si no, el árbol
+  // oculto de la app seguía ocupando alto y salían páginas en blanco antes.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex flex-col anim-up" style={{ background: "var(--bg)", paddingTop: "env(safe-area-inset-top)" }}>
       <div className="max-w-2xl mx-auto w-full px-4 pt-5 flex-1 flex flex-col min-h-0">
         {/* Cabecera (no se imprime) */}
@@ -211,6 +215,7 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
