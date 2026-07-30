@@ -822,6 +822,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "report.pdf": { es: "Descargar PDF", en: "Download PDF" },
   "report.csv": { es: "Descargar CSV", en: "Download CSV" },
   "report.footer": { es: "Generado con Settlia · settlia.app", en: "Generated with Settlia · settlia.app" },
+  "report.generatedOn": { es: "Generado el {date}", en: "Generated on {date}" },
   "report.col.date": { es: "Fecha", en: "Date" },
   "report.col.concept": { es: "Concepto", en: "Concept" },
   "report.col.category": { es: "Categoría", en: "Category" },
