@@ -513,6 +513,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "pay.selectedTotal": { es: "Total seleccionado", en: "Selected total" },
   "pay.cappedNote": { es: "Solo debes {amt} a {to}; se registrará ese monto (no puedes pagar de más).", en: "You only owe {amt} to {to}; that amount will be recorded (you can't overpay)." },
   "pay.partialOf": { es: "Pago parcial de {total}", en: "Partial payment of {total}" },
+  "pay.alreadySettled": { es: "{who} ya no tiene deuda pendiente en el grupo — esto ya se saldó por otra vía (p. ej. dentro de otro pago). No hace falta registrarlo.", en: "{who} has no pending balance left in the group — this was already settled another way (e.g. inside another payment). No need to record it." },
+  "pay.reducedByCap": { es: "Ajustado a {amt}: es todo lo que {who} debe realmente ahora. El resto ya está cubierto por otro pago, así no se duplica.", en: "Adjusted to {amt}: that's all {who} actually owes now. The rest is already covered by another payment, so it isn't duplicated." },
   "expense.partlyPaid": { es: "Parcial", en: "Partial" },
   "pay.coverOthers": { es: "¿Pagas también lo de otros a {to}?", en: "Also paying others' share to {to}?" },
   "pay.totalToTransfer": { es: "Total a transferir", en: "Total to transfer" },
