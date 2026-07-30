@@ -14,8 +14,34 @@ import type { PayMethod } from "./types";
 // de Redirect URLs de Supabase (Authentication → URL Configuration).
 const NATIVE_OAUTH_REDIRECT = "app.settlia.pwa://auth/callback";
 
+// Universal Link de invitación: https://app.settlia.app/?join=<token>. En
+// nativo la app carga desde capacitor://localhost, así que el token NO llega por
+// window.location.search (lo que lee App.tsx en web). Lo capturamos del deep
+// link, lo guardamos donde App.tsx lo busca y avisamos por un evento para que
+// procese la invitación aunque la app ya estuviera abierta. Devuelve true si el
+// URL era un link de invitación (para no seguir con la lógica de OAuth).
+function captureJoinFromUrl(url: string): boolean {
+  try {
+    const joinToken = new URL(url).searchParams.get("join");
+    if (joinToken) {
+      sessionStorage.setItem("settly.pendingJoin", joinToken);
+      window.dispatchEvent(new Event("settly:pendingjoin"));
+      return true;
+    }
+  } catch {
+    /* url no parseable (p. ej. esquema custom) → no es un link de invitación */
+  }
+  return false;
+}
+
 if (Capacitor.isNativePlatform()) {
+  // Arranque en frío: si la app se abrió DESDE el universal link, appUrlOpen
+  // puede no dispararse; leemos la URL de lanzamiento.
+  CapApp.getLaunchUrl().then((res) => { if (res?.url) captureJoinFromUrl(res.url); }).catch(() => {});
+
   CapApp.addListener("appUrlOpen", async ({ url }) => {
+    if (captureJoinFromUrl(url)) return;
+
     if (!url.startsWith(NATIVE_OAUTH_REDIRECT)) return;
     await Browser.close().catch(() => {});
     // Implicit flow (nativo): los tokens vuelven en el fragmento del deep link
