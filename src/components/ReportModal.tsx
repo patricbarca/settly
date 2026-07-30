@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Group } from "../lib/types";
 import { catOf } from "../lib/types";
@@ -45,16 +45,19 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
     downloadFile(reportFilename(group, periodLabel, genIso, "csv"), reportToCsv(group, period, t, lang));
   }
 
-  // Imprimir a PDF: el navegador usa document.title como nombre sugerido, así
-  // que lo cambiamos al nombre del reporte durante la impresión y lo restauramos.
-  function printPdf() {
+  // El navegador (incl. iOS Safari → "Guardar en Archivos") usa document.title
+  // como nombre sugerido del PDF. En iOS el guardado ocurre DESPUÉS de que se
+  // dispara `afterprint`, así que restaurar el título ahí capturaba el título
+  // viejo. Solución: fijamos el título del reporte mientras el modal está
+  // abierto y lo restauramos SOLO al cerrarlo (unmount), cubriendo todo el flujo.
+  useEffect(() => {
     const prev = document.title;
     document.title = reportFilename(group, periodLabel, genIso); // sin extensión
-    const restore = () => {
-      document.title = prev;
-      window.removeEventListener("afterprint", restore);
-    };
-    window.addEventListener("afterprint", restore);
+    return () => { document.title = prev; };
+    // Se re-ejecuta si cambia el periodo (nombre incluye el periodo).
+  }, [group, periodLabel, genIso]);
+
+  function printPdf() {
     window.print();
   }
 
