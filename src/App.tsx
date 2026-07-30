@@ -193,7 +193,7 @@ export default function App() {
   if (!user) return <Login />;
 
   return (
-    <div className="pb-20" style={{ minHeight: "calc(100vh + 1px)" }}>
+    <div className="pb-20" style={{ minHeight: "calc(100dvh + 1px)" }}>
       <OfflineBanner />
       {!group && homeTab === "groups" && (
         <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">

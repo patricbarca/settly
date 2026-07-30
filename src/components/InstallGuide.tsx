@@ -75,7 +75,7 @@ export function InstallGuide({ dark = false }: { dark?: boolean }) {
       {prompt && (
         <button onClick={install}
           className="w-full rounded-full py-3.5 font-bold hover-lift inline-flex items-center justify-center gap-2"
-          style={{ background: dark ? "rgba(255,255,255,0.95)" : "var(--ink)", color: dark ? "#120d36" : "#fff" }}>
+          style={{ background: dark ? "rgba(255,255,255,0.95)" : "var(--ink)", color: dark ? "#120d36" : "var(--surface)" }}>
           <Icon name="download" size={18} /> {t("install.btn")}
         </button>
       )}
