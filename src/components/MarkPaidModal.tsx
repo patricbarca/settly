@@ -38,7 +38,27 @@ export function MarkPaidModal({
   const t = useT();
   const onBehalf = payer !== from;
   const status = confirmReceipt ? ("confirmed" as const) : ("pending" as const);
-  const max = Math.round(amount * 100) / 100;
+  // INVARIANTE ANTI-DUPLICADO: nadie puede registrar pagos que, en total,
+  // superen lo que realmente debe al grupo. `computeSettle().net[from]` ya
+  // descuenta TODOS los pagos confirmados (sin importar el modo Directo o
+  // Simplificado con el que se hicieran), así que es la única fuente de verdad.
+  // Si la deuda ya se saldó por otra vía —p. ej. el gasto ya venía incluido en
+  // un pago al "hub" en Simplificado, y el modo Directo aún lo muestra como
+  // deuda por pareja— el tope cae a 0 y la app impide crear el duplicado, sin
+  // que el usuario tenga que darse cuenta. Fue exactamente lo que pasó con el
+  // fuel: pagado a Felipe directo Y dentro del pago neto a Patric.
+  const netFrom = useMemo(
+    () => computeSettle(group.members, group.expenses, group.settlements ?? []).net[from] || 0,
+    [group.members, group.expenses, group.settlements, from]
+  );
+  const remainingDebt = Math.max(0, Math.round(-netFrom * 100) / 100);
+  const rawMax = Math.round(amount * 100) / 100;
+  // Tope real = lo que pide la fila, pero nunca más que la deuda neta pendiente.
+  const max = Math.min(rawMax, remainingDebt);
+  // La deuda ya está saldada (por otra vía): no hay nada que registrar.
+  const alreadySettled = max < 0.01;
+  // La app bajó el monto respecto a lo que mostraba la fila (evita sobrepago).
+  const reducedByCap = !alreadySettled && rawMax > max + 0.005;
   const [amt, setAmt] = useState(String(max));
   const [proof, setProof] = useState<string | undefined>();
   const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
@@ -138,20 +158,6 @@ export function MarkPaidModal({
   // La selección supera lo adeudado (típico en Simplificado): se registrará
   // solo `max`, y lo avisamos para que el usuario no se confunda.
   const capped = usingPicker && pickedTotal > max + 0.005;
-
-  // Deuda REAL pendiente del deudor (`from`) con TODO el grupo: computeSettle ya
-  // descuenta los pagos confirmados. Si lo que se va a registrar supera esa
-  // deuda, casi siempre significa que ya se saldó por otra vía — típicamente en
-  // modo Simplificado, donde el gasto ya venía incluido/neteado en un pago a
-  // otra persona (el "hub"). Registrarlo igual duplica dinero (fue justo lo que
-  // pasó con el fuel: pagado a Felipe directo Y dentro del pago a Patric). Aviso
-  // NO bloqueante: hay casos legítimos (redondeos, deuda recién añadida).
-  const netFrom = useMemo(
-    () => computeSettle(group.members, group.expenses, group.settlements ?? []).net[from] || 0,
-    [group.members, group.expenses, group.settlements, from]
-  );
-  const remainingDebt = Math.max(0, Math.round(-netFrom * 100) / 100);
-  const overpaying = value > remainingDebt + 0.01;
 
   function onFile(e: ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -414,16 +420,16 @@ export function MarkPaidModal({
           </div>
         )}
 
-        {overpaying && (
+        {(alreadySettled || reducedByCap) && (
           <div
             className="rounded-2xl p-3 mt-4 text-[12px] leading-snug flex items-start gap-2"
             style={{ background: "rgba(232,146,12,0.12)", border: "1px solid rgba(232,146,12,0.35)", color: "#B5730A" }}
           >
             <Icon name="clock" size={15} className="mt-0.5 shrink-0" />
             <span>
-              {remainingDebt < 0.01
-                ? t("pay.overpaySettled", { who: name(from), to: name(to) })
-                : t("pay.overpayWarn", { who: name(from), amt: money(remainingDebt, group.currency), to: name(to) })}
+              {alreadySettled
+                ? t("pay.alreadySettled", { who: name(from) })
+                : t("pay.reducedByCap", { amt: money(max, group.currency), who: name(from) })}
             </span>
           </div>
         )}
