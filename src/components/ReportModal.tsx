@@ -28,13 +28,34 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
   const member = (id: string) => group.members.find((m) => m.id === id);
   const periodLabel = period === "all" ? t("report.allTime") : monthLabel(period, lang);
 
+  // Fecha de generación: ISO (YYYY-MM-DD) para el nombre de archivo (ordenable,
+  // sin caracteres ilegales) y una versión legible localizada para mostrarla.
+  const now = new Date();
+  const genIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const genPretty = now.toLocaleDateString(lang === "en" ? "en-US" : "es-ES", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+
   const periods: { key: Period; label: string }[] = [
     { key: "all", label: t("report.allTime") },
     ...months.map((m) => ({ key: m as Period, label: monthLabel(m, lang) })),
   ];
 
   function downloadCsv() {
-    downloadFile(reportFilename(group, period, "csv"), reportToCsv(group, period, t, lang));
+    downloadFile(reportFilename(group, periodLabel, genIso, "csv"), reportToCsv(group, period, t, lang));
+  }
+
+  // Imprimir a PDF: el navegador usa document.title como nombre sugerido, así
+  // que lo cambiamos al nombre del reporte durante la impresión y lo restauramos.
+  function printPdf() {
+    const prev = document.title;
+    document.title = reportFilename(group, periodLabel, genIso); // sin extensión
+    const restore = () => {
+      document.title = prev;
+      window.removeEventListener("afterprint", restore);
+    };
+    window.addEventListener("afterprint", restore);
+    window.print();
   }
 
   // Portalizado a <body> (fuera de #root) para que la impresión pueda ocultar
@@ -75,7 +96,7 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
         {/* Botones de exportación (no se imprimen) */}
         <div className="flex gap-2 mb-4 no-print">
           <button
-            onClick={() => window.print()}
+            onClick={printPdf}
             className="flex-1 rounded-full px-4 py-2.5 text-sm font-semibold text-white hover-lift inline-flex items-center justify-center gap-1.5"
             style={{ background: "var(--ink)", color: "var(--surface)" }}
           >
@@ -103,6 +124,7 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
             <div className="text-sm text-muted">
               {periodLabel} · {group.members.length} {t("report.members")} · {cur}
             </div>
+            <div className="text-xs text-muted mt-0.5">{t("report.generatedOn", { date: genPretty })}</div>
           </div>
 
           {r.count === 0 ? (

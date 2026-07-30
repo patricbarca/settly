@@ -180,9 +180,14 @@ export function downloadFile(filename: string, content: string, mime = "text/csv
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-/** Nombre de archivo seguro para el reporte. */
-export function reportFilename(group: Group, period: Period, ext: string): string {
-  const slug = group.name.toLowerCase().replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "") || "grupo";
-  const p = period === "all" ? "historico" : period;
-  return `settlia-${slug}-${p}.${ext}`;
+/** Nombre de archivo del reporte:
+ *  "Settlia Report - {grupo} - {periodo} - {fecha generación}[.ext]".
+ *  `periodLabel` ya viene localizado ("All time" / "julio de 2026"); `genDate`
+ *  es la fecha ISO (YYYY-MM-DD) de cuando se generó. `ext` vacío → sin punto
+ *  (para el <title> al imprimir a PDF, donde el navegador añade la extensión). */
+export function reportFilename(group: Group, periodLabel: string, genDate: string, ext = ""): string {
+  // Sanea caracteres ilegales en nombres de archivo (/ \ : * ? " < > |).
+  const clean = (s: string) => s.replace(/[\\/:*?"<>|]+/g, " ").replace(/\s+/g, " ").trim();
+  const suffix = ext ? `.${ext}` : "";
+  return `Settlia Report - ${clean(group.name)} - ${clean(periodLabel)} - ${genDate}${suffix}`;
 }
