@@ -46,6 +46,11 @@ export interface ReportData {
   net: Record<string, number>;
   transfers: Transfer[];
   confirmed: Settlement[]; // pagos confirmados dentro del periodo
+  /** Gasto por categoría (id → total), de mayor a menor. */
+  byCategory: { id: string; value: number }[];
+  /** Cuánto fronteó cada miembro (memberId → total), de mayor a menor. */
+  byPayer: { id: string; value: number }[];
+  topPayerId?: string; // quien puso dinero en más gastos
 }
 
 /** Calcula todos los datos del reporte para un periodo dado. */
@@ -64,7 +69,33 @@ export function buildReport(group: Group, period: Period): ReportData {
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const count = expenses.length;
   const confirmed = settlements.filter((s) => s.status === "confirmed");
-  return { period, expenses, total, count, avg: count ? total / count : 0, paid, net, transfers, confirmed };
+
+  // Gasto por categoría (para el donut del reporte).
+  const catTotals: Record<string, number> = {};
+  for (const e of expenses) catTotals[e.category] = (catTotals[e.category] || 0) + e.amount;
+  const byCategory = Object.entries(catTotals)
+    .map(([id, value]) => ({ id, value }))
+    .sort((a, b) => b.value - a.value);
+
+  // Cuánto fronteó cada persona (multi-pagador incluido) + quién pagó más veces.
+  const payerTotals: Record<string, number> = {};
+  const payerCounts: Record<string, number> = {};
+  for (const e of expenses) {
+    const pays = e.payments?.length ? e.payments : [{ memberId: e.payerId, amount: e.amount }];
+    for (const p of pays) {
+      payerTotals[p.memberId] = (payerTotals[p.memberId] || 0) + Number(p.amount || 0);
+      payerCounts[p.memberId] = (payerCounts[p.memberId] || 0) + 1;
+    }
+  }
+  const byPayer = Object.entries(payerTotals)
+    .map(([id, value]) => ({ id, value }))
+    .sort((a, b) => b.value - a.value);
+  const topPayerId = Object.entries(payerCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+
+  return {
+    period, expenses, total, count, avg: count ? total / count : 0,
+    paid, net, transfers, confirmed, byCategory, byPayer, topPayerId,
+  };
 }
 
 // ── CSV ──────────────────────────────────────────────────────────────────
@@ -91,6 +122,16 @@ export function reportToCsv(group: Group, period: Period, t: T, lang: "es" | "en
   rows.push([t("report.count"), r.count].map(esc).join(","));
   rows.push([t("report.avg"), n2(r.avg), cur].map(esc).join(","));
   rows.push("");
+
+  // Gasto por categoría
+  if (r.byCategory.length > 0) {
+    rows.push(esc(t("chart.byCategory")));
+    rows.push([t("report.col.category"), `${t("report.col.amount")} (${cur})`, "%"].map(esc).join(","));
+    for (const c of r.byCategory) {
+      rows.push([t(`cat.${c.id}`), n2(c.value), r.total ? Math.round((c.value / r.total) * 100) : 0].map(esc).join(","));
+    }
+    rows.push("");
+  }
 
   // Detalle de gastos
   rows.push(esc(t("report.expenses")));

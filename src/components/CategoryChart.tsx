@@ -1,10 +1,8 @@
 import type { Group } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
-import { money } from "../lib/format";
+import { money, categoryColor } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
-
-const COLORS = ["#0FA3A3", "#FF5A4D", "#5B5BF0", "#E8920C", "#E84393", "#0EA5E9"];
 
 export function CategoryChart({ group }: { group: Group }) {
   const t = useT();
@@ -27,14 +25,14 @@ export function CategoryChart({ group }: { group: Group }) {
         <svg width="120" height="120" viewBox="0 0 120 120" className="shrink-0">
           <g transform="translate(60,60) rotate(-90)">
             <circle r={R} fill="none" stroke="var(--line)" strokeWidth="14" />
-            {entries.map((e, i) => {
+            {entries.map((e) => {
               const frac = e.value / total;
               const seg = (
                 <circle
                   key={e.id}
                   r={R}
                   fill="none"
-                  stroke={COLORS[i % COLORS.length]}
+                  stroke={categoryColor(e.id)}
                   strokeWidth="14"
                   strokeDasharray={`${frac * C} ${C}`}
                   strokeDashoffset={-offset}
@@ -54,10 +52,9 @@ export function CategoryChart({ group }: { group: Group }) {
             .slice()
             .sort((a, b) => b.value - a.value)
             .map((e) => {
-              const i = entries.findIndex((x) => x.id === e.id);
               return (
                 <div key={e.id} className="flex items-center gap-2 text-sm">
-                  <span className="h-3 w-3 rounded-full shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
+                  <span className="h-3 w-3 rounded-full shrink-0" style={{ background: categoryColor(e.id) }} />
                   <span className="truncate inline-flex items-center gap-1.5">
                     <Icon name={e.icon} size={15} /> {t(`cat.${e.id}`)}
                   </span>

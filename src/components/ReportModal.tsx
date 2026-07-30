@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { createPortal } from "react-dom";
 import type { Group } from "../lib/types";
+import { catOf } from "../lib/types";
 import { useT, useLang } from "../lib/i18n";
-import { money, memberInitials, sortedMembers } from "../lib/format";
+import { money, memberInitials, sortedMembers, categoryColor, personColor } from "../lib/format";
 import { Avatar } from "./Avatar";
 import {
   buildReport,
@@ -126,6 +127,84 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
                   </div>
                 </div>
               </div>
+
+              {/* Gasto por categoría (donut + leyenda) */}
+              {r.byCategory.length > 0 && (
+                <div className="glass rounded-3xl p-5">
+                  <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{t("chart.byCategory")}</div>
+                  <div className="flex items-center gap-5 flex-wrap">
+                    <svg width="120" height="120" viewBox="0 0 120 120" className="shrink-0">
+                      <g transform="translate(60,60) rotate(-90)">
+                        <circle r={42} fill="none" stroke="var(--line)" strokeWidth="14" />
+                        {(() => {
+                          const C = 2 * Math.PI * 42;
+                          let off = 0;
+                          return r.byCategory.map((e) => {
+                            const frac = e.value / r.total;
+                            const seg = (
+                              <circle
+                                key={e.id}
+                                r={42}
+                                fill="none"
+                                stroke={categoryColor(e.id)}
+                                strokeWidth="14"
+                                strokeDasharray={`${frac * C} ${C}`}
+                                strokeDashoffset={-off}
+                              />
+                            );
+                            off += frac * C;
+                            return seg;
+                          });
+                        })()}
+                      </g>
+                      <text x="60" y="64" textAnchor="middle" fontSize="12" fontWeight="700" fill="var(--ink)" className="font-mono">
+                        {money(r.total, cur)}
+                      </text>
+                    </svg>
+                    <div className="flex-1 min-w-[180px] space-y-1.5">
+                      {r.byCategory.map((e) => (
+                        <div key={e.id} className="flex items-center gap-2 text-sm">
+                          <span className="h-3 w-3 rounded-full shrink-0" style={{ background: categoryColor(e.id) }} />
+                          <span className="truncate inline-flex items-center gap-1.5">
+                            <Icon name={catOf(e.id).icon} size={15} /> {t(`cat.${e.id}`)}
+                          </span>
+                          <span className="ml-auto font-mono text-muted text-xs">{Math.round((e.value / r.total) * 100)}%</span>
+                          <span className="font-mono font-semibold w-20 text-right">{money(e.value, cur)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Gasto por persona (quién fronteó cuánto) */}
+              {r.byPayer.length > 0 && (
+                <div className="glass rounded-3xl p-5">
+                  <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{t("stats.byPerson")}</div>
+                  <div className="space-y-3">
+                    {r.byPayer.map((p) => {
+                      const m = member(p.id);
+                      const maxPaid = r.byPayer[0]?.value || 1;
+                      const pct = Math.round((p.value / maxPaid) * 100);
+                      return (
+                        <div key={p.id}>
+                          <div className="flex items-center justify-between text-sm mb-1.5">
+                            <span className="flex items-center gap-2 min-w-0">
+                              <Avatar name={name(p.id)} avatar={m?.avatar} initials={m ? memberInitials(m) : undefined} size={24} />
+                              <span className="truncate">{name(p.id)}</span>
+                              {p.id === r.topPayerId && <span className="text-muted text-xs">· {t("stats.topPayer")}</span>}
+                            </span>
+                            <span className="font-mono text-sm shrink-0">{money(p.value, cur)}</span>
+                          </div>
+                          <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--line)" }}>
+                            <div className="h-full rounded-full" style={{ width: `${pct}%`, background: personColor(name(p.id)) }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Saldos por persona */}
               <div className="glass rounded-3xl p-5">

@@ -1,7 +1,36 @@
 import { currencyOf } from "./currencies";
 import { getLang } from "./i18n";
+import type { Category } from "./types";
 
 const PALETTE = ["#0FA3A3", "#FF5A4D", "#5B5BF0", "#E8920C", "#E84393", "#0EA5E9"];
+
+// Color ESTABLE y DISTINTO por categoría. Antes el gráfico usaba 6 colores con
+// `COLORS[i % 6]`, así que con 7+ categorías presentes se repetían (p. ej.
+// Comida y Otros salían ambos teal). Aquí hay un color propio para cada una de
+// las 15 categorías; las 7 más comunes (comida/mercado/bebidas/transporte/
+// alojamiento/ocio/otros) son bien distintas entre sí, y "otros" es gris para
+// no confundirse nunca con Comida. Usado por el gráfico y por el reporte.
+export const CATEGORY_COLORS: Record<Category, string> = {
+  comida: "#0FA3A3",        // teal
+  mercado: "#FF5A4D",       // coral
+  bebidas: "#5B5BF0",       // indigo
+  transporte: "#E8920C",    // amber
+  viajes: "#22C55E",        // green
+  alojamiento: "#EC4899",   // pink
+  ocio: "#0EA5E9",          // sky blue
+  compras: "#A855F7",       // purple
+  salud: "#B91C1C",         // dark red
+  servicios: "#A16207",     // brown/gold
+  suscripciones: "#7C3AED", // violet
+  seguros: "#1E40AF",       // dark blue
+  prestamos: "#DB2777",     // magenta
+  regalos: "#F97316",       // orange
+  otros: "#64748B",         // slate gray
+};
+
+/** Color de una categoría (gris de "otros" como último recurso). */
+export const categoryColor = (id: string): string =>
+  CATEGORY_COLORS[id as Category] ?? CATEGORY_COLORS.otros;
 
 export function money(n: number, code = "EUR"): string {
   const c = currencyOf(code);
