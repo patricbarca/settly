@@ -7,13 +7,36 @@
 import { useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import { useGroups } from "./store";
-import { expenseDebtsBetween, type ExpenseDebt } from "./split";
+import {
+  computeSettle,
+  directTransfers,
+  expenseDebtsBetween,
+  fifoExpenseIdsForAmount,
+  shareFor,
+  type ExpenseDebt,
+} from "./split";
 import { getNetwork } from "./contacts";
 import { memberPays } from "./pay";
 import { loadArchivedGroups } from "./archivedGroups";
 import type { PayMethod } from "./types";
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
+
+/** Recorta una lista de deudas por gasto para que su suma no supere `cap`
+ *  (el saldo NETO real que debo a esta persona). Evita ofrecer para saldar
+ *  más de lo que realmente se debe cuando la deuda bruta por gasto es mayor
+ *  que el neto ya saldado en parte por otra vía. */
+function trimTo(list: ExpenseDebt[], cap: number): ExpenseDebt[] {
+  let remaining = r2(cap);
+  const out: ExpenseDebt[] = [];
+  for (const d of list) {
+    if (remaining <= 0.01) break;
+    const amount = Math.min(d.amount, remaining);
+    out.push({ ...d, amount: r2(amount) });
+    remaining = r2(remaining - amount);
+  }
+  return out;
+}
 
 /** Un pago que ESTE amigo dice haber hecho y que espera tu confirmación
  *  (tú eres el cobrador). Se puede confirmar/rechazar desde la vista Friends. */
@@ -92,12 +115,51 @@ export function useFriends(): { friends: Friend[]; loading: boolean } {
           const myMemberId = map.get(user.id) ?? g.meId;
           if (!myMemberId) continue;
           const settlements = g.settlements ?? [];
+          // El saldo real entre dos personas debe salir de las MISMAS
+          // transferencias que muestra la pantalla Balances (que ya descuentan
+          // todos los pagos confirmados, incluidos los que se hicieron vía el
+          // "hub" a través de un tercero en modo Simplificado). Usar la deuda
+          // bruta por pareja (`expenseDebtsBetween`) mostraba saldos fantasma
+          // en grupos ya saldados. Fuente de verdad única → coincide con Balances.
+          const direct = g.simplifyDebts === false;
+          const transfers = direct
+            ? directTransfers(g.members, g.expenses, settlements)
+            : computeSettle(g.members, g.expenses, settlements).transfers;
+          const ids = g.members.map((m) => m.id);
           for (const [friendUserId, friendMemberId] of map) {
             if (friendUserId === user.id) continue;
-            const iOwe = expenseDebtsBetween(g.members, g.expenses, settlements, myMemberId, friendMemberId);
-            const theyOwe = expenseDebtsBetween(g.members, g.expenses, settlements, friendMemberId, myMemberId);
-            const iOweTotal = r2(iOwe.reduce((s, d) => s + d.amount, 0));
-            const theyOweTotal = r2(theyOwe.reduce((s, d) => s + d.amount, 0));
+            const iOweThem = r2(
+              transfers.filter((x) => x.from === myMemberId && x.to === friendMemberId).reduce((s, x) => s + x.amount, 0)
+            );
+            const theyOweMe = r2(
+              transfers.filter((x) => x.from === friendMemberId && x.to === myMemberId).reduce((s, x) => s + x.amount, 0)
+            );
+            const netMe = r2(iOweThem - theyOweMe); // + = le debo, − = me debe
+            const iOweTotal = netMe > 0 ? netMe : 0;
+            const theyOweTotal = netMe < 0 ? -netMe : 0;
+            // Lista de gastos para el selector de "Saldar" (solo cuando YO debo).
+            // Se toma la deuda por gasto y se recorta al neto real. Si no hay
+            // gastos directos con esta persona pero el neto dice que le debo
+            // (ruteo puro por hub), se rellena con mis gastos pendientes más
+            // antiguos hasta el monto (ids reales, para poder registrarlos).
+            let iOwe: ExpenseDebt[] = [];
+            if (iOweTotal > 0.005) {
+              iOwe = trimTo(
+                expenseDebtsBetween(g.members, g.expenses, settlements, myMemberId, friendMemberId),
+                iOweTotal
+              );
+              if (iOwe.length === 0) {
+                iOwe = trimTo(
+                  fifoExpenseIdsForAmount(g.members, g.expenses, settlements, myMemberId, iOweTotal)
+                    .map((id) => {
+                      const e = g.expenses.find((x) => x.id === id);
+                      return e ? { expenseId: id, label: e.label, amount: r2(shareFor(e, ids)[myMemberId] || 0) } : null;
+                    })
+                    .filter((d): d is ExpenseDebt => d !== null),
+                  iOweTotal
+                );
+              }
+            }
             // Pagos de este amigo pendientes de MI confirmación en este grupo.
             const pendingConfirm = settlements.filter(
               (s) => s.status === "pending" && s.to === myMemberId && s.from === friendMemberId
