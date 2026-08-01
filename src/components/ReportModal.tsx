@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import type { Group } from "../lib/types";
 import { catOf } from "../lib/types";
 import { useT, useLang } from "../lib/i18n";
-import { money, memberInitials, sortedMembers, categoryColor, personColor } from "../lib/format";
+import { money, memberInitials, sortedMembers, categoryColor, personColor, displayName } from "../lib/format";
 import { Avatar } from "./Avatar";
 import {
   buildReport,
@@ -24,7 +24,10 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
   const [period, setPeriod] = useState<Period>("all");
   const r = buildReport(group, period);
   const cur = group.currency;
-  const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
+  const name = (id: string) => {
+    const m = group.members.find((mm) => mm.id === id);
+    return m ? displayName(m) : "?";
+  };
   const member = (id: string) => group.members.find((m) => m.id === id);
   const periodLabel = period === "all" ? t("report.allTime") : monthLabel(period, lang);
 
@@ -243,7 +246,7 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
                         <span className="flex items-center gap-2 min-w-0">
                           <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={24} />
                           <span className="truncate">
-                            {m.name}{" "}
+                            {displayName(m)}{" "}
                             <span className="text-muted text-xs">· {t("report.paidLabel", { amt: money(r.paid[m.id] || 0, cur) })}</span>
                           </span>
                         </span>

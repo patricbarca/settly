@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Group, RecurrenceInterval } from "../lib/types";
 import { addRecurring, updateRecurring, deleteRecurring } from "../lib/store";
 import { draftToExpenseFields, ExpenseForm, type ExpenseDraft } from "./ExpenseForm";
-import { uid, memberLabels } from "../lib/format";
+import { uid, memberLabels, displayName } from "../lib/format";
 import { parseExpense } from "../lib/parse";
 import { useSpeech } from "../lib/speech";
 import { useT, useLang } from "../lib/i18n";
@@ -155,7 +155,10 @@ export function RecurringList({ group }: { group: Group }) {
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const recurring = group.recurring ?? [];
 
-  const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
+  const name = (id: string) => {
+    const m = group.members.find((mm) => mm.id === id);
+    return m ? displayName(m) : "?";
+  };
   // Iniciales + color únicos por grupo (evita que dos personas se vean iguales).
   const labels = memberLabels(group.members);
 

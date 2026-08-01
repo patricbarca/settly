@@ -3,7 +3,7 @@ import type { Group, Settlement } from "../lib/types";
 import { computeSettle, directTransfers } from "../lib/split";
 import { updateGroup } from "../lib/store";
 import { useUser } from "../lib/auth";
-import { memberInitials, sortedMembers, fmtDate } from "../lib/format";
+import { memberInitials, sortedMembers, fmtDate, displayName } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useGroupMoney } from "../lib/displayCurrency";
 import { Icon } from "./Icon";
@@ -26,7 +26,10 @@ export function Balances({ group }: { group: Group }) {
       ? directTransfers(group.members, group.expenses, settlements)
       : minTransfers;
   const total = group.expenses.reduce((s, e) => s + e.amount, 0);
-  const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
+  const name = (id: string) => {
+    const m = group.members.find((mm) => mm.id === id);
+    return m ? displayName(m) : "?";
+  };
   const member = (id: string) => group.members.find((m) => m.id === id);
   const pending = settlements.filter((s) => s.status === "pending");
   const confirmed = settlements.filter((s) => s.status === "confirmed");
@@ -119,7 +122,7 @@ export function Balances({ group }: { group: Group }) {
                 <span className="flex items-center gap-2 min-w-0">
                   <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={24} />
                   <span className="truncate">
-                    {m.name}{" "}
+                    {displayName(m)}{" "}
                     <span className="text-muted text-xs">
                       · {t("bal.paid", { amt: money(paid[m.id] || 0) })}
                     </span>
@@ -255,7 +258,7 @@ export function Balances({ group }: { group: Group }) {
                       : { background: "var(--surface-soft)", color: "var(--muted)" }
                   }
                 >
-                  {m.name}
+                  {displayName(m)}
                 </button>
               ))}
           </div>

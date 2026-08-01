@@ -3,7 +3,7 @@ import { useGroups, updateGroup } from "../lib/store";
 import { withNotif } from "../lib/notifications";
 import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
-import { uid, money } from "../lib/format";
+import { uid, money, displayName } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { getDailyRate } from "../lib/fxCache";
 import { CURRENCIES, resolveToCode, currencySymbol } from "../lib/currencies";
@@ -106,7 +106,10 @@ export function SettleFriendModal({ friend, onClose }: { friend: Friend; onClose
       if (amount < 0.005) continue;
       const g = groups.find((x) => x.id === fg.groupId);
       if (!g) continue;
-      const name = (id: string) => g.members.find((m) => m.id === id)?.name ?? "?";
+      const name = (id: string) => {
+        const m = g.members.find((mm) => mm.id === id);
+        return m ? displayName(m) : "?";
+      };
       updateGroup(fg.groupId, (gg) => ({
         ...gg,
         settlements: [
