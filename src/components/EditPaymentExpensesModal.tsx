@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import type { Group, Settlement } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { expenseDebtsBetween } from "../lib/split";
-import { money } from "../lib/format";
+import { money, displayName } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -19,7 +19,10 @@ export function EditPaymentExpensesModal({
   onClose: () => void;
 }) {
   const t = useT();
-  const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
+  const name = (id: string) => {
+    const m = group.members.find((mm) => mm.id === id);
+    return m ? displayName(m) : "?";
+  };
   const debts = useMemo(
     () =>
       expenseDebtsBetween(

@@ -3,7 +3,7 @@ import type { Group, Category } from "../lib/types";
 import { catOf } from "../lib/types";
 import { patchExpense, deleteExpense } from "../lib/store";
 import { shareFor, expenseSettledStatus } from "../lib/split";
-import { money as rawMoney, fmtDate, memberLabels } from "../lib/format";
+import { money as rawMoney, fmtDate, memberLabels, displayName } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
 import { useGroupMoney } from "../lib/displayCurrency";
 import { fmtRate } from "../lib/fx";
@@ -30,7 +30,10 @@ export function ExpenseList({ group }: { group: Group }) {
   const [openId, setOpenId] = useState<string | null>(null);
   // Gasto pendiente de confirmar su eliminación (evita borrados accidentales).
   const [confirmId, setConfirmId] = useState<string | null>(null);
-  const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
+  const name = (id: string) => {
+    const m = group.members.find((mm) => mm.id === id);
+    return m ? displayName(m) : "?";
+  };
   // Iniciales + color únicos por grupo (evita que dos personas se vean iguales).
   const labels = memberLabels(group.members);
 

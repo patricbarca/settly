@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Group, Member } from "../lib/types";
 import { memberStats } from "../lib/gamification";
-import { memberInitials, sortedMembers } from "../lib/format";
+import { memberInitials, sortedMembers, displayName } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Avatar } from "./Avatar";
@@ -26,7 +26,7 @@ export function Achievements({ group }: { group: Group }) {
               <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={36} />
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-sm truncate">
-                  {m.name}
+                  {displayName(m)}
                   {m.id === group.meId && <span className="text-muted text-xs"> · {t("members.you")}</span>}
                 </div>
                 <div className="text-[11px] text-muted font-mono">

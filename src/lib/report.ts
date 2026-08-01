@@ -6,6 +6,7 @@
 // (→ PDF vía window.print) y un CSV (reportToCsv) para abrir en Excel/Sheets.
 import type { Group, Expense, Settlement } from "./types";
 import { computeSettle, directTransfers, type Transfer } from "./split";
+import { displayName } from "./format";
 
 /** "all" = histórico completo; "YYYY-MM" = un mes concreto. */
 export type Period = "all" | string;
@@ -111,7 +112,10 @@ const n2 = (n: number) => (Math.round((n + Number.EPSILON) * 100) / 100).toFixed
 /** Genera el CSV (multi-sección) del reporte. */
 export function reportToCsv(group: Group, period: Period, t: T, lang: "es" | "en"): string {
   const r = buildReport(group, period);
-  const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
+  const name = (id: string) => {
+    const m = group.members.find((mm) => mm.id === id);
+    return m ? displayName(m) : "?";
+  };
   const cur = group.currency;
   const periodLabel = period === "all" ? t("report.allTime") : monthLabel(period, lang);
   const rows: string[] = [];
@@ -153,7 +157,7 @@ export function reportToCsv(group: Group, period: Period, t: T, lang: "es" | "en
   rows.push(esc(t("report.balances")));
   rows.push([t("report.col.member"), `${t("report.col.paid")} (${cur})`, `${t("report.col.balance")} (${cur})`].map(esc).join(","));
   for (const m of group.members) {
-    rows.push([m.name, n2(r.paid[m.id] || 0), n2(r.net[m.id] || 0)].map(esc).join(","));
+    rows.push([displayName(m), n2(r.paid[m.id] || 0), n2(r.net[m.id] || 0)].map(esc).join(","));
   }
   rows.push("");
 

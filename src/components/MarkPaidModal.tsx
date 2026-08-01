@@ -4,7 +4,7 @@ import { updateGroup } from "../lib/store";
 import { withNotif } from "../lib/notifications";
 import { withActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
-import { uid, money } from "../lib/format";
+import { uid, money, displayName } from "../lib/format";
 import { computeSettle, expenseDebtsBetween, fifoExpenseIdsForAmount } from "../lib/split";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -61,7 +61,10 @@ export function MarkPaidModal({
   const reducedByCap = !alreadySettled && rawMax > max + 0.005;
   const [amt, setAmt] = useState(String(max));
   const [proof, setProof] = useState<string | undefined>();
-  const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
+  const name = (id: string) => {
+    const m = group.members.find((mm) => mm.id === id);
+    return m ? displayName(m) : "?";
+  };
   // Miembros que elijo cubrir además de lo mío (se saldan enteros hacia `to`).
   const [covered, setCovered] = useState<Set<string>>(new Set());
   function toggleCovered(id: string) {
