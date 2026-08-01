@@ -106,6 +106,33 @@ export default function App() {
     }
   }, []);
 
+  // iOS/WKWebView: al REANUDAR la app (traerla del segundo plano) el viewport
+  // queda momentáneamente obsoleto y la barra inferior fija se descoloca hasta
+  // un reflow (por eso cerrar+reabrir lo arreglaba). Recalculamos el alto real
+  // en cada resume y forzamos un reflow para recolocarla sin cerrar la app.
+  useEffect(() => {
+    const fix = () => {
+      const h = window.visualViewport?.height ?? window.innerHeight;
+      document.documentElement.style.setProperty("--app-height", `${h}px`);
+      // Lectura que fuerza el reflow → WKWebView recoloca el position:fixed.
+      void document.body.offsetHeight;
+    };
+    const onVisible = () => { if (document.visibilityState === "visible") fix(); };
+    fix();
+    window.addEventListener("pageshow", fix);
+    window.addEventListener("focus", fix);
+    window.addEventListener("resize", fix);
+    window.visualViewport?.addEventListener("resize", fix);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("pageshow", fix);
+      window.removeEventListener("focus", fix);
+      window.removeEventListener("resize", fix);
+      window.visualViewport?.removeEventListener("resize", fix);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, []);
+
   useEffect(() => {
     if (phase === "guest") loadGuestMode();
   }, [phase]);
@@ -202,7 +229,7 @@ export default function App() {
   if (!user) return <Login />;
 
   return (
-    <div className="pb-20" style={{ minHeight: "calc(100dvh + 1px)" }}>
+    <div className="pb-20" style={{ minHeight: "calc(var(--app-height, 100dvh) + 1px)" }}>
       <OfflineBanner />
       {!group && homeTab === "groups" && (
         <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">
