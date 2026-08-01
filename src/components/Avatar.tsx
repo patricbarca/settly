@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { personColor, initials as initialsOf } from "../lib/format";
 
 function isImage(a?: string) {
@@ -19,7 +20,12 @@ export function Avatar({
   size?: number;
   className?: string;
 }) {
-  if (isImage(avatar)) {
+  // Si la imagen falla al cargar (foto de Google con 403/timeout, sobre todo al
+  // reanudar la app), caemos a las iniciales en vez de dejar un <img> roto ("?").
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [avatar]);
+
+  if (isImage(avatar) && !failed) {
     return (
       // key={avatar}: fuerza a React a crear un <img> nuevo cuando cambia la
       // foto, en vez de reutilizar el nodo y mostrar la imagen de otra persona
@@ -31,6 +37,7 @@ export function Avatar({
         src={avatar}
         alt=""
         referrerPolicy="no-referrer"
+        onError={() => setFailed(true)}
         className={`rounded-full object-cover shrink-0 ${className}`}
         style={{ width: size, height: size }}
       />
@@ -46,7 +53,7 @@ export function Avatar({
         fontSize: Math.round(size * 0.42),
       }}
     >
-      {avatar || initials?.trim() || initialsOf(name)}
+      {(!isImage(avatar) && avatar) || initials?.trim() || initialsOf(name)}
     </span>
   );
 }
