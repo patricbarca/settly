@@ -32,6 +32,15 @@ export const CATEGORY_COLORS: Record<Category, string> = {
 export const categoryColor = (id: string): string =>
   CATEGORY_COLORS[id as Category] ?? CATEGORY_COLORS.otros;
 
+/** Primer nombre (primer token) de un nombre completo. */
+export const firstName = (name: string): string =>
+  (name || "").trim().split(/\s+/)[0] || (name || "");
+
+/** Nombre a MOSTRAR de un miembro: su apodo si lo puso, si no el primer nombre.
+ *  Mantén el nombre completo (`m.name`) para búsquedas/parser, no para mostrar. */
+export const displayName = (m: { name: string; nick?: string }): string =>
+  m.nick?.trim() || firstName(m.name);
+
 export function money(n: number, code = "EUR"): string {
   const c = currencyOf(code);
   const dec = c.decimals ?? 2;

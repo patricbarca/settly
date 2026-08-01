@@ -48,6 +48,9 @@ export interface Member {
   avatar: string;
   /** Iniciales personalizadas (editables); si no, se derivan del nombre. */
   initials?: string;
+  /** Apodo/nombre visible elegido por la persona; si está, se muestra en vez
+   *  del nombre completo. Si no, se muestra el primer nombre. */
+  nick?: string;
   /** País de residencia (código ISO 3166-1 alpha-2, ej. "AU"). */
   country?: string;
   /** Teléfono en formato internacional E.164 (ej. "+61412345678"). */

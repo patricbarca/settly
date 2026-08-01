@@ -1,6 +1,8 @@
+import { useState } from "react";
 import type { Group, Member } from "../lib/types";
 import { memberStats } from "../lib/gamification";
-import { money, memberInitials } from "../lib/format";
+import { money, memberInitials, firstName } from "../lib/format";
+import { updateMyMember } from "../lib/store";
 import { countryName } from "../lib/countries";
 import { useT, useLang } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -21,6 +23,17 @@ export function ProfileModal({
   const lang = useLang();
   const s = memberStats(group, member.id);
   const ok = Math.abs(s.net) < 0.01;
+  const isMe = member.id === group.meId;
+
+  // Apodo (nombre visible) — solo editable en tu propio perfil. Se guarda con
+  // updateMyMember (aplica a todos tus grupos, como las iniciales). Vacío =
+  // se muestra tu primer nombre.
+  const [nick, setNick] = useState(member.nick ?? "");
+  function saveNick() {
+    const v = nick.trim();
+    if (v === (member.nick ?? "").trim()) return;
+    updateMyMember({ nick: v || undefined });
+  }
 
   return (
     <Overlay onClose={onClose}>
@@ -64,6 +77,21 @@ export function ProfileModal({
             </div>
           </div>
         </div>
+
+        {isMe && (
+          <div className="glass rounded-3xl p-3 mb-3">
+            <label className="text-xs font-semibold text-muted block mb-1.5">{t("profile.nickLabel")}</label>
+            <input
+              value={nick}
+              onChange={(e) => setNick(e.target.value)}
+              onBlur={saveNick}
+              maxLength={24}
+              placeholder={firstName(member.name)}
+              className="glass rounded-xl px-3 py-2.5 text-sm w-full"
+            />
+            <p className="text-[11px] text-muted mt-1.5">{t("profile.nickHint")}</p>
+          </div>
+        )}
 
         {(member.country || member.phone) && (
           <div className="glass rounded-3xl p-3 mb-3 space-y-1.5">
