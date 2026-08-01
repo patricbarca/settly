@@ -21,9 +21,16 @@ export function Avatar({
 }) {
   if (isImage(avatar)) {
     return (
+      // key={avatar}: fuerza a React a crear un <img> nuevo cuando cambia la
+      // foto, en vez de reutilizar el nodo y mostrar la imagen de otra persona
+      // (bug de fotos repetidas/cruzadas en las tiras de miembros).
+      // referrerPolicy no-referrer: las fotos de Google (lh3.googleusercontent)
+      // fallan si se envía el referer → salían rotas/genéricas.
       <img
+        key={avatar}
         src={avatar}
         alt=""
+        referrerPolicy="no-referrer"
         className={`rounded-full object-cover shrink-0 ${className}`}
         style={{ width: size, height: size }}
       />

@@ -304,6 +304,7 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "users.title": { es: "Miembros", en: "Members" },
   "members.you": { es: "tú", en: "you" },
+  "members.title": { es: "Miembros", en: "Members" },
   "members.add": { es: "Añadir miembro", en: "Add member" },
   "members.name": { es: "Nombre", en: "Name" },
   "members.searchHint": { es: "Busca por email o teléfono de un usuario registrado.", en: "Search by email or phone of a registered user." },
