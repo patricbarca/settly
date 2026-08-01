@@ -3,7 +3,7 @@ import type { Group, Member } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
-import { memberInitials, sortedMembers } from "../lib/format";
+import { memberInitials, sortedMembers, displayName } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Avatar } from "./Avatar";
@@ -51,7 +51,7 @@ export function Members({ group }: { group: Group }) {
           const paid = Math.abs(net[m.id] || 0) < 0.01;
           return (
             <div key={m.id} className="rounded-full pl-1 pr-2.5 py-1 flex items-center gap-1.5 text-sm shrink-0" style={{ background: "var(--surface-soft)" }}>
-              <button onClick={() => setProfile(m)} className="flex items-center gap-1.5 min-w-0">
+              <button onClick={() => setProfile(m)} className="flex items-center gap-1.5 min-w-0" title={m.name}>
                 <span
                   className="rounded-full shrink-0"
                   title={paid ? "Al día" : "Pendiente"}
@@ -60,7 +60,7 @@ export function Members({ group }: { group: Group }) {
                   <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={28} />
                 </span>
                 <span className="font-medium truncate max-w-[8rem]">
-                  {m.name}
+                  {displayName(m)}
                   {m.id === group.meId && <span className="text-muted text-xs"> · {t("members.you")}</span>}
                 </span>
               </button>
