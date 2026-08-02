@@ -89,7 +89,7 @@ export function NotificationsBell({ open, onClose }: { open: boolean; onClose: (
       return t("notif.delete_requested", { name: n.actorName ?? "?", label: n.label ?? "" });
     if (n.type === "recurring_generated")
       return t("notif.recurring_generated", { label: n.label ?? "", amt, payer: n.toName ?? "?" });
-    return t("notif.review_requested", { label: n.label ?? "" });
+    return t("notif.review_requested", { name: n.actorName ?? "?", label: n.label ?? "" });
   }
 
 

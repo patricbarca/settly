@@ -139,22 +139,21 @@ export function ExpenseList({ group }: { group: Group }) {
   function requestReview(id: string) {
     const exp = group.expenses.find((e) => e.id === id);
     if (!exp) return;
-    patchExpense(group.id, id, { reviewRequested: true }, {
-      // Solicitud de revisión: anónima (sin actorId) por diseño, tanto en la
-      // notificación como en el log de actividad. Guardamos expenseId para
-      // poder cancelarla después con precisión.
-      notifAdd: makeNotif({ type: "review_requested", label: exp.label, expenseId: id }),
-      activity: makeActivity({ type: "review_requested", label: exp.label }),
+    patchExpense(group.id, id, { reviewRequested: true, reviewRequestedBy: group.meId }, {
+      // Guardamos quién la pidió (reviewRequestedBy) para mostrar "en revisión ·
+      // {nombre}". expenseId permite cancelar la notificación luego con precisión.
+      notifAdd: makeNotif({ type: "review_requested", label: exp.label, expenseId: id, actorId: group.meId, actorName: name(group.meId) }),
+      activity: makeActivity({ type: "review_requested", label: exp.label, actorId: group.meId, actorName: name(group.meId) }),
     });
-    notifyGroup(group.id, group.name, t("notif.review_requested", { label: exp.label }), "requests");
+    notifyGroup(group.id, group.name, t("notif.review_requested", { name: name(group.meId), label: exp.label }), "requests");
   }
   // El creador del gasto marca que ya lo revisó (resuelve la solicitud).
   function markReviewed(id: string) {
-    patchExpense(group.id, id, { reviewRequested: false });
+    patchExpense(group.id, id, { reviewRequested: false, reviewRequestedBy: undefined });
   }
   // Cancelar una solicitud propia (la pulsé por error): quita el flag y el aviso.
   function cancelReview(id: string) {
-    patchExpense(group.id, id, { reviewRequested: false }, {
+    patchExpense(group.id, id, { reviewRequested: false, reviewRequestedBy: undefined }, {
       notifRemove: { type: "review_requested", expenseId: id },
     });
   }
@@ -810,6 +809,12 @@ function ExpenseRow({
                   </button>
                 )}
                 {e.receiptPath && <ReceiptButton path={e.receiptPath} />}
+                {e.reviewRequested && e.reviewRequestedBy && (
+                  <span className="text-xs text-muted inline-flex items-center gap-1 self-center">
+                    <Icon name="flag" size={12} style={{ color: "var(--amber)" }} />
+                    {t("exp.reviewBy", { name: displayName(group.members.find((m) => m.id === e.reviewRequestedBy) ?? { name: "?" }) })}
+                  </span>
+                )}
                 {!e.reviewRequested ? (
                   <button
                     onClick={onRequestReview}

@@ -77,6 +77,8 @@ export interface Expense {
   /** multiple payers: who paid how much (null en un patch = limpiar) */
   payments?: { memberId: string; amount: number }[] | null;
   reviewRequested?: boolean;
+  /** memberId de quien pidió la revisión (para mostrar "en revisión · {nombre}"). */
+  reviewRequestedBy?: string;
   /** se pidió borrar el gasto; espera la aprobación del creador. */
   deleteRequested?: boolean;
   /** memberId de quien añadió el gasto (para el botón "Revisado"). */
