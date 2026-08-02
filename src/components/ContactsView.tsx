@@ -6,7 +6,7 @@ import { useT } from "../lib/i18n";
 import { usePlan } from "../lib/plan";
 import { useFriends, type Friend, type PendingConfirm } from "../lib/friends";
 import { shareBaseUrl } from "../lib/invite";
-import { useGroups, updateGroup } from "../lib/store";
+import { useGroups, setSettlementStatus, removeSettlement } from "../lib/store";
 import { notifyUser } from "../lib/push";
 import { Icon } from "./Icon";
 import { SettleFriendModal } from "./SettleFriendModal";
@@ -112,17 +112,11 @@ export function ContactsView() {
 
   // Confirmar un pago que el amigo dice haber hecho (yo cobro) → status confirmed.
   function confirmPayment(pc: PendingConfirm) {
-    updateGroup(pc.groupId, (g) => ({
-      ...g,
-      settlements: (g.settlements ?? []).map((s) => (s.id === pc.settlementId ? { ...s, status: "confirmed" as const } : s)),
-    }));
+    setSettlementStatus(pc.groupId, pc.settlementId, "confirmed");
   }
   // Rechazar un pago pendiente → se elimina el settlement.
   function rejectPayment(pc: PendingConfirm) {
-    updateGroup(pc.groupId, (g) => ({
-      ...g,
-      settlements: (g.settlements ?? []).filter((s) => s.id !== pc.settlementId),
-    }));
+    removeSettlement(pc.groupId, pc.settlementId);
   }
   // Recordar (push) a quien te debe, vía el grupo donde más te debe.
   function remind(f: Friend) {

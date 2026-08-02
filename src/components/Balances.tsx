@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Group, Settlement } from "../lib/types";
 import { computeSettle, directTransfers } from "../lib/split";
-import { updateGroup } from "../lib/store";
+import { setSettlementStatus, removeSettlement } from "../lib/store";
 import { useUser } from "../lib/auth";
 import { memberInitials, sortedMembers, fmtDate, displayName } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -54,16 +54,8 @@ export function Balances({ group }: { group: Group }) {
   const filteredLog =
     logFilter === "all" ? sortedConfirmed : sortedConfirmed.filter((s) => s.from === logFilter || s.to === logFilter);
 
-  const confirmS = (id: string) =>
-    updateGroup(group.id, (g) => ({
-      ...g,
-      settlements: (g.settlements ?? []).map((s) => (s.id === id ? { ...s, status: "confirmed" as const } : s)),
-    }));
-  const rejectS = (id: string) =>
-    updateGroup(group.id, (g) => ({
-      ...g,
-      settlements: (g.settlements ?? []).filter((s) => s.id !== id),
-    }));
+  const confirmS = (id: string) => setSettlementStatus(group.id, id, "confirmed");
+  const rejectS = (id: string) => removeSettlement(group.id, id);
 
   return (
     <section className="space-y-3">
