@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { useGroups, updateGroup } from "../lib/store";
-import { withNotif } from "../lib/notifications";
-import { withActivity } from "../lib/activity";
+import { useGroups, addSettlements } from "../lib/store";
+import { makeNotif } from "../lib/notifications";
+import { makeActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { uid, money, displayName } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -110,37 +110,29 @@ export function SettleFriendModal({ friend, onClose }: { friend: Friend; onClose
         const m = g.members.find((mm) => mm.id === id);
         return m ? displayName(m) : "?";
       };
-      updateGroup(fg.groupId, (gg) => ({
-        ...gg,
-        settlements: [
-          ...(gg.settlements ?? []),
+      const evt = {
+        type: "payment_made" as const,
+        actorId: fg.myMemberId,
+        actorName: name(fg.myMemberId),
+        toId: fg.friendMemberId,
+        toName: name(fg.friendMemberId),
+        amount,
+      };
+      addSettlements(
+        fg.groupId,
+        [
           {
             id: uid(),
             from: fg.myMemberId,
             to: fg.friendMemberId,
             amount,
             date: new Date().toISOString().slice(0, 10),
-            status: "pending" as const, // lo confirma quien cobra
+            status: "pending", // lo confirma quien cobra
             expenseIds: picked.map((d) => d.expenseId),
           },
         ],
-        notifications: withNotif(gg, {
-          type: "payment_made",
-          actorId: fg.myMemberId,
-          actorName: name(fg.myMemberId),
-          toId: fg.friendMemberId,
-          toName: name(fg.friendMemberId),
-          amount,
-        }),
-        activity: withActivity(gg, {
-          type: "payment_made",
-          actorId: fg.myMemberId,
-          actorName: name(fg.myMemberId),
-          toId: fg.friendMemberId,
-          toName: name(fg.friendMemberId),
-          amount,
-        }),
-      }));
+        { activity: makeActivity(evt), notifs: [makeNotif(evt)] }
+      );
       notifyGroup(
         fg.groupId,
         fg.groupName,

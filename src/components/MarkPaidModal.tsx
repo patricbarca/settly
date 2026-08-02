@@ -1,8 +1,9 @@
 import { useMemo, useState, type ChangeEvent } from "react";
 import type { Group } from "../lib/types";
-import { updateGroup } from "../lib/store";
-import { withNotif } from "../lib/notifications";
-import { withActivity } from "../lib/activity";
+import { addSettlements } from "../lib/store";
+import { makeNotif } from "../lib/notifications";
+import { makeActivity } from "../lib/activity";
+import type { Settlement } from "../lib/types";
 import { notifyGroup } from "../lib/push";
 import { uid, money, displayName } from "../lib/format";
 import { computeSettle, expenseDebtsBetween, fifoExpenseIdsForAmount } from "../lib/split";
@@ -195,60 +196,55 @@ export function MarkPaidModal({
     // El saldo que se limpia sigue siendo el del deudor real (`from` de cada
     // settlement); `settledBy` deja constancia de quién puso el dinero.
     const coveredList = coverable.filter((c) => covered.has(c.from));
-    updateGroup(group.id, (g) => {
-      const newSettlements = [
-        {
-          id: uid(),
-          from,
-          to,
-          amount: paidAmt,
-          date: today,
-          // Deudor: queda PENDIENTE hasta que el acreedor confirme. Acreedor
-          // (confirmReceipt): ya CONFIRMADO. Puede ser un pago PARCIAL.
-          status,
-          proof,
-          ...(onBehalf ? { settledBy: payer } : {}),
-          ...(fullyCovered.length ? { expenseIds: fullyCovered } : {}),
-          ...(picks.length ? { expensePayments: picks } : {}),
-        },
-        ...coveredList.map((c) => ({
-          id: uid(),
-          from: c.from,
-          to,
-          amount: c.amount,
-          date: today,
-          status,
-          // En modo acreedor cada deudor pagó lo suyo → sin settledBy. En modo
-          // pagador (cubro a otros) el dinero lo pongo yo → settledBy = payer.
-          ...(confirmReceipt ? {} : { settledBy: payer }),
-          expenseIds: fifoExpenseIdsForAmount(g.members, g.expenses, g.settlements ?? [], c.from, c.amount),
-        })),
-      ];
-      // Encadena una notificación por cada deudor saldado (el mío + los cubiertos).
-      let notifications = g.notifications ?? [];
-      for (const s of newSettlements) {
-        notifications = withNotif({ ...g, notifications }, {
-          type: "payment_made",
-          actorId: s.from,
-          actorName: name(s.from),
-          toId: to,
-          toName: name(to),
-          amount: s.amount,
-        });
-      }
-      return {
-        ...g,
-        settlements: [...(g.settlements ?? []), ...newSettlements],
-        notifications,
-        activity: withActivity(g, {
-          type: "payment_made",
-          actorId: from,
-          actorName: name(from),
-          toId: to,
-          toName: name(to),
-          amount: paidAmt + coveredTotal,
-        }),
-      };
+    const newSettlements: Settlement[] = [
+      {
+        id: uid(),
+        from,
+        to,
+        amount: paidAmt,
+        date: today,
+        // Deudor: queda PENDIENTE hasta que el acreedor confirme. Acreedor
+        // (confirmReceipt): ya CONFIRMADO. Puede ser un pago PARCIAL.
+        status,
+        proof,
+        ...(onBehalf ? { settledBy: payer } : {}),
+        ...(fullyCovered.length ? { expenseIds: fullyCovered } : {}),
+        ...(picks.length ? { expensePayments: picks } : {}),
+      },
+      ...coveredList.map((c) => ({
+        id: uid(),
+        from: c.from,
+        to,
+        amount: c.amount,
+        date: today,
+        status,
+        // En modo acreedor cada deudor pagó lo suyo → sin settledBy. En modo
+        // pagador (cubro a otros) el dinero lo pongo yo → settledBy = payer.
+        ...(confirmReceipt ? {} : { settledBy: payer }),
+        expenseIds: fifoExpenseIdsForAmount(group.members, group.expenses, group.settlements ?? [], c.from, c.amount),
+      })),
+    ];
+    // Una notificación por cada deudor saldado (el mío + los cubiertos).
+    const notifs = newSettlements.map((s) =>
+      makeNotif({
+        type: "payment_made",
+        actorId: s.from,
+        actorName: name(s.from),
+        toId: to,
+        toName: name(to),
+        amount: s.amount,
+      })
+    );
+    addSettlements(group.id, newSettlements, {
+      activity: makeActivity({
+        type: "payment_made",
+        actorId: from,
+        actorName: name(from),
+        toId: to,
+        toName: name(to),
+        amount: paidAmt + coveredTotal,
+      }),
+      notifs,
     });
     notifyGroup(
       group.id,

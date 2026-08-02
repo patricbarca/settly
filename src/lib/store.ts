@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import type { Group, RecurringExpense, RecurrenceInterval, Expense, ActivityEvent, AppNotification } from "./types";
+import type { Group, RecurringExpense, RecurrenceInterval, Expense, ActivityEvent, AppNotification, Settlement } from "./types";
 import { supabase } from "./supabase";
 import { createSeed } from "./seed";
 import { uid, money } from "./format";
@@ -504,6 +504,87 @@ export async function deleteExpense(
   });
   if (error) {
     console.error("delete_expense:", error);
+    idbAddToOutbox(groupId).catch(() => {});
+  }
+}
+
+// ── Pagos (settlements) atómicos ───────────────────────────────────────────
+// Igual que los gastos: se añaden/confirman/rechazan con RPCs que parchean SOLO
+// los settlements en el servidor (SELECT ... FOR UPDATE), no reescribiendo todo
+// el JSON del grupo. Así dos personas actuando a la vez (el deudor marca "pagué"
+// y el acreedor "me pagaron") no se pisan → no se pierden pagos pendientes.
+
+/** Añade uno o más pagos (al final) + opcional actividad + notificaciones. */
+export async function addSettlements(
+  groupId: string,
+  settlements: Settlement[],
+  opts?: { activity?: ActivityEvent; notifs?: AppNotification[] }
+) {
+  const apply = (g: Group): Group => ({
+    ...g,
+    settlements: [...(g.settlements ?? []), ...settlements],
+    activity: opts?.activity ? [...(g.activity ?? []), opts.activity].slice(-200) : g.activity,
+    notifications: opts?.notifs?.length ? [...(g.notifications ?? []), ...opts.notifs].slice(-100) : g.notifications,
+  });
+
+  if (!isOnline || !currentUserId) {
+    updateGroup(groupId, apply);
+    return;
+  }
+  applyLocal(groupId, apply);
+  const { error } = await supabase.rpc("add_settlement", {
+    p_group_id: groupId,
+    p_settlements: settlements,
+    p_activity: opts?.activity ?? null,
+    p_notifs: opts?.notifs?.length ? opts.notifs : null,
+  });
+  if (error) {
+    console.error("add_settlement:", error);
+    idbAddToOutbox(groupId).catch(() => {});
+  }
+}
+
+/** Cambia el estado de un pago (p. ej. confirmar uno pendiente). */
+export async function setSettlementStatus(groupId: string, settlementId: string, status: "pending" | "confirmed") {
+  const apply = (g: Group): Group => ({
+    ...g,
+    settlements: (g.settlements ?? []).map((s) => (s.id === settlementId ? { ...s, status } : s)),
+  });
+
+  if (!isOnline || !currentUserId) {
+    updateGroup(groupId, apply);
+    return;
+  }
+  applyLocal(groupId, apply);
+  const { error } = await supabase.rpc("set_settlement_status", {
+    p_group_id: groupId,
+    p_settlement_id: settlementId,
+    p_status: status,
+  });
+  if (error) {
+    console.error("set_settlement_status:", error);
+    idbAddToOutbox(groupId).catch(() => {});
+  }
+}
+
+/** Elimina un pago (p. ej. rechazar uno pendiente). */
+export async function removeSettlement(groupId: string, settlementId: string) {
+  const apply = (g: Group): Group => ({
+    ...g,
+    settlements: (g.settlements ?? []).filter((s) => s.id !== settlementId),
+  });
+
+  if (!isOnline || !currentUserId) {
+    updateGroup(groupId, apply);
+    return;
+  }
+  applyLocal(groupId, apply);
+  const { error } = await supabase.rpc("remove_settlement", {
+    p_group_id: groupId,
+    p_settlement_id: settlementId,
+  });
+  if (error) {
+    console.error("remove_settlement:", error);
     idbAddToOutbox(groupId).catch(() => {});
   }
 }
