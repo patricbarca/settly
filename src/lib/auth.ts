@@ -68,6 +68,8 @@ export type User = {
   /** Datos de perfil (fuente única en la tabla profiles). */
   country?: string;
   initials?: string;
+  /** Apodo/nombre visible global (se aplica en todos los grupos). */
+  nick?: string;
   pays?: PayMethod[];
   provider: "email" | "google" | "apple" | "guest";
 };
@@ -106,7 +108,7 @@ async function fromSession(session: Session) {
   {
     const full = await supabase
       .from("profiles")
-      .select("name, phone, phone_verified, avatar, country, initials, pays, notif_prefs")
+      .select("name, phone, phone_verified, avatar, country, initials, nick, pays, notif_prefs")
       .eq("id", au.id)
       .single();
     if (full.error) {
@@ -160,6 +162,7 @@ async function fromSession(session: Session) {
     avatar,
     country: (profile?.country as string) || undefined,
     initials: (profile?.initials as string) || undefined,
+    nick: (profile?.nick as string) || undefined,
     pays: Array.isArray(profile?.pays) ? (profile!.pays as PayMethod[]) : [],
     provider: (au.app_metadata?.provider as User["provider"]) ?? "email",
   };
@@ -306,6 +309,7 @@ export async function setProfileExtra(patch: {
   country?: string;
   phone?: string;
   initials?: string;
+  nick?: string;
   pays?: PayMethod[];
 }) {
   const { data: { session } } = await supabase.auth.getSession();
@@ -314,6 +318,7 @@ export async function setProfileExtra(patch: {
   if (patch.country !== undefined) row.country = patch.country;
   if (patch.phone !== undefined) row.phone = patch.phone;
   if (patch.initials !== undefined) row.initials = patch.initials;
+  if (patch.nick !== undefined) row.nick = patch.nick;
   if (patch.pays !== undefined) row.pays = patch.pays;
   if (Object.keys(row).length === 0) return;
   const { error } = await supabase.from("profiles").update(row).eq("id", session.user.id);

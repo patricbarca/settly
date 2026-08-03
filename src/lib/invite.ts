@@ -92,7 +92,7 @@ export async function joinByToken(token: string, userId: string, claimMemberId?:
   }
 
   const { data: profile } = await supabase
-    .from("profiles").select("name, avatar").eq("id", userId).single();
+    .from("profiles").select("name, avatar, nick").eq("id", userId).single();
 
   const { data: row } = await supabase
     .from("groups").select("id, data").eq("id", invite.group_id).single();
@@ -151,7 +151,7 @@ export async function joinByToken(token: string, userId: string, claimMemberId?:
     member_id: newMemberId,
   });
 
-  const newMember = { id: newMemberId, name: profile?.name || "Nuevo miembro", avatar: "" };
+  const newMember = { id: newMemberId, name: profile?.name || "Nuevo miembro", avatar: "", ...(profile?.nick ? { nick: profile.nick as string } : {}) };
   const updated: Group = {
     ...group,
     members: [...group.members, newMember],

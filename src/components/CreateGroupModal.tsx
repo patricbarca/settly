@@ -62,7 +62,7 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
   function create() {
     if (!name.trim()) return;
     const meId = uid();
-    const me = { id: meId, name: user?.name || "Tú", avatar: user?.avatar || "" };
+    const me = { id: meId, name: user?.name || "Tú", avatar: user?.avatar || "", ...(user?.nick ? { nick: user.nick } : {}) };
     const chosen = network.filter((c) => selected.has(c.userId));
     const extraMembers: { userId: string; memberId: string }[] = [];
     const others = chosen.map((c) => {

@@ -72,7 +72,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const tzPref = useTimezonePref();
   const countries = useMemo(() => countryList(lang), [lang]);
   const [name, setName] = useState(user?.name ?? "");
-  const [nick, setNick] = useState(firstNonEmpty((m) => m.nick) ?? "");
+  const [nick, setNick] = useState(user?.nick ?? "");
   const [inits, setInits] = useState(myMember?.initials ?? "");
   const [avatar, setAvatar] = useState(user?.avatar ?? "");
   const [country, setCountry] = useState(myMember?.country ?? "");
@@ -170,6 +170,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
       country: country || "",
       phone: normPhone,
       initials: inits.trim(),
+      nick: nick.trim(),
       pays,
     });
 
