@@ -3,6 +3,7 @@ import type { Group, Member } from "../lib/types";
 import { memberStats } from "../lib/gamification";
 import { money, memberInitials, firstName } from "../lib/format";
 import { updateMyMember } from "../lib/store";
+import { setProfileExtra } from "../lib/auth";
 import { countryName } from "../lib/countries";
 import { useT, useLang } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -32,7 +33,8 @@ export function ProfileModal({
   function saveNick() {
     const v = nick.trim();
     if (v === (member.nick ?? "").trim()) return;
-    updateMyMember({ nick: v || undefined });
+    updateMyMember({ nick: v || undefined });   // grupos actuales (inmediato)
+    setProfileExtra({ nick: v });                // perfil global (grupos nuevos)
   }
 
   return (
