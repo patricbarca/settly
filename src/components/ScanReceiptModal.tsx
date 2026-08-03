@@ -140,10 +140,27 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     // impuesto. Cuando subtotal y total prácticamente coinciden, no puede
     // haber un impuesto añadido encima: se fuerza `included` sin importar lo
     // que haya devuelto el escaneo.
-    const gapCoversTax =
-      res.subtotal > 0 && res.total > 0 && res.total - res.subtotal > Math.max(0.01, res.tax.amount * 0.5);
-    const taxIncluded = !res.tax || res.tax.amount <= 0 || res.tax.included || !gapCoversTax;
-    const taxNotIncluded = res.tax && res.tax.amount > 0 && !taxIncluded;
+    // Decidir si el impuesto ya está DENTRO de los precios o se suma ENCIMA.
+    // La fuente de verdad son los NÚMEROS, no el flag `included` del modelo de
+    // visión (que a veces se equivoca en ambas direcciones):
+    //   - hueco (total − subtotal) ≈ impuesto  → se añadió encima  (p. ej. un
+    //     invoice "Excl. GST 33.45 + 10% GST 3.35 = 36.80"): hay que sumarlo.
+    //   - subtotal ≈ total                       → ya está incluido (desglose
+    //     "GST Sales" meramente informativo típico de AU/NZ): NO sumarlo.
+    //   - montos no concluyentes                 → caemos al flag del escaneo.
+    const taxAmt = res.tax?.amount ?? 0;
+    const hasTax = !!res.tax && taxAmt > 0;
+    const gap = res.subtotal > 0 && res.total > 0 ? r2(res.total - res.subtotal) : 0;
+    const gapMatchesTax = Math.abs(gap - taxAmt) <= Math.max(0.02, taxAmt * 0.1);
+    let taxNotIncluded: boolean;
+    if (hasTax && gap > 0.01 && gapMatchesTax) {
+      taxNotIncluded = true; // hueco ≈ impuesto → añadido encima
+    } else if (hasTax && Math.abs(gap) <= 0.01) {
+      taxNotIncluded = false; // subtotal ≈ total → ya incluido
+    } else {
+      taxNotIncluded = hasTax && res.tax!.included === false; // ambiguo → flag del modelo
+    }
+    const taxIncluded = !taxNotIncluded;
     const baseFees = taxNotIncluded
       ? [
           ...scannedFees,
