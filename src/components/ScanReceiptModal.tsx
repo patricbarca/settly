@@ -186,7 +186,15 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     const residual = r2(totalConv - r2(itemsSum + baseFeesSum));
     const itemsMatchSubtotal =
       subtotalConv > 0 && Math.abs(itemsSum - subtotalConv) <= Math.max(0.02, subtotalConv * 0.005);
-    const surchargeCap = Math.max(2, totalConv * 0.03);
+    // Tope del recargo automático. Cuando los ítems cuadran EXACTO con el
+    // subtotal impreso, el hueco hasta el total es dinero real innegable
+    // (impuesto/recargo que el modelo no etiquetó como línea, p. ej. un GST del
+    // 10% que no vino como `tax`): permitimos hasta el 30% del total para cubrir
+    // GST/VAT/propina. Sin subtotal confirmado mantenemos el tope estricto (3%),
+    // porque ahí un hueco grande es más probablemente un misread y debe avisar.
+    const surchargeCap = itemsMatchSubtotal
+      ? Math.max(2, totalConv * 0.3)
+      : Math.max(2, totalConv * 0.03);
     const fees =
       itemsMatchSubtotal && residual > 0.02 && residual <= surchargeCap
         ? [
