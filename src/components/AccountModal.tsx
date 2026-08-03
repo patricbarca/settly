@@ -3,7 +3,7 @@ import type { PayType, PayMethod } from "../lib/types";
 import { useUser, setProfileName, setProfileAvatar, setProfileExtra, deleteAccount, signOut } from "../lib/auth";
 import { useAllGroups, updateMyMember } from "../lib/store";
 import { fileToAvatarDataUrl } from "../lib/image";
-import { personColor, memberInitials } from "../lib/format";
+import { personColor, memberInitials, firstName } from "../lib/format";
 import { enablePush, disablePush, isPushEnabled, pushSupported } from "../lib/push";
 import { enableNativePush, disableNativePush, isNativePushOn, nativePushSupported } from "../lib/nativePush";
 import { useNotifPrefs, setNotifPref, NOTIF_CATEGORIES } from "../lib/notifPrefs";
@@ -72,6 +72,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const tzPref = useTimezonePref();
   const countries = useMemo(() => countryList(lang), [lang]);
   const [name, setName] = useState(user?.name ?? "");
+  const [nick, setNick] = useState(firstNonEmpty((m) => m.nick) ?? "");
   const [inits, setInits] = useState(myMember?.initials ?? "");
   const [avatar, setAvatar] = useState(user?.avatar ?? "");
   const [country, setCountry] = useState(myMember?.country ?? "");
@@ -177,6 +178,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
       ...(n && n !== user!.name ? { name: n } : {}),
       ...(avatar !== (user!.avatar ?? "") ? { avatar } : {}),
       initials: inits.trim() || undefined,
+      nick: nick.trim() || undefined,
       country: country || undefined,
       phone: normPhone || undefined,
       pays,
@@ -236,6 +238,19 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
             onChange={(e) => { setName(e.target.value); setSaved(false); }}
             className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1"
           />
+        </div>
+
+        {/* Nickname (nombre visible) */}
+        <div className="mb-4">
+          <label className="text-xs font-semibold text-muted">{t("account.nick")}</label>
+          <input
+            value={nick}
+            onChange={(e) => { setNick(e.target.value.slice(0, 24)); setSaved(false); }}
+            maxLength={24}
+            placeholder={firstName(name || user.name)}
+            className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1"
+          />
+          <p className="text-xs text-muted mt-1">{t("account.nickHint")}</p>
         </div>
 
         {/* Initials */}
