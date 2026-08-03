@@ -705,6 +705,8 @@ const DICT: Record<string, { es: string; en: string }> = {
 
   "account.title":   { es: "Mi cuenta", en: "My account" },
   "account.name":    { es: "Tu nombre", en: "Your name" },
+  "account.nick":    { es: "Apodo (nombre visible)", en: "Nickname (display name)" },
+  "account.nickHint": { es: "Se muestra en vez de tu nombre en todos tus grupos. Vacío = tu primer nombre.", en: "Shown instead of your name in all your groups. Empty = your first name." },
   "account.initials": { es: "Iniciales", en: "Initials" },
   "account.initialsHint": { es: "Hasta 3 letras. Se muestran en los grupos cuando no tienes foto.", en: "Up to 3 letters. Shown in groups when you have no photo." },
   "account.payHint": { es: "Se muestra al saldar deudas con el grupo.", en: "Shown when settling debts in a group." },
