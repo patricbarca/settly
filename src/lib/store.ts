@@ -696,15 +696,40 @@ export function processRecurring(groupId: string) {
   }
 }
 
-export function updateMyMember(patch: Partial<import("./types").Member>) {
-  const groupIds = state.groups
-    .filter((g) => g.members.some((m) => m.id === g.meId))
-    .map((g) => g.id);
-  for (const id of groupIds) {
-    updateGroup(id, (g) => ({
+export async function updateMyMember(patch: Partial<import("./types").Member>) {
+  const targets = state.groups
+    .filter((g) => g.meId && g.members.some((m) => m.id === g.meId))
+    .map((g) => ({ id: g.id, meId: g.meId as string }));
+
+  // Aplicación local optimista en cada grupo.
+  for (const { id, meId } of targets) {
+    applyLocal(id, (g) => ({
       ...g,
-      members: g.members.map((m) => (m.id === g.meId ? { ...m, ...patch } : m)),
+      members: g.members.map((m) => (m.id === meId ? { ...m, ...patch } : m)),
     }));
+  }
+
+  if (!isOnline || !currentUserId) {
+    for (const { id } of targets) idbAddToOutbox(id).catch(() => {});
+    return;
+  }
+  // Parche ATÓMICO por miembro (RPC), en vez de reescribir el JSON completo del
+  // grupo — así una edición de perfil no se pisa con otra escritura concurrente
+  // (bug por el que el apodo no se reflejaba en algún grupo). undefined → null
+  // para poder limpiar un campo (p. ej. borrar el apodo) en el servidor.
+  const rpcPatch = Object.fromEntries(
+    Object.entries(patch).map(([k, v]) => [k, v === undefined ? null : v])
+  );
+  for (const { id, meId } of targets) {
+    const { error } = await supabase.rpc("patch_member", {
+      p_group_id: id,
+      p_member_id: meId,
+      p_patch: rpcPatch,
+    });
+    if (error) {
+      console.error("patch_member:", error);
+      idbAddToOutbox(id).catch(() => {});
+    }
   }
 }
 
