@@ -414,6 +414,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "exp.pending": { es: "Pendiente", en: "Pending" },
   "exp.viewReceipt": { es: "Ver recibo", en: "View receipt" },
   "exp.receiptError": { es: "No se pudo cargar el recibo.", en: "Couldn't load the receipt." },
+  "exp.zoomHint": { es: "Pellizca o doble toca para hacer zoom", en: "Pinch or double-tap to zoom" },
   "exp.confirmDeleteTitle": { es: "¿Eliminar gasto?", en: "Delete expense?" },
   "exp.confirmDeleteMsg": { es: "«{label}» se eliminará para todo el grupo. Esta acción no se puede deshacer.", en: "“{label}” will be removed for the whole group. This can't be undone." },
   "recur.confirmDeleteTitle": { es: "¿Eliminar recurrente?", en: "Delete recurring?" },
