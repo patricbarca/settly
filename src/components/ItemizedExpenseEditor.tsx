@@ -730,7 +730,8 @@ export function ItemizedExpenseEditor({
 
       {taxInfo && (
         <div className="text-[11px] text-muted">
-          {t("scan.taxIncluded", {
+          {t(taxInfo.label ? "scan.taxIncludedLabel" : "scan.taxIncluded", {
+            ...(taxInfo.label ? { label: taxInfo.label } : {}),
             rate: String(taxInfo.rate || 0),
             amt:
               showOriginal && canToggle && taxInfo.originalAmount != null

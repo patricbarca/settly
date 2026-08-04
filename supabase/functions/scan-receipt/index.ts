@@ -112,7 +112,7 @@ function firstOk(promises: Promise<ProviderResult>[]): Promise<ProviderResult> {
 }
 
 const PROMPT = `You are a receipt/document parser. Read this image (restaurant bill, café, supermarket, utility/phone bill, invoice, etc.) and extract the fields. Respond with ONLY a JSON object, no prose, no markdown:
-{"description":"...","subtotal":0.00,"total":0.00,"category":"...","currency":"AUD","items":[{"name":"...","qty":1,"unitPrice":0.00,"price":0.00}],"fees":[{"name":"...","amount":0.00}],"tax":{"amount":0.00,"rate":0,"included":true}}
+{"description":"...","subtotal":0.00,"total":0.00,"category":"...","currency":"AUD","items":[{"name":"...","qty":1,"unitPrice":0.00,"price":0.00}],"fees":[{"name":"...","amount":0.00}],"tax":{"amount":0.00,"rate":0,"included":true,"label":"GST"}}
 
 Rules:
 - description: short label for the expense (e.g. "Dinner at Bunny Beans", "Electricity bill", "Aldi groceries"). Max 60 chars.
@@ -127,7 +127,8 @@ Rules:
   - NEVER emit an item with price 0 or a missing price. A LONG item name may WRAP onto two (or more) printed lines — that is still ONE item with ONE price on the right: join the wrapped text into a single item name, do NOT create a separate line with price 0 for the overflow text. If a line genuinely has no price on the right, it is a wrap/modifier — merge it into the item above or ignore it. Every item you output MUST have a real non-zero price.
   - For non-itemized receipts (utility/invoice) return [].
 - fees: extra charges added ON TOP of the items — surcharge, service charge, card/payment surcharge, delivery, weekend/public-holiday surcharge. Each {name, amount}. Do NOT put tax, tip, subtotal or total in fees.
-- tax: the tax/GST/VAT line if present — {amount, rate (percent as a number), included (true if the tax is already inside the total, e.g. "10% Tax Included")}. If no tax is shown use {"amount":0,"rate":0,"included":true}.
+- tax: the tax/GST/VAT line if present — {amount, rate (percent as a number), included (true if the tax is already inside the total, e.g. "10% Tax Included"), label}. If no tax is shown use {"amount":0,"rate":0,"included":true,"label":""}.
+  - label: the EXACT tax name as printed on the receipt, copied verbatim — e.g. "GST", "VAT", "IVA", "Sales Tax", "Tax". Preserve the receipt's own wording (if it says "VAT", use "VAT"; if "GST", use "GST"). If a tax amount is present but no name is printed, use "Tax". Max 12 chars.
   - CRITICAL: many receipts (Australia/NZ especially) print a "GST Sales" / "GST Amount" (or "Tax Sales" / "Tax Amount") breakdown near the bottom purely as a statutory disclosure of the tax portion ALREADY inside the prices — it is NOT an extra charge to add. If the printed subtotal equals (or is within a cent of) the final total/amount paid, the tax is included: set included:true. Only set included:false when the tax amount is clearly added ON TOP — i.e. subtotal + tax ≈ total, with total strictly greater than subtotal. This is common on INVOICES / tax invoices that print line prices "Excl. GST/Tax", then a separate GST/Tax line, then a "Total Incl. GST/Tax" — there the tax IS added on top: set included:false and make sure subtotal (excl. tax) + tax = total.
 - ACCURACY OF THE NUMBERS MATTERS MOST: subtotal, tax.amount and total must be read exactly as printed so that subtotal + (all fees) + (tax if not included) = total. Re-check these three before answering.
 - subtotal: items subtotal before fees/tax (the pre-tax "Excl. GST/Tax" amount when the receipt separates it). total: the FINAL amount paid.
@@ -292,9 +293,14 @@ function sanitizeFees(fees: unknown): { name: string; amount: number }[] {
     .filter((f) => Math.abs(f.amount) > 0.0001);
 }
 
-function sanitizeTax(tax: unknown): { amount: number; rate: number; included: boolean } {
-  const o = (tax ?? {}) as { amount?: unknown; rate?: unknown; included?: unknown };
-  return { amount: num(o.amount), rate: num(o.rate), included: o.included !== false };
+function sanitizeTax(tax: unknown): { amount: number; rate: number; included: boolean; label: string } {
+  const o = (tax ?? {}) as { amount?: unknown; rate?: unknown; included?: unknown; label?: unknown };
+  return {
+    amount: num(o.amount),
+    rate: num(o.rate),
+    included: o.included !== false,
+    label: String(o.label ?? "").trim().slice(0, 12),
+  };
 }
 
 function extractJson(text: string): Record<string, unknown> | null {

@@ -161,11 +161,21 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
       taxNotIncluded = hasTax && res.tax!.included === false; // ambiguo → flag del modelo
     }
     const taxIncluded = !taxNotIncluded;
+    // Nombre del recargo del impuesto: usa la etiqueta TEXTUAL del recibo
+    // (GST/VAT/IVA/Tax…) tal cual la imprimió; si el escaneo no la trajo, cae
+    // al string genérico.
+    const taxLabel = (res.tax?.label || "").trim();
+    const taxRate = res.tax!.rate || 0;
+    const taxFeeName = taxLabel
+      ? taxRate
+        ? `${taxLabel} ${taxRate}%`
+        : taxLabel
+      : t("scan.taxFeeName", { rate: String(taxRate) });
     const baseFees = taxNotIncluded
       ? [
           ...scannedFees,
           {
-            name: t("scan.taxFeeName", { rate: String(res.tax!.rate || 0) }),
+            name: taxFeeName,
             amount: conv(res.tax!.amount),
             originalAmount: res.tax!.amount,
           },
