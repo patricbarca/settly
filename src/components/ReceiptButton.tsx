@@ -3,6 +3,7 @@ import { getReceiptUrl } from "../lib/storage";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
+import { ZoomableImage } from "./ZoomableImage";
 
 // Botón "Ver recibo" en el detalle de un gasto: pide una URL firmada temporal y
 // muestra la foto del ticket a pantalla completa. La imagen vive en Storage
@@ -45,7 +46,12 @@ export function ReceiptButton({ path }: { path: string }) {
             </button>
             {loading && <div className="glass-strong rounded-3xl p-8 text-center text-muted">…</div>}
             {error && <div className="glass-strong rounded-3xl p-8 text-center text-muted">{t("exp.receiptError")}</div>}
-            {url && <img src={url} alt="" className="w-full rounded-3xl" />}
+            {url && (
+              <>
+                <ZoomableImage src={url} />
+                <p className="mt-2 text-center text-[11px] text-muted">{t("exp.zoomHint")}</p>
+              </>
+            )}
           </div>
         </Overlay>
       )}
