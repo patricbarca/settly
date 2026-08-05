@@ -472,6 +472,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "scan.selectAll": { es: "Todos", en: "Select all" },
   "scan.deselectAll": { es: "Ninguno", en: "Deselect all" },
   "scan.taxIncluded": { es: "Impuesto {rate}% incluido: {amt} (ya dentro del total)", en: "Tax {rate}% included: {amt} (already in the total)" },
+  "scan.taxIncludedLabel": { es: "{label} {rate}% incluido: {amt} (ya dentro del total)", en: "{label} {rate}% included: {amt} (already in the total)" },
   "scan.aiNote": { es: "Revisa los artículos detectados y corrige lo que haga falta antes de guardar.", en: "Check the detected items and fix anything before saving." },
   "aiConsent.title": { es: "Procesamiento con IA", en: "AI processing" },
   "aiConsent.intro": { es: "Para leer recibos, entender tu voz o interpretar texto, Settlia usa un servicio de IA. Necesitamos tu permiso antes de enviar nada.", en: "To read receipts, understand your voice, or interpret text, Settlia uses an AI service. We need your permission before sending anything." },
