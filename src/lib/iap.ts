@@ -88,6 +88,11 @@ export type IAPProduct = {
   priceString: string; // ya localizado por la tienda, p. ej. "$6.99"
   currencyCode: string; // moneda real del precio, p. ej. "USD", "AUD"
   packageIdentifier: string;
+  // Prueba gratis introductoria del producto (si la tienda la ofrece). Solo se
+  // rellena cuando el intro es GRATIS (price 0); úsalo para mostrar "N días
+  // gratis, luego {precio}" con el importe facturado como elemento dominante
+  // (App Review 3.1.2(c)).
+  freeTrial?: { count: number; unit: "day" | "week" | "month" | "year" };
 };
 
 /** Devuelve los productos disponibles del offering por defecto (para el Paywall). */
@@ -104,12 +109,25 @@ export async function getProducts(): Promise<IAPProduct[]> {
       // RevenueCat marca los packages anuales/mensuales; deducimos por periodo.
       const type = pkg.packageType; // "ANNUAL" | "MONTHLY" | ...
       const billing: "monthly" | "annual" = type === "ANNUAL" ? "annual" : "monthly";
+      // Prueba gratis: RevenueCat expone `introPrice` con periodo/unidad. Solo la
+      // tomamos si es realmente GRATIS (price 0), que es el caso del free trial.
+      const intro = (p as {
+        introPrice?: { price?: number; periodUnit?: string; periodNumberOfUnits?: number } | null;
+      }).introPrice;
+      let freeTrial: IAPProduct["freeTrial"];
+      if (intro && (intro.price ?? 0) <= 0 && intro.periodNumberOfUnits && intro.periodUnit) {
+        const u = String(intro.periodUnit).toLowerCase();
+        const unit = (["day", "week", "month", "year"].includes(u) ? u : "day") as
+          | "day" | "week" | "month" | "year";
+        freeTrial = { count: intro.periodNumberOfUnits, unit };
+      }
       out.push({
         id: p.identifier,
         billing,
         priceString: p.priceString,
         currencyCode: (p as { currencyCode?: string }).currencyCode ?? "",
         packageIdentifier: pkg.identifier,
+        ...(freeTrial ? { freeTrial } : {}),
       });
     }
     // mensual primero, anual después

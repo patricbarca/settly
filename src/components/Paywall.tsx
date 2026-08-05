@@ -263,6 +263,19 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
                     <div className="text-xs text-muted mt-1.5">
                       {selected.billing === "annual" ? t("paywall.billedYearlyG") : t("paywall.billedMonthlyG")}
                     </div>
+                    {/* Free trial en tamaño/posición SUBORDINADA al importe (3.1.2(c)):
+                        indica cuánto dura y el precio que se cobra después. */}
+                    {selected.freeTrial && (
+                      <div className="text-[11px] text-muted mt-1">
+                        {t("paywall.trialAfter", {
+                          trial: `${selected.freeTrial.count} ${t(
+                            `paywall.unit.${selected.freeTrial.unit}${selected.freeTrial.count === 1 ? "" : "_plural"}`,
+                          )}`,
+                          price: selected.priceString,
+                          per: selected.billing === "annual" ? t("paywall.year") : t("paywall.month"),
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
 
