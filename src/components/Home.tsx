@@ -426,7 +426,10 @@ function GroupCard({
       >
         <button
           onClick={handleClick}
-          className="glass rounded-3xl p-4 w-full text-left hover-lift flex items-center gap-3"
+          /* Sin rounded propio: el borde izquierdo debe quedar RECTO y a ras del
+             panel de Archive al deslizar. El contenedor externo (rounded-3xl +
+             overflow-hidden) ya da la forma redondeada y recorta las esquinas. */
+          className="glass p-4 w-full text-left hover-lift flex items-center gap-3"
         >
           <div className="shrink-0">
             <SettleRing value={groupSettleScore(g)} size={44} stroke={5} color="#0FA3A3" track="var(--line)" />
