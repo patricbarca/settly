@@ -252,6 +252,20 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
                   </div>
                 )}
 
+                {/* Importe a cobrar = elemento MÁS prominente del flujo de compra
+                    (App Review 3.1.2(c)): precio grande y dominante; el resto de
+                    datos (moneda, periodo) van en tamaño/posición subordinada.
+                    No se promociona ningún trial/precio introductorio por encima
+                    del importe facturado. */}
+                {selected && (
+                  <div className="text-center mb-1">
+                    <div className="font-display text-4xl font-bold leading-none">{selected.priceString}</div>
+                    <div className="text-xs text-muted mt-1.5">
+                      {selected.billing === "annual" ? t("paywall.billedYearlyG") : t("paywall.billedMonthlyG")}
+                    </div>
+                  </div>
+                )}
+
                 {/* Deja claro en qué moneda se cobra (USD, AUD, EUR…), tomada
                     del propio producto de la tienda para que sea siempre exacta. */}
                 {selected?.currencyCode && (
@@ -266,11 +280,7 @@ export function Paywall({ onClose, reason }: { onClose: () => void; reason?: str
                   className="w-full rounded-2xl py-3.5 font-semibold text-white hover-lift disabled:opacity-60 mb-2"
                   style={{ background: "linear-gradient(135deg, var(--indigo), var(--teal))" }}
                 >
-                  {redirecting
-                    ? t("paywall.redirecting")
-                    : selected
-                      ? `${t("paywall.subscribe")} · ${selected.priceString}`
-                      : t("paywall.subscribe")}
+                  {redirecting ? t("paywall.redirecting") : t("paywall.subscribe")}
                 </button>
 
                 <button
