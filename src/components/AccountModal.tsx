@@ -513,10 +513,12 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
                     role="switch"
                     aria-checked={on}
                     className="relative h-6 w-11 rounded-full shrink-0 transition-colors"
-                    style={{ background: on ? "var(--teal)" : "var(--glass)" }}
+                    /* Estado OFF con color visible (antes usaba var(--glass), casi
+                       blanco sobre la tarjeta blanca → el toggle "desaparecía"). */
+                    style={{ background: on ? "var(--teal)" : "rgba(120,125,140,0.45)" }}
                   >
                     <span
-                      className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all"
+                      className="absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all shadow-sm"
                       style={{ left: on ? "22px" : "2px" }}
                     />
                   </button>
