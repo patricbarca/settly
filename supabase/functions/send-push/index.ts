@@ -1,5 +1,5 @@
 // ============================================================
-// Settly – Edge Function: send-push (Web Push, Fase 2)
+// Settly – Edge Function: send-push (Web Push + APNs nativo)
 // Envía una notificación push a los demás miembros de un grupo (excluye al
 // emisor, identificado por su JWT). Resuelve destinatarios y suscripciones con
 // la service-role key, así que NO depende de RLS para leer suscripciones ajenas.
@@ -8,15 +8,12 @@
 //   supabase functions deploy send-push
 //   supabase secrets set VAPID_PUBLIC_KEY=...  VAPID_PRIVATE_KEY=...
 //   (opcional) VAPID_SUBJECT=mailto:tu@correo
+//   APNs: APNS_KEY_P8 / APNS_KEY_ID / APNS_TEAM_ID (+ opcional APNS_BUNDLE_ID, APNS_ENV)
 //   SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY ya están disponibles por defecto.
-//
-// Requiere la tabla push_subscriptions (ver supabase/push_subscriptions.sql).
 // ============================================================
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-// CORS inline (sin import de ../_shared) para poder pegar este archivo en el
-// editor del dashboard de Supabase.
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -34,8 +31,6 @@ if (VAPID_PUBLIC && VAPID_PRIVATE) {
 }
 
 // ---- Push NATIVO iOS (APNs) --------------------------------------------------
-// Envía a los tokens de device_push_tokens (plataforma "ios") vía APNs HTTP/2,
-// autenticando con un JWT ES256 firmado con la clave .p8 de Apple.
 const APNS_KEY_P8 = Deno.env.get("APNS_KEY_P8") ?? "";
 const APNS_KEY_ID = Deno.env.get("APNS_KEY_ID") ?? "";
 const APNS_TEAM_ID = Deno.env.get("APNS_TEAM_ID") ?? "";
@@ -77,9 +72,25 @@ async function sendApns(
   body: string,
   url: string,
 ): Promise<number> {
-  if (!apnsConfigured || !tokens.length) return 0;
+  if (!apnsConfigured || !tokens.length) {
+    await admin.from("push_debug").insert({
+      status: -1,
+      reason: `skip: apnsConfigured=${apnsConfigured} tokens=${tokens.length}`,
+      token_prefix: "-",
+    }).catch(() => {});
+    return 0;
+  }
   const host = APNS_ENV === "sandbox" ? "api.sandbox.push.apple.com" : "api.push.apple.com";
-  const jwt = await apnsJwt();
+  let jwt: string;
+  try {
+    jwt = await apnsJwt();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("[apns] jwt sign failed — revisa APNS_KEY_P8:", msg);
+    await admin.from("push_debug").insert({ status: 0, reason: `jwt_sign_failed: ${msg}`, token_prefix: "-" }).catch(() => {});
+    return 0;
+  }
+  console.log(`[apns] sending to ${tokens.length} token(s), env=${APNS_ENV}, topic=${APNS_BUNDLE_ID}`);
   const payload = JSON.stringify({ aps: { alert: { title, body }, sound: "default" }, url });
   let sent = 0;
   await Promise.all(tokens.map(async (tk) => {
@@ -94,10 +105,21 @@ async function sendApns(
         },
         body: payload,
       });
-      if (res.ok) sent++;
-      else if (res.status === 410 || res.status === 400) {
-        // Token inválido/expirado → limpiar.
-        await admin.from("device_push_tokens").delete().eq("token", tk);
+      if (res.ok) {
+        sent++;
+        await admin.from("push_debug").insert({ status: 200, reason: "ok", token_prefix: tk.slice(0, 10) }).catch(() => {});
+      } else {
+        // Log del motivo EXACTO de APNs (BadDeviceToken, InvalidProviderToken,
+        // DeviceTokenNotForTopic, TopicDisallowed, Unregistered…) para diagnosticar.
+        const reason = await res.text().catch(() => "");
+        console.error(`[apns] rejected status=${res.status} reason=${reason} token=${tk.slice(0, 10)}…`);
+        await admin.from("push_debug").insert({ status: res.status, reason, token_prefix: tk.slice(0, 10) }).catch(() => {});
+        // Solo se limpia el token cuando el problema es del token en sí
+        // (400 BadDeviceToken / 410 Unregistered). Un 403 (auth) NO borra el
+        // token: el fallo es de la clave/config, no del dispositivo.
+        if (res.status === 410 || (res.status === 400 && /BadDeviceToken|Unregistered/i.test(reason))) {
+          await admin.from("device_push_tokens").delete().eq("token", tk);
+        }
       }
     } catch (e) {
       console.error("[apns] send error", e);
@@ -131,13 +153,10 @@ Deno.serve(async (req) => {
     let userIds = [
       ...new Set((members ?? []).map((m) => m.user_id).filter((id) => id && id !== callerId)),
     ];
-    // Recordatorio 1-a-1: si viene toUserId, notificar SOLO a esa persona
-    // (siempre que sea miembro del grupo y no sea el propio emisor).
     if (toUserId) userIds = userIds.filter((id) => id === toUserId);
     if (!userIds.length) return json({ sent: 0 });
 
-    // Preferencias de notificación: excluir a quien desactivó esta categoría.
-    // Modelo opt-out: si no hay fila/clave, se considera activada.
+    // Preferencias de notificación (opt-out): excluir a quien desactivó la categoría.
     if (category) {
       const { data: profs } = await admin
         .from("profiles")
@@ -183,7 +202,6 @@ Deno.serve(async (req) => {
           sent++;
         } catch (e: unknown) {
           const code = (e as { statusCode?: number })?.statusCode;
-          // Suscripción caducada/eliminada → limpiar.
           if (code === 404 || code === 410) {
             await admin.from("push_subscriptions").delete().eq("endpoint", s.endpoint);
           }
