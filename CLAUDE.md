@@ -10,6 +10,7 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **`patricbarca/settly-landing`** — landing. Plain HTML/CSS at repo root, no build. "Deploy from a branch" → `master` / root → **`settlia.app`** (root `CNAME`).
 - **DNS (GoDaddy):** apex `settlia.app` → 4 A records to GitHub Pages (185.199.108–111.153); `app` → CNAME `patricbarca.github.io`; `www` → CNAME `settlia.app`.
 - **Auth note:** Supabase Site URL + Redirect URLs must include `https://app.settlia.app` (Google OAuth redirects via the Supabase callback, so Google Cloud needs no domain change).
+- **Auth email / SMTP (2026-08):** login por email arreglado. El email default de Supabase está rate-limited y el template mandaba un magic **link** (abría la web, no iOS). Fix en el dashboard de Supabase: **custom SMTP con Resend** (dominio `send.settlia.app` verificado; `smtp.resend.com:465`, user `resend`, pass = API key, sender `noreply@send.settlia.app`); **templates usan `{{ .Token }}`** (código de 6 dígitos → `verifyOtp`) en vez de `{{ .ConfirmationURL }}`; **Email OTP Length = 6** (estaba en 8). Pendiente: editar también el template **"Confirm sign up"** (usuarios nuevos) con `{{ .Token }}`.
 
 ## Key files
 - `src/index.css` — CSS variables, glass/glass-strong components, dark mode, animations

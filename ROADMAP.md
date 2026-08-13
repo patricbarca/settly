@@ -16,7 +16,12 @@ Bloquean lanzamiento serio / publicación en stores.
 - ✅ **`scan-receipt`** — desplegado, escaneo de tickets funcionando (Groq Llama 4 Scout).
 - ✅ **Supabase Auth** — Site URL + Redirect URLs en `https://app.settlia.app`; origen Google OAuth añadido.
 - ✅ **Deploy `delete-account`** — desplegada y verificada (borra perfil, membresías, push subs, entitlements y la cuenta de auth; limpia dependientes antes de `deleteUser` y transfiere propiedad de grupos compartidos).
-- ✅ **Correo de dominio** (`hello@settlia.app`) — recibiendo vía **Cloudflare Email Routing** (catch-all → `settlia.app@gmail.com`); nameservers movidos a Cloudflare. Páginas legales y `VAPID_SUBJECT` apuntan a `hello@settlia.app`. (Envío saliente vía SMTP queda opcional para más adelante.)
+- ✅ **Correo de dominio** (`hello@settlia.app`) — recibiendo vía **Cloudflare Email Routing** (catch-all → `settlia.app@gmail.com`); nameservers movidos a Cloudflare. Páginas legales y `VAPID_SUBJECT` apuntan a `hello@settlia.app`.
+- ✅ **SMTP de auth (emails de login) — ARREGLADO (2026-08).** El login por email fallaba: el email default de Supabase está **rate-limited** (~pocos/hora) → no llegaban los códigos; y el template default mandaba un **magic link** que abría la **web** en vez de la app iOS. Fix (todo en el dashboard de Supabase):
+  1. **Custom SMTP con Resend** — dominio de envío **`send.settlia.app`** verificado (registros DNS auto-configurados en Cloudflare por Resend: MX/SPF/DKIM). Supabase → Auth → Emails → SMTP: `smtp.resend.com:465`, user `resend`, password = API key `re_...`, sender `noreply@send.settlia.app`.
+  2. **Templates → código, no link:** los templates "Magic link or OTP" (y pendiente "Confirm sign up") usan **`{{ .Token }}`** (código de 6 dígitos que la app teclea con `verifyOtp`) en vez de `{{ .ConfirmationURL }}`. Adiós al problema del link que abría la web.
+  3. **Email OTP Length = 6** (estaba en 8; la app pide 6).
+  - **Pendientes menores:** editar también el template **"Confirm sign up"** con `{{ .Token }}` (para usuarios nuevos, que disparan ese template en vez de "Magic link or OTP"); confirmar sender de producción `noreply@send.settlia.app` (no el `onboarding@resend.dev` de prueba).
 
 > **Fase 0 cerrada.** Nota: al mover los nameservers a Cloudflare, el DNS ya está allí — facilita la migración de hosting a Cloudflare Pages (Fase 2).
 
