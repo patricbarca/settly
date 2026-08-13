@@ -173,14 +173,21 @@ Deno.serve(async (req) => {
 
     // Push nativo (APNs) a los dispositivos iOS de esos usuarios.
     let apnsSent = 0;
-    if (apnsConfigured) {
+    {
       const { data: devices } = await admin
         .from("device_push_tokens")
         .select("token")
         .eq("platform", "ios")
         .in("user_id", userIds);
       const tokens = [...new Set((devices ?? []).map((d) => d.token as string).filter(Boolean))];
-      apnsSent = await sendApns(admin, tokens, title || "Settlia", body || "", url || "/");
+      await admin.from("push_debug").insert({
+        status: -2,
+        reason: `invoke: apnsConfigured=${apnsConfigured} recipients=${userIds.length} iosTokens=${tokens.length}`,
+        token_prefix: tokens[0]?.slice(0, 10) ?? "-",
+      }).catch(() => {});
+      if (apnsConfigured) {
+        apnsSent = await sendApns(admin, tokens, title || "Settlia", body || "", url || "/");
+      }
     }
 
     const { data: subs } = await admin
