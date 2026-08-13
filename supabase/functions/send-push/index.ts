@@ -131,14 +131,20 @@ async function sendApns(
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
+    // Traza de configuración ANTES del guard not_configured, para diagnosticar.
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
+    await admin.from("push_debug").insert({
+      status: -5,
+      reason: `config: service=${!!SERVICE_ROLE} vapid=${!!VAPID_PRIVATE} apnsCfg=${apnsConfigured} p8=${!!APNS_KEY_P8} kid=${!!APNS_KEY_ID} team=${!!APNS_TEAM_ID}`,
+      token_prefix: "-",
+    }).catch(() => {});
+
     if (!SERVICE_ROLE || (!VAPID_PRIVATE && !apnsConfigured)) {
       return json({ error: "not_configured" }, 503);
     }
 
     const { groupId, title, body, url, toUserId, category } = await req.json();
     if (!groupId) return json({ error: "no_group" }, 400);
-
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
     // Emisor (desde el JWT) para no notificarse a sí mismo.
     const token = (req.headers.get("Authorization") ?? "").replace("Bearer ", "");
