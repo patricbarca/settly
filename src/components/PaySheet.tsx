@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { Group, PayMethod } from "../lib/types";
-import { memberPays, payLink, fetchMemberProfilePays } from "../lib/pay";
+import { memberPays, payLink, payTransferText, payConcept, fetchMemberProfilePays } from "../lib/pay";
 import { money } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -69,7 +69,13 @@ export function PaySheet({
         ) : (
           <div className="space-y-3">
             {methods.map((pm, i) => {
-              const link = payLink(pm, amount);
+              const link = payLink(pm, amount, group.currency);
+              // Métodos sin enlace web (PayID / transferencia / Bizum): ofrecemos
+              // "copiar todo" con destinatario + dato + monto + concepto ya listos
+              // para pegar en la app del banco (Modelo A+, sin custodia).
+              const transferText = !link
+                ? payTransferText(pm, amount, group.currency, payee?.name ?? "", payConcept(group.name))
+                : null;
               return (
                 <div key={i} className="glass rounded-2xl p-3">
                   <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">
@@ -113,6 +119,23 @@ export function PaySheet({
                     >
                       <Icon name="external" size={15} /> {t("pay.payVia", { name: t(`pay.label.${pm.type}`) })}
                     </a>
+                  )}
+                  {transferText && (
+                    <button
+                      onClick={() => copy(`all-${i}`, transferText)}
+                      className="mt-2 inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-white hover-lift w-full"
+                      style={{ background: "var(--teal)" }}
+                    >
+                      {copied === `all-${i}` ? (
+                        <>
+                          <Icon name="check" size={15} /> {t("pay.copied.short")}
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="copy" size={15} /> {t("pay.copyAll")}
+                        </>
+                      )}
+                    </button>
                   )}
                 </div>
               );

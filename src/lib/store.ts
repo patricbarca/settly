@@ -647,24 +647,35 @@ export function processRecurring(groupId: string) {
     let newExpenses = [...g.expenses];
     let notifications = g.notifications ?? [];
     let activity = g.activity ?? [];
+    // IDs ya presentes (para idempotencia: no re-generar una ocurrencia que ya
+    // existe, p. ej. si otro dispositivo la creó y llegó por realtime).
+    const existingIds = new Set(newExpenses.map((e) => e.id));
     const updatedRecurring = g.recurring.map((r) => {
       if (!r.active || r.nextDate > today) return r;
       let nextDate = r.nextDate;
       let count = 0;
       while (nextDate <= today && count < 12) {
-        newExpenses.unshift({
-          id: uid(),
-          label: r.label,
-          amount: r.amount,
-          payerId: r.payerId,
-          ...(r.payments?.length ? { payments: r.payments } : {}),
-          participantIds: r.participantIds,
-          splits: r.splits ?? null,
-          category: r.category,
-          date: nextDate,
-        });
+        // ID DETERMINISTA por (regla, fecha de ocurrencia): si dos dispositivos
+        // generan la misma ocurrencia a la vez, producen el MISMO gasto → aunque
+        // se pisen los blobs (last-write-wins), queda uno solo. Evita duplicados
+        // por concurrencia sin necesidad de una operación atómica en el servidor.
+        const occId = `recur_${r.id}_${nextDate}`;
+        if (!existingIds.has(occId)) {
+          existingIds.add(occId);
+          newExpenses.unshift({
+            id: occId,
+            label: r.label,
+            amount: r.amount,
+            payerId: r.payerId,
+            ...(r.payments?.length ? { payments: r.payments } : {}),
+            participantIds: r.participantIds,
+            splits: r.splits ?? null,
+            category: r.category,
+            date: nextDate,
+          });
+          count++;
+        }
         nextDate = advanceDate(nextDate, r.interval);
-        count++;
       }
       if (count > 0) {
         // Una sola entrada por regla aunque haya varios ciclos de recuperación.

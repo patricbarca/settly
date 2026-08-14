@@ -16,6 +16,7 @@ import {
 } from "../lib/report";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
+import { getReceiptUrl } from "../lib/storage";
 
 export function ReportModal({ group, onClose }: { group: Group; onClose: () => void }) {
   const t = useT();
@@ -30,6 +31,27 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
   };
   const member = (id: string) => group.members.find((m) => m.id === id);
   const periodLabel = period === "all" ? t("report.allTime") : monthLabel(period, lang);
+
+  // Recibos escaneados del periodo: gasto id → URL firmada (temporal) para
+  // embeber la miniatura en el reporte. Se cargan de forma asíncrona al abrir /
+  // cambiar de periodo; si un recibo no carga, simplemente no se muestra.
+  const withReceipt = r.expenses.filter((e) => e.receiptPath);
+  const [receiptUrls, setReceiptUrls] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let alive = true;
+    setReceiptUrls({});
+    (async () => {
+      const entries = await Promise.all(
+        withReceipt.map(async (e) => [e.id, await getReceiptUrl(e.receiptPath!)] as const)
+      );
+      if (!alive) return;
+      const map: Record<string, string> = {};
+      for (const [id, url] of entries) if (url) map[id] = url;
+      setReceiptUrls(map);
+    })();
+    return () => { alive = false; };
+    // Recalcula al cambiar el conjunto de recibos del periodo.
+  }, [withReceipt.map((e) => e.id).join(",")]);
 
   // Fecha de generación: ISO (YYYY-MM-DD) para el nombre de archivo (ordenable,
   // sin caracteres ilegales) y una versión legible localizada para mostrarla.
@@ -311,6 +333,36 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
                       <div key={s.id} className="flex items-center gap-1.5 text-sm">
                         <Icon name="check" size={13} style={{ color: "#0A8B5E" }} />
                         <span>{t("pay.saysPaid", { from: name(s.from), amt: money(s.amount, cur), to: name(s.to) })}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recibos escaneados (miniaturas) */}
+              {withReceipt.length > 0 && (
+                <div className="glass rounded-3xl p-5">
+                  <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{t("report.receipts")}</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {withReceipt.map((e) => (
+                      <div key={e.id} className="text-center">
+                        <div
+                          className="rounded-2xl overflow-hidden mb-1 flex items-center justify-center"
+                          style={{ background: "var(--line)", aspectRatio: "3 / 4" }}
+                        >
+                          {receiptUrls[e.id] ? (
+                            <img
+                              src={receiptUrls[e.id]}
+                              alt={e.label}
+                              className="w-full h-full object-cover"
+                              loading="eager"
+                            />
+                          ) : (
+                            <Icon name="doc" size={22} className="text-muted" />
+                          )}
+                        </div>
+                        <div className="text-[11px] truncate">{e.label}</div>
+                        <div className="text-[10px] text-muted font-mono">{money(e.amount, cur)}</div>
                       </div>
                     ))}
                   </div>

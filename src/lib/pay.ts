@@ -65,21 +65,28 @@ export function payClipboardText(pay: PayMethod): string {
   return pay.value.trim();
 }
 
-/** Enlace de pago prerellenado, o null si el método no tiene enlace web
- *  (PayID, transferencia, Bizum → se copia el dato y se pega en la app del banco). */
-export function payLink(pay: PayMethod | undefined, amount: number): string | null {
+/** Enlace de pago prerellenado (Modelo A+: destinatario + monto + moneda ya
+ *  puestos), o null si el método no tiene enlace web (PayID, transferencia,
+ *  Bizum → se usa `payTransferText` para copiar los datos listos para pegar en
+ *  la app del banco). `currency` es el código ISO del grupo (EUR/USD/AUD…). */
+export function payLink(pay: PayMethod | undefined, amount: number, currency?: string): string | null {
   if (!pay || !pay.value.trim()) return null;
   const a = (Math.round(amount * 100) / 100).toFixed(2);
   const u = encodeURIComponent(handle(pay.value));
+  const cur = (currency ?? "").toUpperCase();
   switch (pay.type) {
     case "paypal":
-      return `https://paypal.me/${u}/${a}`;
+      // paypal.me acepta el código de moneda pegado al monto (p. ej. /10.00EUR).
+      return `https://paypal.me/${u}/${a}${cur}`;
     case "bunq":
       return `https://bunq.me/${u}/${a}`;
     case "wise":
       return `https://wise.com/pay/me/${u}`;
     case "revolut":
-      return `https://revolut.me/${u}`;
+      // revolut.me acepta amount + currency como query.
+      return cur
+        ? `https://revolut.me/${u}?amount=${a}&currency=${cur}`
+        : `https://revolut.me/${u}?amount=${a}`;
     case "other":
       return pay.value.startsWith("http") ? pay.value : null;
     case "payid":
@@ -88,4 +95,35 @@ export function payLink(pay: PayMethod | undefined, amount: number): string | nu
     default:
       return null;
   }
+}
+
+/** Concepto/referencia sugerido para la transferencia ("Settlia · {grupo}"). */
+export function payConcept(groupName: string): string {
+  const g = (groupName || "").trim();
+  return g ? `Settlia · ${g}` : "Settlia";
+}
+
+/** Bloque de texto listo para pegar en la app del banco cuando el método NO
+ *  tiene enlace web (PayID / transferencia / Bizum). Incluye a quién pagar, el
+ *  dato de cobro, el monto y el concepto — el "Modelo A+" sin custodia: el
+ *  dinero va banco a banco, nosotros solo pre-rellenamos los datos. */
+export function payTransferText(
+  pay: PayMethod,
+  amount: number,
+  currency: string,
+  payeeName: string,
+  concept: string,
+): string {
+  const a = (Math.round(amount * 100) / 100).toFixed(2);
+  const cur = (currency ?? "").toUpperCase();
+  const lines = [`${payeeName}`];
+  if (pay.type === "bank") {
+    if (pay.value?.trim()) lines.push(`BSB: ${pay.value.trim()}`);
+    if (pay.value2?.trim()) lines.push(`Cuenta: ${pay.value2.trim()}`);
+  } else {
+    lines.push(pay.value.trim());
+  }
+  lines.push(`${a} ${cur}`.trim());
+  if (concept) lines.push(concept);
+  return lines.join("\n");
 }

@@ -140,7 +140,7 @@ export function reportToCsv(group: Group, period: Period, t: T, lang: "es" | "en
   // Detalle de gastos
   rows.push(esc(t("report.expenses")));
   rows.push(
-    [t("report.col.date"), t("report.col.concept"), t("report.col.category"), t("report.col.payer"), `${t("report.col.amount")} (${cur})`, t("report.col.participants")]
+    [t("report.col.date"), t("report.col.concept"), t("report.col.category"), t("report.col.payer"), `${t("report.col.amount")} (${cur})`, t("report.col.participants"), t("report.receipts")]
       .map(esc)
       .join(",")
   );
@@ -149,7 +149,8 @@ export function reportToCsv(group: Group, period: Period, t: T, lang: "es" | "en
     const parts = (e.participantIds.length ? e.participantIds : group.members.map((m) => m.id))
       .map(name)
       .join(" / ");
-    rows.push([e.date, e.label, t(`cat.${e.category}`), payer, n2(e.amount), parts].map(esc).join(","));
+    const hasReceipt = e.receiptPath ? t("common.yes") : t("common.no");
+    rows.push([e.date, e.label, t(`cat.${e.category}`), payer, n2(e.amount), parts, hasReceipt].map(esc).join(","));
   }
   rows.push("");
 
