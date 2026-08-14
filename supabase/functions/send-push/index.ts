@@ -33,10 +33,12 @@ if (VAPID_PUBLIC && VAPID_PRIVATE) {
   try { webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE); } catch (_) { /* ignore */ }
 }
 
-const APNS_KEY_P8 = Deno.env.get("APNS_KEY_P8") ?? "";
-const APNS_KEY_ID = Deno.env.get("APNS_KEY_ID") ?? "";
-const APNS_TEAM_ID = Deno.env.get("APNS_TEAM_ID") ?? "";
-const APNS_BUNDLE_ID = Deno.env.get("APNS_BUNDLE_ID") ?? "app.settlia.pwa";
+// .trim() defensivo: un espacio o \n pegado al copiar el secreto (típico en el
+// Team ID / Key ID) corrompe el JWT → APNs responde 403 InvalidProviderToken.
+const APNS_KEY_P8 = (Deno.env.get("APNS_KEY_P8") ?? "").trim();
+const APNS_KEY_ID = (Deno.env.get("APNS_KEY_ID") ?? "").trim();
+const APNS_TEAM_ID = (Deno.env.get("APNS_TEAM_ID") ?? "").trim();
+const APNS_BUNDLE_ID = (Deno.env.get("APNS_BUNDLE_ID") ?? "app.settlia.pwa").trim();
 // "production" para TestFlight y App Store; "sandbox" solo para builds de Xcode.
 const APNS_ENV = (Deno.env.get("APNS_ENV") ?? "production").trim();
 const apnsConfigured = !!(APNS_KEY_P8 && APNS_KEY_ID && APNS_TEAM_ID);
@@ -132,7 +134,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
   try {
-    await dbg(admin, -5, `config: service=${!!SERVICE_ROLE} vapid=${!!VAPID_PRIVATE} apnsCfg=${apnsConfigured} p8len=${APNS_KEY_P8.length} kid=${!!APNS_KEY_ID} team=${!!APNS_TEAM_ID} env=${APNS_ENV}`);
+    await dbg(admin, -5, `config: service=${!!SERVICE_ROLE} vapid=${!!VAPID_PRIVATE} apnsCfg=${apnsConfigured} p8len=${APNS_KEY_P8.length} kid=[${APNS_KEY_ID}] team=[${APNS_TEAM_ID}] bundle=[${APNS_BUNDLE_ID}] env=${APNS_ENV} p8head=${APNS_KEY_P8.slice(0, 27)}`);
 
     if (!SERVICE_ROLE || (!VAPID_PRIVATE && !apnsConfigured)) {
       return json({ error: "not_configured" }, 503);
