@@ -134,7 +134,7 @@ Bloquean lanzamiento serio / publicación en stores.
 - **Modelo B — pago automático real (mueve dinero, siempre con comisión):** en AU lo más barato es **PayTo/NPP** vía **Monoova / Azupay / Zai** (céntimos por transferencia, no %); tarjeta (Stripe ~1.7%+30c) mata los splits pequeños. Apple Pay caería aquí (rieles de tarjeta). Implica cumplimiento (AFSL propia o apoyarse en el proveedor, KYC/AML). Solo cuando haya volumen que lo justifique.
 
 ## Deuda técnica / limpieza
-- ⬜ Borrar `PayMethodModal.tsx` (huérfano; edición de métodos solo en perfil).
+- ✅ Borrar `PayMethodModal.tsx` (huérfano; edición de métodos solo en perfil) — hecho 2026-08.
 - ⬜ Migrar `settlement.proof` base64 → Storage (con Fase 1).
 - ⬜ Revisar concurrencia de `processRecurring` (posible doble generación si dos abren a la vez).
 - ⬜ **Concurrencia — Fase 2**: extender el patrón atómico (`SELECT ... FOR UPDATE` + parche puntual) a miembros, settlements, recurrentes y notificaciones; hoy siguen en el `updateGroup` de blob completo (ver Fase 1).
