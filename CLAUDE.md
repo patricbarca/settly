@@ -50,6 +50,12 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Contador de IA movido a Supabase (server-authoritative) + fix crash de push
+- **Cuota de IA ya NO en localStorage** (`src/lib/plan.ts`): el contador mensual de scan/voz/texto vive en Supabase (`ai_usage` + RPCs `consume_ai`/`ai_remaining`/`is_pro`, SECURITY DEFINER, `migrate_v10_ai_usage.sql`, **aplicada vía conector MCP**). Borrar datos del navegador ya **no resetea** la cuota. `consume_ai` es **atómico** (`update ... where count < quota`) y decide Pro vs Free según `entitlements` (fuente de verdad). El cliente cachea el `remaining` **en memoria** (no localStorage), sembrado con `refreshAIQuota()` al autenticar; `consumeAI` descuenta optimista y reconcilia con la RPC. Cuotas en SQL DEBEN coincidir con plan.ts (FREE=3; PRO scan/voice=30, text=50). **API de plan.ts sin cambios de firma** (`consumeAI`/`aiRemaining`/`useAIRemaining` siguen síncronas). Aplica web + iOS.
+  - **Pendiente/known:** el enforcement lo sigue disparando el cliente (llama a `consume_ai` antes de invocar la Edge Function de IA); el **contador** ya es inviolable, pero el enforcement 100% estricto exigiría que `parse-expense`/`scan-receipt`/`transcribe` llamen a `consume_ai` server-side (follow-up). Además, el Pro **nativo (RevenueCat)** solo cuenta como Pro server-side si su entitlement se sincroniza a la tabla `entitlements` (hoy `is_pro` lee solo esa tabla).
+- **Fix crash de `send-push` (v46):** la instrumentación de debug usaba `builder.insert(x).catch(()=>{})`, pero el query builder de supabase-js v2 es *thenable* y **no tiene `.catch`** → lanzaba `TypeError` y tumbaba la función con 500 (mataba web push Y APNs). Fix: helper `dbg()` (await + try/catch). Regla: nunca `.catch` sobre el builder; usar `await` + try/catch.
+- **Diagnóstico push iOS (APNs):** con `send-push` ya arreglado, APNs responde **`403 InvalidProviderToken`** para los tokens iOS → **los secretos APNs no cuadran entre sí** (config confirma `apnsCfg=true p8len=257`, el JWT firma bien, no es problema del device-token). **Fix pendiente del lado del usuario:** verificar en Supabase → Edge Functions → Secrets que `APNS_TEAM_ID = KY72Q4Y3V3` (NO el Issuer ID/UUID de RevenueCat), que `APNS_KEY_ID` sea el Key ID (10 chars) de la Auth Key APNs, y que `APNS_KEY_P8` sea el `.p8` de ESE mismo Key ID. Tabla temporal `push_debug` en la DB registra cada intento (borrar cuando se confirme `status=200 ok`).
+
 ### Scan: impuesto AÑADIDO ENCIMA en invoices + saga de review IAP (PR #246, merged a master)
 - **GST separado en invoices (`ScanReceiptModal.tsx` + `scan-receipt`):** facturas que imprimen precios **Excl. GST** + una línea de **GST** aparte + un **Total Incl. GST** (típico AU, p. ej. Crowies Paints 33.45 + 3.35 = 36.80) ahora suman el impuesto al total a repartir. Complementa el fix inverso (GST ya incluido de AU/NZ que no hay que duplicar). **Dos redes:**
   1. La decisión incluido/no-incluido se deriva de los **números** (hueco `total − subtotal` vs `tax.amount`), no solo del flag `included` del modelo de visión.
@@ -246,6 +252,13 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - Interpret/parser: local regex parser (`parse.ts`) is the free fallback; the LLM (`parse-expense`) is the smart path. Falls back automatically on error/no quota.
 - Hero pills render even when `0` on a side (could hide the zero side or show a "settled" state).
 - When reusing the same working branch across multiple PRs, reset it to `origin/master` before starting new work — squash-merges otherwise cause merge conflicts on the next PR.
+
+## ⚠️ Regla permanente: mantener la documentación al día
+- **Al terminar CUALQUIER trabajo, SIEMPRE actualizar los 3 archivos vivos antes de cerrar:**
+  1. **`CLAUDE.md`** — reflejar lo hecho (sección "Recent work completed") y el estado real de features.
+  2. **`ROADMAP.md`** — mover el ítem de ⬜/🔧 a ✅, o ajustar su estado.
+  3. **Los pendientes** (sección "Pending / known issues" de este archivo + "Deuda técnica" del ROADMAP) — quitar lo resuelto, añadir lo nuevo descubierto.
+- Vale para fixes, features, deploys y cambios de config. Si algo queda a medias, dejarlo anotado como pendiente con el estado exacto. No confiar en la memoria entre sesiones: estos `.md` son la única fuente de verdad compartida.
 
 ## Multi-session / concurrency notes
 - CLAUDE.md is a normal repo file — it is **not** auto-updated; it only changes when a session edits + commits it. Keep it current manually.

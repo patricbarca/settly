@@ -7,8 +7,11 @@
 // when Stripe is added later, its webhook writes to the same table and nothing
 // here changes.
 //
-// The monthly AI quota stays client-side for now (good enough until the LLM
-// endpoint enforces it server-side).
+// The monthly AI quota is now server-authoritative: the counter lives in
+// Supabase (`ai_usage` table + `consume_ai`/`ai_remaining` RPCs, see
+// migrate_v10_ai_usage.sql). The client only caches the "remaining" in memory
+// (never localStorage), so clearing browser data no longer resets the quota.
+// Strict per-request enforcement inside the AI Edge Functions is a follow-up.
 import { useSyncExternalStore } from "react";
 import { Capacitor } from "@capacitor/core";
 import { supabase } from "./supabase";
@@ -28,9 +31,6 @@ export const FREE_GROUP_LIMIT = 3;
 /** Cuota mensual de IA para Pro (por tipo). Se elimina cuando Stripe esté activo. */
 export const PRO_AI_QUOTA: Record<AIKind, number> = { scan: 30, voice: 30, text: 50 };
 
-const USAGE_KEY = "settly.aiUsage";
-type Usage = { month: string; scan: number; voice: number; text: number };
-
 let plan: Plan = "free";
 let planReady = false;
 let trialEndsAt: Date | null = null;
@@ -39,7 +39,6 @@ let hasStripe = false;
  *  (OR) con el entitlement de Supabase: en iOS/Android la suscripción se compra
  *  vía App Store / Play (guideline 3.1.1) y RevenueCat es la fuente de verdad. */
 let nativePro = false;
-let usage: Usage = loadUsage();
 const listeners = new Set<() => void>();
 
 function emit() {
@@ -80,11 +79,15 @@ async function loadEntitlement(userId: string) {
 supabase.auth.onAuthStateChange((_event, session) => {
   if (session?.user) {
     loadEntitlement(session.user.id);
+    refreshAIQuota();
   } else {
     plan = "free";
     trialEndsAt = null;
     hasStripe = false;
     planReady = true;
+    remaining.scan = FREE_AI_QUOTA;
+    remaining.voice = FREE_AI_QUOTA;
+    remaining.text = FREE_AI_QUOTA;
     emit();
   }
 });
@@ -194,60 +197,72 @@ export async function redeemCode(code: string): Promise<RedeemResult> {
   }
 }
 
-// ---------- AI quota (local) ----------
-
-function thisMonth(): string {
-  return new Date().toISOString().slice(0, 7);
-}
-
-function loadUsage(): Usage {
-  try {
-    const raw = localStorage.getItem(USAGE_KEY);
-    if (raw) {
-      const u = JSON.parse(raw) as Partial<Usage>;
-      if (u && u.month === thisMonth()) {
-        return { month: u.month, scan: u.scan || 0, voice: u.voice || 0, text: u.text || 0 };
-      }
-    }
-  } catch {}
-  return { month: thisMonth(), scan: 0, voice: 0, text: 0 };
-}
-
-function saveUsage() {
-  try {
-    localStorage.setItem(USAGE_KEY, JSON.stringify(usage));
-  } catch {}
-}
-
-function rollover() {
-  if (usage.month !== thisMonth()) {
-    usage = { month: thisMonth(), scan: 0, voice: 0, text: 0 };
-    saveUsage();
-  }
-}
+// ---------- AI quota (server-authoritative) ----------
+//
+// El contador vive en Supabase (`ai_usage` + RPCs `consume_ai`/`ai_remaining`,
+// SECURITY DEFINER). El cliente solo cachea el "remaining" en MEMORIA (no en
+// localStorage), sembrado desde el servidor al autenticar, así que borrar los
+// datos del navegador ya NO resetea la cuota. `consume_ai` es atómico y decide
+// Pro vs Free según `entitlements` (fuente de verdad), coincidiendo con las
+// constantes de arriba. La reconciliación es optimista: descontamos local al
+// instante y ajustamos al valor real que devuelve la RPC.
 
 function quota(kind: AIKind): number {
   return effectivePlan() === "pro" ? PRO_AI_QUOTA[kind] : FREE_AI_QUOTA;
 }
 
-/** Usos de IA restantes este mes para un tipo concreto. */
+// Remaining en memoria por tipo. Se siembra optimista a la cuota free hasta que
+// el servidor responde (evita bloquear en el primer render).
+const remaining: Record<AIKind, number> = {
+  scan: FREE_AI_QUOTA,
+  voice: FREE_AI_QUOTA,
+  text: FREE_AI_QUOTA,
+};
+
+/** Recarga el remaining real desde el servidor (llamar al autenticar). */
+export async function refreshAIQuota(): Promise<void> {
+  try {
+    const { data, error } = await supabase.rpc("ai_remaining");
+    if (error || !data) return;
+    for (const row of data as { kind: AIKind; remaining: number }[]) {
+      if (row.kind in remaining) remaining[row.kind] = Math.max(0, row.remaining);
+    }
+    emit();
+  } catch {
+    /* offline / RPC ausente → conservar cache optimista */
+  }
+}
+
+/** Usos de IA restantes este mes para un tipo concreto (Pro = cuota alta). */
 export function aiRemaining(kind: AIKind): number {
-  rollover();
-  return Math.max(0, quota(kind) - usage[kind]);
+  return effectivePlan() === "pro" ? quota(kind) : remaining[kind];
 }
 
 export function useAIRemaining(kind: AIKind): number {
-  const snap = () => Math.max(0, quota(kind) - usage[kind]);
+  const snap = () => aiRemaining(kind);
   return useSyncExternalStore(sub, snap, snap);
 }
 
 /** Consume un uso de IA de ese tipo. Devuelve true si se permite; false si la
- *  cuota está agotada. */
+ *  cuota (según el cache local sembrado del servidor) está agotada. La RPC
+ *  atómica es la que realmente cuenta y reconcilia el valor. Pro no consume. */
 export function consumeAI(kind: AIKind): boolean {
-  rollover();
-  if (usage[kind] >= quota(kind)) return false;
-  usage = { ...usage, [kind]: usage[kind] + 1 };
-  saveUsage();
+  if (effectivePlan() === "pro") return true;
+  if (remaining[kind] <= 0) return false;
+  // Descuento optimista inmediato.
+  remaining[kind] = Math.max(0, remaining[kind] - 1);
   emit();
+  // Reconciliar con el servidor en segundo plano.
+  (async () => {
+    try {
+      const { data, error } = await supabase.rpc("consume_ai", { p_kind: kind });
+      if (error || data == null) return;
+      const left = data as number; // remaining tras consumir, o -1 si agotada
+      remaining[kind] = left < 0 ? 0 : left;
+      emit();
+    } catch {
+      /* mantener el descuento optimista */
+    }
+  })();
   return true;
 }

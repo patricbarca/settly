@@ -23,6 +23,8 @@ Bloquean lanzamiento serio / publicación en stores.
   3. **Email OTP Length = 6** (estaba en 8; la app pide 6).
   - **Pendientes menores:** editar también el template **"Confirm sign up"** con `{{ .Token }}` (para usuarios nuevos, que disparan ese template en vez de "Magic link or OTP"); confirmar sender de producción `noreply@send.settlia.app` (no el `onboarding@resend.dev` de prueba).
 
+- ✅ **Contador de IA server-side (2026-08).** La cuota mensual de scan/voz/texto se movió de `localStorage` a Supabase (`ai_usage` + RPCs atómicas `consume_ai`/`ai_remaining`/`is_pro`, `migrate_v10_ai_usage.sql`, aplicada). Borrar datos del navegador ya no resetea la cuota; `plan.ts` cachea el `remaining` en memoria y reconcilia con la RPC. **Follow-up (no bloqueante):** enforcement 100% estricto llamando a `consume_ai` dentro de las Edge Functions de IA; y sincronizar el Pro nativo (RevenueCat) a la tabla `entitlements` para que `is_pro` lo reconozca server-side.
+
 > **Fase 0 cerrada.** Nota: al mover los nameservers a Cloudflare, el DNS ya está allí — facilita la migración de hosting a Cloudflare Pages (Fase 2).
 
 ## Fase 1 — Producto (UX / robustez)
