@@ -64,10 +64,12 @@ if (VAPID_PUBLIC && VAPID_PRIVATE) {
 
 // ---- Push NATIVO iOS (APNs) --------------------------------------------------
 // Mismo mecanismo que send-push: JWT ES256 firmado con la clave .p8 de Apple.
-const APNS_KEY_P8 = Deno.env.get("APNS_KEY_P8") ?? "";
-const APNS_KEY_ID = Deno.env.get("APNS_KEY_ID") ?? "";
-const APNS_TEAM_ID = Deno.env.get("APNS_TEAM_ID") ?? "";
-const APNS_BUNDLE_ID = Deno.env.get("APNS_BUNDLE_ID") ?? "app.settlia.pwa";
+// .trim() defensivo: un espacio o \n pegado al copiar el secreto (Team ID /
+// Key ID) corrompe el JWT → APNs responde 403 InvalidProviderToken.
+const APNS_KEY_P8 = (Deno.env.get("APNS_KEY_P8") ?? "").trim();
+const APNS_KEY_ID = (Deno.env.get("APNS_KEY_ID") ?? "").trim();
+const APNS_TEAM_ID = (Deno.env.get("APNS_TEAM_ID") ?? "").trim();
+const APNS_BUNDLE_ID = (Deno.env.get("APNS_BUNDLE_ID") ?? "app.settlia.pwa").trim();
 const APNS_ENV = (Deno.env.get("APNS_ENV") ?? "production").trim();
 const apnsConfigured = !!(APNS_KEY_P8 && APNS_KEY_ID && APNS_TEAM_ID);
 
