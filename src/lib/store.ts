@@ -744,6 +744,19 @@ export async function updateMyMember(patch: Partial<import("./types").Member>) {
   }
 }
 
+/** Propaga MI foto de perfil a la copia `member.avatar` de cada grupo si difiere.
+ *  La vista de grupo muestra `member.avatar` (copia en el JSON del grupo), no el
+ *  `profiles.avatar` vivo — así que si el perfil cambia (o se cacheó la foto de
+ *  Google), hay que empujarla a los miembros. Usa el patch atómico (updateMyMember
+ *  → RPC `patch_member`), que NO se pisa con escrituras concurrentes del blob. */
+export function syncMyMemberAvatar(avatar: string) {
+  if (!avatar) return;
+  const needs = state.groups.some(
+    (g) => g.meId && g.members.some((m) => m.id === g.meId && (m.avatar ?? "") !== avatar)
+  );
+  if (needs) updateMyMember({ avatar });
+}
+
 export function loadGuestMode() {
   state = { groups: [createSeed()], activeId: null, loading: false };
   emit();

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useUser, useAuthPhase, setProfileName, submitPhone, verifyPhone, skipPhone, usePendingPhone } from "./lib/auth";
 import { useLang, setLang, useT } from "./lib/i18n";
-import { resetSeed, useActiveGroup, loadGuestMode, setActiveGroup, addGroup, useGroups } from "./lib/store";
+import { resetSeed, useActiveGroup, loadGuestMode, setActiveGroup, addGroup, useGroups, syncMyMemberAvatar } from "./lib/store";
 import { useTheme, toggleTheme } from "./lib/theme";
 import { joinByToken, getJoinPreview } from "./lib/invite";
 import { ClaimMemberModal } from "./components/ClaimMemberModal";
@@ -181,6 +181,16 @@ export default function App() {
       void initIAP(); // RevenueCat: sincroniza el entitlement Pro (no-op en web)
     }
   }, [phase]);
+
+  useEffect(() => {
+    // Propaga mi foto de perfil a la copia `member.avatar` de cada grupo si
+    // difiere — la vista de grupo lee esa copia, no el `profiles.avatar` vivo.
+    // Cubre el caso de la foto de Google recién cacheada y el de una foto nueva
+    // subida que aún no se había reflejado en algún grupo.
+    if (phase === "authenticated" && user?.avatar) {
+      syncMyMemberAvatar(user.avatar);
+    }
+  }, [phase, user?.avatar, allGroups.length]);
 
   useEffect(() => {
     // El onboarding se muestra una sola vez (flag persistente). Se puede
