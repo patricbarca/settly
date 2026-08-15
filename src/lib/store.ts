@@ -242,7 +242,7 @@ export async function addGroup(
   group: Group,
   extraMembers: { userId: string; memberId: string }[] = []
 ) {
-  state = { groups: [group, ...state.groups], activeId: group.id };
+  state = { groups: [group, ...state.groups], activeId: group.id, loading: false };
   emit();
   if (!currentUserId) return;
   idbPutGroup(group).catch(() => {});

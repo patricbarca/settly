@@ -57,7 +57,7 @@ export function GroupView({ group }: { group: Group }) {
     // (muchos destinos ignoran `title`, por eso va en `text`). En móvil abre el
     // selector de apps; el usuario ve "Únete a mi grupo «X»…".
     const shareText = t("share.inviteText", { name: group.name });
-    if (typeof navigator !== "undefined" && "share" in navigator) {
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
       try {
         await navigator.share({ title: group.name, text: shareText, url: link });
         return;

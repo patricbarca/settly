@@ -8,6 +8,7 @@ export type IconName =
   | "leisure"
   | "shopping"
   | "cart"
+  | "chart"
   | "drink"
   | "health"
   | "bolt"

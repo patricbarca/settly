@@ -153,10 +153,15 @@ async function fromSession(session: Session) {
   }
 
   if (!profile?.name) {
-    // also sync email if column exists (after migrate_v2.sql is applied)
-    await supabase.from("profiles").upsert({ id: au.id, name, email: au.email || "" })
-      .then(() => {})
-      .catch(() => supabase.from("profiles").upsert({ id: au.id, name }));
+    // also sync email if column exists (after migrate_v2.sql is applied).
+    // El query builder de supabase-js es "thenable" pero NO tiene `.catch` →
+    // usar try/await/catch, nunca `.then().catch()` (lanza TypeError).
+    try {
+      const { error } = await supabase.from("profiles").upsert({ id: au.id, name, email: au.email || "" });
+      if (error) await supabase.from("profiles").upsert({ id: au.id, name });
+    } catch {
+      /* ignore */
+    }
   }
 
   const partialUser: User = {

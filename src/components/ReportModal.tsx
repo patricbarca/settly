@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Group } from "../lib/types";
-import { catOf } from "../lib/types";
+import { catOf, type Category } from "../lib/types";
 import { useT, useLang } from "../lib/i18n";
 import { money, memberInitials, sortedMembers, categoryColor, personColor, displayName } from "../lib/format";
 import { Avatar } from "./Avatar";
@@ -216,7 +216,7 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
                         <div key={e.id} className="flex items-center gap-2 text-sm">
                           <span className="h-3 w-3 rounded-full shrink-0" style={{ background: categoryColor(e.id) }} />
                           <span className="truncate inline-flex items-center gap-1.5">
-                            <Icon name={catOf(e.id).icon} size={15} /> {t(`cat.${e.id}`)}
+                            <Icon name={catOf(e.id as Category).icon} size={15} /> {t(`cat.${e.id}`)}
                           </span>
                           <span className="ml-auto font-mono text-muted text-xs">{Math.round((e.value / r.total) * 100)}%</span>
                           <span className="font-mono font-semibold w-20 text-right">{money(e.value, cur)}</span>
