@@ -60,7 +60,7 @@ Return a JSON object with exactly these keys:
 Rules:
 - amount: numeric TOTAL only (no currency symbol; use a dot for decimals). A number written as a PERCENTAGE (followed by "%", or clearly a share like "60 percent") is NEVER the amount — it describes how the cost or payment is split. The amount is the real money figure. Example: in "supermarket 45, I paid 60% and Ana 40%", the amount is 45 (NOT 60).
 - percentages for payers: if the note says who paid using percentages ("I paid 60%, Ana 40%", "yo el 60% y Ana el 40%"), convert each percentage to a money amount = percentage/100 × total, and put those in payments (they must still sum to the total).
-- currency: ISO 4217 code (3 letters) of the currency the amount is stated in. Detect words/symbols in the note (e.g. "dong"/"₫"→VND, "dollars"/"USD"/"$"→USD, "euros"/"€"→EUR, "pounds"/"£"→GBP, "yen"/"¥"→JPY, "pesos argentinos"→ARS). If the note does NOT mention a currency, or it matches the group's currency, use the group's currency shown above (${currency}). Never guess an exchange rate yourself — only report which currency the number is in.
+- currency: ISO 4217 code (3 letters) of the currency the amount is stated in. Detect it ONLY from an EXPLICIT currency word, code or symbol IN THE NOTE (e.g. "dong"/"₫"/"VND"→VND, "USD"/"US$"→USD, "euros"/"€"→EUR, "pounds"/"£"→GBP, "yen"/"¥"→JPY, "pesos argentinos"→ARS). **NEVER infer the currency from the group's name, the destination/country, the location, or the item names.** A bare "$" is ambiguous — do NOT treat it as USD; use the group's currency. If the note does NOT explicitly state a currency, ALWAYS use the group's currency shown above (${currency}). Never guess an exchange rate yourself — only report which currency the number is in.
 - PER-PERSON amounts: if the note states the amount PER PERSON ("X each", "X cada uno", "X c/u", "X por cabeza", "X por persona", "X apiece"), then the TOTAL amount = that number multiplied by the number of participantIds. Example: "Cinema 12 each" with 4 participants -> amount 48.
 - payments: who actually PAID and how much. One entry per payer; the amounts MUST sum to the total amount. If paid evenly between payers, divide the total. If unclear who paid, use a single entry: [{"memberId":"${meId}","amount":<total>}].
 - participantIds: who SHARES the cost — INDEPENDENT from who paid. DEFAULT = the WHOLE group (ALL member ids). Only use a subset when the note EXPLICITLY limits who shares (e.g. "only Ana and me", "except Luis", "menos Luis"). Naming who PAID never limits who shares. When in doubt, include ALL member ids.
@@ -108,7 +108,7 @@ Examples (sample roster — a: Ana, b: Luis, c: Me; "me"=c; assume the group's c
 
     // Saneamos la salida para que sea siempre usable, aunque el modelo se
     // desvíe: IDs válidos, categoría permitida, intervalo válido o null.
-    const clean = sanitize(parsed, { memberIds, meId, categories: catArr, groupCurrency: String(currency ?? "") });
+    const clean = sanitize(parsed, { memberIds, meId, categories: catArr, groupCurrency: String(currency ?? ""), text: String(text) });
     // Reparto por defecto = TODO el grupo. El modelo pequeño a veces estrecha el
     // reparto sin motivo (p. ej. "asado 100" -> solo el pagador). Si la nota NO
     // nombra a otros miembros y no dice "solo yo", repartimos entre todos.
@@ -128,11 +128,45 @@ Examples (sample roster — a: Ana, b: Luis, c: Me; "me"=c; assume the group's c
   }
 });
 
+// Tokens EXPLÍCITOS por moneda. Deliberadamente SIN el "$" pelado ni "dollar(s)"
+// (ambiguos entre USD/AUD/NZD/CAD) para no forzar una conversión cuando el
+// usuario solo escribió un número: un grupo en AUD llamado "Vietnam" NO debe
+// convertir a VND salvo que la nota diga "dong"/"VND"/"₫".
+const CURRENCY_TOKENS: Record<string, string[]> = {
+  USD: ["usd", "us$"],
+  AUD: ["aud", "au$", "a$"],
+  NZD: ["nzd", "nz$"],
+  CAD: ["cad", "ca$"],
+  SGD: ["sgd", "s$"],
+  EUR: ["eur", "euro", "euros", "€"],
+  GBP: ["gbp", "pound", "pounds", "£", "quid", "libra", "libras"],
+  JPY: ["jpy", "yen", "¥"],
+  CNY: ["cny", "yuan", "rmb", "renminbi"],
+  VND: ["vnd", "dong", "đồng", "₫"],
+  THB: ["thb", "baht", "฿"],
+  INR: ["inr", "rupee", "rupees", "₹"],
+  IDR: ["idr", "rupiah"],
+  KRW: ["krw", "won", "₩"],
+  CHF: ["chf", "franc", "francs", "franco", "francos"],
+  ARS: ["ars", "peso argentino", "pesos argentinos"],
+  CLP: ["clp", "peso chileno", "pesos chilenos"],
+  BRL: ["brl", "real", "reais", "r$"],
+};
+
+/** ¿La nota menciona EXPLÍCITAMENTE la moneda `code`? (token conocido o el
+ *  propio código ISO como palabra). Sin señal explícita → no convertimos. */
+function currencyMentioned(text: string, code: string): boolean {
+  const t = ` ${text.toLowerCase()} `;
+  const toks = CURRENCY_TOKENS[code] ?? [];
+  if (toks.some((tok) => t.includes(tok))) return true;
+  return new RegExp(`\\b${code.toLowerCase()}\\b`).test(t);
+}
+
 function sanitize(
   p: Record<string, unknown>,
-  ctx: { memberIds: string[]; meId: string; categories: string[]; groupCurrency: string }
+  ctx: { memberIds: string[]; meId: string; categories: string[]; groupCurrency: string; text: string }
 ) {
-  const { memberIds, meId, categories, groupCurrency } = ctx;
+  const { memberIds, meId, categories, groupCurrency, text } = ctx;
   const inMembers = (id: unknown) => typeof id === "string" && memberIds.includes(id);
 
   const amount = Number(p.amount);
@@ -179,7 +213,13 @@ function sanitize(
   // moneda del grupo (nunca inventamos una tasa nosotros, solo detectamos cuál
   // moneda menciona la nota).
   const currencyGuess = String(p.currency ?? "").toUpperCase().trim();
-  const currency = /^[A-Z]{3}$/.test(currencyGuess) ? currencyGuess : groupCurrency;
+  let currency = /^[A-Z]{3}$/.test(currencyGuess) ? currencyGuess : groupCurrency;
+  // Guardia anti-conversión-fantasma: si el modelo devuelve una moneda distinta
+  // a la del grupo pero la nota NO la menciona explícitamente (p. ej. infirió VND
+  // del nombre "Vietnam" con un monto en AUD), forzamos la moneda del grupo.
+  if (currency !== groupCurrency && !currencyMentioned(text, currency)) {
+    currency = groupCurrency;
+  }
 
   return {
     label: String(p.label ?? "").trim() || "Gasto",
