@@ -1,5 +1,13 @@
 import type { Expense, Member, Settlement } from "./types";
 
+/** Un pago cuenta como saldado en cuanto el deudor lo marca (`pending`), no solo
+ *  cuando el acreedor lo confirma (`confirmed`) — así el que pagó aparece
+ *  "pagado" al instante para todos (modelo optimista estilo Splitwise). Si el
+ *  acreedor rechaza, el pago se ELIMINA del array (removeSettlement), no queda
+ *  como estado, así que basta con contar los que existen. */
+export const settles = (s: Settlement): boolean =>
+  s.status === "confirmed" || s.status === "pending";
+
 /** Cuánto le toca a cada miembro de un gasto concreto. Reparto EXACTO en
  *  centavos: si no divide justo (ej. $10 entre 3), el o los centavos sueltos
  *  se asignan a los primeros participantes de la lista (orden determinista)
@@ -64,9 +72,9 @@ export function computeSettle(
     ids.forEach((id) => (owed[id] += sh[id] || 0));
   }
 
-  // un pago confirmado: 'from' salda su deuda con 'to'
+  // un pago (marcado o confirmado): 'from' salda su deuda con 'to'
   for (const s of settlements) {
-    if (s.status !== "confirmed") continue;
+    if (!settles(s)) continue;
     if (paid[s.from] != null) paid[s.from] += Number(s.amount || 0);
     if (owed[s.to] != null) owed[s.to] += Number(s.amount || 0);
   }
@@ -131,9 +139,9 @@ export function directTransfers(
     }
   }
 
-  // Pagos confirmados: 'from' ya pagó a 'to' → reduce esa deuda.
+  // Pagos (marcados o confirmados): 'from' ya pagó a 'to' → reduce esa deuda.
   for (const s of settlements) {
-    if (s.status !== "confirmed") continue;
+    if (!settles(s)) continue;
     add(s.to, s.from, Number(s.amount || 0));
   }
 
@@ -171,7 +179,7 @@ function paidTowardExpense(
   let paid = 0;
   for (const s of settlements) {
     if (s.id === excludeSettlementId) continue;
-    if (s.status !== "confirmed" || s.from !== fromId) continue;
+    if (!settles(s) || s.from !== fromId) continue;
     if (toId && s.to !== toId) continue;
     const ep = s.expensePayments?.find((x) => x.expenseId === expenseId);
     if (ep) paid += Number(ep.amount || 0);
@@ -259,7 +267,7 @@ export function fifoExpenseIdsForAmount(
   const ids = members.map((m) => m.id);
   const alreadySettled = new Set<string>();
   for (const s of settlements) {
-    if (s.status === "confirmed" && s.from === fromId) {
+    if (settles(s) && s.from === fromId) {
       (s.expenseIds ?? []).forEach((id) => alreadySettled.add(id));
     }
   }

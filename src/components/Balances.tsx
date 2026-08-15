@@ -38,6 +38,10 @@ export function Balances({ group }: { group: Group }) {
     pending.find((s) => s.from === from && s.to === to);
   // Pagos pendientes que ME toca confirmar (soy quien cobra).
   const toConfirm = pending.filter((s) => s.to === group.meId);
+  // Pagos que YO marqué como hechos (o puse por otro) y aún no confirma el
+  // acreedor → aparecen como "Pagado · esperando confirmación" (modelo optimista:
+  // ya cuentan como saldados en los saldos; el acreedor puede rechazar).
+  const myPending = pending.filter((s) => s.from === group.meId || s.settledBy === group.meId);
 
   const [mark, setMark] = useState<{ from: string; to: string; amount: number; confirmReceipt?: boolean } | null>(null);
   // Otras deudas hacia el MISMO acreedor que puedo cubrir en el mismo pago
@@ -138,7 +142,7 @@ export function Balances({ group }: { group: Group }) {
           <div className="text-xs uppercase tracking-widest font-mono text-muted">{t("bal.toSettle")}</div>
         </div>
 
-        {transfers.length === 0 && pending.length === 0 ? (
+        {transfers.length === 0 ? (
           <div className="text-sm text-muted py-8 text-center">{t("bal.allSettled")}</div>
         ) : (
           <div className="mt-3 space-y-3">
@@ -219,6 +223,37 @@ export function Balances({ group }: { group: Group }) {
           </div>
         )}
       </div>
+
+      {/* Pagos que YO marqué (esperando que el acreedor confirme). Ya cuentan como
+          saldados; muestro el estado "Pagado" para que no aparezca como pendiente. */}
+      {myPending.length > 0 && (
+        <div className="glass rounded-3xl p-5">
+          <div className="text-xs uppercase tracking-widest font-mono text-muted">{t("pay.paidAwaitingTitle")}</div>
+          <div className="mt-3 space-y-2.5">
+            {myPending.map((s) => (
+              <div key={s.id} className="text-sm border-b border-[color:var(--line)] last:border-0 pb-2.5 last:pb-0">
+                <div className="flex items-center gap-2">
+                  <Icon name="check" size={15} className="shrink-0" style={{ color: "#0A8B5E" }} />
+                  <span className="min-w-0">
+                    {s.settledBy && s.settledBy !== s.from
+                      ? t("pay.youPaidForAwaiting", { who: name(s.from), amt: money(s.amount), to: name(s.to) })
+                      : t("pay.youPaidAwaiting", { amt: money(s.amount), to: name(s.to) })}
+                  </span>
+                  <span className="font-mono font-bold ml-auto shrink-0" style={{ color: "#0A8B5E" }}>{money(s.amount)}</span>
+                </div>
+                <div className="flex items-center gap-2 mt-1 pl-7">
+                  <span className="text-xs text-muted inline-flex items-center gap-1">
+                    <Icon name="clock" size={12} /> {t("pay.awaiting")}
+                  </span>
+                  <button onClick={() => rejectS(s.id)} className="lk text-xs text-muted ml-auto">
+                    {t("pay.undoPaid")}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Log de pagos: historial completo (con fecha) filtrable por persona,
           para ver quién pagó qué y cuándo. */}
