@@ -99,7 +99,7 @@ Bloquean lanzamiento serio / publicación en stores.
 - ✅ **Push nativo (APNs)** — resuelto. `@capacitor/push-notifications` + `device_push_tokens` + `send-push` (v50)/`daily-reminders` (v42) firmando JWT ES256 con la `.p8`. **Bug del `\n` en `APNS_TEAM_ID` arreglado con `.trim()` defensivo (2026-08-14); verificado end-to-end en iPhone.**
 - ✅ **Saga de rechazos resuelta (2026-07/08):** **2.1(a)** login (path email+password para el demo account `demo.review@settlia.app`) · **3.1.2** link EULA en la App Description (metadata) · **2.3.10 / 3.1.2(c)** (referencia Android en la descripción + prominencia del monto/trial en el paywall) — todos corregidos y **la app fue aprobada**.
 - ✅ **Disponibilidad:** re-habilitada en Pricing & Availability (estaba "Removed from Sale"). **EU:** requiere **DSA "Trader Status"** — enviado, **"In Review"** por Apple (algunos países EU no visibles hasta que se apruebe).
-- ⬜ **Sign in with Apple** — código listo (`App.entitlements` + OAuth `app.settlia.pwa://`); falta activar la capability en el App ID del portal Apple (opcional, no bloquea).
+- ✅ **Sign in with Apple** — listo y funcionando: entitlement `com.apple.developer.applesignin` + OAuth nativo (`app.settlia.pwa://`), capability activada en el App ID del portal Apple.
 - ⬜ **Developer name → Organization** — hoy figura como persona; cambiar a cuenta de organización cuando se forme la empresa (requiere D-U-N-S).
 - ⬜ **ASO keywords** — actualizar keywords en la próxima versión (`splitwise,tricount,bill,receipt,scan,roommate,travel,trip,share,cost,tab,rent,friends,settle,owe`) — bloqueadas a la versión live 1.1.
 
