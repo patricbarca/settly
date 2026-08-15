@@ -1,7 +1,9 @@
 # SettliA — Roadmap
 
-> Estado vivo del producto. La app ya está online como PWA en **app.settlia.app**
-> (landing en **settlia.app**). Esto ordena lo que falta de aquí al lanzamiento.
+> Estado vivo del producto. La app está **LIVE** como PWA en **app.settlia.app**
+> (landing en **settlia.app**) y **publicada en la App Store** (iOS, Apple ID
+> `6787267468`). Foco actual: **growth** (ads, ASO, contenido) + Android + pulir
+> features. Android (Google Play) aún no publicado.
 
 Leyenda: ✅ hecho · 🔧 código listo, falta desplegar · ⬜ por hacer
 
@@ -11,7 +13,7 @@ Leyenda: ✅ hecho · 🔧 código listo, falta desplegar · ⬜ por hacer
 Bloquean lanzamiento serio / publicación en stores.
 
 - ✅ **Web Push** — desplegado (`send-push` + `push_subscriptions` + VAPID).
-- ⚠️ **Recordatorios diarios** — código listo; **despliegue SIN VERIFICAR (2026-07-15)**. Comprobar en el dashboard: función `daily-reminders` en la lista, `select jobname, schedule, active from cron.job;` con un job activo, y secret `CRON_SECRET`. (Distinto del botón manual "Recordar" en Friends, que es one-shot vía `send-push` y sí está desplegado.)
+- ⚠️ **Recordatorios diarios** — función `daily-reminders` desplegada (**v42, 2026-08-14**, con el fix `.trim()` de los secretos APNs). **Falta verificar el cron:** `select jobname, schedule, active from cron.job;` con un job activo + secret `CRON_SECRET`. (Distinto del botón manual "Recordar" en Friends, one-shot vía `send-push`.)
 - ✅ **`parse-expense`** — desplegado con "por persona" forzado + few-shot.
 - ✅ **`scan-receipt`** — desplegado, escaneo de tickets funcionando (Groq Llama 4 Scout).
 - ✅ **Supabase Auth** — Site URL + Redirect URLs en `https://app.settlia.app`; origen Google OAuth añadido.
@@ -63,10 +65,13 @@ Bloquean lanzamiento serio / publicación en stores.
 - ✅ **Leaked password protection** — activado en Supabase Dashboard → Authentication → Password Settings.
 - ⬜ **Cabeceras de seguridad / CSP** (HSTS, CSP, X-Frame-Options, Referrer-Policy) — GitHub Pages no las permite; **Cloudflare Pages sí** (otra razón para migrar el hosting, Fase 2).
 - ✅ **`npm audit`** — 0 vulnerabilidades (verificado 2026-07-01).
-- ✅ **Quota/abuso de IA** — límites en `plan.ts`: free 3/mes, Pro scan 30 · voice 30 · text 50/mes. Edge Functions pendientes de rate-limit server-side.
+- ✅ **Quota/abuso de IA** — límites: free 3/mes, Pro scan 30 · voice 30 · text 50/mes. **El contador ya es server-side** (Supabase `ai_usage` + RPC atómica `consume_ai`, 2026-08) → no reseteable borrando datos del navegador. **Pendiente (no crítico):** que las Edge Functions de IA llamen a `consume_ai` server-side para enforcement 100% estricto (hoy lo dispara el cliente antes de invocar la función).
 - ✅ HTTPS · RLS por grupo · borrar cuenta (RGPD) · recibos en bucket privado · service-role solo en servidor.
 
 ## Fase 2 — Lanzamiento web (growth)
+- 🔧 **Apple Search Ads** — **campañas iniciadas (2026-08):** Brand + Competitors en marcha (Search Results, Advanced). Pendiente: completar Generic + Discovery, ajustar pujas/keywords, medir CPT/CPA/CPI. Conceptos (CPA/CPT/CPI/etc.) documentados en CLAUDE.md.
+- ✅ **Link-in-bio + redirect Instagram** — `settlia.app/links` (link-in-bio propio) y `settlia.app/ios` (redirect con `itms-apps://` para el navegador in-app de Instagram, que renderiza en blanco los links `https` de la App Store). Badges de App Store en la landing apuntando a `apps.apple.com/app/id6787267468`.
+- ✅ **Artículos de blog** — `blog-splitwise-alternative.html` (EN) + `blog-dividir-cuenta-restaurante.html` (ES) publicados en la landing + sitemap.
 - ⬜ **Migrar hosting a Cloudflare Pages + privatizar repos** — pasar `settly` y `settly-landing` a Cloudflare Pages (conectado al mismo repo de GitHub; el `git push` no cambia) para poder **poner los repos en privado gratis** y quitar el límite de ancho de banda de GitHub Pages. Implica: conectar repo, build (`npm run build` → `dist`), variables `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`, `_redirects` (`/* /index.html 200`), y mover/recrear el DNS (idealmente nameservers a Cloudflare, aprovechando el correo del dominio). Las Redirect URLs de Supabase no cambian. **Disparador: el día que quieras privatizar o antes de empujar tráfico (Product Hunt/ads); hazlo con poco tráfico, el cutover es indoloro.** Alternativa rápida sin migrar: GitHub Pro (~4 USD/mes) para Pages desde repo privado.
 - ⬜ **Viralidad por invitaciones** — pulir el flujo de compartir (1 toque, valor en 10 s).
 - ⬜ **Comunidades nicho** — pisos compartidos, estudiantes/Erasmus, viajeros, expats (AUD → Australia).
@@ -86,18 +91,17 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ **20 testers durante 14 días** (prueba cerrada) antes de producción.
 - ⬜ `assetlinks.json` si se quiere verificación de dominio / app links.
 
-## Fase 4 — App Store (~99 USD/año)
-- ✅ Empaquetar con **Capacitor** (WKWebView + plugins) — `ios/App` scaffolded, `codemagic.yaml` con workflow `ios-testflight` (build + auto-submit a TestFlight). Íconos/splash nativos reemplazados (placeholder de Capacitor → navy `#0D1B2A` + logo real); permisos `NSCameraUsageDescription`/`NSMicrophoneUsageDescription`/`NSPhotoLibraryUsageDescription` agregados a `Info.plist` (faltaban — hubieran causado crash/rechazo).
-- ✅ **Sign in with Apple**: entitlement `com.apple.developer.applesignin` ya está en `App.entitlements` y el flujo OAuth nativo (`app.settlia.pwa://` + PKCE) ya soporta Apple. **Pendiente del lado de Apple**: habilitar la capability "Sign In with Apple" en el App ID desde el Apple Developer portal (paso manual, no se puede hacer desde el repo).
-- ⬜ Borrar cuenta in-app (Fase 0, ya implementado) + **App Privacy label** (cuestionario en App Store Connect), capturas de pantalla por tamaño de dispositivo, descripción/keywords — todo pendiente en App Store Connect.
-- ⬜ **Cuenta de Apple Developer Program** ($99/año) + registrar el app record en App Store Connect (`app.settlia.pwa`) + integración `codemagic_appstore` en Codemagic (API key de App Store Connect: Issuer ID + Key ID + .p8).
-- ⚠️ Cuidar guía 4.2 ("minimum functionality"): el push/offline/instalación ayudan.
-- ✅ **Push en la app nativa** — resuelto con **APNs directo** (`@capacitor/push-notifications` + `device_push_tokens` + `send-push`/`daily-reminders` firmando JWT ES256 con la `.p8`). El Web Push no funciona en WKWebView; APNs es el canal nativo. Secrets `APNS_KEY_P8`/`APNS_KEY_ID`/`APNS_TEAM_ID` puestos; `daily-reminders` **pendiente de re-deploy manual** con el código APNs.
-- 🚀 **En proceso de review — saga de rechazos (2026-07/08):**
-  1. **2.1(a)** — Apple no podía iniciar sesión (solo OAuth/OTP, sin user/pass fijo). ✅ **Resuelto:** path email+password oculto (`Login.tsx` `pwMode` + `signInPassword`) para la cuenta demo `demo.review@settlia.app` (verificado: el login con contraseña funciona).
-  2. **3.1.2 (Subscriptions)** — el paywall vende suscripciones auto-renovables pero **faltaba el link a los Términos de Uso (EULA) en la METADATA** (la App Description, no el link in-app que ya existía en el paywall). ✅ **Resuelto:** se añadió a la App Description el bloque de suscripción (precios/auto-renovación) + link al **EULA estándar de Apple** (`apple.com/legal/.../stdeula/`) + Privacy Policy. License Agreement = Apple standard EULA. `terms.html` (landing) ya tenía las cláusulas de suscripción completas.
-  - **Cascada de IAP:** cada vez que el app se rechaza, las 2 suscripciones + el subscription group vuelven a **"Rejected"** automáticamente (no es un problema propio de ellas). Salen de "Rejected" **solo al re-enviar el app** (pasan a "Waiting for Review"), y **solo en ese estado el sandbox las sirve** para probar la compra.
-  - Las 2 suscripciones + grupo **ya están adjuntas al mismo envío** que la versión (iOS Submission → 4 items). Re-enviado con el fix del EULA + mensaje al revisor.
+## Fase 4 — App Store (~99 USD/año) — ✅ **PUBLICADA / LIVE (2026-08)**
+> La app **ya está aprobada y publicada** en la App Store (Apple ID `6787267468`, `app.settlia.pwa`). Descargable en `https://apps.apple.com/app/id6787267468`.
+- ✅ Empaquetar con **Capacitor** (WKWebView + plugins) — `ios/App`, `codemagic.yaml` con workflow `ios-testflight` (build + auto-submit a TestFlight). Íconos/splash nativos + permisos `NSCamera/Microphone/PhotoLibrary` en `Info.plist`.
+- ✅ **Cuenta Apple Developer Program** ($99/año) activa + app record en App Store Connect + integración con Codemagic (API key App Store Connect).
+- ✅ **App Privacy label**, capturas por dispositivo, descripción/keywords, Support/Privacy URLs — completados y publicados.
+- ✅ **Push nativo (APNs)** — resuelto. `@capacitor/push-notifications` + `device_push_tokens` + `send-push` (v50)/`daily-reminders` (v42) firmando JWT ES256 con la `.p8`. **Bug del `\n` en `APNS_TEAM_ID` arreglado con `.trim()` defensivo (2026-08-14); verificado end-to-end en iPhone.**
+- ✅ **Saga de rechazos resuelta (2026-07/08):** **2.1(a)** login (path email+password para el demo account `demo.review@settlia.app`) · **3.1.2** link EULA en la App Description (metadata) · **2.3.10 / 3.1.2(c)** (referencia Android en la descripción + prominencia del monto/trial en el paywall) — todos corregidos y **la app fue aprobada**.
+- ✅ **Disponibilidad:** re-habilitada en Pricing & Availability (estaba "Removed from Sale"). **EU:** requiere **DSA "Trader Status"** — enviado, **"In Review"** por Apple (algunos países EU no visibles hasta que se apruebe).
+- ⬜ **Sign in with Apple** — código listo (`App.entitlements` + OAuth `app.settlia.pwa://`); falta activar la capability en el App ID del portal Apple (opcional, no bloquea).
+- ⬜ **Developer name → Organization** — hoy figura como persona; cambiar a cuenta de organización cuando se forme la empresa (requiere D-U-N-S).
+- ⬜ **ASO keywords** — actualizar keywords en la próxima versión (`splitwise,tricount,bill,receipt,scan,roommate,travel,trip,share,cost,tab,rent,friends,settle,owe`) — bloqueadas a la versión live 1.1.
 
 ### Pendientes técnicos / CI (anotados 2026-07)
 - 🔧 **Codemagic ya NO construye automáticamente en push a `master`** (`codemagic.yaml` → `branch_patterns include: false`). Solo build manual (Start new build) o por API. Motivo: poder desplegar cambios de la PWA a `master` sin generar builds de iOS mientras la app está en review. **Para reactivar el auto-build:** volver a poner `include: true`.
@@ -125,8 +129,9 @@ Bloquean lanzamiento serio / publicación en stores.
   - **App Store Connect:** grupo "Settlia Pro" con 2 auto-renovables (Monthly `$6.99`, Annual `$59.99`). Paid Applications Agreement **Active**.
   - **RevenueCat:** entitlement **`pro`** con los 2 productos; **Offering "Current"** con packages Monthly + Annual; API key de App Store Connect ("RevenueCat", rol **Admin**, Key ID `KULP484ST9`, Issuer `b52e2bad-…`) conectada. (Hay un entitlement duplicado "Settlia Pro" sin usar — el código usa `pro` — se puede borrar.)
   - **Codemagic:** `VITE_RC_IOS_KEY` (`appl_…`) en el grupo de variables **`revenuecat`**, importado por el workflow `iOS TestFlight build` (`codemagic.yaml`). El build DEBE llevar esta key o el paywall nativo sale vacío.
-  - **Bloqueo actual:** los productos están en **"Rejected"** (cascada del rechazo del app). Mientras sigan así, **StoreKit no los sirve ni en sandbox** → el paywall nativo muestra "Subscribe" sin precios y no hace nada. **Web (Stripe) muestra las suscripciones bien** — es lo esperado, no un bug. Se desbloquea al re-enviar el app (productos → "Waiting for Review" → sandbox los sirve). Ver Fase 4.
-  - **Para probar la compra:** sandbox tester (App Store Connect → Users and Access → Sandbox → Testers, con un email real controlable, p. ej. alias `+sandbox`) → en el iPhone se mete en **Ajustes → App Store → Sandbox Account** (NO en el Apple ID de arriba) o al pulsar Subscribe.
+  - ✅ **Desbloqueado (2026-08):** con la app aprobada y publicada, los 2 productos salieron de "Rejected" → **StoreKit los sirve**. El paywall nativo muestra precios y permite comprar.
+  - ⬜ **Pendiente:** enroll ambos stores' **Small Business Program** (15% comisión); borrar el entitlement duplicado "Settlia Pro" (el código usa `pro`); `VITE_RC_ANDROID_KEY` para Android; y **sincronizar el Pro de RevenueCat a la tabla `entitlements`** para que `is_pro` (server-side, usado por el contador de IA) lo reconozca — hoy `is_pro` solo lee `entitlements`, así que un Pro nativo no cuenta como Pro para la cuota server-side.
+  - **Para probar la compra:** sandbox tester (App Store Connect → Users and Access → Sandbox → Testers) → en el iPhone en **Ajustes → App Store → Sandbox Account**.
 
 ### Pagos automáticos (opcional, evaluar a futuro)
 - **Modelo A — "mostrar y confirmar" (actual, 0 comisión):** mostramos PayID/banco del que cobra; la persona paga desde su banco (Osko/PayID = instantáneo y gratis en AU) y se confirma. Sin licencia ni custodia de dinero. **Recomendado para esta etapa.**
