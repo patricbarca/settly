@@ -129,10 +129,15 @@ async function fromSession(session: Session) {
   // Avatar: foto guardada en el perfil, o por defecto la de Google.
   const googleAvatar = au.user_metadata?.avatar_url || "";
   const avatar = profile?.avatar?.trim() || googleAvatar;
-  // Si no hay avatar guardado pero Google trae uno, persístelo (para que el
-  // resto de miembros también lo vean). Fire-and-forget.
-  if (!profile?.avatar && googleAvatar) {
-    supabase.from("profiles").update({ avatar: googleAvatar }).eq("id", au.id).then(() => {});
+  // Google a veces bloquea/limita el hotlink de las fotos de perfil
+  // (lh3.googleusercontent.com → 403/429), y entonces la foto sale rota (cae a
+  // iniciales) en web e iOS. Solución: la Edge Function `cache-avatar` baja la
+  // foto UNA vez desde el servidor (donde Google sí la sirve) y la guarda como
+  // data URL en `profiles.avatar`, así dejamos de depender del hotlink.
+  // La invocamos cuando el avatar efectivo sigue siendo una URL de Google
+  // (guardada o recién traída). Fire-and-forget; se auto-repara.
+  if (/googleusercontent\.com/.test(avatar)) {
+    supabase.functions.invoke("cache-avatar", { body: { userId: au.id } }).catch(() => {});
   }
 
   const name =
