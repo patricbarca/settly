@@ -13,7 +13,7 @@ Leyenda: ✅ hecho · 🔧 código listo, falta desplegar · ⬜ por hacer
 Bloquean lanzamiento serio / publicación en stores.
 
 - ✅ **Web Push** — desplegado (`send-push` + `push_subscriptions` + VAPID).
-- ⚠️ **Recordatorios diarios** — función `daily-reminders` desplegada (**v42, 2026-08-14**, con el fix `.trim()` de los secretos APNs). **Falta verificar el cron:** `select jobname, schedule, active from cron.job;` con un job activo + secret `CRON_SECRET`. (Distinto del botón manual "Recordar" en Friends, one-shot vía `send-push`.)
+- ✅ **Recordatorios diarios** — función `daily-reminders` desplegada (**v42, 2026-08-14**, con el fix `.trim()` de los secretos APNs) y **cron VERIFICADO ACTIVO** (`settlia-daily-reminders`, `active=true`, `0 23 * * *` ≈ 9-10am Sydney). Web Push + APNs. (Distinto del botón manual "Recordar" en Friends, one-shot vía `send-push`.)
 - ✅ **`parse-expense`** — desplegado con "por persona" forzado + few-shot.
 - ✅ **`scan-receipt`** — desplegado, escaneo de tickets funcionando (Groq Llama 4 Scout).
 - ✅ **Supabase Auth** — Site URL + Redirect URLs en `https://app.settlia.app`; origen Google OAuth añadido.
@@ -30,7 +30,7 @@ Bloquean lanzamiento serio / publicación en stores.
 > **Fase 0 cerrada.** Nota: al mover los nameservers a Cloudflare, el DNS ya está allí — facilita la migración de hosting a Cloudflare Pages (Fase 2).
 
 ## Fase 1 — Producto (UX / robustez)
-- 🔧 **Recibos en Supabase Storage** (evidencia) — **tickets escaneados YA** (`src/lib/storage.ts`, bucket privado `receipts`, URL firmada, `Expense.receiptPath`, `ReceiptButton`; **falta correr `migrate_v5_receipts_storage.sql`**). ✅ **Recibo en el reporte** (2026-08): `ReportModal` muestra una sección "Recibos" con miniaturas (URL firmada) y el CSV lleva columna Recibo sí/no. Pendiente: extender a **comprobantes de pago** (hoy base64 en `settlement.proof`) y **migrar los `proof` base64 viejos**.
+- 🔧 **Recibos en Supabase Storage** (evidencia) — ✅ **tickets escaneados** (`src/lib/storage.ts`, bucket privado `receipts` **creado y verificado**, URL firmada, `Expense.receiptPath`, `ReceiptButton`; `migrate_v5_receipts_storage.sql` **ya aplicada**). ✅ **Recibo en el reporte** (2026-08): `ReportModal` muestra sección "Recibos" con miniaturas + CSV columna sí/no. **Solo pendiente:** extender a **comprobantes de pago** (hoy base64 en `settlement.proof`) y **migrar los `proof` base64 viejos** a Storage.
 - ✅ **Recurrentes → eventos** — `processRecurring` registra cada pasada en Actividad + Notificaciones + push (`recurring_generated`).
 - ⬜ **Recurrentes por servidor** (opcional) — cron que materialice las ocurrencias aunque nadie abra el grupo.
 - ⬜ **Escaneo por lote / bandeja de recibos** — subir MUCHOS recibos de una y asignarlos después. Reutiliza `scan-receipt` + `ItemizedExpenseEditor` (la asignación por ítem/persona no cambia); es básicamente `N imágenes → N escaneos en paralelo → cola de "recibos por asignar" → asignas cada uno → se crean N gastos`.
