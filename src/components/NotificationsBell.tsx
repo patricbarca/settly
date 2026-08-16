@@ -39,6 +39,7 @@ const ACTIVITY_ICON: Record<ActivityType, IconName> = {
   expense_edited: "edit",
   expense_deleted: "trash",
   payment_made: "card",
+  payment_rejected: "close",
   marked_ready: "check",
   unmarked_ready: "clock",
   review_requested: "flag",
@@ -85,6 +86,8 @@ export function NotificationsBell({ open, onClose }: { open: boolean; onClose: (
       return t("notif.expense_added", { name: n.actorName ?? "?", label: n.label ?? "", amt });
     if (n.type === "payment_made")
       return t("notif.payment_made", { name: n.actorName ?? "?", amt, to: toDisplay });
+    if (n.type === "payment_rejected")
+      return t("notif.payment_rejected", { name: n.actorName ?? "?", amt });
     if (n.type === "delete_requested")
       return t("notif.delete_requested", { name: n.actorName ?? "?", label: n.label ?? "" });
     if (n.type === "recurring_generated")
@@ -160,7 +163,7 @@ export function NotificationsBell({ open, onClose }: { open: boolean; onClose: (
                               style={{ background: "var(--glass)" }}
                             >
                               <Icon
-                                name={n.type === "payment_made" ? "card" : n.type === "review_requested" ? "flag" : n.type === "delete_requested" ? "trash" : n.type === "recurring_generated" ? "repeat" : "plus"}
+                                name={n.type === "payment_made" ? "card" : n.type === "payment_rejected" ? "close" : n.type === "review_requested" ? "flag" : n.type === "delete_requested" ? "trash" : n.type === "recurring_generated" ? "repeat" : "plus"}
                                 size={16}
                               />
                             </span>

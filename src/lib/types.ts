@@ -142,7 +142,7 @@ export interface Settlement {
   expensePayments?: { expenseId: string; amount: number }[];
 }
 
-export type NotificationType = "expense_added" | "payment_made" | "review_requested" | "delete_requested" | "recurring_generated";
+export type NotificationType = "expense_added" | "payment_made" | "payment_rejected" | "review_requested" | "delete_requested" | "recurring_generated";
 
 export interface AppNotification {
   id: string;
@@ -174,6 +174,7 @@ export type ActivityType =
   | "expense_edited"
   | "expense_deleted"
   | "payment_made"
+  | "payment_rejected"
   | "marked_ready"
   | "unmarked_ready"
   | "review_requested"

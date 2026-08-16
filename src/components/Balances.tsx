@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Group, Settlement } from "../lib/types";
 import { computeSettle, directTransfers } from "../lib/split";
-import { setSettlementStatus, removeSettlement } from "../lib/store";
+import { setSettlementStatus, removeSettlement, rejectSettlement } from "../lib/store";
 import { useUser } from "../lib/auth";
 import { memberInitials, sortedMembers, fmtDate, displayName } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -59,7 +59,9 @@ export function Balances({ group }: { group: Group }) {
     logFilter === "all" ? sortedConfirmed : sortedConfirmed.filter((s) => s.from === logFilter || s.to === logFilter);
 
   const confirmS = (id: string) => setSettlementStatus(group.id, id, "confirmed");
-  const rejectS = (id: string) => removeSettlement(group.id, id);
+  // Rechazo por el acreedor → avisa al deudor. "Deshacer" del deudor → sin aviso.
+  const rejectS = (id: string) => rejectSettlement(group.id, id);
+  const undoMyPayment = (id: string) => removeSettlement(group.id, id);
 
   return (
     <section className="space-y-3">
@@ -156,31 +158,25 @@ export function Balances({ group }: { group: Group }) {
                   <b>{name(tr.to)}</b>
                   <span className="font-mono font-bold ml-auto">{money(tr.amount)}</span>
                 </div>
-                {/* Solo el DEUDOR ve "Pagar" y "Marcar pagado". Si ya marcó, queda
-                    a la espera de que el acreedor confirme. */}
+                {/* Solo el DEUDOR ve "Pagar". `tr.amount` ya es lo que queda por
+                    saldar (los pagos marcados/pendientes se descuentan), así que
+                    siempre puede pagar el resto — incluso si hay un pago parcial
+                    esperando confirmación (ese se muestra en "Pagado · esperando"). */}
                 {tr.from === group.meId ? (
                   <div className="flex gap-2 mt-1.5 pl-8 items-center">
-                    {pendingFor(tr.from, tr.to) ? (
-                      <span className="text-xs text-muted inline-flex items-center gap-1">
-                        <Icon name="clock" size={13} /> {t("pay.awaiting")}
-                      </span>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => setMark({ from: tr.from, to: tr.to, amount: tr.amount })}
-                          className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift"
-                          style={{ background: "var(--teal)" }}
-                        >
-                          {t("pay.pay")}
-                        </button>
-                        <button
-                          onClick={() => setPaySheet({ to: tr.to, amount: tr.amount })}
-                          className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted"
-                        >
-                          {t("pay.method")}
-                        </button>
-                      </>
-                    )}
+                    <button
+                      onClick={() => setMark({ from: tr.from, to: tr.to, amount: tr.amount })}
+                      className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift"
+                      style={{ background: "var(--teal)" }}
+                    >
+                      {t("pay.pay")}
+                    </button>
+                    <button
+                      onClick={() => setPaySheet({ to: tr.to, amount: tr.amount })}
+                      className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted"
+                    >
+                      {t("pay.method")}
+                    </button>
                   </div>
                 ) : tr.to === group.meId ? (
                   /* Me deben a MÍ: puedo registrar que ya me pagaron (queda
@@ -245,7 +241,7 @@ export function Balances({ group }: { group: Group }) {
                   <span className="text-xs text-muted inline-flex items-center gap-1">
                     <Icon name="clock" size={12} /> {t("pay.awaiting")}
                   </span>
-                  <button onClick={() => rejectS(s.id)} className="lk text-xs text-muted ml-auto">
+                  <button onClick={() => undoMyPayment(s.id)} className="lk text-xs text-muted ml-auto">
                     {t("pay.undoPaid")}
                   </button>
                 </div>

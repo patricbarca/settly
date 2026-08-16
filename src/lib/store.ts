@@ -589,6 +589,44 @@ export async function removeSettlement(groupId: string, settlementId: string) {
   }
 }
 
+/** Rechazo de un pago por el ACREEDOR: elimina el settlement (la deuda reaparece)
+ *  y avisa al DEUDOR (notificación in-app + push) de que su pago fue rechazado.
+ *  Se hace en un único `updateGroup` (blob) porque además de borrar hay que
+ *  añadir la notificación; el rechazo es una acción deliberada y poco frecuente.
+ *  El "Deshacer" del propio deudor sigue usando `removeSettlement` (sin aviso). */
+export function rejectSettlement(groupId: string, settlementId: string) {
+  const g0 = state.groups.find((x) => x.id === groupId);
+  const s = g0?.settlements?.find((x) => x.id === settlementId);
+  if (!g0 || !s) {
+    removeSettlement(groupId, settlementId);
+    return;
+  }
+  const debtorName = g0.members.find((m) => m.id === s.from)?.name;
+  const creditorName = g0.members.find((m) => m.id === g0.meId)?.name;
+  updateGroup(groupId, (g) => ({
+    ...g,
+    settlements: (g.settlements ?? []).filter((x) => x.id !== settlementId),
+    notifications: [
+      ...(g.notifications ?? []),
+      makeNotif({ type: "payment_rejected", actorId: g.meId, actorName: creditorName, toId: s.from, toName: debtorName, amount: s.amount }),
+    ].slice(-100),
+    activity: withActivity(g, {
+      type: "payment_rejected",
+      actorId: g.meId,
+      actorName: creditorName,
+      toId: s.from,
+      toName: debtorName,
+      amount: s.amount,
+    }),
+  }));
+  notifyGroup(
+    groupId,
+    g0.name,
+    tr("notif.payment_rejected", { name: creditorName ?? "?", amt: money(s.amount, g0.currency) }),
+    "payments"
+  );
+}
+
 export function addRecurring(groupId: string, r: RecurringExpense) {
   updateGroup(groupId, (g) => ({
     ...g,

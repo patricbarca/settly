@@ -25,6 +25,7 @@ export function buildFeed(groups: Group[]): FeedItem[] {
     for (const n of g.notifications ?? []) {
       if (n.actorId && n.actorId === g.meId) continue; // no me notifico a mí mismo
       if (n.type === "delete_requested" && n.toId !== g.meId) continue; // solo al creador
+      if (n.type === "payment_rejected" && n.toId !== g.meId) continue; // solo al deudor rechazado
       if (!isCategoryOn(categoryOf(n.type))) continue; // categoría desactivada por el usuario
       items.push({ ...n, groupId: g.id, groupName: g.name, currency: g.currency });
     }

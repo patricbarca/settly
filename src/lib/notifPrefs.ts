@@ -14,6 +14,7 @@ const TYPE_CATEGORY: Record<string, NotifCategory> = {
   expense_added: "expenses",
   recurring_generated: "expenses",
   payment_made: "payments",
+  payment_rejected: "payments",
   review_requested: "requests",
   delete_requested: "requests",
 };
