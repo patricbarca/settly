@@ -9,6 +9,7 @@ import { enableNativePush, disableNativePush, isNativePushOn, nativePushSupporte
 import { useNotifPrefs, setNotifPref, NOTIF_CATEGORIES } from "../lib/notifPrefs";
 import { memberPays, payLink } from "../lib/pay";
 import { countryList, dialCode, isValidPhone, normalizePhone } from "../lib/countries";
+import { CURRENCIES } from "../lib/currencies";
 import { useT, useLang } from "../lib/i18n";
 import { useTimezonePref, setTimezone, resolveTz, TIMEZONES } from "../lib/tz";
 import { usePlan, FREE_AI_QUOTA, startPortal, useHasStripeSubscription, isNativePlatform } from "../lib/plan";
@@ -76,6 +77,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const [inits, setInits] = useState(myMember?.initials ?? "");
   const [avatar, setAvatar] = useState(user?.avatar ?? "");
   const [country, setCountry] = useState(myMember?.country ?? "");
+  const [mainCurrency, setMainCurrency] = useState(user?.mainCurrency ?? "");
   const [phone, setPhone] = useState(myMember?.phone ?? "");
   const phoneOk = !phone.trim() || isValidPhone(phone, country || undefined);
   // Un borrador por tipo, para que cada método se guarde por separado y no se
@@ -172,6 +174,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
       initials: inits.trim(),
       nick: nick.trim(),
       pays,
+      mainCurrency: mainCurrency || "",
     });
 
     // Reflejo en los grupos para que los demás vean tu nombre/avatar/iniciales/pagos.
@@ -282,6 +285,24 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Moneda principal (para las pills de balance global multi-grupo) */}
+        <div className="mb-4">
+          <label className="text-xs font-semibold text-muted">{t("account.mainCurrency")}</label>
+          <select
+            value={mainCurrency}
+            onChange={(e) => { setMainCurrency(e.target.value); setSaved(false); }}
+            className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1"
+          >
+            <option value="">{t("account.mainCurrencyAuto")}</option>
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>
+                {c.code} · {c.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted mt-1">{t("account.mainCurrencyHint")}</p>
         </div>
 
         {/* Phone */}

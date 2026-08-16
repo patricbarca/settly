@@ -71,6 +71,9 @@ export type User = {
   /** Apodo/nombre visible global (se aplica en todos los grupos). */
   nick?: string;
   pays?: PayMethod[];
+  /** Moneda principal para las pills de balance global (convierte todos los
+   *  grupos a esta moneda). Vacío = usa la moneda del grupo más común. */
+  mainCurrency?: string;
   provider: "email" | "google" | "apple" | "guest";
 };
 
@@ -108,7 +111,7 @@ async function fromSession(session: Session) {
   {
     const full = await supabase
       .from("profiles")
-      .select("name, phone, phone_verified, avatar, country, initials, nick, pays, notif_prefs")
+      .select("name, phone, phone_verified, avatar, country, initials, nick, pays, notif_prefs, main_currency")
       .eq("id", au.id)
       .single();
     if (full.error) {
@@ -171,6 +174,7 @@ async function fromSession(session: Session) {
     phone: profile?.phone || undefined,
     avatar,
     country: (profile?.country as string) || undefined,
+    mainCurrency: (profile?.main_currency as string) || undefined,
     initials: (profile?.initials as string) || undefined,
     nick: (profile?.nick as string) || undefined,
     pays: Array.isArray(profile?.pays) ? (profile!.pays as PayMethod[]) : [],
@@ -321,6 +325,7 @@ export async function setProfileExtra(patch: {
   initials?: string;
   nick?: string;
   pays?: PayMethod[];
+  mainCurrency?: string;
 }) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return;
@@ -330,6 +335,7 @@ export async function setProfileExtra(patch: {
   if (patch.initials !== undefined) row.initials = patch.initials;
   if (patch.nick !== undefined) row.nick = patch.nick;
   if (patch.pays !== undefined) row.pays = patch.pays;
+  if (patch.mainCurrency !== undefined) row.main_currency = patch.mainCurrency;
   if (Object.keys(row).length === 0) return;
   const { error } = await supabase.from("profiles").update(row).eq("id", session.user.id);
   if (error) console.error("[auth] setProfileExtra:", error.message);

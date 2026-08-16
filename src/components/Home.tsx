@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useGroups, useTrashedGroups, setActiveGroup, archiveGroup, recoverGroup, purgeGroup } from "../lib/store";
 import { useArchivedGroups } from "../lib/archivedGroups";
 import { computeSettle, shareFor } from "../lib/split";
@@ -6,6 +6,8 @@ import { groupSettleScore } from "../lib/gamification";
 import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { usePlan, FREE_GROUP_LIMIT } from "../lib/plan";
+import { useUser } from "../lib/auth";
+import { getDailyRate } from "../lib/fxCache";
 import { TrialBanner } from "./TrialBanner";
 import { Logo } from "./Logo";
 import { Icon } from "./Icon";
@@ -50,6 +52,59 @@ export function Home({ tab }: { tab: HomeTab }) {
     setShowPaywall(true);
   }
 
+  // Balance global de todos los grupos activos, convertido a UNA moneda
+  // principal (la del perfil, o la más común entre los grupos). Cada grupo
+  // aporta en SU moneda y se convierte con la tasa diaria cacheada.
+  // NOTA: estos hooks van ANTES del early-return de "contacts" (reglas de hooks).
+  const user = useUser();
+  const mostCommonCur = (() => {
+    const count: Record<string, number> = {};
+    for (const g of active) count[g.currency] = (count[g.currency] || 0) + 1;
+    return Object.entries(count).sort((a, b) => b[1] - a[1])[0]?.[0];
+  })();
+  const mainCur = user?.mainCurrency || mostCommonCur || active[0]?.currency || "$";
+
+  // Aporte por grupo en su propia moneda.
+  const perGroup = active.map((g) => {
+    const ids = g.members.map((m) => m.id);
+    let s = 0;
+    for (const e of g.expenses) s += shareFor(e, ids)[g.meId] || 0;
+    const { net } = computeSettle(g.members, g.expenses, g.settlements ?? []);
+    const mine = net[g.meId] || 0;
+    return { cur: g.currency, spent: s, owe: mine < -0.01 ? -mine : 0, owed: mine > 0.01 ? mine : 0 };
+  });
+  // Suma sin convertir (fallback instantáneo mientras cargan las tasas).
+  const rawTotals = perGroup.reduce(
+    (a, x) => ({ spent: a.spent + x.spent, owe: a.owe + x.owe, owed: a.owed + x.owed }),
+    { spent: 0, owe: 0, owed: 0 }
+  );
+  const [converted, setConverted] = useState<typeof rawTotals | null>(null);
+  const perGroupKey = JSON.stringify(perGroup) + "|" + mainCur;
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const curs = [...new Set(perGroup.map((x) => x.cur))];
+      const rates: Record<string, number> = {};
+      for (const c of curs) rates[c] = c === mainCur ? 1 : (await getDailyRate(c, mainCur)) ?? 1;
+      if (!alive) return;
+      setConverted(
+        perGroup.reduce(
+          (a, x) => {
+            const r = rates[x.cur] ?? 1;
+            return { spent: a.spent + x.spent * r, owe: a.owe + x.owe * r, owed: a.owed + x.owed * r };
+          },
+          { spent: 0, owe: 0, owed: 0 }
+        )
+      );
+    })();
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [perGroupKey]);
+
+  const overallCur = mainCur;
+  const { spent, owe, owed } = converted ?? rawTotals;
+  const showOverall = active.length > 0 && spent > 0.01;
+
   // Pestaña Amigos: pantalla propia con cabecera fija (igual que Actividad),
   // en vez de scrollear junto con el resto del contenido de Grupos.
   if (tab === "contacts") {
@@ -75,22 +130,6 @@ export function Home({ tab }: { tab: HomeTab }) {
   const hasExpense = active.some((g) => g.expenses.length > 0);
   const hasSettlement = active.some((g) => (g.settlements ?? []).some((s) => s.status === "confirmed"));
   const allDone = hasGroup && hasExpense && hasSettlement;
-
-  // Balance global de todos los grupos activos. Asume una sola moneda (la del
-  // primer grupo); con monedas mixtas el total sería orientativo.
-  const overallCur = active[0]?.currency ?? "$";
-  let spent = 0;
-  let owe = 0;
-  let owed = 0;
-  for (const g of active) {
-    const ids = g.members.map((m) => m.id);
-    for (const e of g.expenses) spent += shareFor(e, ids)[g.meId] || 0;
-    const { net } = computeSettle(g.members, g.expenses, g.settlements ?? []);
-    const mine = net[g.meId] || 0;
-    if (mine > 0.01) owed += mine;
-    else if (mine < -0.01) owe += -mine;
-  }
-  const showOverall = active.length > 0 && spent > 0.01;
 
   return (
     <div className="max-w-2xl mx-auto px-4 pb-10">

@@ -666,6 +666,9 @@ const DICT: Record<string, { es: string; en: string }> = {
   "offline.banner": { es: "Sin conexión · los cambios se sincronizarán al reconectar", en: "Offline · changes will sync when you reconnect" },
 
   "account.country": { es: "País de residencia", en: "Country of residence" },
+  "account.mainCurrency": { es: "Moneda principal", en: "Main currency" },
+  "account.mainCurrencyAuto": { es: "Automática (la más usada)", en: "Automatic (most used)" },
+  "account.mainCurrencyHint": { es: "Las pills de balance de la pantalla de inicio convierten todos tus grupos a esta moneda.", en: "The balance pills on the home screen convert all your groups to this currency." },
   "account.countryNone": { es: "Sin especificar", en: "Not set" },
   "account.phone": { es: "Teléfono", en: "Phone" },
   "account.phoneHint": { es: "Incluye el prefijo del país (ej. +61). Solo valida el formato.", en: "Include the country code (e.g. +61). Format is validated only." },
