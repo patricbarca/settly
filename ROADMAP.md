@@ -142,7 +142,7 @@ Bloquean lanzamiento serio / publicación en stores.
 - ✅ Borrar `PayMethodModal.tsx` (huérfano; edición de métodos solo en perfil) — hecho 2026-08.
 - ⬜ Migrar `settlement.proof` base64 → Storage (con Fase 1).
 - ✅ Concurrencia de `processRecurring` (2026-08): IDs deterministas por ocurrencia (`recur_{ruleId}_{fecha}`) + guardia de idempotencia → dos dispositivos que generan la misma ocurrencia producen el mismo gasto (mismo id), así el last-write-wins del blob deja uno solo. Sin cambio de servidor.
-- ⬜ **Concurrencia — Fase 2**: extender el patrón atómico (`SELECT ... FOR UPDATE` + parche puntual) a miembros, settlements, recurrentes y notificaciones; hoy siguen en el `updateGroup` de blob completo (ver Fase 1).
+- 🔧 **Concurrencia — Fase 2** (parcial): ✅ **fix del clobber de pagos (2026-08)** — `persist`/`syncOutbox` ya no pueden borrar un settlement con una escritura de blob vieja; van por la RPC `update_group_data` que UNE por id settlements/notifications/activity con el servidor (`migrate_v12`). **Pendiente:** dar el mismo trato de merge/atómico a **miembros y expenses** en el blob (hoy una escritura de blob vieja todavía podría revertir un cambio de miembro/gasto de otro dispositivo — menos crítico que perder un pago); y **avisar al usuario** cuando una escritura falla (hoy se reintenta silenciosa vía outbox).
 
 ---
 
