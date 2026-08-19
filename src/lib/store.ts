@@ -132,10 +132,9 @@ async function syncOutbox() {
     for (const groupId of pending) {
       const g = state.groups.find((g) => g.id === groupId);
       if (!g) { synced.push(groupId); continue; }
-      const { error } = await supabase
-        .from("groups")
-        .update({ data: g, updated_at: new Date().toISOString() })
-        .eq("id", g.id);
+      // Vía RPC que UNE por id los arrays críticos (settlements/notifs/activity)
+      // con el servidor → una escritura de blob vieja no puede borrar un pago.
+      const { error } = await supabase.rpc("update_group_data", { p_group_id: g.id, p_data: g });
       if (!error) synced.push(groupId);
     }
     if (synced.length) await idbClearFromOutbox(synced);
@@ -161,11 +160,12 @@ function persist(group: Group) {
     idbAddToOutbox(group.id).catch(() => {});
     return;
   }
+  // Vía RPC que preserva/une por id los arrays críticos (settlements, notifs,
+  // activity) con el servidor → una escritura de blob completo con datos viejos
+  // NUNCA borra un pago ya guardado por otro dispositivo (fix del clobber).
   supabase
-    .from("groups")
-    .update({ data: group, updated_at: new Date().toISOString() })
-    .eq("id", group.id)
-    .then(({ error }) => {
+    .rpc("update_group_data", { p_group_id: group.id, p_data: group })
+    .then(({ error }: { error: unknown }) => {
       if (error) {
         console.error("persist:", error);
         idbAddToOutbox(group.id).catch(() => {});
