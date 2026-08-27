@@ -50,6 +50,10 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Balance explainer: botón "?" que desglosa el saldo y las transferencias
+- **`BalanceExplainer.tsx`** — botón "?" en cada persona de Balances → modal con el desglose: **parte de cada gasto** (con "entre N"), lo que **adelantó**, **pagos hechos/recibidos**, y el **saldo resultante** (le queda por pagar / le deben / al día). Reactivo: recalcula desde `shareFor`/`computeSettle`/`settlements`, se actualiza en vivo con cada pago. No guarda nada.
+- **`TransferExplainer.tsx`** — botón "?" en cada fila de "Para saldar" → explica por qué existe ese pago. En **Simplificado**: nota de que se agrupan deudas para minimizar transferencias + netos de deudor/acreedor + aviso "puede cambiar cuando otro pague" + hint de modo Directo. En **Directo**: lista los gastos concretos que componen la deuda (`expenseDebtsBetween`). Botón "Ver desglose de {deudor}" abre el `BalanceExplainer`. Strings `explain.*`/`explainTr.*`. Ataca la confusión del reordenamiento de saldos en modo Simplificado.
+
 ### Fix clobber de pagos: escrituras de blob completo ya no pueden borrar un settlement
 - **Síntoma real (grupo Canberrita Home):** Javi marcó un pago, llegó la notificación push (llamada aparte a `send-push`), pero el pago **nunca quedó en la DB** — ni settlement, ni actividad, ni para confirmar. Nada, ni en web ni iOS.
 - **Causa raíz:** `persist()` y `syncOutbox()` (`store.ts`) escribían el **JSON COMPLETO** del grupo (`update ... set data = <copia local>`). Aunque los pagos se añaden con la RPC atómica `add_settlement`, **cualquier** escritura de blob posterior desde un cliente con datos viejos (otro dispositivo, o un back-fill SQL) **sobrescribía todo el `data`**, borrando el settlement recién añadido → pago perdido en silencio. Es el "clobber" que ya advertía CLAUDE.md.

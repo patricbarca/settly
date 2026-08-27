@@ -12,6 +12,7 @@ import { MarkPaidModal } from "./MarkPaidModal";
 import { PaySheet } from "./PaySheet";
 import { EditPaymentExpensesModal } from "./EditPaymentExpensesModal";
 import { BalanceExplainer } from "./BalanceExplainer";
+import { TransferExplainer } from "./TransferExplainer";
 
 export function Balances({ group }: { group: Group }) {
   const t = useT();
@@ -55,6 +56,7 @@ export function Balances({ group }: { group: Group }) {
   const [paySheet, setPaySheet] = useState<{ to: string; amount: number } | null>(null);
   const [editSettlement, setEditSettlement] = useState<Settlement | null>(null);
   const [explain, setExplain] = useState<string | null>(null);
+  const [explainTr, setExplainTr] = useState<{ from: string; to: string; amount: number } | null>(null);
   const [logFilter, setLogFilter] = useState<string>("all");
   const sortedConfirmed = [...confirmed].sort((a, b) => b.date.localeCompare(a.date));
   const filteredLog =
@@ -169,6 +171,14 @@ export function Balances({ group }: { group: Group }) {
                   <Avatar name={name(tr.to)} avatar={member(tr.to)?.avatar} initials={memberInitials(member(tr.to) ?? { name: name(tr.to) })} size={24} />
                   <b>{name(tr.to)}</b>
                   <span className="font-mono font-bold ml-auto">{money(tr.amount)}</span>
+                  <button
+                    onClick={() => setExplainTr({ from: tr.from, to: tr.to, amount: tr.amount })}
+                    className="h-6 w-6 rounded-full glass flex items-center justify-center text-muted hover-lift shrink-0"
+                    title={t("explain.button")}
+                    aria-label={t("explain.button")}
+                  >
+                    <Icon name="help" size={13} />
+                  </button>
                 </div>
                 {/* Solo el DEUDOR ve "Pagar". `tr.amount` ya es lo que queda por
                     saldar (los pagos marcados/pendientes se descuentan), así que
@@ -351,6 +361,16 @@ export function Balances({ group }: { group: Group }) {
       )}
       {explain && (
         <BalanceExplainer group={group} memberId={explain} onClose={() => setExplain(null)} />
+      )}
+      {explainTr && (
+        <TransferExplainer
+          group={group}
+          from={explainTr.from}
+          to={explainTr.to}
+          amount={explainTr.amount}
+          onClose={() => setExplainTr(null)}
+          onExplainMember={(id) => setExplain(id)}
+        />
       )}
       {mark && (
         <MarkPaidModal
