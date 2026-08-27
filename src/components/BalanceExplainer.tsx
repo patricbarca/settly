@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Group } from "../lib/types";
 import { shareFor } from "../lib/split";
 import { displayName } from "../lib/format";
@@ -20,6 +21,7 @@ export function BalanceExplainer({
 }) {
   const t = useT();
   const money = useGroupMoney(group);
+  const [showHelp, setShowHelp] = useState(false);
   const ids = group.members.map((m) => m.id);
   const me = group.members.find((m) => m.id === memberId);
   const settles = (s: { status: string }) => s.status === "confirmed" || s.status === "pending";
@@ -66,9 +68,31 @@ export function BalanceExplainer({
   return (
     <Overlay onClose={onClose}>
       <div className="glass-strong rounded-3xl w-full max-w-sm p-6 anim-pop max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <h3 className="font-display text-xl font-bold mb-4">
-          {t("explain.title", { name: me ? displayName(me) : "?" })}
-        </h3>
+        <div className="flex items-center gap-2 mb-4">
+          <h3 className="font-display text-xl font-bold flex-1">
+            {t("explain.title", { name: me ? displayName(me) : "?" })}
+          </h3>
+          <button
+            onClick={() => setShowHelp((v) => !v)}
+            className="h-7 w-7 rounded-full glass flex items-center justify-center text-muted hover-lift shrink-0"
+            title={t("explain.help.title")}
+            aria-label={t("explain.help.title")}
+          >
+            <Icon name="help" size={14} />
+          </button>
+        </div>
+
+        {/* Leyenda: qué significa cada línea */}
+        {showHelp && (
+          <div className="glass rounded-2xl p-3 mb-3 text-xs text-muted space-y-1.5">
+            <div className="font-semibold text-[color:var(--ink)]">{t("explain.help.title")}</div>
+            <p>• {t("explain.help.share")}</p>
+            <p>• {t("explain.help.fronted")}</p>
+            <p>• {t("explain.help.made")}</p>
+            <p>• {t("explain.help.received")}</p>
+            <p>• {t("explain.help.result")}</p>
+          </div>
+        )}
 
         {/* Parte de los gastos */}
         <div className="glass rounded-2xl p-3 mb-3">
