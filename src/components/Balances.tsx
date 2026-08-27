@@ -11,6 +11,7 @@ import { Avatar } from "./Avatar";
 import { MarkPaidModal } from "./MarkPaidModal";
 import { PaySheet } from "./PaySheet";
 import { EditPaymentExpensesModal } from "./EditPaymentExpensesModal";
+import { BalanceExplainer } from "./BalanceExplainer";
 
 export function Balances({ group }: { group: Group }) {
   const t = useT();
@@ -53,6 +54,7 @@ export function Balances({ group }: { group: Group }) {
       .map((o) => ({ from: o.from, amount: o.amount }));
   const [paySheet, setPaySheet] = useState<{ to: string; amount: number } | null>(null);
   const [editSettlement, setEditSettlement] = useState<Settlement | null>(null);
+  const [explain, setExplain] = useState<string | null>(null);
   const [logFilter, setLogFilter] = useState<string>("all");
   const sortedConfirmed = [...confirmed].sort((a, b) => b.date.localeCompare(a.date));
   const filteredLog =
@@ -126,11 +128,21 @@ export function Balances({ group }: { group: Group }) {
                     </span>
                   </span>
                 </span>
-                <span
-                  className="font-mono font-bold text-right shrink-0"
-                  style={{ color: ok ? "var(--muted)" : v > 0 ? "#0A8B5E" : "#D14444" }}
-                >
-                  {ok ? t("bal.uptodate") : v > 0 ? `+${money(v)}` : `−${money(-v)}`}
+                <span className="flex items-center gap-1.5 shrink-0">
+                  <span
+                    className="font-mono font-bold text-right"
+                    style={{ color: ok ? "var(--muted)" : v > 0 ? "#0A8B5E" : "#D14444" }}
+                  >
+                    {ok ? t("bal.uptodate") : v > 0 ? `+${money(v)}` : `−${money(-v)}`}
+                  </span>
+                  <button
+                    onClick={() => setExplain(m.id)}
+                    className="h-6 w-6 rounded-full glass flex items-center justify-center text-muted hover-lift"
+                    title={t("explain.button")}
+                    aria-label={t("explain.button")}
+                  >
+                    <Icon name="help" size={13} />
+                  </button>
                 </span>
               </div>
             );
@@ -336,6 +348,9 @@ export function Balances({ group }: { group: Group }) {
 
       {paySheet && (
         <PaySheet group={group} to={paySheet.to} amount={paySheet.amount} onClose={() => setPaySheet(null)} />
+      )}
+      {explain && (
+        <BalanceExplainer group={group} memberId={explain} onClose={() => setExplain(null)} />
       )}
       {mark && (
         <MarkPaidModal
