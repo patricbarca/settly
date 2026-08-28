@@ -60,6 +60,7 @@ export function Balances({ group }: { group: Group }) {
   const [explainTr, setExplainTr] = useState<{ from: string; to: string; amount: number } | null>(null);
   const [logFilter, setLogFilter] = useState<string>("all");
   const [cancelS, setCancelS] = useState<Settlement | null>(null);
+  const [expandedLog, setExpandedLog] = useState<string | null>(null);
   // El log incluye pagos CONFIRMADOS y también los PENDIENTES (awaiting) — así se
   // pueden cancelar desde aquí aunque el acreedor aún no confirme.
   const logSource = [...confirmed, ...pending].sort((a, b) => b.date.localeCompare(a.date));
@@ -334,9 +335,16 @@ export function Balances({ group }: { group: Group }) {
                     .map((id) => group.expenses.find((e) => e.id === id)?.label)
                     .filter(Boolean)
                 : [];
+              // Detalle desplegable al tocar la fila: qué gastos cubre + editar.
+              const hasDetail = covered.length > 0 || (isOwner && direct);
+              const open = expandedLog === s.id;
               return (
                 <div key={s.id} className="text-sm border-b border-[color:var(--line)] last:border-0 pb-2.5 last:pb-0">
-                  <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => hasDetail && setExpandedLog(open ? null : s.id)}
+                    className="w-full flex items-center gap-2 text-left"
+                    style={{ cursor: hasDetail ? "pointer" : "default" }}
+                  >
                     <Avatar name={name(s.from)} avatar={member(s.from)?.avatar} initials={memberInitials(member(s.from) ?? { name: name(s.from) })} size={24} />
                     <b>{name(s.from)}</b>
                     <span className="text-muted">{t("bal.paysTo")}</span>
@@ -346,25 +354,16 @@ export function Balances({ group }: { group: Group }) {
                       <span className="text-[10px] text-muted">({t("pay.coveredBy", { name: name(s.settledBy) })})</span>
                     )}
                     <span className="font-mono font-bold ml-auto shrink-0 whitespace-nowrap">{money(s.amount)}</span>
-                  </div>
+                    {hasDetail && (
+                      <Icon name="chevron" size={14} className="shrink-0 text-muted transition-transform" style={open ? { transform: "rotate(180deg)" } : undefined} />
+                    )}
+                  </button>
                   <div className="text-[11px] text-muted mt-1 pl-8 flex items-center gap-1.5 flex-wrap">
-                    <span>
-                      {fmtDate(s.date)}
-                      {covered.length > 0 && ` · ${t("pay.logCovers", { items: covered.join(", ") })}`}
-                    </span>
+                    <span>{fmtDate(s.date)}</span>
                     {s.status === "pending" && (
                       <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 shrink-0" style={{ background: "rgba(232,146,12,0.14)", color: "#B5730A" }}>
                         <Icon name="clock" size={10} /> {t("pay.awaiting")}
                       </span>
-                    )}
-                    {isOwner && direct && (
-                      <button
-                        onClick={() => setEditSettlement(s)}
-                        className="rounded-full px-2 py-0.5 text-[10px] font-semibold hover-lift shrink-0"
-                        style={{ background: "var(--surface-soft)", color: "var(--muted)" }}
-                      >
-                        {t("pay.editExpenses")}
-                      </button>
                     )}
                     {canCancel(s) && (
                       <button
@@ -376,6 +375,22 @@ export function Balances({ group }: { group: Group }) {
                       </button>
                     )}
                   </div>
+                  {open && hasDetail && (
+                    <div className="mt-1.5 pl-8 flex flex-col gap-1.5 items-start">
+                      {covered.length > 0 && (
+                        <div className="text-[11px] text-muted">{t("pay.logCovers", { items: covered.join(", ") })}</div>
+                      )}
+                      {isOwner && direct && (
+                        <button
+                          onClick={() => setEditSettlement(s)}
+                          className="rounded-full px-2.5 py-1 text-[10px] font-semibold hover-lift shrink-0"
+                          style={{ background: "var(--surface-soft)", color: "var(--muted)" }}
+                        >
+                          {t("pay.editExpenses")}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
