@@ -226,8 +226,12 @@ export function Balances({ group }: { group: Group }) {
                   )
                 ) : (
                   /* Deuda de OTRO hacia un tercero: puedo pagarla por él/ella
-                     (settledBy = yo). Si ya hay un pago pendiente, no ofrezco nada. */
-                  group.meId && !pendingFor(tr.from, tr.to) && (
+                     (settledBy = yo). `tr.amount` ya es el neto restante (descuenta
+                     pagos pendientes), así que ofrezco "Pagar por" SIEMPRE que quede
+                     saldo — igual que el propio deudor puede pagar el resto aunque
+                     tenga un pago esperando confirmación. El tope anti-duplicado del
+                     modal evita pagar de más. */
+                  group.meId && (
                     <div className="flex gap-2 mt-1.5 pl-8 items-center">
                       <button
                         onClick={() => setMark({ from: tr.from, to: tr.to, amount: tr.amount })}
