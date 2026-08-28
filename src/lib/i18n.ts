@@ -366,6 +366,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "common.done": { es: "Listo", en: "Done" },
   "common.back": { es: "Volver", en: "Back" },
   "common.close": { es: "Cerrar", en: "Close" },
+  "common.info": { es: "Qué es esto", en: "What is this" },
   "common.delete": { es: "Eliminar", en: "Delete" },
 
   "cat.comida": { es: "Comida", en: "Food" },

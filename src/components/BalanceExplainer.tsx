@@ -8,8 +8,9 @@ import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 
 /** Explica CÓMO se llega al saldo de un miembro: su parte de cada gasto, lo que
- *  adelantó, y los pagos que hizo/recibió → saldo final. Se recalcula en vivo
- *  desde el estado del grupo (se re-renderiza con cada pago). No guarda nada. */
+ *  pagó por el grupo, y los pagos que hizo/recibió → saldo final. Cada concepto
+ *  tiene un botón "i" que explica qué es. Reactivo: recalcula del estado del
+ *  grupo (se re-renderiza con cada pago). No guarda nada. */
 export function BalanceExplainer({
   group,
   memberId,
@@ -21,7 +22,7 @@ export function BalanceExplainer({
 }) {
   const t = useT();
   const money = useGroupMoney(group);
-  const [showHelp, setShowHelp] = useState(false);
+  const [openHelp, setOpenHelp] = useState<string | null>(null);
   const ids = group.members.map((m) => m.id);
   const me = group.members.find((m) => m.id === memberId);
   const settles = (s: { status: string }) => s.status === "confirmed" || s.status === "pending";
@@ -30,14 +31,13 @@ export function BalanceExplainer({
   const rows = group.expenses
     .map((e) => ({
       label: e.label,
-      total: Number(e.amount || 0),
       n: (e.participantIds?.length ? e.participantIds.length : ids.length) || 1,
       share: shareFor(e, ids)[memberId] || 0,
     }))
     .filter((x) => x.share > 0.005);
   const totalShare = Math.round(rows.reduce((s, x) => s + x.share, 0) * 100) / 100;
 
-  // Lo que adelantó (puso de su bolsillo en los gastos).
+  // Lo que puso de su bolsillo (adelantó) en los gastos.
   let fronted = 0;
   for (const e of group.expenses) {
     if (e.payments?.length) {
@@ -58,46 +58,49 @@ export function BalanceExplainer({
   const net = Math.round((fronted + paymentsMade - (totalShare + paymentsReceived)) * 100) / 100;
   const settled = Math.abs(net) < 0.01;
 
-  const Line = ({ label, value, sign }: { label: string; value: number; sign: "+" | "-" }) => (
-    <div className="flex items-center justify-between text-sm py-1">
-      <span className="text-muted">{label}</span>
-      <span className="font-mono">{sign === "-" ? "−" : "+"}{money(value)}</span>
+  // Botón "i" que despliega la ayuda de ese concepto.
+  const HelpBtn = ({ k }: { k: string }) => (
+    <button
+      onClick={() => setOpenHelp((v) => (v === k ? null : k))}
+      className="h-4 w-4 rounded-full flex items-center justify-center text-muted shrink-0"
+      style={{ border: "1px solid var(--line)" }}
+      aria-label={t("common.info")}
+    >
+      <Icon name="help" size={10} />
+    </button>
+  );
+  const HelpText = ({ k, text }: { k: string; text: string }) =>
+    openHelp === k ? <p className="text-xs text-muted mt-1 leading-snug">{text}</p> : null;
+
+  // Fila de ajuste (label + botón i + monto), con su ayuda debajo.
+  const Line = ({ k, label, value, sign, help }: { k: string; label: string; value: number; sign: "+" | "-"; help: string }) => (
+    <div className="py-1">
+      <div className="flex items-center justify-between text-sm gap-2">
+        <span className="flex items-center gap-1.5 text-muted min-w-0">
+          <span className="truncate">{label}</span>
+          <HelpBtn k={k} />
+        </span>
+        <span className="font-mono shrink-0">{sign === "-" ? "−" : "+"}{money(value)}</span>
+      </div>
+      <HelpText k={k} text={help} />
     </div>
   );
 
   return (
     <Overlay onClose={onClose}>
       <div className="glass-strong rounded-3xl w-full max-w-sm p-6 anim-pop max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center gap-2 mb-4">
-          <h3 className="font-display text-xl font-bold flex-1">
-            {t("explain.title", { name: me ? displayName(me) : "?" })}
-          </h3>
-          <button
-            onClick={() => setShowHelp((v) => !v)}
-            className="h-7 w-7 rounded-full glass flex items-center justify-center text-muted hover-lift shrink-0"
-            title={t("explain.help.title")}
-            aria-label={t("explain.help.title")}
-          >
-            <Icon name="help" size={14} />
-          </button>
-        </div>
-
-        {/* Leyenda: qué significa cada línea */}
-        {showHelp && (
-          <div className="glass rounded-2xl p-3 mb-3 text-xs text-muted space-y-1.5">
-            <div className="font-semibold text-[color:var(--ink)]">{t("explain.help.title")}</div>
-            <p>• {t("explain.help.share")}</p>
-            <p>• {t("explain.help.fronted")}</p>
-            <p>• {t("explain.help.made")}</p>
-            <p>• {t("explain.help.received")}</p>
-            <p>• {t("explain.help.result")}</p>
-          </div>
-        )}
+        <h3 className="font-display text-xl font-bold mb-4">
+          {t("explain.title", { name: me ? displayName(me) : "?" })}
+        </h3>
 
         {/* Parte de los gastos */}
         <div className="glass rounded-2xl p-3 mb-3">
-          <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-2">{t("explain.share")}</div>
-          <div className="space-y-1">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="text-[11px] uppercase tracking-wide font-mono text-muted">{t("explain.share")}</span>
+            <HelpBtn k="share" />
+          </div>
+          <HelpText k="share" text={t("explain.help.share")} />
+          <div className="space-y-1 mt-1">
             {rows.length === 0 ? (
               <div className="text-sm text-muted">—</div>
             ) : (
@@ -117,12 +120,12 @@ export function BalanceExplainer({
           </div>
         </div>
 
-        {/* Ajustes */}
+        {/* Ajustes: cada uno con su botón "i" */}
         <div className="glass rounded-2xl p-3 mb-3">
-          {fronted > 0.005 && <Line label={t("explain.fronted")} value={fronted} sign="+" />}
-          {paymentsMade > 0.005 && <Line label={t("explain.paymentsMade")} value={paymentsMade} sign="+" />}
-          {paymentsReceived > 0.005 && <Line label={t("explain.paymentsReceived")} value={paymentsReceived} sign="-" />}
-          <Line label={t("explain.shareOwed")} value={totalShare} sign="-" />
+          {fronted > 0.005 && <Line k="fronted" label={t("explain.fronted")} value={fronted} sign="+" help={t("explain.help.fronted")} />}
+          {paymentsMade > 0.005 && <Line k="made" label={t("explain.paymentsMade")} value={paymentsMade} sign="+" help={t("explain.help.made")} />}
+          {paymentsReceived > 0.005 && <Line k="received" label={t("explain.paymentsReceived")} value={paymentsReceived} sign="-" help={t("explain.help.received")} />}
+          <Line k="shareOwed" label={t("explain.shareOwed")} value={totalShare} sign="-" help={t("explain.help.share")} />
         </div>
 
         {/* Resultado */}
@@ -130,10 +133,12 @@ export function BalanceExplainer({
           className="rounded-2xl p-4 text-center"
           style={{ background: settled ? "var(--glass)" : net < 0 ? "rgba(209,68,68,0.12)" : "rgba(10,139,94,0.12)" }}
         >
-          <div className="text-xs text-muted mb-1">
+          <div className="text-xs text-muted mb-1 inline-flex items-center gap-1.5">
             {settled ? t("explain.settledResult") : net < 0 ? t("explain.owesResult") : t("explain.owedResult")}
+            <HelpBtn k="result" />
           </div>
-          <div className="font-mono font-bold text-2xl" style={{ color: settled ? "var(--muted)" : net < 0 ? "#D14444" : "#0A8B5E" }}>
+          <HelpText k="result" text={t("explain.help.result")} />
+          <div className="font-mono font-bold text-2xl mt-1" style={{ color: settled ? "var(--muted)" : net < 0 ? "#D14444" : "#0A8B5E" }}>
             {settled ? t("bal.uptodate") : money(Math.abs(net))}
           </div>
         </div>
