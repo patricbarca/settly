@@ -52,25 +52,45 @@ function sub(l: () => void) {
 
 // ---------- plan (entitlement from Supabase) ----------
 
+/** Fallback anti-degradación: verifica el Pro con el RPC `is_pro` (SECURITY
+ *  DEFINER → ignora RLS). Solo BAJA a free si el servidor confirma que NO es
+ *  Pro; ante un error/timeout deja el plan como está (no strippea un Pro). */
+async function verifyProOrKeep(userId: string) {
+  try {
+    const { data, error } = await supabase.rpc("is_pro", { uid: userId });
+    if (error) return; // transitorio → conservar plan actual
+    plan = data ? "pro" : "free";
+  } catch {
+    /* red caída → conservar plan actual (no degradar) */
+  }
+}
+
 async function loadEntitlement(userId: string) {
   try {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("entitlements")
       .select("plan, expires_at, trial_ends_at, stripe_customer_id")
       .eq("user_id", userId)
       .maybeSingle();
-    const active =
-      !!data &&
-      data.plan === "pro" &&
-      (!data.expires_at || new Date(data.expires_at) > new Date());
-    plan = active ? "pro" : "free";
-    trialEndsAt = data?.trial_ends_at ? new Date(data.trial_ends_at) : null;
-    hasStripe = !!data?.stripe_customer_id;
+    if (error) throw error;
+    if (data) {
+      const active =
+        data.plan === "pro" &&
+        (!data.expires_at || new Date(data.expires_at) > new Date());
+      plan = active ? "pro" : "free";
+      trialEndsAt = data.trial_ends_at ? new Date(data.trial_ends_at) : null;
+      hasStripe = !!data.stripe_customer_id;
+    } else {
+      // El select directo no vio fila. Puede ser genuino (sin entitlement) o un
+      // hueco de sesión donde RLS (auth.uid()) devolvió 0 filas. NO degradamos a
+      // ciegas: confirmamos con el RPC definer antes de decidir.
+      await verifyProOrKeep(userId);
+    }
   } catch {
-    // Table missing (migration not applied yet) or offline → default to free.
-    plan = "free";
-    trialEndsAt = null;
-    hasStripe = false;
+    // Error transitorio (red/offline/tabla). NUNCA bajar un Pro válido a Free por
+    // un fallo pasajero — verificamos por RPC; si también falla, conservamos el
+    // plan actual (un re-fetch posterior lo corrige).
+    await verifyProOrKeep(userId);
   }
   planReady = true;
   emit();
