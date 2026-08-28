@@ -41,10 +41,21 @@ export function BottomNav({
        *  del nav (viewport visual vs real, notch, etc.) — mismo color, se
        *  extiende bien por debajo de la pantalla real así que cubre
        *  cualquier hueco sin importar la causa exacta. */}
-      <div className="fixed inset-x-0 z-30 surface" style={{ bottom: "-50vh", height: "50vh" }} />
+      <div
+        className="fixed inset-x-0 z-30 surface"
+        style={{ bottom: "-50vh", height: "50vh", transform: "translateZ(0)", willChange: "transform" }}
+      />
       <nav
         className="fixed bottom-0 inset-x-0 z-40 surface"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)", borderTop: "1px solid var(--line)" }}
+        style={{
+          paddingBottom: "env(safe-area-inset-bottom)",
+          borderTop: "1px solid var(--line)",
+          // Fuerza a la barra a su propia capa GPU: en iOS Safari/WKWebView una
+          // barra `fixed` sin capa propia se "arrastra" a mitad de pantalla
+          // durante el scroll con inercia. translateZ(0) la ancla al viewport.
+          transform: "translateZ(0)",
+          willChange: "transform",
+        }}
       >
       <div className="max-w-2xl mx-auto px-2 flex items-stretch">
         {items.map((it) => (
