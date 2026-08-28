@@ -341,14 +341,14 @@ export function Balances({ group }: { group: Group }) {
                     {s.settledBy && s.settledBy !== s.from && (
                       <span className="text-[10px] text-muted">({t("pay.coveredBy", { name: name(s.settledBy) })})</span>
                     )}
+                    <span className="font-mono font-bold ml-auto shrink-0 whitespace-nowrap">{money(s.amount)}</span>
+                  </div>
+                  <div className="text-[11px] text-muted mt-1 pl-8 flex items-center gap-1.5 flex-wrap">
                     {s.status === "pending" && (
-                      <span className="text-[10px] inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 shrink-0" style={{ background: "rgba(232,146,12,0.14)", color: "#B5730A" }}>
+                      <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 shrink-0" style={{ background: "rgba(232,146,12,0.14)", color: "#B5730A" }}>
                         <Icon name="clock" size={10} /> {t("pay.awaiting")}
                       </span>
                     )}
-                    <span className="font-mono font-bold ml-auto">{money(s.amount)}</span>
-                  </div>
-                  <div className="text-[11px] text-muted mt-1 pl-8 flex items-center gap-1.5 flex-wrap">
                     <span>
                       {fmtDate(s.date)}
                       {covered.length > 0 && ` · ${t("pay.logCovers", { items: covered.join(", ") })}`}
