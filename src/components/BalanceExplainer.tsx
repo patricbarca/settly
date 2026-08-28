@@ -106,10 +106,17 @@ export function BalanceExplainer({
             ) : (
               rows.map((r, i) => (
                 <div key={i} className="flex items-center justify-between text-sm gap-2">
-                  <span className="min-w-0 truncate">
-                    {r.label} <span className="text-muted text-xs">· {t("explain.splitAmong", { n: r.n })}</span>
+                  <span className="min-w-0 truncate">{r.label}</span>
+                  <span className="flex items-center gap-1.5 shrink-0">
+                    <span
+                      className="text-[10px] font-mono text-muted rounded-full px-1.5 py-0.5 leading-none"
+                      style={{ background: "var(--glass)" }}
+                      title={t("explain.splitAmong", { n: r.n })}
+                    >
+                      ÷{r.n}
+                    </span>
+                    <span className="font-mono">{money(r.share)}</span>
                   </span>
-                  <span className="font-mono shrink-0">{money(r.share)}</span>
                 </div>
               ))
             )}
