@@ -11,6 +11,7 @@ import { Avatar } from "./Avatar";
 import { MarkPaidModal } from "./MarkPaidModal";
 import { PaySheet } from "./PaySheet";
 import { EditPaymentExpensesModal } from "./EditPaymentExpensesModal";
+import { ConfirmModal } from "./ConfirmModal";
 import { BalanceExplainer } from "./BalanceExplainer";
 import { TransferExplainer } from "./TransferExplainer";
 
@@ -58,9 +59,16 @@ export function Balances({ group }: { group: Group }) {
   const [explain, setExplain] = useState<string | null>(null);
   const [explainTr, setExplainTr] = useState<{ from: string; to: string; amount: number } | null>(null);
   const [logFilter, setLogFilter] = useState<string>("all");
-  const sortedConfirmed = [...confirmed].sort((a, b) => b.date.localeCompare(a.date));
+  const [cancelS, setCancelS] = useState<Settlement | null>(null);
+  // El log incluye pagos CONFIRMADOS y también los PENDIENTES (awaiting) — así se
+  // pueden cancelar desde aquí aunque el acreedor aún no confirme.
+  const logSource = [...confirmed, ...pending].sort((a, b) => b.date.localeCompare(a.date));
   const filteredLog =
-    logFilter === "all" ? sortedConfirmed : sortedConfirmed.filter((s) => s.from === logFilter || s.to === logFilter);
+    logFilter === "all" ? logSource : logSource.filter((s) => s.from === logFilter || s.to === logFilter);
+  // Quién puede cancelar un pago del log: el que pagó, quien cobra, quien lo puso
+  // por otro, o el dueño del grupo. Cancelar = eliminarlo → la deuda reaparece.
+  const canCancel = (s: Settlement) =>
+    isOwner || s.from === group.meId || s.to === group.meId || s.settledBy === group.meId;
 
   const confirmS = (id: string) => setSettlementStatus(group.id, id, "confirmed");
   // Rechazo por el acreedor → avisa al deudor. "Deshacer" del deudor → sin aviso.
@@ -277,7 +285,7 @@ export function Balances({ group }: { group: Group }) {
           para ver quién pagó qué y cuándo. */}
       <div className="glass rounded-3xl p-5">
         <div className="text-xs uppercase tracking-widest font-mono text-muted">{t("pay.logTitle")}</div>
-        {confirmed.length > 0 && (
+        {logSource.length > 0 && (
           <div className="flex items-center gap-1.5 mt-3 overflow-x-auto pb-0.5">
             <button
               onClick={() => setLogFilter("all")}
@@ -291,7 +299,7 @@ export function Balances({ group }: { group: Group }) {
               {t("pay.logAll")}
             </button>
             {sortedMembers(group.members)
-              .filter((m) => confirmed.some((s) => s.from === m.id || s.to === m.id))
+              .filter((m) => logSource.some((s) => s.from === m.id || s.to === m.id))
               .map((m) => (
                 <button
                   key={m.id}
@@ -332,6 +340,11 @@ export function Balances({ group }: { group: Group }) {
                     {s.settledBy && s.settledBy !== s.from && (
                       <span className="text-[10px] text-muted">({t("pay.coveredBy", { name: name(s.settledBy) })})</span>
                     )}
+                    {s.status === "pending" && (
+                      <span className="text-[10px] inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 shrink-0" style={{ background: "rgba(232,146,12,0.14)", color: "#B5730A" }}>
+                        <Icon name="clock" size={10} /> {t("pay.awaiting")}
+                      </span>
+                    )}
                     <span className="font-mono font-bold ml-auto">{money(s.amount)}</span>
                   </div>
                   <div className="text-[11px] text-muted mt-1 pl-8 flex items-center gap-1.5 flex-wrap">
@@ -346,6 +359,15 @@ export function Balances({ group }: { group: Group }) {
                         style={{ background: "var(--surface-soft)", color: "var(--muted)" }}
                       >
                         {t("pay.editExpenses")}
+                      </button>
+                    )}
+                    {canCancel(s) && (
+                      <button
+                        onClick={() => setCancelS(s)}
+                        className="rounded-full px-2 py-0.5 text-[10px] font-semibold hover-lift shrink-0 ml-auto"
+                        style={{ background: "rgba(255,90,77,0.12)", color: "var(--coral)" }}
+                      >
+                        {t("pay.cancelPayment")}
                       </button>
                     )}
                   </div>
@@ -389,6 +411,15 @@ export function Balances({ group }: { group: Group }) {
           group={group}
           settlement={editSettlement}
           onClose={() => setEditSettlement(null)}
+        />
+      )}
+      {cancelS && (
+        <ConfirmModal
+          title={t("pay.cancelTitle")}
+          message={t("pay.cancelMsg", { from: name(cancelS.from), to: name(cancelS.to), amt: money(cancelS.amount) })}
+          confirmLabel={t("pay.cancelPayment")}
+          onConfirm={() => removeSettlement(group.id, cancelS.id)}
+          onClose={() => setCancelS(null)}
         />
       )}
       </div>

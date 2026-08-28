@@ -1,5 +1,5 @@
 import type { Group } from "../lib/types";
-import { computeSettle, expenseDebtsBetween } from "../lib/split";
+import { computeSettle, expenseDebtsBetween, settles } from "../lib/split";
 import { displayName } from "../lib/format";
 import { useGroupMoney } from "../lib/displayCurrency";
 import { useT } from "../lib/i18n";
@@ -35,9 +35,27 @@ export function TransferExplainer({
   const { net } = computeSettle(group.members, group.expenses, group.settlements ?? []);
   const netFrom = Math.abs(net[from] || 0);
   const netTo = Math.abs(net[to] || 0);
+  const settlements = group.settlements ?? [];
   const directDebts = !simplified
-    ? expenseDebtsBetween(group.members, group.expenses, group.settlements ?? [], from, to)
+    ? expenseDebtsBetween(group.members, group.expenses, settlements, from, to)
     : [];
+  // Suma de los gastos concretos que el modo Directo pudo atribuir.
+  const listSum = Math.round(directDebts.reduce((a, d) => a + d.amount, 0) * 100) / 100;
+  // Lo que 'from' ya le pagó a 'to' (pagos marcados/confirmados entre ese par).
+  const paidFromTo = !simplified
+    ? Math.round(
+        settlements
+          .filter((s) => settles(s) && s.from === from && s.to === to)
+          .reduce((a, s) => a + Number(s.amount || 0), 0) * 100
+      ) / 100
+    : 0;
+  // La lista de gastos "cuadra" con la transferencia solo si su suma ≈ el monto.
+  // Cuando los pagos se hicieron por MONTOS SUELTOS (no atados a un gasto vía
+  // expenseIds), la lista no cuadra (muestra la deuda bruta) → en su lugar
+  // mostramos el resumen parte/pagado/restante, que sí reconcilia con el neto.
+  const listReconciles = Math.abs(listSum - amount) < 0.02;
+  const shareGross = Math.round((amount + paidFromTo) * 100) / 100;
+  const showSummary = !simplified && !listReconciles && paidFromTo > 0.01;
 
   return (
     <Overlay onClose={onClose}>
@@ -70,6 +88,22 @@ export function TransferExplainer({
             </div>
             <p className="text-xs text-muted mb-3">{t("explainTr.directHint")}</p>
           </>
+        ) : showSummary ? (
+          <div className="glass rounded-2xl p-3 mb-3 text-sm space-y-1.5">
+            <p className="text-muted text-xs">{t("explainTr.lumpNote")}</p>
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-muted">{t("explainTr.share", { name: name(from) })}</span>
+              <span className="font-mono">{money(shareGross)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted">{t("explainTr.paidAlready")}</span>
+              <span className="font-mono">−{money(paidFromTo)}</span>
+            </div>
+            <div className="flex items-center justify-between font-semibold border-t pt-1.5" style={{ borderColor: "var(--line)" }}>
+              <span>{t("explainTr.remaining")}</span>
+              <span className="font-mono">{money(amount)}</span>
+            </div>
+          </div>
         ) : (
           <div className="glass rounded-2xl p-3 mb-3">
             <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-2">{t("explainTr.directTitle")}</div>
