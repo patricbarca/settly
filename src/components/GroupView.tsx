@@ -19,6 +19,7 @@ import { UsersModal } from "./UsersModal";
 import { ReportModal } from "./ReportModal";
 import { Paywall } from "./Paywall";
 import { ShareLinkModal } from "./ShareLinkModal";
+import { PayMethodReminder } from "./PayMethodReminder";
 import { isPro } from "../lib/plan";
 
 type Tab = "expenses" | "balances" | "stats" | "achievements";
@@ -113,6 +114,8 @@ export function GroupView({ group }: { group: Group }) {
           </button>
         </div>
       </div>
+
+      <PayMethodReminder group={group} />
 
       <Hero group={group} />
 

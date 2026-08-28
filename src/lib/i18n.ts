@@ -367,6 +367,10 @@ const DICT: Record<string, { es: string; en: string }> = {
   "common.back": { es: "Volver", en: "Back" },
   "common.close": { es: "Cerrar", en: "Close" },
   "common.info": { es: "Qué es esto", en: "What is this" },
+  "payReminder.title": { es: "Añade tu método de cobro", en: "Add your payment details" },
+  "payReminder.body": { es: "Configúralo para que los demás puedan pagarte con un toque (PayID, transferencia, PayPal…).", en: "Set it up so others can pay you back in one tap (PayID, bank transfer, PayPal…)." },
+  "payReminder.cta": { es: "Completar en mi perfil", en: "Complete in my profile" },
+  "payReminder.later": { es: "Más tarde", en: "Later" },
   "common.delete": { es: "Eliminar", en: "Delete" },
 
   "cat.comida": { es: "Comida", en: "Food" },

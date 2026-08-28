@@ -72,6 +72,14 @@ export default function App() {
     registerAIConsentOpener(() => setShowAIConsent(true));
     return () => registerAIConsentOpener(null);
   }, []);
+
+  // Permite abrir el perfil (AccountModal) desde cualquier parte de la app vía
+  // un evento global (p. ej. el recordatorio de "completa tu método de pago").
+  useEffect(() => {
+    const open = () => { setShowActivity(false); setShowAccount(true); };
+    window.addEventListener("settlia:open-profile", open);
+    return () => window.removeEventListener("settlia:open-profile", open);
+  }, []);
   const showLoading = phase === "loading" || !minLoadDone;
 
   // theme-color (tiñe la barra de estado/navegador) sigue siempre al tema

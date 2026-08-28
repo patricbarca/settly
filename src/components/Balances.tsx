@@ -348,15 +348,15 @@ export function Balances({ group }: { group: Group }) {
                     <span className="font-mono font-bold ml-auto shrink-0 whitespace-nowrap">{money(s.amount)}</span>
                   </div>
                   <div className="text-[11px] text-muted mt-1 pl-8 flex items-center gap-1.5 flex-wrap">
+                    <span>
+                      {fmtDate(s.date)}
+                      {covered.length > 0 && ` · ${t("pay.logCovers", { items: covered.join(", ") })}`}
+                    </span>
                     {s.status === "pending" && (
                       <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 shrink-0" style={{ background: "rgba(232,146,12,0.14)", color: "#B5730A" }}>
                         <Icon name="clock" size={10} /> {t("pay.awaiting")}
                       </span>
                     )}
-                    <span>
-                      {fmtDate(s.date)}
-                      {covered.length > 0 && ` · ${t("pay.logCovers", { items: covered.join(", ") })}`}
-                    </span>
                     {isOwner && direct && (
                       <button
                         onClick={() => setEditSettlement(s)}
