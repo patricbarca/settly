@@ -50,6 +50,19 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Sesión 2026-08-28: explainers por concepto, descuentos en scan, cancelar pagos, fix Pro, recordatorio de método de pago
+- **BalanceExplainer — botón "i" por concepto:** cada línea (parte de gastos, pagaste por el grupo, pagos hechos/recibidos, resultado) tiene su propio botón de info que despliega qué es (`explain.help.*`, `common.info`). El "split among N" se reemplazó por un **chip compacto `÷N`** pegado al monto, para que los nombres largos no se trunquen.
+- **Descuentos en el escaneo de recibos:** líneas que reducen el total (promo, "X for $Y", cupón, monto negativo) ahora se capturan como **fee negativo** y se reparten proporcional al consumo. `scan-receipt` v52 (prompt reforzado) + `ScanReceiptModal` (residual negativo → descuento auto) + `ItemizedExpenseEditor` (fees negativos ahora SÍ se distribuyen; antes solo `feesTotal > 0`). String `scan.discountAuto`.
+- **TransferExplainer reconciliado (modo Directo):** cuando los pagos fueron por montos sueltos (no atados a gastos), en vez de una lista vacía/engañosa muestra un resumen **parte / ya pagado / queda por saldar** que cuadra con el neto (`explainTr.share/paidAlready/remaining/lumpNote`).
+- **Cancelar pagos desde el log:** botón "Cancelar pago" (con `ConfirmModal`) en cada fila del log, **solo para las personas involucradas** (from/to/settledBy), NO el dueño. El log ahora incluye los pagos **pendientes** (badge "Awaiting confirmation", que se movió a la 2ª línea tras la fecha para no empujar el monto). Cancelar = `removeSettlement` (borra del todo, la deuda reaparece; no vuelve a "pending").
+- **"Pay for {them}" con pago pendiente:** se quitó el gate `!pendingFor` — ahora se puede pagar por otro aunque tenga un pago parcial esperando confirmación (igual que el propio deudor); `tr.amount` ya es el neto restante y el tope anti-duplicado del modal lo protege.
+- **⚠️ FIX Pro que se caía a Free (importante):** `loadEntitlement` (`plan.ts`) ponía `plan="free"` ante CUALQUIER error de red O una lectura nula (RLS devolviendo 0 filas durante un hueco de token) → strippeaba el Pro a usuarios que SÍ son Pro en la DB. Ahora ante error/nulo **verifica con el RPC `is_pro`** (SECURITY DEFINER, ignora RLS) y solo degrada si el servidor confirma que NO es Pro; si la verificación también falla, **conserva el plan actual**. Los 17 redentores de códigos estaban correctos en la DB — era puramente cliente.
+- **Códigos de acceso — Pro permanente:** `SETTLIALAUNCH2026` (Pro 180 días, 100 usos) — los 15 redentores se dejaron **permanentes** (`expires_at=NULL`). Alecita + Patric (`SETTLYBETA`) también permanentes. `is_pro` y el cliente tratan `expires_at NULL` como Pro válido.
+- **BottomNav flotando en iOS:** se promovió a su propia capa GPU (`transform: translateZ(0)` + `willChange`) para que no se "arrastre" a mitad de pantalla durante el scroll con inercia.
+- **PayMethodReminder:** banner al inicio del grupo (arriba del Hero) si tu miembro no tiene método de cobro (`memberPays(me).length===0`) → CTA que abre tu perfil vía el evento global **`settlia:open-profile`** (escuchado en `App.tsx`). Descartable por usuario (localStorage). Strings `payReminder.*`.
+- **iOS 1.2:** `MARKETING_VERSION` 1.1 → 1.2; build subido a TestFlight (el 422 "Another build in review" era solo el auto-envío a beta review externa, no un fallo del binario).
+- **Daily reminders verificados:** cron `settlia-daily-reminders` ACTIVO, últimas 6 corridas `succeeded` (23:00 UTC).
+
 ### Balance explainer: botón "?" que desglosa el saldo y las transferencias
 - **`BalanceExplainer.tsx`** — botón "?" en cada persona de Balances → modal con el desglose: **parte de cada gasto** (con "entre N"), lo que **adelantó**, **pagos hechos/recibidos**, y el **saldo resultante** (le queda por pagar / le deben / al día). Reactivo: recalcula desde `shareFor`/`computeSettle`/`settlements`, se actualiza en vivo con cada pago. No guarda nada.
 - **`TransferExplainer.tsx`** — botón "?" en cada fila de "Para saldar" → explica por qué existe ese pago. En **Simplificado**: nota de que se agrupan deudas para minimizar transferencias + netos de deudor/acreedor + aviso "puede cambiar cuando otro pague" + hint de modo Directo. En **Directo**: lista los gastos concretos que componen la deuda (`expenseDebtsBetween`). Botón "Ver desglose de {deudor}" abre el `BalanceExplainer`. Strings `explain.*`/`explainTr.*`. Ataca la confusión del reordenamiento de saldos en modo Simplificado.
@@ -282,11 +295,13 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - Hero pills render even when `0` on a side (could hide the zero side or show a "settled" state).
 - When reusing the same working branch across multiple PRs, reset it to `origin/master` before starting new work — squash-merges otherwise cause merge conflicts on the next PR.
 
-## ⚠️ Regla permanente: mantener la documentación al día
-- **Al terminar CUALQUIER trabajo, SIEMPRE actualizar los 3 archivos vivos antes de cerrar:**
-  1. **`CLAUDE.md`** — reflejar lo hecho (sección "Recent work completed") y el estado real de features.
+## ⚠️ Regla permanente OBLIGATORIA: actualizar la documentación en CADA tarea
+- **REGLA (no opcional):** al terminar CUALQUIER instrucción/tarea/fix/feature/deploy — **cada vez, sin que el usuario lo pida** — actualizar la documentación como paso final ANTES de cerrar la respuesta. No esperar al "final de la sesión": es por tarea.
+- **Los 3 archivos vivos a revisar SIEMPRE:**
+  1. **`CLAUDE.md`** — añadir/ajustar en "Recent work completed" lo hecho y el estado real de las features.
   2. **`ROADMAP.md`** — mover el ítem de ⬜/🔧 a ✅, o ajustar su estado.
-  3. **Los pendientes** (sección "Pending / known issues" de este archivo + "Deuda técnica" del ROADMAP) — quitar lo resuelto, añadir lo nuevo descubierto.
+  3. **Los pendientes** ("Pending / known issues" aquí + "Deuda técnica" del ROADMAP) — quitar lo resuelto, añadir lo nuevo descubierto.
+- **Cómo:** incluir la edición de estos `.md` en el MISMO commit/push que el cambio de código (o en un commit inmediatamente posterior antes de dar por cerrada la tarea). Actualizar también cualquier otro `.md` afectado.
 - Vale para fixes, features, deploys y cambios de config. Si algo queda a medias, dejarlo anotado como pendiente con el estado exacto. No confiar en la memoria entre sesiones: estos `.md` son la única fuente de verdad compartida.
 
 ## Multi-session / concurrency notes

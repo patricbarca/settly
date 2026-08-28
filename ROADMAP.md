@@ -139,6 +139,8 @@ Bloquean lanzamiento serio / publicación en stores.
 - **Modelo B — pago automático real (mueve dinero, siempre con comisión):** en AU lo más barato es **PayTo/NPP** vía **Monoova / Azupay / Zai** (céntimos por transferencia, no %); tarjeta (Stripe ~1.7%+30c) mata los splits pequeños. Apple Pay caería aquí (rieles de tarjeta). Implica cumplimiento (AFSL propia o apoyarse en el proveedor, KYC/AML). Solo cuando haya volumen que lo justifique.
 
 ## Deuda técnica / limpieza
+- ✅ **Fix Pro→Free por fallo transitorio (2026-08-28):** `loadEntitlement` degradaba a Free ante cualquier error de red o lectura nula (RLS 0 filas en hueco de token). Ahora verifica con el RPC `is_pro` (definer) antes de degradar y conserva el plan actual si la verificación falla. Los códigos `SETTLIALAUNCH2026`/`SETTLYBETA` se dejaron con `expires_at=NULL` (Pro permanente para los 17 redentores).
+- ✅ **Descuentos en scan (2026-08-28):** `scan-receipt` v52 + `ScanReceiptModal` + `ItemizedExpenseEditor` — líneas que reducen el total se capturan como fee negativo y se reparten proporcional (antes los fees negativos NO se distribuían).
 - ✅ Borrar `PayMethodModal.tsx` (huérfano; edición de métodos solo en perfil) — hecho 2026-08.
 - ⬜ Migrar `settlement.proof` base64 → Storage (con Fase 1).
 - ✅ Concurrencia de `processRecurring` (2026-08): IDs deterministas por ocurrencia (`recur_{ruleId}_{fecha}`) + guardia de idempotencia → dos dispositivos que generan la misma ocurrencia producen el mismo gasto (mismo id), así el last-write-wins del blob deja uno solo. Sin cambio de servidor.
