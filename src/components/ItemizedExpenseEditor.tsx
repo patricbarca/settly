@@ -333,7 +333,8 @@ export function ItemizedExpenseEditor({
       who.forEach((id) => (splits[id] += per));
     });
     const itemParticipants = allIds.filter((id) => splits[id] > 0.001);
-    if (feesTotal > 0 && itemsTotal > 0) {
+    // Recargos Y descuentos (fee negativo) se reparten proporcional al consumo.
+    if (Math.abs(feesTotal) > 0.001 && itemsTotal > 0) {
       itemParticipants.forEach((id) => (splits[id] += feesTotal * (splits[id] / itemsTotal)));
     }
     if (tipNum > 0 && itemParticipants.length) {

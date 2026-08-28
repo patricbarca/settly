@@ -205,12 +205,30 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     const surchargeCap = itemsMatchSubtotal
       ? Math.max(2, totalConv * 0.3)
       : Math.max(2, totalConv * 0.03);
+    // Descuento automático: si los ítems cuadran con el subtotal impreso pero el
+    // TOTAL pagado es MENOR (residual negativo), el ticket trae un descuento /
+    // promoción (p. ej. "EGGS 2 FOR $9.00 -$2.00") que baja el subtotal. Se
+    // añade como recargo NEGATIVO editable para que "Total a repartir" = lo que
+    // de verdad se pagó, y se reparte proporcional al consumo (reduce cada
+    // parte). Tope: nunca más que el propio subtotal (un descuento mayor sería
+    // un misread).
+    const isDiscount =
+      itemsMatchSubtotal && residual < -0.02 && Math.abs(residual) <= subtotalConv;
     const fees =
       itemsMatchSubtotal && residual > 0.02 && residual <= surchargeCap
         ? [
             ...baseFees,
             {
               name: t("scan.surchargeAuto"),
+              amount: residual,
+              ...(rate !== 1 ? { originalAmount: r2(residual / rate) } : {}),
+            },
+          ]
+        : isDiscount
+        ? [
+            ...baseFees,
+            {
+              name: t("scan.discountAuto"),
               amount: residual,
               ...(rate !== 1 ? { originalAmount: r2(residual / rate) } : {}),
             },
