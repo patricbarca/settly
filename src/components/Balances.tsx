@@ -65,10 +65,11 @@ export function Balances({ group }: { group: Group }) {
   const logSource = [...confirmed, ...pending].sort((a, b) => b.date.localeCompare(a.date));
   const filteredLog =
     logFilter === "all" ? logSource : logSource.filter((s) => s.from === logFilter || s.to === logFilter);
-  // Quién puede cancelar un pago del log: el que pagó, quien cobra, quien lo puso
-  // por otro, o el dueño del grupo. Cancelar = eliminarlo → la deuda reaparece.
+  // Cancelar un pago (= eliminarlo → la deuda reaparece) solo lo pueden hacer las
+  // personas INVOLUCRADAS en él: el deudor (from), el acreedor (to) o quien lo
+  // puso por otro (settledBy). El dueño del grupo NO puede cancelar pagos ajenos.
   const canCancel = (s: Settlement) =>
-    isOwner || s.from === group.meId || s.to === group.meId || s.settledBy === group.meId;
+    s.from === group.meId || s.to === group.meId || s.settledBy === group.meId;
 
   const confirmS = (id: string) => setSettlementStatus(group.id, id, "confirmed");
   // Rechazo por el acreedor → avisa al deudor. "Deshacer" del deudor → sin aviso.
