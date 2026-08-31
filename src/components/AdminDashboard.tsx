@@ -11,6 +11,10 @@ type Stats = {
   active_groups: number;
   total_expenses: number;
   total_settlements: number;
+  expenses_1d: number;
+  expenses_7d: number;
+  expenses_30d: number;
+  expenses_by_day: { day: string; count: number }[];
   pro_users: number;
   total_redemptions: number;
   push_subs: number;
@@ -72,6 +76,9 @@ export function AdminDashboard({ onClose }: { onClose: () => void }) {
                 <StatCard label="Nuevos (30 días)" value={stats.users_30d} />
                 <StatCard label="Grupos activos" value={stats.active_groups} sub={`${stats.total_groups} total`} />
                 <StatCard label="Gastos añadidos" value={stats.total_expenses ?? 0} sub={`${stats.total_groups ? (stats.total_expenses / stats.total_groups).toFixed(1) : 0} por grupo`} />
+                <StatCard label="Gastos (24 h)" value={stats.expenses_1d ?? 0} />
+                <StatCard label="Gastos (7 días)" value={stats.expenses_7d ?? 0} />
+                <StatCard label="Gastos (30 días)" value={stats.expenses_30d ?? 0} />
                 <StatCard label="Pagos registrados" value={stats.total_settlements ?? 0} />
                 <StatCard label="Códigos canjeados" value={stats.total_redemptions} />
                 <StatCard label="Push suscripciones" value={stats.push_subs} />
@@ -94,6 +101,25 @@ export function AdminDashboard({ onClose }: { onClose: () => void }) {
                           />
                         </div>
                         <span className="font-mono font-bold w-6 text-right">{m.count}</span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              )}
+
+              {/* Gastos añadidos por día (últimos 14 días) */}
+              {stats.expenses_by_day && stats.expenses_by_day.length > 0 && (
+                <div className="glass rounded-2xl p-4 space-y-3">
+                  <h3 className="font-semibold text-sm">Gastos añadidos por día (14 d)</h3>
+                  {(() => {
+                    const max = Math.max(...stats.expenses_by_day.map((d) => d.count), 1);
+                    return stats.expenses_by_day.map((d) => (
+                      <div key={d.day} className="flex items-center gap-3 text-sm">
+                        <span className="text-muted w-20 shrink-0 font-mono text-xs">{d.day.slice(5)}</span>
+                        <div className="flex-1 rounded-full overflow-hidden h-2" style={{ background: "var(--glass-border)" }}>
+                          <div className="h-full rounded-full" style={{ width: `${(d.count / max) * 100}%`, background: "var(--indigo)" }} />
+                        </div>
+                        <span className="font-mono font-bold w-6 text-right">{d.count}</span>
                       </div>
                     ));
                   })()}
