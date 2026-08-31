@@ -14,6 +14,8 @@ type Stats = {
   expenses_1d: number;
   expenses_7d: number;
   expenses_30d: number;
+  active_users_7d: number;
+  active_users_30d: number;
   expenses_by_day: { day: string; count: number }[];
   pro_users: number;
   total_redemptions: number;
@@ -74,6 +76,8 @@ export function AdminDashboard({ onClose }: { onClose: () => void }) {
                 <StatCard label="Usuarios Pro" value={stats.pro_users} sub={`${Math.round(stats.pro_users / Math.max(stats.total_users, 1) * 100)}% del total`} />
                 <StatCard label="Nuevos (7 días)" value={stats.users_7d} />
                 <StatCard label="Nuevos (30 días)" value={stats.users_30d} />
+                <StatCard label="Activos (7 días)" value={stats.active_users_7d ?? 0} sub="hicieron algo" />
+                <StatCard label="Activos (30 días)" value={stats.active_users_30d ?? 0} sub="hicieron algo" />
                 <StatCard label="Grupos activos" value={stats.active_groups} sub={`${stats.total_groups} total`} />
                 <StatCard label="Gastos añadidos" value={stats.total_expenses ?? 0} sub={`${stats.total_groups ? (stats.total_expenses / stats.total_groups).toFixed(1) : 0} por grupo`} />
                 <StatCard label="Gastos (24 h)" value={stats.expenses_1d ?? 0} />
