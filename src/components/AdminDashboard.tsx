@@ -9,6 +9,8 @@ type Stats = {
   users_30d: number;
   total_groups: number;
   active_groups: number;
+  total_expenses: number;
+  total_settlements: number;
   pro_users: number;
   total_redemptions: number;
   push_subs: number;
@@ -69,6 +71,8 @@ export function AdminDashboard({ onClose }: { onClose: () => void }) {
                 <StatCard label="Nuevos (7 días)" value={stats.users_7d} />
                 <StatCard label="Nuevos (30 días)" value={stats.users_30d} />
                 <StatCard label="Grupos activos" value={stats.active_groups} sub={`${stats.total_groups} total`} />
+                <StatCard label="Gastos añadidos" value={stats.total_expenses ?? 0} sub={`${stats.total_groups ? (stats.total_expenses / stats.total_groups).toFixed(1) : 0} por grupo`} />
+                <StatCard label="Pagos registrados" value={stats.total_settlements ?? 0} />
                 <StatCard label="Códigos canjeados" value={stats.total_redemptions} />
                 <StatCard label="Push suscripciones" value={stats.push_subs} />
                 <StatCard label="Free" value={stats.total_users - stats.pro_users} sub="sin plan Pro" />

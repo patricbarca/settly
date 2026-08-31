@@ -63,6 +63,7 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **PayMethodReminder:** banner al inicio del grupo (arriba del Hero) si tu miembro no tiene método de cobro (`memberPays(me).length===0`) → CTA que abre tu perfil vía el evento global **`settlia:open-profile`** (escuchado en `App.tsx`). Descartable por usuario (localStorage). Strings `payReminder.*`.
 - **iOS 1.2:** `MARKETING_VERSION` 1.1 → 1.2; build subido a TestFlight (el 422 "Another build in review" era solo el auto-envío a beta review externa, no un fallo del binario).
 - **Daily reminders verificados:** cron `settlia-daily-reminders` ACTIVO, últimas 6 corridas `succeeded` (23:00 UTC).
+- **Admin: uso de la app:** `get_admin_stats()` ahora devuelve `total_expenses` y `total_settlements` (suma de `jsonb_array_length(data->'expenses'/'settlements')` sobre todos los grupos). `AdminDashboard` los muestra como tarjetas "Gastos añadidos" (con promedio por grupo) y "Pagos registrados". Aplicado vía conector MCP (CREATE OR REPLACE).
 
 ### Balance explainer: botón "?" que desglosa el saldo y las transferencias
 - **`BalanceExplainer.tsx`** — botón "?" en cada persona de Balances → modal con el desglose: **parte de cada gasto** (con "entre N"), lo que **adelantó**, **pagos hechos/recibidos**, y el **saldo resultante** (le queda por pagar / le deben / al día). Reactivo: recalcula desde `shareFor`/`computeSettle`/`settlements`, se actualiza en vivo con cada pago. No guarda nada.
