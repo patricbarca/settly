@@ -3,6 +3,7 @@ import type { Group, Member } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
+import { useUser } from "../lib/auth";
 import { memberInitials, sortedMembers, displayName } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -10,6 +11,8 @@ import { Avatar } from "./Avatar";
 import { ProfileModal } from "./ProfileModal";
 
 export function Members({ group }: { group: Group }) {
+  const user = useUser();
+  const isOwner = !group.ownerId || group.ownerId === user?.id;
   const t = useT();
   const [profile, setProfile] = useState<Member | null>(null);
 
@@ -25,8 +28,10 @@ export function Members({ group }: { group: Group }) {
 
   const { net } = computeSettle(group.members, group.expenses, group.settlements ?? []);
 
+  // Solo el DUEÑO del grupo puede quitar miembros. Antes cualquiera podía
+  // eliminar a cualquiera —incluido el propio dueño—, dejándole sin acceso.
   function remove(id: string) {
-    if (referenced.has(id) || id === group.meId) return;
+    if (!isOwner || referenced.has(id) || id === group.meId) return;
     const removed = group.members.find((m) => m.id === id)?.name;
     updateGroup(group.id, (g) => ({
       ...g,
@@ -47,7 +52,7 @@ export function Members({ group }: { group: Group }) {
       </div>
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {sortedMembers(group.members).map((m) => {
-          const removable = !referenced.has(m.id) && m.id !== group.meId;
+          const removable = isOwner && !referenced.has(m.id) && m.id !== group.meId;
           const paid = Math.abs(net[m.id] || 0) < 0.01;
           return (
             <div key={m.id} className="rounded-full pl-1 pr-2.5 py-1 flex items-center gap-1.5 text-sm shrink-0" style={{ background: "var(--surface-soft)" }}>

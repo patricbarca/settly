@@ -3,6 +3,7 @@ import type { Group } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
+import { useUser } from "../lib/auth";
 import { uid, personColor, initials, memberInitials, money, sortedMembers } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
@@ -18,6 +19,8 @@ type AddMode = "idle" | "search" | "found" | "notfound" | "manual";
 
 export function UsersModal({ group, onClose }: { group: Group; onClose: () => void }) {
   const t = useT();
+  const user = useUser();
+  const isOwner = !group.ownerId || group.ownerId === user?.id;
   const [addMode, setAddMode] = useState<AddMode>("idle");
   const [query, setQuery] = useState("");
   const [foundUser, setFoundUser] = useState<{ id: string; name: string } | null>(null);
@@ -161,8 +164,9 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
     }
   }
 
+  // Solo el DUEÑO puede quitar miembros (ver Members.tsx).
   function remove(id: string) {
-    if (referenced.has(id) || id === group.meId) return;
+    if (!isOwner || referenced.has(id) || id === group.meId) return;
     const removed = group.members.find((m) => m.id === id)?.name;
     updateGroup(group.id, (g) => ({
       ...g,
@@ -194,7 +198,7 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
           {sortedMembers(group.members).map((m) => {
             const bal = net[m.id] || 0;
             const ok = Math.abs(bal) < 0.01;
-            const removable = !referenced.has(m.id) && m.id !== group.meId;
+            const removable = isOwner && !referenced.has(m.id) && m.id !== group.meId;
             return (
               <div key={m.id} className="flex items-center gap-3 py-2">
                 <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={36} />

@@ -92,7 +92,9 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
     setTimeout(() => { setSaved(false); onClose(); }, 800);
   }
 
+  // Solo el DUEÑO puede quitar miembros; nadie puede quitarse a sí mismo.
   function removeMember(id: string) {
+    if (!isOwner || id === group.meId) return;
     const removed = group.members.find((m) => m.id === id)?.name;
     updateGroup(group.id, (g) => ({
       ...g,
@@ -274,7 +276,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
             {sortedMembers(group.members).map((m) => {
               const balance = net[m.id] ?? 0;
               const settled = Math.abs(balance) < 0.01;
-              const canRemove = m.id !== group.meId && !referenced.has(m.id);
+              const canRemove = isOwner && m.id !== group.meId && !referenced.has(m.id);
               return (
                 <div key={m.id} className="flex items-center gap-2.5">
                   <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={28} />

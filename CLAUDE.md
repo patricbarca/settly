@@ -50,6 +50,14 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Fix: un miembro cualquiera podía eliminar al DUEÑO del grupo (caso "Espagne 2026")
+- **Síntoma real:** Janie (dueña de `Espagne 2026 🇪🇸❤️`, `x7ec92h`) dejó de ver el grupo. El log de actividad lo delata: creó el grupo el 7-ago (`group_created` por su member `swivz00`); Alex entró por el link el 9-ago 13:55 (`member_joined`) y **un minuto después** (13:56) disparó `member_removed` quitando a Janie.
+- **Por qué tardó semanas en notarse:** la RLS de `groups` permite leer si eres miembro **O si existe un invite link vigente**. Janie siguió viendo el grupo con el link válido; cuando **caducó el 14-ago**, perdió el acceso y "desapareció" el grupo.
+- **Causa raíz (código):** en `GroupSettings.tsx`, `Members.tsx` y `UsersModal.tsx` el gate de borrado era solo `m.id !== group.meId && !referenced.has(m.id)` — **sin comprobar propiedad**: cualquiera podía quitar a cualquiera, incluido el dueño.
+- **Fix:** los tres sitios exigen ahora **`isOwner`** (`!group.ownerId || group.ownerId === user?.id`) tanto en el flag de UI (`removable`/`canRemove`) como en el guard de la función (`remove`/`removeMember`). `Members.tsx` y `UsersModal.tsx` importan `useUser`. El dueño sigue sin poder quitarse a sí mismo.
+- **Datos reparados:** Janie devuelta al array `members` (`swivz00`, "Janie") + fila en `group_members` recreada. El único gasto no la referenciaba, así que no se alteró ningún reparto.
+- **Pendiente/known:** el gate es **client-side**; `update_group_data` no valida quién edita `members`. Un cliente manipulado aún podría quitar a otro. Endurecer server-side si importa.
+
 ### Sesión 2026-08-28: explainers por concepto, descuentos en scan, cancelar pagos, fix Pro, recordatorio de método de pago
 - **BalanceExplainer — botón "i" por concepto:** cada línea (parte de gastos, pagaste por el grupo, pagos hechos/recibidos, resultado) tiene su propio botón de info que despliega qué es (`explain.help.*`, `common.info`). El "split among N" se reemplazó por un **chip compacto `÷N`** pegado al monto, para que los nombres largos no se trunquen.
 - **Descuentos en el escaneo de recibos:** líneas que reducen el total (promo, "X for $Y", cupón, monto negativo) ahora se capturan como **fee negativo** y se reparten proporcional al consumo. `scan-receipt` v52 (prompt reforzado) + `ScanReceiptModal` (residual negativo → descuento auto) + `ItemizedExpenseEditor` (fees negativos ahora SÍ se distribuyen; antes solo `feesTotal > 0`). String `scan.discountAuto`.
