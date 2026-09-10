@@ -50,6 +50,17 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Duplicados de miembros al unirse por link (caso "Aussie fam 2026 reunion")
+- **Reporte:** "cuando entran al grupo se genera otro usuario". Investigado en `soqxsmq`.
+- **Son DOS problemas distintos, ninguno es "siempre duplica":**
+  1. **Creador duplicado por desajuste de nombre.** Al crear el grupo la app añade al creador con el **nombre completo del perfil** (`Janie Duval`), pero luego la persona escribe a mano la lista de asistentes usando **apodos** — y se incluye a sí misma (`Janie`). Resultado: dos miembros de la misma persona. Prueba: el gasto lo creó `pi7xk3r` (cuenta real) pero eligió como pagador a `w8577pa` (el placeholder) — ni ella distingue cuál es cuál.
+  2. **Selector de plaza demasiado fácil de saltar.** `joinByToken` SÍ detecta al que ya está — pero **solo por `user_id` en `group_members`**. Si no tienes fila, entra el flujo de claim: `ClaimMemberModal` deja salir con *"Ninguno de estos"* **y también cerrando al tocar fuera** (`onClose={() => onPick(undefined)}`) → sin plaza elegida se crea un miembro NUEVO. Confirmado en el log: `member_joined` de `c564p5i` y `member_left` **12 segundos después** (alguien entró, se vio duplicado y salió).
+- **Comportamiento correcto verificado:** el **creador entrando por su propio link NO se duplica** (`joinByToken` encuentra su fila y devuelve su `meId`); y Sousou/Anna/Valu reclamaron su plaza bien (`claimed: true`).
+- **Datos reparados:** "Janie" (`w8577pa`) fusionada en "Janie Duval" (`pi7xk3r`). Orden obligatorio para no romper el JSON: (1) quitar la clave `pi7xk3r` de `splits` (valía 0) porque el gasto tenía AMBAS claves y un replace directo generaría clave duplicada, (2) borrar el miembro del array, (3) `replace()` de `w8577pa`→`pi7xk3r` en todo el blob (payerId, participantIds, splits, activity). Reparto intacto: 34,33+34,33+34,34 = €103.
+- **⬜ Pendiente (los dos arreglos de raíz, NO hechos):**
+  - **Blindar el selector:** que `ClaimMemberModal` no se cierre tocando fuera y que *"Ninguno de estos"* pida confirmación ("se creará un miembro nuevo, solo si tu nombre NO está en la lista").
+  - **Evitar el duplicado en origen:** al añadir miembros a mano, avisar si el nombre se parece a uno existente y mostrar al creador "tú ya estás como X".
+
 ### Fix: un miembro cualquiera podía eliminar al DUEÑO del grupo (caso "Espagne 2026")
 - **Síntoma real:** Janie (dueña de `Espagne 2026 🇪🇸❤️`, `x7ec92h`) dejó de ver el grupo. El log de actividad lo delata: creó el grupo el 7-ago (`group_created` por su member `swivz00`); Alex entró por el link el 9-ago 13:55 (`member_joined`) y **un minuto después** (13:56) disparó `member_removed` quitando a Janie.
 - **Por qué tardó semanas en notarse:** la RLS de `groups` permite leer si eres miembro **O si existe un invite link vigente**. Janie siguió viendo el grupo con el link válido; cuando **caducó el 14-ago**, perdió el acceso y "desapareció" el grupo.
