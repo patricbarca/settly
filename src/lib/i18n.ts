@@ -92,9 +92,14 @@ const DICT: Record<string, { es: string; en: string }> = {
   "share.inviteText": { es: "Únete a mi grupo «{name}» en Settlia para dividir los gastos:", en: "Join my group “{name}” on Settlia to split expenses:" },
   "share.copy": { es: "Copiar", en: "Copy" },
   "share.share": { es: "Compartir", en: "Share" },
+  "members.dupWarn": { es: "«{added}» se parece a «{existing}», que ya está en el grupo. Si son la misma persona, quita uno para no duplicar sus gastos.", en: "\u201c{added}\u201d looks like \u201c{existing}\u201d, who is already in the group. If they are the same person, remove one so their expenses aren't split in two." },
   "join.whichAreYou": { es: "¿Cuál de estos eres tú?", en: "Which one of these are you?" },
   "join.whichAreYouHint": { es: "Alguien te añadió a \"{name}\" sin cuenta todavía. Elige tu nombre para heredar tu historial.", en: "Someone added you to \"{name}\" without an account yet. Pick your name to inherit your history." },
   "join.noneOfThese": { es: "Ninguno, soy nuevo/a", en: "None of these, I'm new" },
+  "join.noneConfirmTitle": { es: "¿Seguro que no estás en la lista?", en: "Sure you're not on the list?" },
+  "join.noneConfirmBody": { es: "Se te añadirá como miembro NUEVO. Si tu nombre ya estaba arriba, quedarás duplicado y tus gastos se dividirán en dos.", en: "You'll be added as a NEW member. If your name was already listed above, you'll end up duplicated and your expenses will be split in two." },
+  "join.noneConfirmBack": { es: "Volver", en: "Go back" },
+  "join.noneConfirmCta": { es: "Soy nuevo/a", en: "I'm new" },
 
   "app.footerCloud": { es: "¿Necesitas ayuda?", en: "Need help?" },
 

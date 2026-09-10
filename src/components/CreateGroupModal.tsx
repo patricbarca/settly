@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { addGroup } from "../lib/store";
 import { makeActivity } from "../lib/activity";
-import { uid, personColor, initials } from "../lib/format";
+import { uid, personColor, initials, similarNames } from "../lib/format";
 import { useUser } from "../lib/auth";
 import { getNetwork, type Contact } from "../lib/contacts";
 import { useHiddenContacts } from "../lib/hiddenContacts";
@@ -24,6 +24,7 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
   const [manualMembers, setManualMembers] = useState<{ id: string; name: string }[]>([]);
   const [manualName, setManualName] = useState("");
+  const [dupWarn, setDupWarn] = useState<{ added: string; existing: string }[]>([]);
 
   useEffect(() => {
     getNetwork().then(setNetwork).catch(() => {});
@@ -51,6 +52,16 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
     // tener que tocar el botón "+" ni cerrar el teclado entre uno y otro.
     const names = manualName.split(",").map((n) => n.trim()).filter(Boolean);
     if (!names.length) return;
+    // Aviso (no bloquea): el creador ya entra con el nombre de su PERFIL, así
+    // que re-añadirse por apodo ("Janie" vs "Janie Duval") crea un duplicado.
+    const existingNames = [
+      user?.name || "",
+      ...network.filter((c) => selected.has(c.userId)).map((c) => c.name),
+      ...manualMembers.map((m) => m.name),
+    ].filter(Boolean);
+    setDupWarn(
+      names.flatMap((n) => similarNames(n, existingNames).map((existing) => ({ added: n, existing })))
+    );
     setManualMembers((prev) => [...prev, ...names.map((n) => ({ id: uid(), name: n }))]);
     setManualName("");
   }
@@ -273,6 +284,15 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
               </button>
             </div>
             <p className="text-[11px] text-muted mt-1">{t("members.manualHint")}</p>
+            {dupWarn.length > 0 && (
+              <div className="rounded-2xl p-2.5 mt-2" style={{ background: "rgba(232,146,12,0.12)", border: "1px solid rgba(232,146,12,0.3)" }}>
+                {dupWarn.map((w, k) => (
+                  <p key={k} className="text-[11px] leading-snug" style={{ color: "#B5730A" }}>
+                    {t("members.dupWarn", { added: w.added, existing: w.existing })}
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

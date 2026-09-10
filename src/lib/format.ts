@@ -153,3 +153,27 @@ export function fmtDate(iso: string): string {
     month: "short",
   });
 }
+
+/** Normaliza un nombre para comparar: sin acentos, minúsculas, espacios simples. */
+function normName(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim().replace(/\s+/g, " ");
+}
+
+/** ¿`a` y `b` parecen la MISMA persona? Ataca el duplicado real que vimos en
+ *  producción: la app añade al creador con el nombre COMPLETO de su perfil
+ *  ("Janie Duval") y luego alguien lo re-añade a mano por su apodo ("Janie").
+ *  Coincide si son iguales, o si uno es de una sola palabra y esa palabra es el
+ *  primer nombre del otro. */
+export function looksLikeSameName(a: string, b: string): boolean {
+  const x = normName(a), y = normName(b);
+  if (!x || !y) return false;
+  if (x === y) return true;
+  const xs = x.split(" "), ys = y.split(" ");
+  if ((xs.length === 1 || ys.length === 1) && xs[0] === ys[0]) return true;
+  return false;
+}
+
+/** De `existing`, los que parecen la misma persona que `name`. */
+export function similarNames(name: string, existing: string[]): string[] {
+  return existing.filter((e) => looksLikeSameName(name, e));
+}

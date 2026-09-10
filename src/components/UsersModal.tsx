@@ -4,7 +4,7 @@ import { updateGroup } from "../lib/store";
 import { withActivity } from "../lib/activity";
 import { computeSettle } from "../lib/split";
 import { useUser } from "../lib/auth";
-import { uid, personColor, initials, memberInitials, money, sortedMembers } from "../lib/format";
+import { uid, personColor, initials, memberInitials, money, sortedMembers, similarNames } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { supabase } from "../lib/supabase";
 import { getNetwork, type Contact } from "../lib/contacts";
@@ -29,6 +29,8 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
   const [inviteErr, setInviteErr] = useState(false);
   const [shareLink, setShareLink] = useState<string | null>(null);
   const [manualName, setManualName] = useState("");
+  // Nombres recién añadidos que se parecen a alguien que YA está en el grupo.
+  const [dupWarn, setDupWarn] = useState<{ added: string; existing: string }[]>([]);
   // Sugeridos: tu red (registrados) menos quienes ya están en este grupo.
   const [network, setNetwork] = useState<Contact[]>([]);
   const [existingIds, setExistingIds] = useState<Set<string>>(new Set());
@@ -123,6 +125,13 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
     // panel al añadir para poder seguir escribiendo sin perder el teclado.
     const names = raw.split(",").map((n) => n.trim()).filter(Boolean);
     if (!names.length) return;
+    // Aviso (no bloquea): añadir "Janie" cuando ya está "Janie Duval" duplica a
+    // la misma persona — el fallo real que vimos en producción.
+    const existingNames = group.members.map((m) => m.name);
+    const warns = names.flatMap((n) =>
+      similarNames(n, existingNames).map((existing) => ({ added: n, existing }))
+    );
+    setDupWarn(warns);
     updateGroup(group.id, (g) => ({
       ...g,
       members: [...g.members, ...names.map((name) => ({ id: uid(), name, avatar: "", claimed: false }))],
@@ -354,6 +363,15 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
             {addMode === "manual" && (
               <>
                 <p className="text-xs text-muted mb-2">{t("members.manualHint")}</p>
+                {dupWarn.length > 0 && (
+                  <div className="rounded-2xl p-2.5 mt-2" style={{ background: "rgba(232,146,12,0.12)", border: "1px solid rgba(232,146,12,0.3)" }}>
+                    {dupWarn.map((w, k) => (
+                      <p key={k} className="text-[11px] leading-snug" style={{ color: "#B5730A" }}>
+                        {t("members.dupWarn", { added: w.added, existing: w.existing })}
+                      </p>
+                    ))}
+                  </div>
+                )}
                 <input
                   autoFocus
                   value={manualName}
