@@ -20,6 +20,9 @@ import { RecurringList } from "./RecurringList";
 import { makeNotif } from "../lib/notifications";
 import { makeActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
+import { needsMyClaim, pendingClaims } from "../lib/claims";
+import { ClaimItemsModal } from "./ClaimItemsModal";
+import { CloseClaimModal } from "./CloseClaimModal";
 
 export function ExpenseList({ group }: { group: Group }) {
   const t = useT();
@@ -30,6 +33,11 @@ export function ExpenseList({ group }: { group: Group }) {
   const [openId, setOpenId] = useState<string | null>(null);
   // Gasto pendiente de confirmar su eliminación (evita borrados accidentales).
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  // Ronda de auto-asignación: gasto abierto en el selector "¿qué consumiste?"
+  // y gasto cuyo reparto se va a cerrar.
+  const [claimId, setClaimId] = useState<string | null>(null);
+  const [closeId, setCloseId] = useState<string | null>(null);
+  const myClaims = pendingClaims(group);
   const name = (id: string) => {
     const m = group.members.find((mm) => mm.id === id);
     return m ? displayName(m) : "?";
@@ -243,6 +251,28 @@ export function ExpenseList({ group }: { group: Group }) {
           </button>
         )}
       </div>
+      {myClaims.length > 0 && (
+        <button
+          onClick={() => setClaimId(myClaims[0].id)}
+          className="w-full glass rounded-2xl px-4 py-3 flex items-center gap-3 text-left anim-pop hover-lift"
+          style={{ border: "1px solid var(--teal)" }}
+        >
+          <span
+            className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 text-white"
+            style={{ background: "linear-gradient(135deg, var(--teal), var(--indigo))" }}
+          >
+            <Icon name="food" size={17} />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block text-sm font-semibold truncate">{t("claim.pending")}</span>
+            <span className="block text-[11px] text-muted truncate">
+              {myClaims.map((x) => x.label).join(" · ")}
+            </span>
+          </span>
+          <Icon name="chevron" size={16} className="text-muted -rotate-90 shrink-0" />
+        </button>
+      )}
+
       <RecurringList group={group} />
 
       {showFilters && group.expenses.length > 0 && (
@@ -387,6 +417,8 @@ export function ExpenseList({ group }: { group: Group }) {
           open={openId === e.id}
           onToggleOpen={() => setOpenId(openId === e.id ? null : e.id)}
           onEdit={() => setEditId(e.id)}
+          onClaim={() => setClaimId(e.id)}
+          onCloseRound={() => setCloseId(e.id)}
           onRequestReview={() => requestReview(e.id)}
           onMarkReviewed={() => markReviewed(e.id)}
           onCancelReview={() => cancelReview(e.id)}
@@ -458,6 +490,21 @@ export function ExpenseList({ group }: { group: Group }) {
           </div>
         </Overlay>
       )}
+
+      {claimId && group.expenses.find((x) => x.id === claimId) && (
+        <ClaimItemsModal
+          group={group}
+          expense={group.expenses.find((x) => x.id === claimId)!}
+          onClose={() => setClaimId(null)}
+        />
+      )}
+      {closeId && group.expenses.find((x) => x.id === closeId) && (
+        <CloseClaimModal
+          group={group}
+          expense={group.expenses.find((x) => x.id === closeId)!}
+          onClose={() => setCloseId(null)}
+        />
+      )}
     </section>
   );
 }
@@ -480,6 +527,8 @@ function ExpenseRow({
   open,
   onToggleOpen,
   onEdit,
+  onClaim,
+  onCloseRound,
   onRequestReview,
   onMarkReviewed,
   onCancelReview,
@@ -497,6 +546,8 @@ function ExpenseRow({
   open: boolean;
   onToggleOpen: () => void;
   onEdit: () => void;
+  onClaim: () => void;
+  onCloseRound: () => void;
   onRequestReview: () => void;
   onMarkReviewed: () => void;
   onCancelReview: () => void;
@@ -513,6 +564,14 @@ function ExpenseRow({
   // Mismo criterio que el botón de eliminar en el detalle: sin autor (gastos
   // antiguos) o autor = yo → es "mío", puedo eliminarlo directo.
   const isMine = !e.createdBy || e.createdBy === group.meId;
+  // Ronda de auto-asignación: badge en la cabecera + controles en el detalle.
+  const round = e.claimRound;
+  const roundOpen = round?.status === "open";
+  const claimDone = (round?.done ?? []).length;
+  const claimTotal = (round?.expected ?? []).length;
+  const iMustClaim = needsMyClaim(e, group.meId);
+  // Cierra quien abrió la ronda (o el creador del gasto, para gastos viejos).
+  const canCloseRound = roundOpen && (round?.openedBy === group.meId || isMine);
   // Indicador "pagado"/"pendiente" por gasto: un pago confirmado que
   // referencia este gasto en `expenseIds` — en modo Directo por elección
   // manual (picker), en Simplificado por asignación automática de más
@@ -633,6 +692,19 @@ function ExpenseRow({
                   style={{ background: "#E8920C22", color: "#9A6B00" }}
                 >
                   <Icon name="flag" size={11} /> {t("exp.inReview")}
+                </span>
+              )}
+              {roundOpen && (
+                <span
+                  className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0"
+                  style={
+                    iMustClaim
+                      ? { background: "#0FA3A322", color: "var(--teal)" }
+                      : { background: "#5B5BF022", color: "#5B5BF0" }
+                  }
+                >
+                  <Icon name="users" size={11} />
+                  {iMustClaim ? t("claim.pending") : `${claimDone}/${claimTotal}`}
                 </span>
               )}
               {paidStatus && (
@@ -798,6 +870,55 @@ function ExpenseRow({
                   </div>
                 ))}
               </div>
+
+              {round && (
+                <div className="glass rounded-2xl px-3 py-2.5 mt-3 space-y-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold">
+                      {roundOpen ? t("claim.open") : t("claim.closed")}
+                    </span>
+                    {roundOpen && (
+                      <span className="text-[11px] text-muted font-mono">
+                        {t("claim.progress", { done: claimDone, total: claimTotal })}
+                      </span>
+                    )}
+                  </div>
+                  {roundOpen && claimDone < claimTotal && (
+                    <div className="text-[11px] text-muted">
+                      {t("claim.waitingFor", {
+                        names: (round.expected ?? [])
+                          .filter((id) => !(round.done ?? []).includes(id))
+                          .map(name)
+                          .join(", "),
+                      })}
+                    </div>
+                  )}
+                  {roundOpen && (
+                    <div className="flex gap-2 flex-wrap pt-0.5">
+                      {(round.expected ?? []).includes(group.meId) && (
+                        <button
+                          onClick={onClaim}
+                          className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift"
+                          style={{ background: "linear-gradient(135deg, var(--teal), var(--indigo))" }}
+                        >
+                          {iMustClaim ? t("claim.pickYours") : t("claim.editMine")}
+                        </button>
+                      )}
+                      {canCloseRound && (
+                        <button
+                          onClick={onCloseRound}
+                          className="glass rounded-full px-3 py-1 text-xs hover-lift text-muted inline-flex items-center gap-1"
+                        >
+                          <Icon name="lock" size={12} /> {t("claim.close")}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {roundOpen && (
+                    <div className="text-[11px] text-muted">{t("claim.provisionalNote")}</div>
+                  )}
+                </div>
+              )}
 
               <div className="flex gap-2 mt-3 flex-wrap">
                 {(isMine || e.allowEdits) && (

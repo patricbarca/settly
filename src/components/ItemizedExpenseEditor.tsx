@@ -52,6 +52,9 @@ export type ItemizedResult = {
   fees: { name: string; amount: number; originalAmount?: number }[];
   tip: number;
   allowEdits: boolean;
+  /** Abrir una ronda de auto-asignación: se avisa al grupo y cada persona
+   *  marca qué consumió (en vez de asignarlo todo quien escanea). */
+  askEveryone: boolean;
 };
 
 export type ItemizedInitial = {
@@ -63,6 +66,9 @@ export type ItemizedInitial = {
   category?: Category;
   /** Si true, cualquier participante puede editar este gasto (no solo quien lo creó). */
   allowEdits?: boolean;
+  /** Muestra el toggle "que cada uno elija lo suyo" (solo al CREAR el gasto;
+   *  al editar uno existente no tiene sentido reabrir la ronda desde aquí). */
+  canAskEveryone?: boolean;
   /** Moneda/tasa del ticket original (si se escaneó en otra moneda distinta
    *  a la del grupo) — habilita el toggle para ajustar montos en cualquiera
    *  de las dos monedas. */
@@ -107,6 +113,7 @@ export function ItemizedExpenseEditor({
   const [category, setCategory] = useState<Category>(initial.category ?? "comida");
   const [payerId, setPayerId] = useState(initial.payerId ?? group.meId);
   const [allowEdits, setAllowEdits] = useState(initial.allowEdits ?? false);
+  const [askEveryone, setAskEveryone] = useState(false);
   const [tip, setTip] = useState<number | string>(initial.tip ? String(initial.tip) : "");
   // Ver/ajustar los montos en la moneda del ticket original en vez de la
   // convertida (moneda del grupo) — solo disponible si el escaneo detectó
@@ -404,6 +411,7 @@ export function ItemizedExpenseEditor({
             })),
       tip: isTotalMode ? 0 : tipNum,
       allowEdits,
+      askEveryone: !isTotalMode && askEveryone,
     });
   }
 
@@ -740,6 +748,31 @@ export function ItemizedExpenseEditor({
                 : money(taxInfo.amount, group.currency),
           })}
         </div>
+      )}
+
+      {/* Ronda de auto-asignación: que cada uno marque lo que consumió */}
+      {initial.canAskEveryone && mode !== "total" && (
+        <button
+          type="button"
+          onClick={() => setAskEveryone((v) => !v)}
+          className="w-full flex items-start justify-between gap-2 glass rounded-xl px-3 py-2.5 text-left"
+        >
+          <span className="min-w-0">
+            <span className="block text-sm">{t("claim.askEveryone")}</span>
+            {askEveryone && (
+              <span className="block text-[11px] text-muted mt-0.5">{t("claim.askEveryoneNote")}</span>
+            )}
+          </span>
+          <span
+            className="h-5 w-9 rounded-full relative shrink-0 transition-colors mt-0.5"
+            style={{ background: askEveryone ? "var(--teal)" : "var(--line)" }}
+          >
+            <span
+              className="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform"
+              style={{ transform: askEveryone ? "translateX(18px)" : "translateX(2px)" }}
+            />
+          </span>
+        </button>
       )}
 
       {/* Permitir edición a otros participantes (por defecto, solo el creador puede editar) */}

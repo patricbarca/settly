@@ -47,6 +47,9 @@ const ACTIVITY_ICON: Record<ActivityType, IconName> = {
   recurring_generated: "repeat",
   recurring_deleted: "trash",
   scan_used: "sparkles",
+  claim_requested: "users",
+  claim_submitted: "check",
+  claim_closed: "lock",
 };
 
 type Tab = "notifications" | "activity";
@@ -84,6 +87,8 @@ export function NotificationsBell({ open, onClose }: { open: boolean; onClose: (
     const toDisplay = toIsMe ? `${myName} (${t("common.you")})` : n.toName ?? "?";
     if (n.type === "expense_added")
       return t("notif.expense_added", { name: n.actorName ?? "?", label: n.label ?? "", amt });
+    if (n.type === "claim_requested")
+      return t("notif.claim_requested", { name: n.actorName ?? "?", label: n.label ?? "" });
     if (n.type === "payment_made")
       return t("notif.payment_made", { name: n.actorName ?? "?", amt, to: toDisplay });
     if (n.type === "payment_rejected")
@@ -163,7 +168,7 @@ export function NotificationsBell({ open, onClose }: { open: boolean; onClose: (
                               style={{ background: "var(--glass)" }}
                             >
                               <Icon
-                                name={n.type === "payment_made" ? "card" : n.type === "payment_rejected" ? "close" : n.type === "review_requested" ? "flag" : n.type === "delete_requested" ? "trash" : n.type === "recurring_generated" ? "repeat" : "plus"}
+                                name={n.type === "payment_made" ? "card" : n.type === "payment_rejected" ? "close" : n.type === "review_requested" ? "flag" : n.type === "delete_requested" ? "trash" : n.type === "recurring_generated" ? "repeat" : n.type === "claim_requested" ? "users" : "plus"}
                                 size={16}
                               />
                             </span>

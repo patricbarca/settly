@@ -12,6 +12,7 @@ export const NOTIF_CATEGORIES: NotifCategory[] = ["expenses", "payments", "reque
 // Tipo interno de notificación → categoría visible para el usuario.
 const TYPE_CATEGORY: Record<string, NotifCategory> = {
   expense_added: "expenses",
+  claim_requested: "requests",
   recurring_generated: "expenses",
   payment_made: "payments",
   payment_rejected: "payments",

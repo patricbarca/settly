@@ -6,6 +6,7 @@ import { uid, money } from "./format";
 import { withActivity, makeActivity } from "./activity";
 import { makeNotif } from "./notifications";
 import { notifyGroup } from "./push";
+import { applyClaim, applyCloseRound, type ClosePolicy } from "./claims";
 import { tr } from "./i18n";
 import {
   idbPutGroup,
@@ -742,6 +743,77 @@ export function processRecurring(groupId: string) {
       tr("notif.recurring_generated", { label: p.label, amt: money(p.amount, p.currency), payer: p.payerName }),
       "expenses"
     );
+  }
+}
+
+// ── Ronda de auto-asignación ("¿qué consumiste?") ──────────────────────────
+// Toda la ronda pasa por RPCs atómicos: `claim_expense_items` toca SOLO la
+// pertenencia de UN miembro dentro de `items[].participantIds` bajo lock de
+// fila, así una mesa entera marcando sus platos a la vez se serializa en
+// Postgres en vez de pisarse. El servidor recalcula `splits`/`participantIds`;
+// aquí solo aplicamos el espejo optimista para el feedback instantáneo.
+
+/** Marca qué ítems consumí yo (o, si soy el dueño, otra persona). */
+export async function claimExpenseItems(
+  groupId: string,
+  expenseId: string,
+  memberId: string,
+  itemIndexes: number[],
+  done = true,
+  opts?: { activity?: ActivityEvent }
+) {
+  const apply = (g: Group): Group => ({
+    ...g,
+    expenses: g.expenses.map((e) => (e.id === expenseId ? applyClaim(e, memberId, itemIndexes, done) : e)),
+    activity: opts?.activity ? [...(g.activity ?? []), opts.activity].slice(-200) : g.activity,
+  });
+
+  if (!isOnline || !currentUserId) {
+    updateGroup(groupId, apply);
+    return;
+  }
+  applyLocal(groupId, apply);
+  const { error } = await supabase.rpc("claim_expense_items", {
+    p_group_id: groupId,
+    p_expense_id: expenseId,
+    p_member_id: memberId,
+    p_item_indexes: itemIndexes,
+    p_done: done,
+    p_activity: opts?.activity ?? null,
+  });
+  if (error) {
+    console.error("claim_expense_items:", error);
+    idbAddToOutbox(groupId).catch(() => {});
+  }
+}
+
+/** Cierra la ronda y congela el reparto según la política de no-reclamados. */
+export async function closeClaimRound(
+  groupId: string,
+  expenseId: string,
+  policy: ClosePolicy,
+  opts?: { activity?: ActivityEvent }
+) {
+  const apply = (g: Group): Group => ({
+    ...g,
+    expenses: g.expenses.map((e) => (e.id === expenseId ? applyCloseRound(e, policy) : e)),
+    activity: opts?.activity ? [...(g.activity ?? []), opts.activity].slice(-200) : g.activity,
+  });
+
+  if (!isOnline || !currentUserId) {
+    updateGroup(groupId, apply);
+    return;
+  }
+  applyLocal(groupId, apply);
+  const { error } = await supabase.rpc("close_claim_round", {
+    p_group_id: groupId,
+    p_expense_id: expenseId,
+    p_policy: policy,
+    p_activity: opts?.activity ?? null,
+  });
+  if (error) {
+    console.error("close_claim_round:", error);
+    idbAddToOutbox(groupId).catch(() => {});
   }
 }
 

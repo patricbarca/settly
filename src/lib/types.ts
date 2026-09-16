@@ -103,6 +103,22 @@ export interface Expense {
   originalAmount?: number;
   originalCurrency?: string;
   fxRate?: number;
+  /** Ronda de auto-asignación ("¿qué consumiste?"): el gasto se crea con los
+   *  ítems sin asignar y cada miembro elige los suyos. Mientras `status` sea
+   *  "open" el reparto es PROVISIONAL (los ítems que nadie ha reclamado se
+   *  dividen entre `expected`) para que los saldos nunca queden en blanco. */
+  claimRound?: ClaimRound;
+}
+
+export interface ClaimRound {
+  status: "open" | "closed";
+  openedAt: string;   // ISO
+  openedBy: string;   // memberId
+  /** memberIds a quienes se les pidió elegir. */
+  expected: string[];
+  /** memberIds que ya confirmaron su elección. */
+  done: string[];
+  closedAt?: string;
 }
 
 /** Una línea de un gasto repartido por ítem: precio + quiénes lo comparten. */
@@ -142,7 +158,7 @@ export interface Settlement {
   expensePayments?: { expenseId: string; amount: number }[];
 }
 
-export type NotificationType = "expense_added" | "payment_made" | "payment_rejected" | "review_requested" | "delete_requested" | "recurring_generated";
+export type NotificationType = "expense_added" | "claim_requested" | "payment_made" | "payment_rejected" | "review_requested" | "delete_requested" | "recurring_generated";
 
 export interface AppNotification {
   id: string;
@@ -181,7 +197,10 @@ export type ActivityType =
   | "recurring_added"
   | "recurring_generated"
   | "recurring_deleted"
-  | "scan_used";
+  | "scan_used"
+  | "claim_requested"
+  | "claim_submitted"
+  | "claim_closed";
 
 export interface ActivityEvent {
   id: string;

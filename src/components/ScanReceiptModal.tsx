@@ -2,6 +2,7 @@ import { useState, type ChangeEvent } from "react";
 import type { Group, Category, ExpenseItem } from "../lib/types";
 import { scanReceipt, type ScanResult, type ScanTax } from "../lib/ai";
 import { addExpense } from "../lib/store";
+import { itemizedSplits } from "../lib/claims";
 import { makeNotif } from "../lib/notifications";
 import { makeActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
@@ -256,6 +257,16 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     setSaving(true);
     const receiptPath = file ? await uploadReceipt(group.id, file) : null;
     setSaving(false);
+    // Ronda de auto-asignación: el gasto se crea con los ítems SIN asignar y
+    // cada persona marca lo suyo. El reparto arranca provisional (a partes
+    // iguales entre los convocados) para que los saldos nunca queden vacíos.
+    const expected = r.askEveryone ? group.members.map((m) => m.id) : [];
+    const items = r.askEveryone ? r.items.map((it) => ({ ...it, participantIds: [] })) : r.items;
+    const splits = r.askEveryone ? itemizedSplits(items, r.fees, r.tip, expected) : r.splits;
+    const participantIds = r.askEveryone
+      ? Object.keys(splits).filter((id) => splits[id] > 0.001)
+      : r.participantIds;
+
     addExpense(
       group.id,
       {
@@ -263,28 +274,40 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
         label: r.label,
         amount: r.amount,
         payerId: r.payerId,
-        participantIds: r.participantIds,
+        participantIds,
         category: r.category,
         date: new Date().toISOString().slice(0, 10),
-        splits: r.splits,
-        items: r.items,
+        splits,
+        items,
         fees: r.fees,
         tip: r.tip,
         allowEdits: r.allowEdits,
+        ...(r.askEveryone
+          ? {
+              claimRound: {
+                status: "open" as const,
+                openedAt: new Date().toISOString(),
+                openedBy: group.meId,
+                expected,
+                done: [group.meId],
+              },
+            }
+          : {}),
         ...(receiptPath ? { receiptPath } : {}),
         ...(fx ? { originalAmount: fx.originalAmount, originalCurrency: fx.originalCurrency, fxRate: fx.fxRate } : {}),
         createdBy: group.meId,
       },
       {
         notifAdd: makeNotif({
-          type: "expense_added",
+          type: r.askEveryone ? "claim_requested" : "expense_added",
           actorId: group.meId,
           actorName: meName,
           label: r.label,
           amount: r.amount,
+          expenseId: undefined,
         }),
         activity: makeActivity({
-          type: "scan_used",
+          type: r.askEveryone ? "claim_requested" : "scan_used",
           actorId: group.meId,
           actorName: meName,
           label: r.label,
@@ -295,8 +318,10 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     notifyGroup(
       group.id,
       group.name,
-      t("notif.expense_added", { name: meName, label: "Ticket", amt: money(r.amount, group.currency) }),
-      "expenses"
+      r.askEveryone
+        ? t("notif.claim_requested", { name: meName, label: r.label })
+        : t("notif.expense_added", { name: meName, label: "Ticket", amt: money(r.amount, group.currency) }),
+      r.askEveryone ? "requests" : "expenses"
     );
     onClose();
   }
@@ -423,7 +448,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
 
             <ItemizedExpenseEditor
               group={group}
-              initial={initial}
+              initial={{ ...initial, canAskEveryone: true }}
               taxInfo={tax}
               scannedTotal={scannedTotal}
               banner={scanError ? t("scan.error") : undefined}
