@@ -19,6 +19,7 @@ import { BottomNav, type NavKey } from "./components/BottomNav";
 import { countUnread } from "./lib/notifications";
 import { refreshNativePush } from "./lib/nativePush";
 import { initIAP } from "./lib/iap";
+import { initAdTracking, trackConversion } from "./lib/adtrack";
 import { FeedbackModal } from "./components/FeedbackModal";
 import { AIConsentModal } from "./components/AIConsentModal";
 import { registerAIConsentOpener, resolveAIConsent } from "./lib/aiConsent";
@@ -182,6 +183,22 @@ export default function App() {
   }
 
   useEffect(() => {
+    // Medición de campañas: no-op en nativo y sin IDs configurados.
+    initAdTracking();
+    // Stripe vuelve a `/?upgraded=1` tras un pago completado: es el único
+    // punto en web donde sabemos con certeza que la suscripción se cerró.
+    // Se limpia el parámetro para que un refresh no vuelva a contarla.
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("upgraded") === "1") {
+        trackConversion("pro");
+        url.searchParams.delete("upgraded");
+        window.history.replaceState({}, "", url.pathname + url.search + url.hash);
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  useEffect(() => {
     // Refresca el token de push nativo al iniciar sesión (Apple puede rotarlo).
     // No-op en web o si el usuario no lo activó.
     if (phase === "authenticated") {
@@ -189,6 +206,22 @@ export default function App() {
       void initIAP(); // RevenueCat: sincroniza el entitlement Pro (no-op en web)
     }
   }, [phase]);
+
+  useEffect(() => {
+    // Conversión "registro": SOLO cuentas recién creadas, no cada login — si
+    // no, el optimizador de la campaña aprendería de usuarios recurrentes y
+    // compraría tráfico que ya teníamos. Ventana de 10 min sobre created_at +
+    // marca local para no repetirlo si recarga.
+    if (phase !== "authenticated" || !user?.createdAt || user.provider === "guest") return;
+    const age = Date.now() - new Date(user.createdAt).getTime();
+    if (age > 10 * 60 * 1000) return;
+    const key = `settlia.signupTracked.${user.id}`;
+    try {
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, "1");
+    } catch { /* modo privado: preferimos medir de más que de menos */ }
+    trackConversion("signup");
+  }, [phase, user?.id, user?.createdAt, user?.provider]);
 
   useEffect(() => {
     // Propaga mi foto de perfil a la copia `member.avatar` de cada grupo si

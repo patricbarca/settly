@@ -154,7 +154,7 @@ export function AdminDashboard({ onClose }: { onClose: () => void }) {
                 <p className="font-semibold text-sm text-inherit mb-1">Métricas pendientes</p>
                 <p>• <b>Churn</b>: requiere campo <code>last_seen_at</code> en profiles (aún no implementado).</p>
                 <p>• <b>Actividad</b>: gastos/grupo/usuario — requiere tabla de eventos server-side.</p>
-                <p>• <b>Conversión</b>: visita→registro se ve en Plausible (settlia.app + app.settlia.app).</p>
+                <p>• <b>Conversión</b>: visita→registro vía los eventos de Google Ads/TikTok (<code>adtrack.ts</code>), una vez configurados los IDs.</p>
               </div>
             </>
           )}

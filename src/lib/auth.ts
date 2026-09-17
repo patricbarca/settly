@@ -75,6 +75,9 @@ export type User = {
    *  grupos a esta moneda). Vacío = usa la moneda del grupo más común. */
   mainCurrency?: string;
   provider: "email" | "google" | "apple" | "guest";
+  /** Alta de la cuenta (ISO). Sirve para distinguir un REGISTRO nuevo de un
+   *  login recurrente al medir conversiones de campañas. */
+  createdAt?: string;
 };
 
 export type AuthPhase =
@@ -171,6 +174,7 @@ async function fromSession(session: Session) {
     id: au.id,
     name,
     email: au.email,
+    createdAt: au.created_at,
     phone: profile?.phone || undefined,
     avatar,
     country: (profile?.country as string) || undefined,

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { addGroup } from "../lib/store";
+import { trackConversion } from "../lib/adtrack";
 import { makeActivity } from "../lib/activity";
 import { uid, personColor, initials, similarNames } from "../lib/format";
 import { useUser } from "../lib/auth";
@@ -93,6 +94,7 @@ export function CreateGroupModal({ onClose }: { onClose: () => void }) {
       activity: [makeActivity({ type: "group_created", actorId: meId, actorName: me.name })],
     };
     addGroup(group, extraMembers);
+    trackConversion("group_created");
     onClose();
   }
 
