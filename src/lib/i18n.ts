@@ -1019,6 +1019,16 @@ const DICT: Record<string, { es: string; en: string }> = {
   "claim.closed": { es: "Reparto cerrado", en: "Split closed" },
   "claim.reopenHint": { es: "El reparto se cerró. Edita el gasto si algo quedó mal.", en: "The split is closed. Edit the expense if something is off." },
   "claim.unclaimed": { es: "Sin asignar", en: "Unclaimed" },
+  // Paso de confirmación antes de marcarse como listo
+  "claim.confirmTitle": { es: "¿Eso es todo lo que consumiste?", en: "Is that everything you had?" },
+  "claim.confirmBody": { es: "Marcaste {n} de {total} ítems. Una vez confirmes, tu parte queda registrada y los demás verán que ya elegiste.", en: "You ticked {n} of {total} items. Once you confirm, your share is recorded and the others will see you're done." },
+  "claim.confirmNothingTitle": { es: "¿No consumiste nada?", en: "You had nothing?" },
+  "claim.confirmNothingBody": { es: "No marcaste ningún ítem, así que no pagarás nada de esta cuenta. ¿Es correcto?", en: "You didn't tick any item, so you won't pay anything on this bill. Is that right?" },
+  "claim.confirmYes": { es: "Sí, confirmar", en: "Yes, confirm" },
+  "claim.confirmBack": { es: "Volver a revisar", en: "Go back and check" },
+  "claim.yourItems": { es: "Lo tuyo", en: "Your items" },
+  "claim.done": { es: "Ya elegiste", en: "You're done" },
+  "claim.instruction": { es: "Esta cuenta se reparte por lo que pidió cada uno: marca tus ítems.", en: "This bill is split by what each person ordered: tick your items." },
   "claim.sharedBy": { es: "Compartido por {n}", en: "Shared by {n}" },
 };
 

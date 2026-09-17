@@ -30,6 +30,11 @@ export function ClaimItemsModal({
     () => new Set(items.map((it, i) => (it.participantIds?.includes(meId) ? i : -1)).filter((i) => i >= 0))
   );
 
+  // Paso 2: confirmar antes de marcarse como listo. Sin esto, un toque de más
+  // en "Listo" deja a la persona registrada con un reparto a medias y los
+  // demás la ven como "ya eligió" — justo el error caro de esta pantalla.
+  const [confirming, setConfirming] = useState(false);
+
   const toggle = (i: number) =>
     setPicked((prev) => {
       const next = new Set(prev);
@@ -49,6 +54,7 @@ export function ClaimItemsModal({
   }, [picked, items, expense, meId]);
 
   function submit() {
+    setConfirming(false);
     claimExpenseItems(group.id, expense.id, meId, [...picked].sort((a, b) => a - b), true, {
       activity: makeActivity({
         type: "claim_submitted",
@@ -72,7 +78,15 @@ export function ClaimItemsModal({
             <Icon name="close" size={16} />
           </button>
         </div>
-        <p className="text-sm text-muted mb-4">{t("claim.subtitle", { label: expense.label })}</p>
+        <p className="text-sm text-muted mb-3">{t("claim.subtitle", { label: expense.label })}</p>
+
+        <div
+          className="rounded-2xl px-3 py-2 mb-4 text-[12px] flex items-start gap-2"
+          style={{ background: "rgba(15,163,163,.12)", color: "var(--teal)" }}
+        >
+          <Icon name="info" size={14} className="shrink-0 mt-0.5" />
+          <span>{t("claim.instruction")}</span>
+        </div>
 
         <div className="space-y-2">
           {items.map((it, i) => {
@@ -127,13 +141,71 @@ export function ClaimItemsModal({
         </div>
 
         <button
-          onClick={submit}
+          onClick={() => setConfirming(true)}
           className="w-full rounded-2xl py-3 mt-4 font-semibold text-white hover-lift"
           style={{ background: "linear-gradient(135deg, var(--teal), var(--indigo))" }}
         >
           {picked.size === 0 ? t("claim.nothing") : t("claim.imDone")}
         </button>
       </div>
+
+      {confirming && (
+        <div
+          className="fixed inset-0 z-[1001] flex items-end sm:items-center justify-center bg-black/50 p-3"
+          onClick={(e) => { e.stopPropagation(); setConfirming(false); }}
+        >
+          <div
+            className="glass-strong rounded-3xl w-full max-w-sm p-5 anim-pop"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="font-display font-bold text-lg mb-2">
+              {t(picked.size === 0 ? "claim.confirmNothingTitle" : "claim.confirmTitle")}
+            </h3>
+            <p className="text-sm text-muted mb-4">
+              {picked.size === 0
+                ? t("claim.confirmNothingBody")
+                : t("claim.confirmBody", { n: picked.size, total: items.length })}
+            </p>
+
+            {picked.size > 0 && (
+              <div className="glass rounded-2xl px-3 py-2.5 mb-4 space-y-1.5">
+                <div className="text-[11px] uppercase tracking-wide font-mono text-muted">
+                  {t("claim.yourItems")}
+                </div>
+                {[...picked].sort((a, b) => a - b).map((i) => (
+                  <div key={i} className="flex items-center justify-between gap-2 text-sm">
+                    <span className="min-w-0 truncate">{items[i]?.name || "—"}</span>
+                    <span className="font-mono shrink-0">{money(items[i]?.price ?? 0, group.currency)}</span>
+                  </div>
+                ))}
+                <div
+                  className="flex items-center justify-between gap-2 text-sm pt-1.5"
+                  style={{ borderTop: "1px solid var(--line)" }}
+                >
+                  <span className="text-muted">{t("claim.yourShare")}</span>
+                  <span className="font-mono font-bold">{money(myShare, group.currency)}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirming(false)}
+                className="flex-1 glass rounded-2xl py-2.5 text-sm font-semibold"
+              >
+                {t("claim.confirmBack")}
+              </button>
+              <button
+                onClick={submit}
+                className="flex-1 rounded-2xl py-2.5 text-sm font-semibold text-white"
+                style={{ background: "linear-gradient(135deg, var(--teal), var(--indigo))" }}
+              >
+                {t("claim.confirmYes")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Overlay>
   );
 }

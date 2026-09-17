@@ -266,7 +266,9 @@ export function ExpenseList({ group }: { group: Group }) {
           <span className="flex-1 min-w-0">
             <span className="block text-sm font-semibold truncate">{t("claim.pending")}</span>
             <span className="block text-[11px] text-muted truncate">
-              {myClaims.map((x) => x.label).join(" · ")}
+              {myClaims.length === 1
+                ? `${myClaims[0].label} · ${t("claim.instruction")}`
+                : myClaims.map((x) => x.label).join(" · ")}
             </span>
           </span>
           <Icon name="chevron" size={16} className="text-muted -rotate-90 shrink-0" />
@@ -704,7 +706,9 @@ function ExpenseRow({
                   }
                 >
                   <Icon name="users" size={11} />
-                  {iMustClaim ? t("claim.pending") : `${claimDone}/${claimTotal}`}
+                  {iMustClaim
+                    ? t("claim.pending")
+                    : `${t("claim.done")} · ${claimDone}/${claimTotal}`}
                 </span>
               )}
               {paidStatus && (
@@ -891,6 +895,11 @@ function ExpenseRow({
                           .map(name)
                           .join(", "),
                       })}
+                    </div>
+                  )}
+                  {roundOpen && iMustClaim && (
+                    <div className="text-[11px]" style={{ color: "var(--teal)" }}>
+                      {t("claim.instruction")}
                     </div>
                   )}
                   {roundOpen && (
