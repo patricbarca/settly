@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Expense, Group } from "../lib/types";
 import { Overlay } from "./Overlay";
 import { Avatar } from "./Avatar";
@@ -7,7 +7,8 @@ import { useT } from "../lib/i18n";
 import { money } from "../lib/format";
 import { claimExpenseItems } from "../lib/store";
 import { makeActivity } from "../lib/activity";
-import { itemizedSplits } from "../lib/claims";
+import { itemizedSplits, canClaimForOthers } from "../lib/claims";
+import { useUser } from "../lib/auth";
 
 /** "¿Qué consumiste?" — cada persona marca sus propios ítems de un gasto con
  *  una ronda de asignación abierta. Solo toca MI pertenencia: el RPC atómico
@@ -22,13 +23,34 @@ export function ClaimItemsModal({
   onClose: () => void;
 }) {
   const t = useT();
+  const user = useUser();
   const meId = group.meId;
   const items = expense.items ?? [];
   const name = (id: string) => group.members.find((m) => m.id === id)?.name ?? "?";
 
-  const [picked, setPicked] = useState<Set<number>>(
-    () => new Set(items.map((it, i) => (it.participantIds?.includes(meId) ? i : -1)).filter((i) => i >= 0))
-  );
+  // El dueño del grupo, quien abrió la ronda y quien puso el gasto pueden
+  // marcar por los demás (en la mesa es normal que uno solo tenga el móvil
+  // con el ticket). El resto solo por sí mismo. Espejo del guard del RPC.
+  const canPickForOthers = canClaimForOthers(expense, group, user?.id);
+  const expected = expense.claimRound?.expected ?? [];
+  const targets = canPickForOthers
+    ? [meId, ...expected.filter((id) => id !== meId)]
+    : [meId];
+  const [targetId, setTargetId] = useState(meId);
+  const target = targets.includes(targetId) ? targetId : meId;
+  const isMe = target === meId;
+  const doneIds = expense.claimRound?.done ?? [];
+
+  const picksOf = (id: string) =>
+    new Set(items.map((it, i) => (it.participantIds?.includes(id) ? i : -1)).filter((i) => i >= 0));
+
+  const [picked, setPicked] = useState<Set<number>>(() => picksOf(meId));
+
+  // Al cambiar de persona, cargar SU selección actual (no arrastrar la mía).
+  useEffect(() => {
+    setPicked(picksOf(target));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target]);
 
   // Paso 2: confirmar antes de marcarse como listo. Sin esto, un toque de más
   // en "Listo" deja a la persona registrada con un reparto a medias y los
@@ -46,21 +68,23 @@ export function ClaimItemsModal({
   // Mi parte en vivo, con mi selección actual aplicada sobre lo que ya hay.
   const myShare = useMemo(() => {
     const next = items.map((it, i) => {
-      const who = (it.participantIds ?? []).filter((id) => id !== meId);
-      return { ...it, participantIds: picked.has(i) ? [...who, meId] : who };
+      const who = (it.participantIds ?? []).filter((id) => id !== target);
+      return { ...it, participantIds: picked.has(i) ? [...who, target] : who };
     });
     const fallback = expense.claimRound?.status === "open" ? expense.claimRound.expected ?? [] : null;
-    return itemizedSplits(next, expense.fees ?? [], expense.tip ?? 0, fallback)[meId] ?? 0;
-  }, [picked, items, expense, meId]);
+    return itemizedSplits(next, expense.fees ?? [], expense.tip ?? 0, fallback)[target] ?? 0;
+  }, [picked, items, expense, target]);
 
   function submit() {
     setConfirming(false);
-    claimExpenseItems(group.id, expense.id, meId, [...picked].sort((a, b) => a - b), true, {
+    claimExpenseItems(group.id, expense.id, target, [...picked].sort((a, b) => a - b), true, {
       activity: makeActivity({
         type: "claim_submitted",
         actorId: meId,
         actorName: name(meId),
         label: expense.label,
+        // Si marco por otro, el log deja constancia de por quién fue.
+        ...(isMe ? {} : { toId: target, toName: name(target) }),
       }),
     });
     onClose();
@@ -88,9 +112,39 @@ export function ClaimItemsModal({
           <span>{t("claim.instruction")}</span>
         </div>
 
+        {canPickForOthers && targets.length > 1 && (
+          <div className="mb-4">
+            <div className="text-[11px] uppercase tracking-wide font-mono text-muted mb-1.5">
+              {t("claim.forWho")}
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              {targets.map((id) => {
+                const on = id === target;
+                const picked_ = doneIds.includes(id);
+                return (
+                  <button
+                    key={id}
+                    onClick={() => setTargetId(id)}
+                    className="rounded-full px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1.5"
+                    style={
+                      on
+                        ? { background: "linear-gradient(135deg, var(--teal), var(--indigo))", color: "#fff" }
+                        : { background: "var(--glass)", color: "var(--muted)" }
+                    }
+                  >
+                    {id === meId ? t("claim.me") : name(id)}
+                    {picked_ && <Icon name="check" size={11} />}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="text-[11px] text-muted mt-1.5">{t("claim.forOthersHint")}</div>
+          </div>
+        )}
+
         <div className="space-y-2">
           {items.map((it, i) => {
-            const others = (it.participantIds ?? []).filter((id) => id !== meId);
+            const others = (it.participantIds ?? []).filter((id) => id !== target);
             const mine = picked.has(i);
             return (
               <button
@@ -136,7 +190,7 @@ export function ClaimItemsModal({
         )}
 
         <div className="glass rounded-2xl px-4 py-3 mt-4 flex items-center justify-between">
-          <span className="text-sm text-muted">{t("claim.yourShare")}</span>
+          <span className="text-sm text-muted">{t(isMe ? "claim.yourShare" : "claim.theirShare")}</span>
           <span className="font-mono font-bold">{money(myShare, group.currency)}</span>
         </div>
 
@@ -159,12 +213,18 @@ export function ClaimItemsModal({
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-display font-bold text-lg mb-2">
-              {t(picked.size === 0 ? "claim.confirmNothingTitle" : "claim.confirmTitle")}
+              {isMe
+                ? t(picked.size === 0 ? "claim.confirmNothingTitle" : "claim.confirmTitle")
+                : t("claim.confirmForTitle", { name: name(target) })}
             </h3>
             <p className="text-sm text-muted mb-4">
-              {picked.size === 0
-                ? t("claim.confirmNothingBody")
-                : t("claim.confirmBody", { n: picked.size, total: items.length })}
+              {isMe
+                ? picked.size === 0
+                  ? t("claim.confirmNothingBody")
+                  : t("claim.confirmBody", { n: picked.size, total: items.length })
+                : picked.size === 0
+                  ? t("claim.confirmForNothingBody", { name: name(target) })
+                  : t("claim.confirmForBody", { n: picked.size, total: items.length, name: name(target) })}
             </p>
 
             {picked.size > 0 && (
@@ -182,7 +242,7 @@ export function ClaimItemsModal({
                   className="flex items-center justify-between gap-2 text-sm pt-1.5"
                   style={{ borderTop: "1px solid var(--line)" }}
                 >
-                  <span className="text-muted">{t("claim.yourShare")}</span>
+                  <span className="text-muted">{t(isMe ? "claim.yourShare" : "claim.theirShare")}</span>
                   <span className="font-mono font-bold">{money(myShare, group.currency)}</span>
                 </div>
               </div>

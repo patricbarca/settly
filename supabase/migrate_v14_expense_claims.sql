@@ -145,11 +145,6 @@ BEGIN
   SELECT member_id INTO v_caller
     FROM group_members WHERE group_id = p_group_id AND user_id = auth.uid() LIMIT 1;
   SELECT owner_id INTO v_owner FROM groups WHERE id = p_group_id;
-  -- Solo puedes marcar POR TI. El dueño del grupo puede marcar por otro
-  -- (para cerrar la ronda de quien no responde).
-  IF v_caller IS DISTINCT FROM p_member_id AND v_owner IS DISTINCT FROM auth.uid() THEN
-    RAISE EXCEPTION 'can only claim for yourself';
-  END IF;
 
   SELECT data INTO v_data FROM groups WHERE id = p_group_id FOR UPDATE;
   IF v_data IS NULL THEN RAISE EXCEPTION 'group not found'; END IF;
@@ -160,6 +155,17 @@ BEGIN
   END LOOP;
   IF v_idx < 0 THEN RAISE EXCEPTION 'expense not found'; END IF;
   v_exp := v_expenses->v_idx;
+
+  -- Quién puede marcar: por TI siempre; por OTROS solo el dueño del grupo,
+  -- quien abrió la ronda, o quien creó el gasto (el que puso el dinero y
+  -- tiene el ticket delante). Se comprueba tras leer el gasto porque dos de
+  -- los tres permisos viven dentro de él.
+  IF v_caller IS DISTINCT FROM p_member_id
+     AND v_owner IS DISTINCT FROM auth.uid()
+     AND v_caller IS DISTINCT FROM (v_exp->'claimRound'->>'openedBy')
+     AND v_caller IS DISTINCT FROM (v_exp->>'createdBy') THEN
+    RAISE EXCEPTION 'not allowed to claim for another member';
+  END IF;
 
   -- Añadir/quitar a este miembro ítem a ítem
   FOR v_i IN 0 .. GREATEST(jsonb_array_length(COALESCE(v_exp->'items', '[]'::jsonb)) - 1, -1) LOOP
@@ -221,6 +227,8 @@ CREATE OR REPLACE FUNCTION public.close_claim_round(
 ) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_data     jsonb;
+  v_owner    uuid;
+  v_caller   text;
   v_expenses jsonb;
   v_idx      int := -1;
   v_i        int;
@@ -236,6 +244,10 @@ BEGIN
     RAISE EXCEPTION 'not a member of this group';
   END IF;
 
+  SELECT member_id INTO v_caller
+    FROM group_members WHERE group_id = p_group_id AND user_id = auth.uid() LIMIT 1;
+  SELECT owner_id INTO v_owner FROM groups WHERE id = p_group_id;
+
   SELECT data INTO v_data FROM groups WHERE id = p_group_id FOR UPDATE;
   IF v_data IS NULL THEN RAISE EXCEPTION 'group not found'; END IF;
 
@@ -246,6 +258,14 @@ BEGIN
   IF v_idx < 0 THEN RAISE EXCEPTION 'expense not found'; END IF;
   v_exp := v_expenses->v_idx;
   v_round := COALESCE(v_exp->'claimRound', '{}'::jsonb);
+
+  -- Cerrar congela el reparto de TODOS: solo el dueño del grupo, quien abrió
+  -- la ronda o quien creó el gasto.
+  IF v_owner IS DISTINCT FROM auth.uid()
+     AND v_caller IS DISTINCT FROM (v_round->>'openedBy')
+     AND v_caller IS DISTINCT FROM (v_exp->>'createdBy') THEN
+    RAISE EXCEPTION 'not allowed to close this claim round';
+  END IF;
 
   IF p_policy = 'responders' THEN
     v_fill := COALESCE(v_round->'done', '[]'::jsonb);

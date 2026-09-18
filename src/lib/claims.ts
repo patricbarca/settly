@@ -113,6 +113,19 @@ export function applyCloseRound(exp: Expense, policy: ClosePolicy): Expense {
   };
 }
 
+/** ¿Puedo marcar ítems por OTRA persona en este gasto?
+ *  Espejo del guard de `claim_expense_items`: el dueño del grupo, quien abrió
+ *  la ronda, o quien creó el gasto (tiene el ticket delante). El resto solo
+ *  puede marcar por sí mismo. */
+export function canClaimForOthers(exp: Expense, group: Group, userId?: string): boolean {
+  const isOwner = !group.ownerId || group.ownerId === userId;
+  return (
+    isOwner ||
+    exp.claimRound?.openedBy === group.meId ||
+    exp.createdBy === group.meId
+  );
+}
+
 /** ¿Tengo que elegir todavía en este gasto? */
 export function needsMyClaim(exp: Expense, meId: string): boolean {
   const r = exp.claimRound;

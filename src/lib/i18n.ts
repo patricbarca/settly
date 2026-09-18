@@ -1029,6 +1029,15 @@ const DICT: Record<string, { es: string; en: string }> = {
   "claim.yourItems": { es: "Lo tuyo", en: "Your items" },
   "claim.done": { es: "Ya elegiste", en: "You're done" },
   "claim.instruction": { es: "Esta cuenta se reparte por lo que pidió cada uno: marca tus ítems.", en: "This bill is split by what each person ordered: tick your items." },
+  // Marcar por otra persona (dueño / quien abrió la ronda / quien puso el gasto)
+  "claim.forWho": { es: "Marcando para", en: "Picking for" },
+  "claim.me": { es: "Yo", en: "Me" },
+  "claim.forOthersHint": { es: "Puedes elegir por quien no lo haya hecho — pídeselo antes si puedes.", en: "You can pick for whoever hasn't — ask them first if you can." },
+  "claim.confirmForTitle": { es: "¿Es todo lo que consumió {name}?", en: "Is that everything {name} had?" },
+  "claim.confirmForBody": { es: "Marcaste {n} de {total} ítems por {name}. Quedará registrado como su elección.", en: "You ticked {n} of {total} items for {name}. It will be recorded as their pick." },
+  "claim.confirmForNothingBody": { es: "No marcaste nada por {name}, así que no pagará nada de esta cuenta. ¿Es correcto?", en: "You ticked nothing for {name}, so they won't pay anything on this bill. Is that right?" },
+  "claim.theirShare": { es: "Su parte ahora", en: "Their share now" },
+  "claim.alreadyPicked": { es: "ya eligió", en: "already picked" },
   "claim.sharedBy": { es: "Compartido por {n}", en: "Shared by {n}" },
 };
 

@@ -5,6 +5,7 @@ import { patchExpense, deleteExpense } from "../lib/store";
 import { shareFor, expenseSettledStatus } from "../lib/split";
 import { money as rawMoney, fmtDate, memberLabels, displayName } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
+import { useUser } from "../lib/auth";
 import { useGroupMoney } from "../lib/displayCurrency";
 import { fmtRate } from "../lib/fx";
 import { monthKey, monthsWithExpenses, monthLabel } from "../lib/report";
@@ -20,7 +21,7 @@ import { RecurringList } from "./RecurringList";
 import { makeNotif } from "../lib/notifications";
 import { makeActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
-import { needsMyClaim, pendingClaims } from "../lib/claims";
+import { needsMyClaim, pendingClaims, canClaimForOthers } from "../lib/claims";
 import { ClaimItemsModal } from "./ClaimItemsModal";
 import { CloseClaimModal } from "./CloseClaimModal";
 
@@ -557,6 +558,7 @@ function ExpenseRow({
   onCancelDelete: () => void;
   onDelete: () => void;
 }) {
+  const user = useUser();
   const c = catOf(e.category);
   const shares = shareFor(e, ids);
   const participants = (e.participantIds.length ? e.participantIds : ids).filter(
@@ -574,6 +576,9 @@ function ExpenseRow({
   const iMustClaim = needsMyClaim(e, group.meId);
   // Cierra quien abrió la ronda (o el creador del gasto, para gastos viejos).
   const canCloseRound = roundOpen && (round?.openedBy === group.meId || isMine);
+  // Quien puede marcar por otros conserva el acceso al selector aunque ya haya
+  // elegido lo suyo (si no, el anfitrión se quedaba sin entrada a la pantalla).
+  const canPickForOthers = roundOpen && canClaimForOthers(e, group, user?.id);
   // Indicador "pagado"/"pendiente" por gasto: un pago confirmado que
   // referencia este gasto en `expenseIds` — en modo Directo por elección
   // manual (picker), en Simplificado por asignación automática de más
@@ -904,13 +909,17 @@ function ExpenseRow({
                   )}
                   {roundOpen && (
                     <div className="flex gap-2 flex-wrap pt-0.5">
-                      {(round.expected ?? []).includes(group.meId) && (
+                      {((round.expected ?? []).includes(group.meId) || canPickForOthers) && (
                         <button
                           onClick={onClaim}
                           className="rounded-full px-3 py-1 text-xs font-semibold text-white hover-lift"
                           style={{ background: "linear-gradient(135deg, var(--teal), var(--indigo))" }}
                         >
-                          {iMustClaim ? t("claim.pickYours") : t("claim.editMine")}
+                          {iMustClaim
+                            ? t("claim.pickYours")
+                            : canPickForOthers
+                              ? t("claim.forWho")
+                              : t("claim.editMine")}
                         </button>
                       )}
                       {canCloseRound && (
