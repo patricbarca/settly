@@ -39,8 +39,14 @@ export function fileToAvatarDataUrl(file: File, size = 256): Promise<string> {
 // Devuelve el base64 (sin el prefijo data:) + mediaType.
 export function fileToScanImage(
   file: File,
-  maxSide = 1600,
-  quality = 0.8
+  // 2000px (antes 1600) + calidad 0.85: en un ticket térmico fotografiado de
+  // lejos los dígitos quedan a ~18px de alto a 1600, y 6/8/3/0 se distinguen
+  // por un detalle diminuto que la compresión se come — caso real: un ticket
+  // de Pampero con tres "$36.00" leídos como "$38.00". A 2000px suben a ~22px.
+  // Medido sobre esa misma foto (1932×2576): el payload pasa de 253 KB a 441
+  // KB en base64, muy por debajo del límite de la Edge Function.
+  maxSide = 2000,
+  quality = 0.85
 ): Promise<{ base64: string; mediaType: string }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

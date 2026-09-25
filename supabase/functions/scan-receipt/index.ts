@@ -123,6 +123,8 @@ Rules:
   - unitPrice: price for a SINGLE unit if shown (e.g. "$6.80 each" / "($23.90 each)"). If not shown, use price/qty.
   - price: the LINE TOTAL printed on the right (for the whole quantity).
   - SELF-CHECK: the sum of all item prices should equal the printed subtotal. If your extracted items don't add up to the subtotal, you misread a price or an alignment — fix it before answering.
+  - DIGITS: read every price digit by digit. On thermal receipts 6/8, 3/8, 0/8 and 1/7 differ by a tiny stroke that photographs badly. When a price is not perfectly sharp, prefer the reading that makes the items add up to the printed subtotal.
+  - COMPLETENESS: count the lines that carry a price in the right-hand column, and make sure you emitted exactly that many items. Dropping a line is as wrong as misreading one — if your items fall short of the subtotal, you most likely skipped a line: go back and find it.
   - CRITICAL: DO NOT create items for modifiers/options/sub-lines that are INCLUDED in an item's price and have NO price in the right price column — e.g. "Fresh Fruit", "Medium, Lacfree", "Scrambled", "Chorizo", "(... each)", size/extras. Ignore them, or append to the parent item's name. Only emit lines that carry a real price on the right.
   - NEVER emit an item with price 0 or a missing price. A LONG item name may WRAP onto two (or more) printed lines — that is still ONE item with ONE price on the right: join the wrapped text into a single item name, do NOT create a separate line with price 0 for the overflow text. If a line genuinely has no price on the right, it is a wrap/modifier — merge it into the item above or ignore it. Every item you output MUST have a real non-zero price.
   - For non-itemized receipts (utility/invoice) return [].
