@@ -151,10 +151,30 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
     //   - montos no concluyentes                 → caemos al flag del escaneo.
     const taxAmt = res.tax?.amount ?? 0;
     const hasTax = !!res.tax && taxAmt > 0;
+    // ANCLA PRINCIPAL: la suma de los ÍTEMS contra el total pagado.
+    //
+    // El `subtotal` que devuelve el escaneo es ambiguo en los tickets que
+    // imprimen DOS: uno con impuesto dentro ("Subtotal: $304.00") y otro sin
+    // él ("Total ex tax: $276.38"). Caso real (Pampero, Brisbane): los ítems
+    // suman 304 y el total es 304 —el GST YA está dentro— pero el modelo
+    // devolvía subtotal=276.38, con lo que `total − subtotal` daba 27.62 =
+    // exactamente el GST, y el impuesto se sumaba encima: $331.62 a repartir.
+    //
+    // La suma de los ítems no tiene esa ambigüedad: sale de la columna de
+    // precios. Si ya iguala al total, no cabe ningún impuesto encima.
+    const rawItemsSum = r2(res.items.reduce((a, it) => a + (Number(it.price) || 0), 0));
+    const itemsEqualTotal =
+      rawItemsSum > 0 && res.total > 0 && Math.abs(rawItemsSum - res.total) <= Math.max(0.02, res.total * 0.005);
+    const itemsPlusTaxEqualTotal =
+      rawItemsSum > 0 && res.total > 0 && Math.abs(r2(rawItemsSum + taxAmt) - res.total) <= Math.max(0.02, res.total * 0.005);
     const gap = res.subtotal > 0 && res.total > 0 ? r2(res.total - res.subtotal) : 0;
     const gapMatchesTax = Math.abs(gap - taxAmt) <= Math.max(0.02, taxAmt * 0.1);
     let taxNotIncluded: boolean;
-    if (hasTax && gap > 0.01 && gapMatchesTax) {
+    if (hasTax && itemsEqualTotal) {
+      taxNotIncluded = false; // ítems = total → incluido, mande lo que mande el subtotal
+    } else if (hasTax && itemsPlusTaxEqualTotal) {
+      taxNotIncluded = true; // ítems + impuesto = total → añadido encima
+    } else if (hasTax && gap > 0.01 && gapMatchesTax) {
       taxNotIncluded = true; // hueco ≈ impuesto → añadido encima
     } else if (hasTax && Math.abs(gap) <= 0.01) {
       taxNotIncluded = false; // subtotal ≈ total → ya incluido
