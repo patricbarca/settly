@@ -355,6 +355,21 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - Hero pills render even when `0` on a side (could hide the zero side or show a "settled" state).
 - When reusing the same working branch across multiple PRs, reset it to `origin/master` before starting new work — squash-merges otherwise cause merge conflicts on the next PR.
 
+## ⚠️ Regla permanente: estructura de costes de la IA (hedging factura DOBLE)
+- **FÓRMULA REAL del coste por escaneo** — no es el precio del primario:
+  `coste = P_primario + (tasa_hedge × P_backup)`
+  `tasa_hedge` = % de escaneos en los que el primario tarda **>`HEDGE_MS` (7 s)** → `scan-receipt` lanza el backup **EN PARALELO** y **se facturan LOS DOS**, descartando una respuesta. Al presupuestar, **contar siempre el peor caso (ambos proveedores)**, nunca solo el primario.
+- **Dos palancas, y tiran en sentidos distintos:**
+  - **`HEDGE_MS` ↑** → menos doble facturación **y** menos "ruleta de modelo" (ver abajo), a cambio de más latencia en el peor caso. Es la palanca que mejora coste **y** calidad a la vez.
+  - **Modelo mejor** → más precisión, más precio por llamada.
+- **⚠️ El hedging premia al RÁPIDO, no al mejor.** Pasados `HEDGE_MS`, `firstOk([pPrimary, pBackup])` devuelve **el primero que conteste OK**, sin mirar calidad. Con un primario fuerte y un backup flojo, **pagas por el bueno y a veces recibes el malo**. Corolario: **backup y primario deben ser de calidad comparable**, o se cambia la lógica a "el primario manda salvo fallo real".
+- **Regla de decisión por volumen** (medido 2026-09: **53 escaneos en 4 meses ≈ 20/mes**):
+  - **< ~500 escaneos/mes → elegir por PRECISIÓN, el precio es ruido.** Toda la horquilla entre el VLM más barato y el más caro son **~$0.38/mes** a 20 escaneos. Un escaneo mal leído cuesta más en confianza que la diferencia entera.
+  - **> ~1.000 escaneos/mes → empezar a mirar el precio** (ahí la horquilla se va a ~$19/mes).
+- **La cuenta que escala = coste por usuario Pro contra los $6.99.** Con la cuota Pro (30 escaneos/mes) **agotada entera**: modelo barato ≈ **0.4%** del ingreso, modelo caro ≈ **8.6%**. Margen sano incluso en el peor caso — por eso la precisión gana.
+- **Groq NO va para visión** (ya deprecó Scout y Maverick; su catálogo multimodal es delgado). Groq se queda para **texto y voz** (`parse-expense`, `transcribe`, `STT_API_KEY`). Visión va por `AI_VISION_*`.
+- **Cómo probar un modelo nuevo:** cambiar `AI_VISION_MODEL` es **un secreto del dashboard, sin despliegue**. Caso de prueba con respuesta conocida: el **ticket de Pampero** → **$304.00, 10 líneas, tres a $36.00** (trampas: `36`/`38`, `(2) x 2`, y dos subtotales).
+
 ## ⚠️ Regla permanente OBLIGATORIA: actualizar la documentación en CADA tarea
 - **REGLA (no opcional):** al terminar CUALQUIER instrucción/tarea/fix/feature/deploy — **cada vez, sin que el usuario lo pida** — actualizar la documentación como paso final ANTES de cerrar la respuesta. No esperar al "final de la sesión": es por tarea.
 - **Los 3 archivos vivos a revisar SIEMPRE:**
