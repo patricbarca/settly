@@ -93,21 +93,50 @@ type ProviderResult =
   | { ok: true; value: Record<string, unknown> }
   | { ok: false; error: string };
 
-/** Resuelve con el PRIMER resultado ok de las promesas; si todas fallan,
- *  devuelve el último error. */
-function firstOk(promises: Promise<ProviderResult>[]): Promise<ProviderResult> {
+// Gracia que se le da al PRIMARIO cuando el backup ya contestó bien: si el
+// primario llega dentro de esta ventana, gana él. Evita esperar su timeout
+// completo (25 s) sin renunciar a que mande el modelo que elegimos.
+const PRIMARY_GRACE_MS = 4_000;
+
+/** El PRIMARIO manda: su respuesta OK gana siempre, aunque el backup haya
+ *  contestado antes. El backup solo se sirve si el primario falla, o si sigue
+ *  pendiente PRIMARY_GRACE_MS después de que el backup respondiera bien.
+ *
+ *  Sustituye a un `firstOk` (el primero en contestar ganaba) que premiaba al
+ *  proveedor RÁPIDO en vez de al BUENO: con un primario fuerte y un backup
+ *  flojo, se pagaba por el bueno y a veces se servía el malo. */
+function preferPrimary(
+  pPrimary: Promise<ProviderResult>,
+  pBackup: Promise<ProviderResult>,
+): Promise<ProviderResult> {
   return new Promise((resolve) => {
-    let remaining = promises.length;
-    let last: ProviderResult = { ok: false, error: "no_providers" };
-    for (const pr of promises) {
-      pr.then((r) => {
-        if (r.ok) resolve(r);
-        else {
-          last = r;
-          if (--remaining === 0) resolve(last);
-        }
-      });
-    }
+    let settled = false;
+    let primaryDone = false;
+    let backupResult: ProviderResult | null = null;
+    const done = (r: ProviderResult) => {
+      if (!settled) {
+        settled = true;
+        resolve(r);
+      }
+    };
+
+    pPrimary.then((r) => {
+      primaryDone = true;
+      if (r.ok) return done(r); // el primario manda
+      // Falló el primario → sirve el backup; si ambos fallan, reporta el error
+      // del primario, que es el proveedor que elegimos.
+      if (backupResult) return done(backupResult.ok ? backupResult : r);
+      pBackup.then((b) => done(b.ok ? b : r));
+    });
+
+    pBackup.then((b) => {
+      backupResult = b;
+      if (primaryDone || !b.ok) return; // ya resuelto, o el backup no sirve
+      // El backup llegó primero y está OK: damos una gracia al primario.
+      setTimeout(() => {
+        if (!primaryDone) done(b);
+      }, PRIMARY_GRACE_MS);
+    });
   });
 }
 
@@ -201,8 +230,10 @@ Deno.serve(async (req) => {
     if (hedged !== "HEDGE" && hedged.ok) {
       result = hedged; // el primario ganó rápido
     } else {
+      // Se lanza el backup en paralelo (protege la latencia) PERO la respuesta
+      // del primario sigue mandando — ver preferPrimary.
       const pBackup = callProvider(backup, basePayload);
-      result = await firstOk([pPrimary, pBackup]);
+      result = await preferPrimary(pPrimary, pBackup);
     }
 
     if (result.ok) return ok(result.value);
