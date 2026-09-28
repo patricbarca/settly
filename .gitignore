@@ -13,3 +13,5 @@ android/app/release.keystore
 android/app/*.keystore
 android/app/*.jks
 android/local.properties
+
+supabase/.temp/
