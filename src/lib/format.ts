@@ -148,7 +148,10 @@ export function memberLabels(
 
 export function fmtDate(iso: string): string {
   if (!iso) return "";
-  return new Date(iso + "T00:00:00").toLocaleDateString("es-ES", {
+  // El idioma manda, igual que en money(). Estaba fijo en "es-ES", asi que las
+  // fechas salian en espanol tambien con la app en ingles ("12 sept").
+  const locale = getLang() === "en" ? "en-US" : "es-ES";
+  return new Date(iso + "T00:00:00").toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
   });

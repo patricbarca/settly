@@ -50,6 +50,12 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Fechas en espanol con la app en INGLES (`fmtDate`) — arreglado (2026-09-30)
+- **Bug:** `fmtDate` (`src/lib/format.ts`) llamaba a `toLocaleDateString("es-ES", …)` **fijo**, así que TODAS las fechas de la app salían en español aunque el idioma fuera inglés — en la lista de gastos se leía **"12 sept"** en vez de "Sep 12".
+- **Contexto:** `money()` tenía exactamente el mismo fallo y **ya se había arreglado** (hay un comentario en el código que lo dice); `fmtDate` se quedó atrás. Auditado el resto: **era el único sitio** con locale fijo — `report.ts`, `tz.ts`, `ReportModal`, `CreateGroupModal`, `GroupSettings`, `AddExpense`, `ScanReceiptModal` y `speech.ts` ya respetaban el idioma.
+- **Fix:** `const locale = getLang() === "en" ? "en-US" : "es-ES"`, el mismo patrón que `money()`.
+- **Cómo aparecio:** generando las capturas en inglés para la landing. Las capturas de marketing actúan como revisión de la UI: un bug de i18n que nadie había reportado salía a la vista en cuanto se miró la app en inglés.
+
 ### Mockup de la landing en OSCURO y con la fuente real (2026-09-30)
 - **El usuario mandó 4 capturas de su móvil** (*"Así es cómo luce Settlia"*) y destaparon el fallo de raíz que la sesión anterior no vio.
 - **⚠️ LA FUENTE: la app usa 'Baloo 2' para TODO.** `src/fonts.css` la auto-hospeda y `src/index.css` la aplica al `body`, a `.font-display` **y** a `.font-mono`. **No hay Bricolage Grotesque, ni Instrument Sans, ni Space Mono en la app.** La landing cargaba esas tres de Google Fonts → **ninguna coincidía**, incluidos los importes (que salían monoespaciados cuando en la app no lo son). Era exactamente la queja original *"el font es distinto"*. La ficha *Design system* de este archivo decía lo contrario y fue la causa del diagnóstico erróneo — **ya corregida arriba**.
