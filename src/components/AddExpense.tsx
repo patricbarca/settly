@@ -141,6 +141,14 @@ export function AddExpense({ group }: { group: Group }) {
         ? t("ai.youPay")
         : t("ai.paysName", { name: payerName });
     const sumParts = [payerPart, t("ai.among", { n: String(n) })];
+    // Con reparto desigual, decirlo EN LA LINEA de resumen: es el dato que hay
+    // que revisar antes de guardar, y si no se ve nadie abre el detalle.
+    if (r.percents) {
+      const pretty = r.participantIds
+        .map((id) => `${Math.round((r.percents![id] ?? 0) * 10) / 10}% ${group.members.find((m) => m.id === id)?.name ?? "?"}`)
+        .join(" · ");
+      sumParts.splice(1, 1, pretty);
+    }
     const perPerson =
       /\bcada\s+un[oa]\b|\bc\/u\b|\bpor\s+cabeza\b|\bpor\s+persona\b|\bapiece\b|\bper\s+person\b|\bper\s+head\b|\beach\b(?!\s+(day|week|month|year|d[ií]a|semana|mes|a[ñn]o))/i.test(
         src
@@ -156,8 +164,10 @@ export function AddExpense({ group }: { group: Group }) {
         ? Object.fromEntries(pays.map((p) => [p.memberId, p.amount]))
         : {},
       participantIds: r.participantIds,
-      splitMode: "equal",
-      splitValues: {},
+      splitMode: r.percents ? "percent" : "equal",
+      splitValues: r.percents
+        ? Object.fromEntries(r.participantIds.map((id) => [id, Math.round((r.percents![id] ?? 0) * 100) / 100]))
+        : {},
       category: r.category,
       allowEdits: false,
     });
@@ -169,6 +179,33 @@ export function AddExpense({ group }: { group: Group }) {
     }
     setInterpreting(false);
   }
+
+/** El % que devuelve el LLM se acepta solo si es creible: ids del grupo, todos
+ *  los participantes cubiertos y suma ~100. Ante cualquier duda se descarta y
+ *  el gasto va a partes iguales — es preferible a repartir mal el dinero. */
+function sanitizePercents(
+  raw: Record<string, number> | null | undefined,
+  participantIds: string[]
+): Record<string, number> | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const ids = new Set(participantIds);
+  const out: Record<string, number> = {};
+  let sum = 0;
+  for (const [id, v] of Object.entries(raw)) {
+    if (!ids.has(id)) return undefined;
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < 0) return undefined;
+    out[id] = n;
+    sum += n;
+  }
+  if (participantIds.some((id) => out[id] === undefined)) return undefined;
+  if (Math.abs(sum - 100) > 0.5) return undefined;
+  // Todo igual = reparto normal. Media décima de tolerancia: "33.34/33.33/
+  // 33.33" es un reparto igual redondeado, no uno desigual.
+  const first = out[participantIds[0]];
+  if (participantIds.every((id) => Math.abs(out[id] - first) <= 0.5)) return undefined;
+  return out;
+}
 
   async function tryAI(src: string, kind: AIKind): Promise<ParsedExpense | null> {
     if (!pro && aiRemaining(kind) <= 0) return null;
@@ -193,6 +230,7 @@ export function AddExpense({ group }: { group: Group }) {
         payerId: ids.has(ai.payerId) ? ai.payerId : group.meId,
         payments,
         participantIds: participantIds.length ? participantIds : group.members.map((m) => m.id),
+        percents: sanitizePercents(ai.percents, participantIds.length ? participantIds : group.members.map((m) => m.id)),
         category: CATEGORIES.find((c) => c.id === ai.category)?.id ?? "otros",
         interval: ai.interval || undefined,
       };

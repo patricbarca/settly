@@ -55,11 +55,12 @@ Currency: ${currency}
 Note: "${text}"
 
 Return a JSON object with exactly these keys:
-{"label":"short title","amount":0,"currency":"XXX","payments":[{"memberId":"<member id>","amount":0}],"participantIds":["<member id>",...],"category":"<one allowed category>","interval":null}
+{"label":"short title","amount":0,"currency":"XXX","payments":[{"memberId":"<member id>","amount":0}],"participantIds":["<member id>",...],"percents":null,"category":"<one allowed category>","interval":null}
 
 Rules:
 - amount: numeric TOTAL only (no currency symbol; use a dot for decimals). A number written as a PERCENTAGE (followed by "%", or clearly a share like "60 percent") is NEVER the amount — it describes how the cost or payment is split. The amount is the real money figure. Example: in "supermarket 45, I paid 60% and Ana 40%", the amount is 45 (NOT 60).
-- percentages for payers: if the note says who paid using percentages ("I paid 60%, Ana 40%", "yo el 60% y Ana el 40%"), convert each percentage to a money amount = percentage/100 × total, and put those in payments (they must still sum to the total).
+- percents: UNEVEN SPLIT. A percentage in the note describes HOW THE COST IS SHARED, not who paid. "supermarket 150 60% me" means the expense is 150 and MY share of it is 60%. Return percents as an object memberId -> percentage that covers EVERY id in participantIds and adds up to exactly 100. If some people have an explicit percentage and others do not, split the remainder EQUALLY among the ones without. Use null when the split is even.
+- percentages that mean WHO PAID: only when the percentage directly follows a paying verb ("I paid 60%", "yo pagué el 60%", "Ana puso el 40%"). In that case put the money amounts in payments (percentage/100 × total) and leave percents null. Naming who paid elsewhere in the note does NOT turn the other percentages into payments.
 - currency: ISO 4217 code (3 letters) of the currency the amount is stated in. Detect it ONLY from an EXPLICIT currency word, code or symbol IN THE NOTE (e.g. "dong"/"₫"/"VND"→VND, "USD"/"US$"→USD, "euros"/"€"→EUR, "pounds"/"£"→GBP, "yen"/"¥"→JPY, "pesos argentinos"→ARS). **NEVER infer the currency from the group's name, the destination/country, the location, or the item names.** A bare "$" is ambiguous — do NOT treat it as USD; use the group's currency. If the note does NOT explicitly state a currency, ALWAYS use the group's currency shown above (${currency}). Never guess an exchange rate yourself — only report which currency the number is in.
 - PER-PERSON amounts: if the note states the amount PER PERSON ("X each", "X cada uno", "X c/u", "X por cabeza", "X por persona", "X apiece"), then the TOTAL amount = that number multiplied by the number of participantIds. Example: "Cinema 12 each" with 4 participants -> amount 48.
 - payments: who actually PAID and how much. One entry per payer; the amounts MUST sum to the total amount. If paid evenly between payers, divide the total. If unclear who paid, use a single entry: [{"memberId":"${meId}","amount":<total>}].
@@ -69,15 +70,17 @@ Rules:
 - Match names loosely: nicknames and diminutives count (e.g. "Ale" -> "Alecita", "Pato" -> "Patricio"). Output member IDS, not names.
 
 Examples (sample roster — a: Ana, b: Luis, c: Me; "me"=c; assume the group's currency is USD here). Learn the behavior, then apply to the REAL members listed above:
-- "Cena 80" -> {"label":"Cena","amount":80,"currency":"USD","payments":[{"memberId":"c","amount":80}],"participantIds":["a","b","c"],"category":"comida","interval":null}
-- "Cine 32 cada uno" -> {"label":"Cine","amount":96,"currency":"USD","payments":[{"memberId":"c","amount":96}],"participantIds":["a","b","c"],"category":"ocio","interval":null}
-- "Pagó Ana 50 del súper" -> {"label":"Súper","amount":50,"currency":"USD","payments":[{"memberId":"a","amount":50}],"participantIds":["a","b","c"],"category":"mercado","interval":null}
-- "Taxi, Ana 30 y yo 20" -> {"label":"Taxi","amount":50,"currency":"USD","payments":[{"memberId":"a","amount":30},{"memberId":"c","amount":20}],"participantIds":["a","b","c"],"category":"transporte","interval":null}
-- "Netflix 15 mensual" -> {"label":"Netflix","amount":15,"currency":"USD","payments":[{"memberId":"c","amount":15}],"participantIds":["a","b","c"],"category":"servicios","interval":"monthly"}
-- "Cena 100 menos Luis" -> {"label":"Cena","amount":100,"currency":"USD","payments":[{"memberId":"c","amount":100}],"participantIds":["a","c"],"category":"comida","interval":null}
-- "Fideos 200000 dong" -> {"label":"Fideos","amount":200000,"currency":"VND","payments":[{"memberId":"c","amount":200000}],"participantIds":["a","b","c"],"category":"comida","interval":null}
-- "Súper 45, yo 60% y Ana 40%" -> {"label":"Súper","amount":45,"currency":"USD","payments":[{"memberId":"c","amount":27},{"memberId":"a","amount":18}],"participantIds":["a","b","c"],"category":"mercado","interval":null}
-- "¿qué tiempo hace?" -> {"label":"","amount":0,"currency":"USD","payments":[],"participantIds":[],"category":"otros","interval":null}`;
+- "Cena 80" -> {"label":"Cena","amount":80,"currency":"USD","payments":[{"memberId":"c","amount":80}],"participantIds":["a","b","c"],"percents":null,"category":"comida","interval":null}
+- "Cine 32 cada uno" -> {"label":"Cine","amount":96,"currency":"USD","payments":[{"memberId":"c","amount":96}],"participantIds":["a","b","c"],"percents":null,"category":"ocio","interval":null}
+- "Pagó Ana 50 del súper" -> {"label":"Súper","amount":50,"currency":"USD","payments":[{"memberId":"a","amount":50}],"participantIds":["a","b","c"],"percents":null,"category":"mercado","interval":null}
+- "Taxi, Ana 30 y yo 20" -> {"label":"Taxi","amount":50,"currency":"USD","payments":[{"memberId":"a","amount":30},{"memberId":"c","amount":20}],"participantIds":["a","b","c"],"percents":null,"category":"transporte","interval":null}
+- "Netflix 15 mensual" -> {"label":"Netflix","amount":15,"currency":"USD","payments":[{"memberId":"c","amount":15}],"participantIds":["a","b","c"],"percents":null,"category":"servicios","interval":"monthly"}
+- "Cena 100 menos Luis" -> {"label":"Cena","amount":100,"currency":"USD","payments":[{"memberId":"c","amount":100}],"participantIds":["a","c"],"percents":null,"category":"comida","interval":null}
+- "Fideos 200000 dong" -> {"label":"Fideos","amount":200000,"currency":"VND","payments":[{"memberId":"c","amount":200000}],"participantIds":["a","b","c"],"percents":null,"category":"comida","interval":null}
+- "Súper 45, yo 60% y Ana 40%" -> {"label":"Súper","amount":45,"currency":"USD","payments":[{"memberId":"c","amount":45}],"participantIds":["a","c"],"percents":{"c":60,"a":40},"category":"mercado","interval":null}
+- "supermarket 150 60% me" -> {"label":"Supermarket","amount":150,"currency":"USD","payments":[{"memberId":"c","amount":150}],"participantIds":["a","b","c"],"percents":{"c":60,"a":20,"b":20},"category":"mercado","interval":null}
+- "Súper 45, yo pagué el 60% y Ana el 40%" -> {"label":"Súper","amount":45,"currency":"USD","payments":[{"memberId":"c","amount":27},{"memberId":"a","amount":18}],"participantIds":["a","b","c"],"percents":null,"category":"mercado","interval":null}
+- "¿qué tiempo hace?" -> {"label":"","amount":0,"currency":"USD","payments":[],"participantIds":[],"percents":null,"category":"otros","interval":null}`;
 
     const res = await fetch(API_URL, {
       method: "POST",
@@ -120,7 +123,18 @@ Examples (sample roster — a: Ana, b: Luis, c: Me; "me"=c; assume the group's c
     // del ejemplo few-shot "Ana 30 y yo 20" aunque la nota solo tenga un
     // número). Si devuelve más pagos de los que hay números distintos en la
     // nota, no confiamos en ese reparto: colapsamos a un único pagador.
-    const final = guardAgainstHallucinatedSplit(String(text), withPerPerson);
+    const guarded = guardAgainstHallucinatedSplit(String(text), withPerPerson);
+    // applyDefaultSplit puede AMPLIAR los participantes despues de validar los
+    // porcentajes (p. ej. "150 60% yo" no nombra a nadie mas -> entra todo el
+    // grupo). Se revalida contra la lista final: un reparto que no cubra a
+    // todos repartiria mal el dinero.
+    const final = {
+      ...guarded,
+      percents: sanitizePercents(
+        (guarded as { percents?: unknown }).percents,
+        (guarded as { participantIds: string[] }).participantIds
+      ),
+    };
     return json(final);
   } catch (e) {
     console.error(e);
@@ -228,9 +242,36 @@ function sanitize(
     payerId,
     payments,
     participantIds,
+    percents: sanitizePercents(p.percents, participantIds),
     category,
     interval,
   };
+}
+
+/** Un reparto desigual solo se acepta si es COMPLETO y CUADRA: ids del grupo,
+ *  todos los participantes cubiertos y suma 100 (±0.5 por el redondeo del
+ *  modelo). Cualquier otra cosa -> null y el gasto va a partes iguales: un
+ *  reparto a medias repartiría mal el dinero sin que se note. */
+function sanitizePercents(raw: unknown, participantIds: string[]): Record<string, number> | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const ids = new Set(participantIds);
+  const out: Record<string, number> = {};
+  let sum = 0;
+  for (const [id, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!ids.has(id)) return null;
+    const n = Number(v);
+    if (!Number.isFinite(n) || n < 0) return null;
+    out[id] = n;
+    sum += n;
+  }
+  if (participantIds.some((id) => out[id] === undefined)) return null;
+  if (Math.abs(sum - 100) > 0.5) return null;
+  // Todos iguales = reparto normal. La tolerancia es de medio punto porque
+  // "33.34 / 33.33 / 33.33" ES un reparto a partes iguales redondeado, y
+  // marcarlo como desigual ensucia el gasto con splits que no aportan nada.
+  const first = out[participantIds[0]];
+  if (participantIds.every((id) => Math.abs(out[id] - first) <= 0.5)) return null;
+  return out;
 }
 
 // ¿La nota menciona a algún OTRO miembro (por nombre o primer nombre)?

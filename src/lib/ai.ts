@@ -14,6 +14,8 @@ export type AIParsedExpense = {
   payerId: string;
   payments?: { memberId: string; amount: number }[];
   participantIds: string[];
+  /** Reparto desigual en % por persona; ausente = a partes iguales. */
+  percents?: Record<string, number> | null;
   category: Category;
   interval?: RecurrenceInterval | null;
 };

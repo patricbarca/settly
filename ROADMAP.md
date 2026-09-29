@@ -14,7 +14,7 @@ Bloquean lanzamiento serio / publicación en stores.
 
 - ✅ **Web Push** — desplegado (`send-push` + `push_subscriptions` + VAPID).
 - ✅ **Recordatorios diarios** — función `daily-reminders` desplegada (**v42, 2026-08-14**, con el fix `.trim()` de los secretos APNs) y **cron VERIFICADO ACTIVO** (`settlia-daily-reminders`, `active=true`, `0 23 * * *` ≈ 9-10am Sydney). Web Push + APNs. (Distinto del botón manual "Recordar" en Friends, one-shot vía `send-push`.)
-- ✅ **`parse-expense`** — desplegado con "por persona" forzado + few-shot.
+- ✅ **`parse-expense`** — desplegado (v43) con "por persona" forzado + few-shot + **reparto desigual por porcentajes** (`percents`, "supermarket 150 60% me").
 - ✅ **`scan-receipt`** — desplegado, escaneo de tickets funcionando (Groq Llama 4 Scout).
 - ✅ **Supabase Auth** — Site URL + Redirect URLs en `https://app.settlia.app`; origen Google OAuth añadido.
 - ✅ **Deploy `delete-account`** — desplegada y verificada (borra perfil, membresías, push subs, entitlements y la cuenta de auth; limpia dependientes antes de `deleteUser` y transfiere propiedad de grupos compartidos).

@@ -27,11 +27,62 @@ export interface ParsedExpense {
   payerId: string;
   payments?: { memberId: string; amount: number }[];
   participantIds: string[];
+  /** Reparto DESIGUAL en porcentaje por persona ("supermarket 150 60% yo").
+   *  Ausente = a partes iguales. Siempre cubre a todos los participantes y
+   *  suma 100; el reparto en euros lo hace el formulario. */
+  percents?: Record<string, number>;
   category: Category;
   interval?: RecurrenceInterval;
 }
 
 const firstName = (m: Member) => m.name.trim().split(/\s+/)[0].toLowerCase();
+
+const ME_WORDS = /^(yo|me|m[ií]|mine|myself|i)$/i;
+
+/** Extrae los porcentajes atados a una persona: "60% yo", "yo 60%", "40% Ana".
+ *  Orden de búsqueda: primero el token PEGADO por delante, luego hasta 3 por
+ *  detrás. Ese orden es el que resuelve "yo 60% Emma 40%" — con la búsqueda
+ *  hacia delante primero, el 60% se lo llevaba Emma. Mirar hacia atrás solo a
+ *  distancia 1 evita el fallo simétrico en "Emma 150 60% yo", donde un nombre
+ *  lejano no tiene nada que ver con el porcentaje. Una persona ya asignada no
+ *  se reclama dos veces, que es lo que encadena "60% yo 40% Emma". */
+function extractPercents(
+  text: string,
+  members: Member[],
+  meId: string
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  // "60 %" y "60%" son lo mismo; se pega para tokenizar de una pieza.
+  const toks = (text.toLowerCase().replace(/(\d)\s*%/g, "$1%").match(/\S+/g) || [])
+    .map((w) => w.replace(/^[^\p{L}\p{N}]+|[^\p{L}\p{N}%]+$/gu, ""));
+
+  const personAt = (i: number): string | null => {
+    const w = (toks[i] || "").replace(/[^\p{L}]/gu, "");
+    if (!w) return null;
+    if (ME_WORDS.test(w)) return meId;
+    const m = members.find((x) => firstName(x) === w);
+    return m ? m.id : null;
+  };
+
+  // Si la nota habla de QUIEN PAGÓ, este parser no intenta el reparto desigual.
+  // Un "60%" puede ser cuánto puso alguien o cuánto le toca, y mezclado con un
+  // verbo de pago ("pagó Emma, 60% yo 40% ella") no hay forma fiable de saberlo
+  // con regex. Vale más quedarse a partes iguales —que el usuario ve y corrige—
+  // que repartir el dinero mal. El LLM, que sí modela pagadores, lo resuelve.
+  if (/\b(pagu[eé]|pag[oó]|pagaron|pagamos|paid|pays?|puse|puso|abon[eéoó])\b/i.test(text)) return out;
+
+  toks.forEach((tok, i) => {
+    const m = tok.match(/^(\d+(?:[.,]\d+)?)%$/);
+    if (!m) return;
+    const pct = Number(m[1].replace(",", "."));
+    if (!(pct > 0)) return;
+    const free = (x: string | null) => (x && out[x] === undefined ? x : null);
+    let id: string | null = free(personAt(i - 1));
+    for (let j = i + 1; j <= i + 3 && !id; j++) id = free(personAt(j));
+    if (id) out[id] = pct;
+  });
+  return out;
+}
 
 export function parseExpense(
   text: string,
@@ -48,6 +99,10 @@ export function parseExpense(
     Number(s.replace(/\.(?=\d{3}\b)/g, "").replace(",", "."))
   );
   const amount = nums.length ? Math.max(...nums) : 0;
+
+  // Reparto por porcentajes ("60% yo"), si lo hay.
+  const pct = extractPercents(text, members, meId);
+  const pctIds = Object.keys(pct);
 
   // Participantes: miembros cuyo nombre aparece en el texto.
   let participants = members.filter((m) => t.includes(" " + firstName(m)));
@@ -87,6 +142,39 @@ export function parseExpense(
     );
   const finalAmount = perPerson && participants.length > 0 ? amount * participants.length : amount;
 
+  // Quien lleva un porcentaje participa aunque no se le nombre de otra forma.
+  for (const id of pctIds) {
+    if (!participants.some((p) => p.id === id)) {
+      const m = members.find((x) => x.id === id);
+      if (m) participants.push(m);
+    }
+  }
+
+  // Porcentajes → reparto completo sobre TODOS los participantes, sumando 100.
+  //  · "150 60% yo" en un grupo de 2 → yo 60, el otro 40.
+  //  · en un grupo de 5 → yo 60 y el 40 restante a partes iguales entre los 4.
+  // Lo que sobra (o falta) se reparte entre quien no tiene porcentaje explícito;
+  // si no queda nadie, se normaliza para que siempre cuadre a 100.
+  let percents: Record<string, number> | undefined;
+  if (pctIds.length > 0) {
+    const ids = participants.map((p) => p.id);
+    const assigned = ids.filter((id) => pct[id] !== undefined);
+    const rest = ids.filter((id) => pct[id] === undefined);
+    const sum = assigned.reduce((a, id) => a + pct[id], 0);
+    const result: Record<string, number> = {};
+    for (const id of assigned) result[id] = pct[id];
+    if (rest.length > 0 && sum < 100) {
+      const each = (100 - sum) / rest.length;
+      for (const id of rest) result[id] = each;
+    } else {
+      for (const id of rest) result[id] = 0;
+      if (sum !== 100 && sum > 0) {
+        for (const id of assigned) result[id] = (pct[id] / sum) * 100;
+      }
+    }
+    percents = result;
+  }
+
   // Categoría.
   let category: Category = "otros";
   for (const [re, cat] of CAT_KW) {
@@ -102,10 +190,12 @@ export function parseExpense(
     "gi"
   );
   let label = text
+    .replace(/\d+(?:[.,]\d+)?\s*%/g, " ")
     .replace(/\d+(?:[.,]\d+)?\s*(€|eur|euros?|\$|usd|aud|gbp|cad|chf|mxn|brl|cop|ars|jpy|cny)?\b/gi, " ")
     .replace(names, " ")
     .replace(/\bc\/u\b/gi, " ")
-    .replace(/\b(con|y|e|pagu[eé]|pag[oó]|entre|todos|todas|grupo|yo|de|del|la|el|los|las|un|una|para|por|cabeza|persona|apiece|all|everyone|all of us|nosotros|daily|weekly|monthly|yearly|diario|diaria|semanal|mensual|anual|cada d[ií]a|cada semana|cada mes|cada a[ñn]o|cada un[oa]|annual|annually|every|per|each|month|months|week|weeks|year|years|day|days|mes|semana|a[ñn]o)\b/gi, " ")
+    .replace(/\b(con|y|e|pagu[eé]|pag[oó]|entre|todos|todas|grupo|yo|me|mi|del|la|el|los|las|un|una|para|por|cabeza|persona|apiece|paid|pay|puse|puso|ella|ellos|ellas|she|he|her|him|they|them|all|everyone|all of us|nosotros|daily|weekly|monthly|yearly|diario|diaria|semanal|mensual|anual|cada d[ií]a|cada semana|cada mes|cada a[ñn]o|cada un[oa]|annual|annually|every|per|each|month|months|week|weeks|year|years|day|days|mes|semana|a[ñn]o)\b/gi, " ")
+    .replace(/(^|\s)[^\p{L}\p{N}]+(?=\s|$)/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
   label = label.split(/\s+/).slice(0, 5).join(" ");
@@ -116,6 +206,7 @@ export function parseExpense(
     amount: finalAmount,
     payerId,
     participantIds: participants.map((p) => p.id),
+    percents,
     category,
     interval,
   };
