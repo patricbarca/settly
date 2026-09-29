@@ -203,7 +203,7 @@ export function SettleFriendModal({ friend, onClose }: { friend: Friend; onClose
                 <select
                   value={target}
                   onChange={(e) => convertTo(e.target.value)}
-                  className="glass rounded-lg px-2 py-1 text-sm flex-1"
+                  className="glass rounded-lg px-2 py-1 text-sm flex-1 min-w-0"
                 >
                   <option value="">{t("friends.perCurrency")}</option>
                   {CURRENCIES.map((c) => (

@@ -417,7 +417,7 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
               <select
                 value={otherCurrency}
                 onChange={(e) => setOtherCurrency(e.target.value)}
-                className="glass rounded-xl px-3 py-2.5 text-sm flex-1"
+                className="glass rounded-xl px-3 py-2.5 text-sm flex-1 min-w-0"
               >
                 {CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code}>

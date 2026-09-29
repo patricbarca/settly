@@ -50,6 +50,20 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Fix: el boton "Confirm" del paso de moneda se salia de pantalla (2026-09-30)
+- **Bug:** en `ScanReceiptModal`, el paso *"Confirm the currency"* pone `<select>` + boton **Confirm** en una fila flex. El `<select>` llevaba `flex-1` **sin `min-w-0`**, y el ancho minimo intrinseco de un select lo marca **su opcion mas larga** (la lista completa de `CURRENCIES` con el nombre de la moneda). Resultado: a 390 px el select ocupaba de mas y **Confirm quedaba cortado fuera de pantalla**.
+- **Fix:** `flex-1 min-w-0` en el select. Mismo arreglo preventivo en el select de `SettleFriendModal` (sus opciones son cortas, asi que ahi no se veia, pero el fallo latente era el mismo).
+- **Regla:** un `<select>` dentro de un flex **siempre** necesita `min-w-0`; si no, la opcion mas larga de la lista decide el ancho del contenedor.
+- **Como aparecio:** capturando el flujo de escaneo para la landing. Segunda vez que las capturas de marketing destapan un bug que nadie habia reportado (la primera fue `fmtDate`).
+
+### Landing: storyboard con los DOS flujos reales (escaneo y prompt) (2026-09-30)
+- La seccion "como funciona" era **HTML dibujado a mano** que fingia justo estas pantallas. Ahora son **capturas reales** de los dos recorridos completos, con scroll animado y pie de foto por paso (`settly-landing/assets/flow/`).
+- **Escanear un ticket:** foto + *"Reading the receipt…"* → la IA desglosa linea a linea → marcar quien consumio que → **gasto guardado con la parte de cada uno** (23 / 16 / 16 / 6,50 / 18 de 79,50 — cuadra al centimo).
+- **Escribirlo:** frase en lenguaje normal → *"Review and confirm"* con importe, pagador, categoria y entre quienes → guardado.
+- **⚠️ La IA se intercepta EN RED (`page.route`), no se parchea la app.** Asi corre el camino de produccion entero (consentimiento, compresion de la foto, `ItemizedExpenseEditor`, el calculo del reparto) y solo se sustituyen las 2 llamadas que no podemos hacer de verdad. La respuesta del parser se **construye con los miembros que manda la propia peticion**, porque los ids del modo invitado cambian en cada arranque.
+- **Trampas anotadas en `scripts/README-screenshots.md`:** el scan simulado necesita un **retardo de 2,5 s** o no da tiempo a capturar *"Reading the receipt…"*; el contenedor de cada item se localiza por el **valor** del input (React no lo pone como atributo) marcandolo con un `data-attr` temporal; y en las slides con **modal abierto NO se superpone la barra inferior**, porque la app oscurece toda la pantalla.
+- El ticket de la foto es **generado** (`scripts/demo-receipt.html`, restaurante inventado de Lisboa). Nunca un ticket real.
+
 ### Landing: el hero pasa a CAPTURAS REALES con scroll animado (2026-09-30)
 - **Se elimino el mockup dibujado a mano.** El movil del hero son ahora **capturas reales de la app** (`settly-landing/assets/app/*.webp`), en **oscuro** y en **ingles**, con un grupo de demo inventado ("Lisbon trip", 5 personas). Motivo: el HTML a mano se desincronizaba en cada cambio de UI — llego a mostrar un formato de moneda abandonado y tres tipografias que la app no usa.
 - **Animacion de scroll vertical:** cada slide es la **pantalla entera** y se desplaza dentro del marco. El recorrido lo deriva el CSS (`translateY(calc(560px - 100%))`, donde `100%` es el alto de la imagen), asi que vale para cualquier captura. La **duracion va por slide** a **velocidad constante (~120 px/s)**; `data-ms` = duracion + 1.1 s de pausa arriba y abajo. Con `prefers-reduced-motion` se desactiva.
