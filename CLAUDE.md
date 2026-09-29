@@ -50,6 +50,16 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Mockup de la landing alineado con la app real (2026-09-29)
+- **Reporte:** *"los screenshots del hero no se parecen a la app, el font es distinto"*. Se comprobó contra la **app corriendo en local** (modo invitado vía `signInGuest`, capturada con Playwright), no de memoria. Las tres fuentes ya eran las correctas; el problema era **cómo estaba construido el mockup**.
+- **Formato de dinero (la causa principal de la sensación de "otra tipografía"):** el mockup escribía `74,50 $` en TODAS partes — símbolo **detrás** y coma siempre, en inglés también. `money()` (`format.ts`) pone el símbolo **delante** y sigue el idioma: `$74.50` en EN, `$74,50` en ES. Corregidos los ~24 importes con variante `data-es`. El ticket de papel dibujado conserva su formato con coma (es correcto: lo imprime el restaurante).
+- **El hero salía navy oscuro:** `.hero` de la app apila **tres** radiales + los **blobs** desenfocados en `mix-blend-mode: screen`, que son los que le dan el violeta→teal brillante. `.app-hero` de la landing tenía solo dos radiales y ningún blob. Añadidos (blobs estáticos vía `::before`/`::after`).
+- **Slides de Saldos y Estadísticas abrían con un título de texto plano** — la app SIEMPRE muestra la tarjeta hero encima de las pestañas. Añadida en ambas.
+- **Pestañas:** eran un carril segmentado de anchos iguales; en la app son **pastillas sueltas** con hueco, cada una del ancho de su texto (`flex-auto`, `GroupView.tsx`).
+- **Otros desajustes corregidos:** faltaba el subtítulo `· pagó $X` en las filas de saldo; el meta de la tarjeta de Home decía `4 · 74,50 $ · 1` en **Space Mono** (la app: `4 personas · $74,50 · 1 gasto` en Instrument Sans — el mono se reserva para números); el nombre del grupo va en **Bricolage** (`font-display`) y le faltaban las **burbujas de miembros**; faltaba la etiqueta "Tu balance global" y los dos puntos de `T:`; "Tus grupos" era una etiqueta mono minúscula en vez de un título; y la fila de gasto se partía en tres renglones (en la app es una sola línea).
+- **Verificado:** las 7 slides en **ES y EN**, comprobando además que ninguna desborda la pantalla del móvil.
+- **Nota:** el mockup es un **HTML a mano**, no un screenshot — se desincroniza sola cada vez que cambia la app. Si se vuelve a tocar, comparar contra la app real levantada en local, no contra la memoria.
+
 ### Hedging del scan: el modelo PRIMARIO manda salvo fallo real (`scan-receipt` v54, 2026-09-25)
 - **Bug:** pasados `HEDGE_MS` (7 s) se lanzaba el backup en paralelo y `firstOk` servía **el primero que contestaba OK** — premiaba al proveedor **rápido**, no al **bueno**. Con un primario fuerte (el que elegimos y pagamos) y un backup barato/flojo, la respuesta servida podía ser la peor de las dos.
 - **Fix:** nuevo `preferPrimary(pPrimary, pBackup)` en `supabase/functions/scan-receipt/index.ts`. La respuesta **OK del primario gana siempre**, aunque el backup haya contestado antes. El backup solo se sirve si el primario **falla**, o si sigue pendiente **`PRIMARY_GRACE_MS = 4 s`** tras un backup OK (evita esperar el timeout completo de 25 s sin renunciar a que mande el modelo elegido). Si ambos fallan se devuelve el error del primario.
