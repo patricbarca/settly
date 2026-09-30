@@ -441,6 +441,28 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Groq NO va para visión** (ya deprecó Scout y Maverick; su catálogo multimodal es delgado). Groq se queda para **texto y voz** (`parse-expense`, `transcribe`, `STT_API_KEY`). Visión va por `AI_VISION_*`.
 - **Cómo probar un modelo nuevo:** cambiar `AI_VISION_MODEL` es **un secreto del dashboard, sin despliegue**. Caso de prueba con respuesta conocida: el **ticket de Pampero** → **$304.00, 10 líneas, tres a $36.00** (trampas: `36`/`38`, `(2) x 2`, y dos subtotales).
 
+## ⚠️ Regla permanente OBLIGATORIA: instrucciones claras, precisas y ejecutables
+- **REGLA (no opcional):** siempre que el usuario tenga que hacer algo a mano, las
+  instrucciones van **paso a paso y listas para copiar y pegar**. Nunca dar una
+  indicación vaga ("súbelo al repo", "configúralo en el dashboard") ni dar por
+  supuesto que ya sabe dónde está cada cosa.
+- **Toda instrucción DEBE decir:**
+  1. **DÓNDE se ejecuta** — ¿su Mac o el contenedor de Claude? ¿Terminal, el
+     dashboard de Supabase, App Store Connect? Y **en qué carpeta**.
+  2. **QUÉ hace falta antes** (instalar algo, estar logueado, tener el repo
+     clonado) y **cómo comprobar** que lo tiene, con el comando exacto.
+  3. **Los comandos EXACTOS**, uno por línea, copiables sin editar. Si hay que
+     sustituir algo, marcarlo con `<...>` y decir de dónde sale ese valor.
+  4. **QUÉ debería ver** si sale bien (la salida esperada), para que sepa si
+     funcionó sin tener que preguntar.
+  5. **QUÉ hacer si falla** — el error más probable y su arreglo.
+- **Numerar los pasos** y no mezclar dos cosas en el mismo paso.
+- **Decir siempre por qué** lo tiene que hacer él y no Claude (p. ej. el proxy no
+  soporta WebSocket, o no hay credencial). Sin el motivo parece arbitrario.
+- **Antes de mandar un comando, probarlo** hasta donde el entorno lo permita
+  (`--help`, `--dry-run`, validar sintaxis). Un comando que no arranca quema la
+  confianza más que un error honesto.
+
 ## ⚠️ Regla permanente OBLIGATORIA: actualizar la documentación en CADA tarea
 - **REGLA (no opcional):** al terminar CUALQUIER instrucción/tarea/fix/feature/deploy — **cada vez, sin que el usuario lo pida** — actualizar la documentación como paso final ANTES de cerrar la respuesta. No esperar al "final de la sesión": es por tarea.
 - **Los 3 archivos vivos a revisar SIEMPRE:**
