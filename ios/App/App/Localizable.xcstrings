@@ -91,12 +91,12 @@
         }
       }
     },
-    "Scan a receipt": {
+    "Scan a receipt from ${merchant}": {
       "localizations": {
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Escanear un ticket"
+            "value": "Escanear un ticket de ${merchant}"
           }
         }
       }

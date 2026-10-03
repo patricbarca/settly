@@ -98,8 +98,9 @@ struct ScanReceiptIntent: AppIntent {
     var amount: String?
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Scan a receipt") {
-            \.$merchant
+        // Con un parámetro dentro de la frase, Atajos muestra la flecha › y los
+        // campos; con un Summary de texto fijo los escondía (visto en iPhone).
+        Summary("Scan a receipt from \(\.$merchant)") {
             \.$amount
         }
     }
