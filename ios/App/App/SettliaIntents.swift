@@ -67,16 +67,17 @@ struct AddExpenseIntent: AppIntent {
     @MainActor
     func perform() async throws -> some IntentResult {
         let typed = (note ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let fromWallet = [merchant, amount]
-            .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
-            .joined(separator: " ")
-        let text = typed.isEmpty ? fromWallet : typed
-        guard !text.isEmpty else {
+        let shop = (merchant ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let paid = (amount ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let text = typed.isEmpty ? shop : typed
+        guard !text.isEmpty || !paid.isEmpty else {
             // Siri pregunta "¿Qué gastaste?" y vuelve a ejecutar con la respuesta.
             throw $note.needsValueError(IntentDialog("What did you spend?"))
         }
-        if let url = QuickAddLink.url(route: "add", text: String(text.prefix(200))) {
+        // El importe de Wallet va APARTE, nunca mezclado en el texto: el nombre
+        // del comercio trae números de tienda ("Woolworths 2393") y el parser
+        // tomaba ese número como importe.
+        if let url = QuickAddLink.url(route: "add", text: String(text.prefix(200)), extra: ["paid": paid]) {
             QuickAddLink.deliver(url)
         }
         return .result()

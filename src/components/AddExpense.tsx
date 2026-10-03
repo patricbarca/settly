@@ -73,7 +73,7 @@ export function AddExpense({ group }: { group: Group }) {
       openScan(q.paid);
     } else {
       setText(q.text);
-      interpret(q.text);
+      interpret(q.text, "text", q.paid);
     }
     // Si ya estabas revisando otro gasto, espera: se re-evalua al cerrarlo.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -117,7 +117,7 @@ export function AddExpense({ group }: { group: Group }) {
     else setFxError(code);
   }
 
-  async function interpret(override?: string, kind: AIKind = "text") {
+  async function interpret(override?: string, kind: AIKind = "text", paid?: number) {
     const src = (override ?? text).trim();
     if (!src || interpreting) return;
     setInterpreting(true);
@@ -129,6 +129,9 @@ export function AddExpense({ group }: { group: Group }) {
     // cupo, falla o no está desplegado, cae al parser local de regex (gratis).
     let r: ParsedExpense | null = await tryAI(src, kind);
     if (!r) r = parseExpense(src, group.members, group.meId);
+    // Importe cobrado en la tarjeta (Wallet): es exacto, manda sobre lo que
+    // haya deducido el parser del texto, y va en la moneda del grupo.
+    if (paid) r = { ...r, amount: paid, payments: [], currency: undefined };
 
     // Moneda distinta a la del grupo (solo la vía IA la detecta): convertir
     // (Pro) o avisar (free), igual que en el escaneo de recibos.

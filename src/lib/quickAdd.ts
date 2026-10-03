@@ -14,7 +14,8 @@ import { useSyncExternalStore } from "react";
 /** `groupId` = a qué grupo va. Vacío mientras no se haya elegido: así un gasto
  *  dictado a Siri nunca cae en silencio en el último grupo que dejaste abierto. */
 export type QuickAdd = (
-  | { kind: "text"; text: string }
+  /** `paid` = importe de Wallet. Manda sobre lo que lea el parser. */
+  | { kind: "text"; text: string; paid?: number }
   /** `paid` = lo cobrado en la tarjeta (automatización de Wallet). El escáner lo
    *  usa para comprobar que el ticket leído suma lo mismo. */
   | { kind: "scan"; paid?: number; merchant?: string }
@@ -107,9 +108,14 @@ export function captureQuickAddFromUrl(url: string): boolean {
     store({ kind: "scan", ...(paid ? { paid } : {}), ...(merchant ? { merchant } : {}) });
     return true;
   }
-  const text = (u.searchParams.get("text") || "").trim().slice(0, 200);
-  if (!text) return true;
-  store({ kind: "text", text });
+  const paid = parseMoney(u.searchParams.get("paid"));
+  let text = (u.searchParams.get("text") || "").trim().slice(0, 200);
+  // Con importe de Wallet, el texto es solo el comercio: se le quitan los
+  // números sueltos (nº de tienda, "Woolworths 2393") para que no se lean
+  // como importe ni ensucien la descripción.
+  if (paid) text = text.replace(/(^|\s)[#\d][\d\-\/]*(?=\s|$)/g, " ").replace(/\s+/g, " ").trim();
+  if (!text && !paid) return true;
+  store({ kind: "text", text: text || "?", ...(paid ? { paid } : {}) });
   return true;
 }
 
