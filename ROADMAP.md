@@ -105,7 +105,7 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ **Developer name → Organization** — hoy figura como persona; cambiar a cuenta de organización cuando se forme la empresa (requiere D-U-N-S).
 - ⬜ **ASO keywords** — actualizar keywords en la próxima versión (`splitwise,tricount,bill,receipt,scan,roommate,travel,trip,share,cost,tab,rent,friends,settle,owe`) — bloqueadas a la versión live 1.1.
 
-- 🔧 **Siri / Atajos / Botón de Acción / Wallet (App Intents)** — "Add expense" + "Scan receipt", ES/EN. Al escanear desde un pago con Apple Pay, **compara el ticket con lo cobrado en la tarjeta** en vivo. Compila en CI (`ios-build-check.yml`); **falta probar en iPhone vía TestFlight**.
+- 🔧 **Siri / Atajos / Botón de Acción / Wallet (App Intents)** — "Add expense" + "Scan receipt", ES/EN. Al escanear desde un pago con Apple Pay, **compara el ticket con lo cobrado en la tarjeta** en vivo. Compila en CI (`ios-build-check.yml`); **falta probar en iPhone vía TestFlight**. Automatización de Wallet ✅ montada en iPhone real; pantalla in-app **"Siri y Atajos"** (guía + enlace iCloud) hecha, entra con el próximo build. ⬜ Exponer Merchant/Amount en "Scan receipt" desde el editor de Atajos.
 - ⬜ **Widget** de saldos con botones rápidos + controles de **Centro de Control / pantalla bloqueada** (iOS 18) — requieren una *widget extension* y compartir datos vía App Group.
 - ✅ **CI de compilación iOS** (`ios-build-check.yml`): compila sin firmar en macOS en cada push a `ios/` — gratis (repo público). Evita gastar builds de Codemagic en errores de Swift/pbxproj.
 

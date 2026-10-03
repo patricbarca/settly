@@ -18,6 +18,8 @@ import { Icon } from "./Icon";
 import { Paywall } from "./Paywall";
 import { FeedbackModal } from "./FeedbackModal";
 import { FaqModal } from "./FaqModal";
+import { SiriShortcutsModal } from "./SiriShortcutsModal";
+import { isIOS } from "../lib/pwa";
 
 const PAY_TYPES: PayType[] = ["payid", "bank", "paypal", "revolut", "wise", "bizum", "bunq", "other"];
 
@@ -30,6 +32,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
   const [showPaywall, setShowPaywall] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showFaq, setShowFaq] = useState(false);
+  const [showSiri, setShowSiri] = useState(false);
   const [portalBusy, setPortalBusy] = useState(false);
   const [portalErr, setPortalErr] = useState<string | null>(null);
 
@@ -550,6 +553,23 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
           <p className="text-xs text-muted mt-1">{t("account.notifTypesHint")}</p>
         </div>
 
+        {/* Siri y Atajos (solo app nativa de iPhone) */}
+        {isNativePlatform() && isIOS() && (
+          <button
+            onClick={() => setShowSiri(true)}
+            className="glass rounded-xl p-3 mb-3 w-full flex items-center gap-2 text-left hover-lift"
+          >
+            <span className="h-8 w-8 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(91,91,240,0.14)", color: "var(--indigo)" }}>
+              <Icon name="mic" size={16} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold">{t("siri.entry")}</div>
+              <div className="text-xs text-muted">{t("siri.entrySub")}</div>
+            </div>
+            <Icon name="chevron" size={16} className="text-muted shrink-0" />
+          </button>
+        )}
+
         {/* Preguntas frecuentes */}
         <button
           onClick={() => setShowFaq(true)}
@@ -618,6 +638,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
         {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
         {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
         {showFaq && <FaqModal onClose={() => setShowFaq(false)} />}
+        {showSiri && <SiriShortcutsModal onClose={() => setShowSiri(false)} />}
         </div>
       </div>
     </div>
