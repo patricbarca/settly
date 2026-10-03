@@ -1,0 +1,61 @@
+# Compila la app iOS para el simulador, SIN firmar, para pillar errores de
+# Swift / proyecto de Xcode antes de que lleguen a Codemagic y a TestFlight.
+# No sube nada a ningún sitio. Es gratis porque el repo es público (los
+# runners macOS solo se facturan en repos privados).
+name: iOS build check
+
+on:
+  workflow_dispatch:
+  push:
+    branches-ignore: [master]
+    paths:
+      - "ios/**"
+      - "capacitor.config.ts"
+      - "package.json"
+      - ".github/workflows/ios-build-check.yml"
+  pull_request:
+    paths:
+      - "ios/**"
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+      - run: npx cap sync ios
+
+      - name: Xcode version
+        run: xcodebuild -version
+
+      - name: Compile for the iOS Simulator (no signing)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build 2>&1 | tee build.log | grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true
+          grep -q "BUILD SUCCEEDED" build.log
+
+      - name: Show errors
+        if: failure()
+        run: grep -h -B2 -A6 "error:" build.log | head -200 || true
+
+      - name: Check the App Intents were picked up
+        run: |
+          APP=$(find ~/Library/Developer/Xcode/DerivedData -path "*Debug-iphonesimulator/App.app" -maxdepth 6 | head -1)
+          echo "App bundle: $APP"
+          ls "$APP/Metadata.appintents" || { echo "No Metadata.appintents: Siri won't see the actions"; exit 1; }
+          ls "$APP/es.lproj" || { echo "No es.lproj: the Spanish catalog was not compiled"; exit 1; }

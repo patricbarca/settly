@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { useUser, useAuthPhase, setProfileName, submitPhone, verifyPhone, skipPhone, usePendingPhone } from "./lib/auth";
 import { useLang, setLang, useT } from "./lib/i18n";
-import { resetSeed, useActiveGroup, loadGuestMode, setActiveGroup, addGroup, useGroups, syncMyMemberAvatar } from "./lib/store";
+import { resetSeed, useActiveGroup, loadGuestMode, setActiveGroup, addGroup, useGroups, useGroupsLoading, syncMyMemberAvatar } from "./lib/store";
+import { useQuickAdd, assignQuickAdd, clearQuickAdd } from "./lib/quickAdd";
+import { useArchivedGroups } from "./lib/archivedGroups";
 import { useTheme, toggleTheme } from "./lib/theme";
 import { joinByToken, getJoinPreview } from "./lib/invite";
 import { ClaimMemberModal } from "./components/ClaimMemberModal";
+import { QuickAddGroupPicker } from "./components/QuickAddGroupPicker";
 import { Icon } from "./components/Icon";
 import { Login } from "./components/Login";
 import { Home, type HomeTab } from "./components/Home";
@@ -52,6 +55,28 @@ export default function App() {
     unclaimed: { id: string; name: string }[];
   } | null>(null);
   const [homeTab, setHomeTab] = useState<HomeTab>("groups");
+
+  // "Añadir rápido" desde Siri / Atajos / Wallet (ver lib/quickAdd.ts). Con un
+  // solo grupo activo va directo a él; con varios SIEMPRE se pregunta, aunque
+  // haya uno abierto: si no, un gasto dictado días después caería en silencio
+  // en el último grupo que dejaste abierto.
+  const quick = useQuickAdd();
+  const groupsLoading = useGroupsLoading();
+  const { archived: localArchived } = useArchivedGroups();
+  const pickable = allGroups.filter((g) => !localArchived.has(g.id) && !g.archived);
+  // El grupo abierto primero: es la opción más probable.
+  const pickOrder = group ? [...pickable].sort((a, b) => (a.id === group.id ? -1 : b.id === group.id ? 1 : 0)) : pickable;
+  const quickReady = !!quick && !quick.groupId && !!user && (phase === "authenticated" || phase === "guest") && !groupsLoading;
+  useEffect(() => {
+    if (quickReady && pickable.length === 1) pickQuickGroup(pickable[0].id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quickReady, pickable.length]);
+  function pickQuickGroup(id: string) {
+    assignQuickAdd(id);
+    setShowActivity(false);
+    setShowAccount(false);
+    setActiveGroup(id);
+  }
   const unread = countUnread(allGroups);
   const navActive: NavKey = showActivity
     ? "activity"
@@ -357,6 +382,15 @@ export default function App() {
           setShowAccount(true);
         }}
       />
+
+      {quickReady && pickable.length !== 1 && (
+        <QuickAddGroupPicker
+          quick={quick!}
+          groups={pickOrder}
+          onPick={pickQuickGroup}
+          onCancel={clearQuickAdd}
+        />
+      )}
 
       {joinPreview && (
         <ClaimMemberModal

@@ -1,0 +1,66 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Add an expense in ${applicationName}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir un gasto en ${applicationName}"
+          }
+        }
+      }
+    },
+    "Add expense to ${applicationName}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añade un gasto en ${applicationName}"
+          }
+        }
+      }
+    },
+    "Add a ${applicationName} expense": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apunta un gasto en ${applicationName}"
+          }
+        }
+      }
+    },
+    "Split a bill in ${applicationName}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Divide una cuenta en ${applicationName}"
+          }
+        }
+      }
+    },
+    "Scan a receipt in ${applicationName}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escanear un ticket en ${applicationName}"
+          }
+        }
+      }
+    },
+    "Scan receipt with ${applicationName}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escanea un ticket con ${applicationName}"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

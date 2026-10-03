@@ -1,0 +1,96 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "Add expense": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir gasto"
+          }
+        }
+      }
+    },
+    "Describe an expense, like “taxi 30 with Emma”. Settlia opens it ready for you to review before saving.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Describe un gasto, como “taxi 30 con Emma”. Settlia lo abre listo para que lo revises antes de guardarlo."
+          }
+        }
+      }
+    },
+    "Expense": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gasto"
+          }
+        }
+      }
+    },
+    "Merchant": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comercio"
+          }
+        }
+      }
+    },
+    "Amount": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importe"
+          }
+        }
+      }
+    },
+    "Add ${note} to Settlia": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir ${note} a Settlia"
+          }
+        }
+      }
+    },
+    "What did you spend?": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Qué gastaste?"
+          }
+        }
+      }
+    },
+    "Scan receipt": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escanear ticket"
+          }
+        }
+      }
+    },
+    "Opens Settlia straight to the receipt scanner.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre Settlia directamente en el escáner de tickets."
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

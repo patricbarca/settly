@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Group, RecurrenceInterval } from "../lib/types";
 import { addExpense, addRecurring } from "../lib/store";
 import { parseExpense, type ParsedExpense } from "../lib/parse";
@@ -6,6 +6,7 @@ import { makeNotif } from "../lib/notifications";
 import { makeActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { parseExpenseAI } from "../lib/ai";
+import { useQuickAdd, takeQuickAdd } from "../lib/quickAdd";
 import { convertCurrency, fmtRate } from "../lib/fx";
 import { CURRENCIES, resolveToCode, localCurrencyName } from "../lib/currencies";
 import { CATEGORIES } from "../lib/types";
@@ -56,6 +57,27 @@ export function AddExpense({ group }: { group: Group }) {
     setText(t);
     interpret(t, "voice");
   }, lang);
+
+  // Gasto que llega de Siri / Atajos / Wallet ya asignado a este grupo: se
+  // interpreta igual que si lo hubieras escrito y queda en "revisar y
+  // confirmar". Nunca se guarda solo. La nota de Wallet ("Woolworths A$48.00")
+  // la entiende el mismo parser.
+  const quick = useQuickAdd();
+  const sectionRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    if (!quick || quick.groupId !== group.id || draft || interpreting) return;
+    const q = takeQuickAdd();
+    if (!q) return;
+    sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (q.kind === "scan") {
+      openScan();
+    } else {
+      setText(q.text);
+      interpret(q.text);
+    }
+    // Si ya estabas revisando otro gasto, espera: se re-evalua al cerrarlo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quick, group.id, draft, interpreting]);
 
   function openScan() {
     // Escaneo de recibo: cuota propia de IA (3/mes en free).
@@ -347,7 +369,7 @@ function sanitizePercents(
   }
 
   return (
-    <section className="glass-strong rounded-3xl p-5 anim-up">
+    <section ref={sectionRef} className="glass-strong rounded-3xl p-5 anim-up">
       <div className="text-xs uppercase tracking-widest font-mono mb-2" style={{ color: "var(--muted)" }}>{t("add.title")}</div>
       {/* Mientras hay un borrador en revisión, ocultamos el input y los métodos
           para que el flujo sea: agregar -> revisar/confirmar (sin poder meter

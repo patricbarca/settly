@@ -15,6 +15,9 @@
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
+		BC9AEA9A981EA816F00CA687 /* SettliaIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B4135A52E0D42914D4F9B1 /* SettliaIntents.swift */; };
+		3D74A93C267665EF83B75073 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 053135C700E4FF462087B0DF /* Localizable.xcstrings */; };
+		AC549C9BE9BD34F229F99D7D /* AppShortcuts.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 4BAEFF345E1E4A9603B16723 /* AppShortcuts.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -29,6 +32,9 @@
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 		CCCC6E3E2FF861B2005CEA4B /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
+		52B4135A52E0D42914D4F9B1 /* SettliaIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettliaIntents.swift; sourceTree = "<group>"; };
+		053135C700E4FF462087B0DF /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		4BAEFF345E1E4A9603B16723 /* AppShortcuts.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = AppShortcuts.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -66,6 +72,9 @@
 				CCCC6E3E2FF861B2005CEA4B /* App.entitlements */,
 				50379B222058CBB4000EE86E /* capacitor.config.json */,
 				504EC3071FED79650016851F /* AppDelegate.swift */,
+				52B4135A52E0D42914D4F9B1 /* SettliaIntents.swift */,
+				053135C700E4FF462087B0DF /* Localizable.xcstrings */,
+				4BAEFF345E1E4A9603B16723 /* AppShortcuts.xcstrings */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -122,6 +131,7 @@
 			knownRegions = (
 				en,
 				Base,
+				es,
 			);
 			mainGroup = 504EC2FB1FED79650016851F;
 			packageReferences = (
@@ -144,6 +154,8 @@
 				504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */,
 				50B271D11FEDC1A000F3C39B /* public in Resources */,
 				504EC30F1FED79650016851F /* Assets.xcassets in Resources */,
+				3D74A93C267665EF83B75073 /* Localizable.xcstrings in Resources */,
+				AC549C9BE9BD34F229F99D7D /* AppShortcuts.xcstrings in Resources */,
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
@@ -158,6 +170,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				BC9AEA9A981EA816F00CA687 /* SettliaIntents.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

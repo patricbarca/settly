@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuickAdd } from "../lib/quickAdd";
 import type { Group } from "../lib/types";
 import { setActiveGroup, archiveGroup, processRecurring } from "../lib/store";
 import { createInviteLink } from "../lib/invite";
@@ -31,6 +32,12 @@ export function GroupView({ group }: { group: Group }) {
   const [showReport, setShowReport] = useState(false);
   const [paywall, setPaywall] = useState(false);
   const [tab, setTab] = useState<Tab>("expenses");
+  // Un gasto de Siri / Atajos / Wallet para este grupo: el formulario vive en
+  // la pestana Gastos, asi que hay que estar ahi para que lo recoja.
+  const quick = useQuickAdd();
+  useEffect(() => {
+    if (quick?.groupId === group.id) setTab("expenses");
+  }, [quick, group.id]);
   const [copied, setCopied] = useState(false);
   const [inviteError, setInviteError] = useState(false);
   const [shareLink, setShareLink] = useState<string | null>(null);

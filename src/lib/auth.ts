@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import { App as CapApp } from "@capacitor/app";
 import { Browser } from "@capacitor/browser";
 import { supabase } from "./supabase";
+import { captureQuickAddFromUrl } from "./quickAdd";
 import { applyNotifPrefsFromDB } from "./notifPrefs";
 import { uid } from "./format";
 import { getLang } from "./i18n";
@@ -37,9 +38,13 @@ function captureJoinFromUrl(url: string): boolean {
 if (Capacitor.isNativePlatform()) {
   // Arranque en frío: si la app se abrió DESDE el universal link, appUrlOpen
   // puede no dispararse; leemos la URL de lanzamiento.
-  CapApp.getLaunchUrl().then((res) => { if (res?.url) captureJoinFromUrl(res.url); }).catch(() => {});
+  CapApp.getLaunchUrl()
+    .then((res) => { if (res?.url && !captureQuickAddFromUrl(res.url)) captureJoinFromUrl(res.url); })
+    .catch(() => {});
 
   CapApp.addListener("appUrlOpen", async ({ url }) => {
+    // Siri / Atajos / Wallet (App Intents nativas) → app.settlia.pwa://add|scan
+    if (captureQuickAddFromUrl(url)) return;
     if (captureJoinFromUrl(url)) return;
 
     if (!url.startsWith(NATIVE_OAUTH_REDIRECT)) return;
