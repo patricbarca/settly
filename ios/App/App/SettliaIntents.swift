@@ -126,6 +126,10 @@ struct SettliaShortcuts: AppShortcutsProvider {
                 "Add expense to \(.applicationName)",
                 "Add a \(.applicationName) expense",
                 "Split a bill in \(.applicationName)",
+                "New expense in \(.applicationName)",
+                "Log an expense in \(.applicationName)",
+                "Add a cost to \(.applicationName)",
+                "Split a cost with \(.applicationName)",
             ]
         )
         AppShortcut(
@@ -133,6 +137,12 @@ struct SettliaShortcuts: AppShortcutsProvider {
             phrases: [
                 "Scan a receipt in \(.applicationName)",
                 "Scan receipt with \(.applicationName)",
+                "Scan a ticket in \(.applicationName)",
+                "Scan a ticket with \(.applicationName)",
+                "Scan the receipt in \(.applicationName)",
+                "Scan the bill in \(.applicationName)",
+                "Scan with \(.applicationName)",
+                "Scan in \(.applicationName)",
             ]
         )
     }

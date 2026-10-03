@@ -4,5 +4,15 @@
 "Add expense to ${applicationName}" = "Añade un gasto en ${applicationName}";
 "Add a ${applicationName} expense" = "Apunta un gasto en ${applicationName}";
 "Split a bill in ${applicationName}" = "Divide una cuenta en ${applicationName}";
+"New expense in ${applicationName}" = "Nuevo gasto en ${applicationName}";
+"Log an expense in ${applicationName}" = "Anota un gasto en ${applicationName}";
+"Add a cost to ${applicationName}" = "Agregar un gasto en ${applicationName}";
+"Split a cost with ${applicationName}" = "Agrega un gasto en ${applicationName}";
 "Scan a receipt in ${applicationName}" = "Escanear un ticket en ${applicationName}";
 "Scan receipt with ${applicationName}" = "Escanea un ticket con ${applicationName}";
+"Scan a ticket in ${applicationName}" = "Escanear un recibo en ${applicationName}";
+"Scan a ticket with ${applicationName}" = "Escanea un recibo con ${applicationName}";
+"Scan the receipt in ${applicationName}" = "Escanear el ticket en ${applicationName}";
+"Scan the bill in ${applicationName}" = "Escanear la cuenta en ${applicationName}";
+"Scan with ${applicationName}" = "Escanear con ${applicationName}";
+"Scan in ${applicationName}" = "Escanea en ${applicationName}";

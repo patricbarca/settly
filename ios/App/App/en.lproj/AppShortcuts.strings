@@ -4,5 +4,15 @@
 "Add expense to ${applicationName}" = "Add expense to ${applicationName}";
 "Add a ${applicationName} expense" = "Add a ${applicationName} expense";
 "Split a bill in ${applicationName}" = "Split a bill in ${applicationName}";
+"New expense in ${applicationName}" = "New expense in ${applicationName}";
+"Log an expense in ${applicationName}" = "Log an expense in ${applicationName}";
+"Add a cost to ${applicationName}" = "Add a cost to ${applicationName}";
+"Split a cost with ${applicationName}" = "Split a cost with ${applicationName}";
 "Scan a receipt in ${applicationName}" = "Scan a receipt in ${applicationName}";
 "Scan receipt with ${applicationName}" = "Scan receipt with ${applicationName}";
+"Scan a ticket in ${applicationName}" = "Scan a ticket in ${applicationName}";
+"Scan a ticket with ${applicationName}" = "Scan a ticket with ${applicationName}";
+"Scan the receipt in ${applicationName}" = "Scan the receipt in ${applicationName}";
+"Scan the bill in ${applicationName}" = "Scan the bill in ${applicationName}";
+"Scan with ${applicationName}" = "Scan with ${applicationName}";
+"Scan in ${applicationName}" = "Scan in ${applicationName}";
