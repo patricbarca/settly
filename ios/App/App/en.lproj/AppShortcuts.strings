@@ -1,0 +1,8 @@
+/* Frases de Siri (App Shortcuts). Formato .strings: el catalogo .xcstrings
+   exige iOS 17 y la app soporta desde iOS 15 (las acciones, desde 16). */
+"Add an expense in ${applicationName}" = "Add an expense in ${applicationName}";
+"Add expense to ${applicationName}" = "Add expense to ${applicationName}";
+"Add a ${applicationName} expense" = "Add a ${applicationName} expense";
+"Split a bill in ${applicationName}" = "Split a bill in ${applicationName}";
+"Scan a receipt in ${applicationName}" = "Scan a receipt in ${applicationName}";
+"Scan receipt with ${applicationName}" = "Scan receipt with ${applicationName}";

@@ -17,7 +17,7 @@
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
 		BC9AEA9A981EA816F00CA687 /* SettliaIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B4135A52E0D42914D4F9B1 /* SettliaIntents.swift */; };
 		3D74A93C267665EF83B75073 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 053135C700E4FF462087B0DF /* Localizable.xcstrings */; };
-		AC549C9BE9BD34F229F99D7D /* AppShortcuts.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 4BAEFF345E1E4A9603B16723 /* AppShortcuts.xcstrings */; };
+		51D2E15811DA91C0E194C12B /* AppShortcuts.strings in Resources */ = {isa = PBXBuildFile; fileRef = 605B85A008D69FA092AD0F36 /* AppShortcuts.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,7 +34,8 @@
 		CCCC6E3E2FF861B2005CEA4B /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		52B4135A52E0D42914D4F9B1 /* SettliaIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettliaIntents.swift; sourceTree = "<group>"; };
 		053135C700E4FF462087B0DF /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
-		4BAEFF345E1E4A9603B16723 /* AppShortcuts.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = AppShortcuts.xcstrings; sourceTree = "<group>"; };
+		656B42F4E69006993A3146B4 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
+		4E74898FA9C0886C6781FA7E /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/AppShortcuts.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,7 +75,7 @@
 				504EC3071FED79650016851F /* AppDelegate.swift */,
 				52B4135A52E0D42914D4F9B1 /* SettliaIntents.swift */,
 				053135C700E4FF462087B0DF /* Localizable.xcstrings */,
-				4BAEFF345E1E4A9603B16723 /* AppShortcuts.xcstrings */,
+				605B85A008D69FA092AD0F36 /* AppShortcuts.strings */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -155,7 +156,7 @@
 				50B271D11FEDC1A000F3C39B /* public in Resources */,
 				504EC30F1FED79650016851F /* Assets.xcassets in Resources */,
 				3D74A93C267665EF83B75073 /* Localizable.xcstrings in Resources */,
-				AC549C9BE9BD34F229F99D7D /* AppShortcuts.xcstrings in Resources */,
+				51D2E15811DA91C0E194C12B /* AppShortcuts.strings in Resources */,
 				50379B232058CBB4000EE86E /* capacitor.config.json in Resources */,
 				504EC30D1FED79650016851F /* Main.storyboard in Resources */,
 				2FAD9763203C412B000D30F8 /* config.xml in Resources */,
@@ -191,6 +192,15 @@
 				504EC3111FED79650016851F /* Base */,
 			);
 			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		605B85A008D69FA092AD0F36 /* AppShortcuts.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				656B42F4E69006993A3146B4 /* en */,
+				4E74898FA9C0886C6781FA7E /* es */,
+			);
+			name = AppShortcuts.strings;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

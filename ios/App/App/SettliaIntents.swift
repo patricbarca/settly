@@ -95,7 +95,8 @@ struct ScanReceiptIntent: AppIntent {
 }
 
 /// Frases de Siri. Disponibles sin que el usuario configure nada; las versiones
-/// en español están en AppShortcuts.xcstrings.
+/// en español están en es.lproj/AppShortcuts.strings (el formato .xcstrings
+/// para frases exige iOS 17 y la app soporta desde iOS 15).
 @available(iOS 16.0, *)
 struct SettliaShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
