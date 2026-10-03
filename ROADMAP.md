@@ -105,6 +105,10 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ **Developer name → Organization** — hoy figura como persona; cambiar a cuenta de organización cuando se forme la empresa (requiere D-U-N-S).
 - ⬜ **ASO keywords** — actualizar keywords en la próxima versión (`splitwise,tricount,bill,receipt,scan,roommate,travel,trip,share,cost,tab,rent,friends,settle,owe`) — bloqueadas a la versión live 1.1.
 
+- 🔧 **Siri / Atajos / Botón de Acción / Wallet (App Intents)** — "Add expense" + "Scan receipt", ES/EN. Compila en CI (`ios-build-check.yml`); **falta probar en iPhone vía TestFlight**.
+- ⬜ **Widget** de saldos con botones rápidos + controles de **Centro de Control / pantalla bloqueada** (iOS 18) — requieren una *widget extension* y compartir datos vía App Group.
+- ✅ **CI de compilación iOS** (`ios-build-check.yml`): compila sin firmar en macOS en cada push a `ios/` — gratis (repo público). Evita gastar builds de Codemagic en errores de Swift/pbxproj.
+
 ### Pendientes técnicos / CI (anotados 2026-07)
 - 🔧 **Codemagic ya NO construye automáticamente en push a `master`** (`codemagic.yaml` → `branch_patterns include: false`). Solo build manual (Start new build) o por API. Motivo: poder desplegar cambios de la PWA a `master` sin generar builds de iOS mientras la app está en review. **Para reactivar el auto-build:** volver a poner `include: true`.
 - ⚠️ **No lanzar un build de iOS a Codemagic mientras la app siga "In Review"** (subiría un build nuevo a TestFlight; no rompe la review pero conviene esperar el veredicto).
