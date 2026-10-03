@@ -90,6 +90,16 @@
           }
         }
       }
+    },
+    "Scan a receipt": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escanear un ticket"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

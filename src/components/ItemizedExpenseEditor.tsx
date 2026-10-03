@@ -86,6 +86,7 @@ export function ItemizedExpenseEditor({
   banner,
   taxInfo,
   scannedTotal,
+  paidTotal,
   submitting,
   onSubmit,
   onCancel,
@@ -98,6 +99,11 @@ export function ItemizedExpenseEditor({
   /** Total impreso en el ticket (en la moneda del grupo). Si la suma de los
    *  ítems no cuadra con él, se avisa — así se detecta un escaneo mal leído. */
   scannedTotal?: number;
+  /** Lo que se cobró en la tarjeta (automatización de Wallet). Es un dato más
+   *  fiable que el total que la IA lee del ticket, así que cuando existe manda
+   *  él: se compara EN VIVO con el total a repartir, y si corriges un precio
+   *  mal leído el aviso desaparece. */
+  paidTotal?: number;
   submitting?: boolean;
   onSubmit: (r: ItemizedResult) => void;
   onCancel: () => void;
@@ -703,7 +709,24 @@ export function ItemizedExpenseEditor({
 
       {/* Descuadre: la suma de los ítems no coincide con el total impreso en
           el ticket → probablemente el escaneo leyó mal un precio. */}
-      {!isTotalMode && scannedTotal != null && scannedTotal > 0 && Math.abs(total - scannedTotal) > 0.02 && (
+      {/* Contra lo cobrado en la tarjeta (manda sobre el total leído del ticket). */}
+      {paidTotal != null && paidTotal > 0 && (() => {
+        const diff = Math.round((total - paidTotal) * 100) / 100;
+        const ok = Math.abs(diff) <= 0.02;
+        const amber = { background: "rgba(232,146,12,.12)", color: "var(--amber)", border: "1px solid rgba(232,146,12,.3)" };
+        const teal = { background: "rgba(15,163,163,.12)", color: "var(--teal)", border: "1px solid rgba(15,163,163,.3)" };
+        return (
+          <div className="rounded-2xl px-4 py-3 text-xs" style={ok ? teal : amber}>
+            {ok
+              ? t("scan.paidMatch", { paid: money(paidTotal, group.currency) })
+              : diff < 0
+              ? t("scan.paidShort", { paid: money(paidTotal, group.currency), sum: money(total, group.currency), diff: money(-diff, group.currency) })
+              : t("scan.paidOver", { paid: money(paidTotal, group.currency), sum: money(total, group.currency), diff: money(diff, group.currency) })}
+          </div>
+        );
+      })()}
+
+      {paidTotal == null && !isTotalMode && scannedTotal != null && scannedTotal > 0 && Math.abs(total - scannedTotal) > 0.02 && (
         <div
           className="rounded-2xl px-4 py-3 text-xs"
           style={{ background: "rgba(232,146,12,.12)", color: "var(--amber)", border: "1px solid rgba(232,146,12,.3)" }}

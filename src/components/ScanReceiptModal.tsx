@@ -21,7 +21,16 @@ const r2 = (n: number) => Math.round(n * 100) / 100;
 
 type FxInfo = { originalAmount: number; originalCurrency: string; fxRate: number };
 
-export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: () => void }) {
+export function ScanReceiptModal({
+  group,
+  paidTotal,
+  onClose,
+}: {
+  group: Group;
+  /** Lo cobrado en la tarjeta (automatización de Wallet), en la moneda del grupo. */
+  paidTotal?: number;
+  onClose: () => void;
+}) {
   const t = useT();
   const lang = useLang();
   const plan = usePlan();
@@ -471,6 +480,11 @@ export function ScanReceiptModal({ group, onClose }: { group: Group; onClose: ()
               initial={{ ...initial, canAskEveryone: true }}
               taxInfo={tax}
               scannedTotal={scannedTotal}
+              // Solo se compara si el ticket está en la moneda del grupo. Si venía
+              // en otra: convertido, la tasa del banco y la nuestra no coinciden
+              // al céntimo; sin convertir (plan gratis o tasa caída), seria
+              // comparar euros con dólares.
+              paidTotal={fx || fxUpsell || fxError ? undefined : paidTotal}
               banner={scanError ? t("scan.error") : undefined}
               submitLabel={t("scan.save")}
               submitting={saving}

@@ -70,7 +70,7 @@ export function AddExpense({ group }: { group: Group }) {
     if (!q) return;
     sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     if (q.kind === "scan") {
-      openScan();
+      openScan(q.paid);
     } else {
       setText(q.text);
       interpret(q.text);
@@ -79,8 +79,12 @@ export function AddExpense({ group }: { group: Group }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [quick, group.id, draft, interpreting]);
 
-  function openScan() {
+  // Lo cobrado en la tarjeta, si el escaneo viene de pagar con Apple Pay: el
+  // editor comprueba en vivo que el ticket leído suma lo mismo.
+  const [scanPaid, setScanPaid] = useState<number | undefined>(undefined);
+  function openScan(paid?: number) {
     // Escaneo de recibo: cuota propia de IA (3/mes en free).
+    setScanPaid(paid);
     if (pro || consumeAI("scan")) setScan(true);
     else setShowPaywall(true);
   }
@@ -422,7 +426,7 @@ function sanitizePercents(
               </span>
             </button>
             <button
-              onClick={openScan}
+              onClick={() => openScan()}
               className="glass rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift"
             >
               <Icon name="camera" size={18} />
@@ -576,7 +580,7 @@ function sanitizePercents(
         </div>
       )}
 
-      {scan && <ScanReceiptModal group={group} onClose={() => setScan(false)} />}
+      {scan && <ScanReceiptModal group={group} paidTotal={scanPaid} onClose={() => { setScan(false); setScanPaid(undefined); }} />}
       {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
     </section>
   );

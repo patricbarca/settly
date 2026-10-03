@@ -14,13 +14,17 @@ enum QuickAddLink {
     /// app.settlia.pwa://<route>?id=<uuid>[&text=<nota>]
     /// El id hace el enlace idempotente: Capacitor recuerda el último URL y la
     /// web lo ignora si ya lo procesó.
-    static func url(route: String, text: String? = nil) -> URL? {
+    static func url(route: String, text: String? = nil, extra: [String: String?] = [:]) -> URL? {
         var c = URLComponents()
         c.scheme = "app.settlia.pwa"
         c.host = route
         var items = [URLQueryItem(name: "id", value: UUID().uuidString)]
         if let text = text {
             items.append(URLQueryItem(name: "text", value: text))
+        }
+        for (key, value) in extra {
+            let v = (value ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            if !v.isEmpty { items.append(URLQueryItem(name: key, value: String(v.prefix(80)))) }
         }
         c.queryItems = items
         return c.url
@@ -85,9 +89,24 @@ struct ScanReceiptIntent: AppIntent {
     static var description = IntentDescription("Opens Settlia straight to the receipt scanner.")
     static var openAppWhenRun: Bool = true
 
+    /// Desde la automatización de Wallet: lo que se cobró en la tarjeta. El
+    /// escáner lo usa para comprobar que el ticket leído suma lo mismo.
+    @Parameter(title: "Merchant")
+    var merchant: String?
+
+    @Parameter(title: "Amount")
+    var amount: String?
+
+    static var parameterSummary: some ParameterSummary {
+        Summary("Scan a receipt") {
+            \.$merchant
+            \.$amount
+        }
+    }
+
     @MainActor
     func perform() async throws -> some IntentResult {
-        if let url = QuickAddLink.url(route: "scan") {
+        if let url = QuickAddLink.url(route: "scan", extra: ["paid": amount, "merchant": merchant]) {
             QuickAddLink.deliver(url)
         }
         return .result()
