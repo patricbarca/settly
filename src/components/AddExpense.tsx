@@ -7,6 +7,8 @@ import { makeActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { parseExpenseAI } from "../lib/ai";
 import { useQuickAdd, takeQuickAdd } from "../lib/quickAdd";
+import { knownMerchant, merchantKey, countryForCurrency } from "../lib/merchants";
+import { recallMerchant, rememberMerchant, loadMerchantMemory } from "../lib/merchantMemory";
 import { convertCurrency, fmtRate } from "../lib/fx";
 import { CURRENCIES, resolveToCode, localCurrencyName } from "../lib/currencies";
 import { CATEGORIES } from "../lib/types";
@@ -63,6 +65,12 @@ export function AddExpense({ group }: { group: Group }) {
   // confirmar". Nunca se guarda solo. La nota de Wallet ("Woolworths A$48.00")
   // la entiende el mismo parser.
   const quick = useQuickAdd();
+  // Clave del comercio del pago de Wallet en curso, para recordarlo al guardar
+  // aunque cambies la descripción ("WOOLWORTHS…" → "Súper").
+  const learnKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    void loadMerchantMemory(group.id);
+  }, [group.id]);
   const sectionRef = useRef<HTMLElement>(null);
   useEffect(() => {
     if (!quick || quick.groupId !== group.id || draft || interpreting) return;
@@ -125,13 +133,50 @@ export function AddExpense({ group }: { group: Group }) {
     setFx(null);
     setFxUpsell(null);
     setFxError(null);
+    const country = countryForCurrency(group.currency);
+    const allIds = group.members.map((m) => m.id);
+    const validIds = (ids: string[]) => {
+      const ok = ids.filter((id) => allIds.includes(id));
+      return ok.length ? ok : allIds;
+    };
+    let r: ParsedExpense | null = null;
+    // Pago de Wallet: si el grupo ya conoce el comercio (memoria) o es una
+    // cadena conocida, se rellena directamente, sin gastar IA. El que paga
+    // con su tarjeta es siempre quien lo añade.
+    if (paid) {
+      const key = merchantKey(src);
+      learnKeyRef.current = key;
+      const [mem, known] = [await recallMerchant(group.id, key), knownMerchant(src, country)];
+      if (mem || known) {
+        r = {
+          label: mem?.label ?? known!.name,
+          amount: paid,
+          payerId: group.meId,
+          payments: [],
+          participantIds: validIds(mem?.participantIds ?? []),
+          category: mem?.category ?? known!.category,
+        };
+      }
+    } else {
+      learnKeyRef.current = null;
+    }
     // Con Pro o cupo disponible, usa el LLM (función parse-expense). Si no hay
     // cupo, falla o no está desplegado, cae al parser local de regex (gratis).
-    let r: ParsedExpense | null = await tryAI(src, kind);
+    if (!r) r = await tryAI(src, kind);
     if (!r) r = parseExpense(src, group.members, group.meId);
     // Importe cobrado en la tarjeta (Wallet): es exacto, manda sobre lo que
     // haya deducido el parser del texto, y va en la moneda del grupo.
-    if (paid) r = { ...r, amount: paid, payments: [], currency: undefined };
+    if (paid) r = { ...r, amount: paid, payments: [], currency: undefined, payerId: group.meId };
+    // Categoría: lo que el grupo eligió la última vez para ese comercio manda;
+    // si no hay, una cadena conocida corrige el "Otros".
+    if (!paid) {
+      const mem = await recallMerchant(group.id, merchantKey(r.label || src));
+      if (mem) r = { ...r, category: mem.category };
+    }
+    if (r.category === "otros") {
+      const known = knownMerchant(src, country);
+      if (known) r = { ...r, category: known.category };
+    }
 
     // Moneda distinta a la del grupo (solo la vía IA la detecta): convertir
     // (Pro) o avisar (free), igual que en el escaneo de recibos.
@@ -293,6 +338,14 @@ function sanitizePercents(
 
   function save(d: ExpenseDraft) {
     const { payerId, payments: rawPayments, splits: rawSplits } = draftToExpenseFields(d);
+
+    // Memoria del grupo: lo que confirmas hoy rellena el próximo pago en ese
+    // comercio. Bajo la clave del pago de Wallet y bajo la de la descripción.
+    const memo = { label: d.label.trim(), category: d.category, participantIds: d.participantIds };
+    for (const key of new Set([learnKeyRef.current, merchantKey(d.label)].filter(Boolean) as string[])) {
+      rememberMerchant(group.id, key, memo);
+    }
+    learnKeyRef.current = null;
 
     // Moneda distinta elegida a mano (Pro): convierte monto, pagos y splits
     // con la misma tasa, y guarda el original para el badge (igual que IA).
