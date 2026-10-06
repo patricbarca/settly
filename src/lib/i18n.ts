@@ -565,6 +565,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "pay.remaining": { es: "Quedará pendiente {amt}", en: "{amt} will remain" },
   "pay.whichExpenses": { es: "¿Qué gastos cubre este pago?", en: "Which expenses does this cover?" },
   "pay.whichExpensesSimplified": { es: "Elige tus gastos pendientes a saldar", en: "Choose your pending expenses to settle" },
+  "pay.selectAll": { es: "Seleccionar todos", en: "Select all" },
+  "pay.deselectAll": { es: "Quitar todos", en: "Deselect all" },
   "pay.selectedTotal": { es: "Total seleccionado", en: "Selected total" },
   "pay.cappedNote": { es: "Solo debes {amt} a {to}; se registrará ese monto (no puedes pagar de más).", en: "You only owe {amt} to {to}; that amount will be recorded (you can't overpay)." },
   "pay.partialOf": { es: "Pago parcial de {total}", en: "Partial payment of {total}" },

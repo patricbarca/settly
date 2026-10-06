@@ -50,6 +50,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Pagar: "Seleccionar todos / Quitar todos" en la lista de gastos (2026-10-06)
+- En `MarkPaidModal`, junto a "¿Qué gastos cubre este pago?", un botón teal que alterna **Seleccionar todos / Quitar todos** (solo si hay >1 gasto). Toca solo el set `selected` (igual que `toggleExpense`, sin efectos extra); los importes parciales editados se conservan. Strings `pay.selectAll/deselectAll`. `tsc` + build limpios; **no verificado en pantalla**.
+
 ### Siri / Atajos / Wallet: "Añadir gasto" y "Escanear ticket" desde fuera de la app (2026-10-03)
 - **Qué hace:** dos **App Intents** nativas en iOS (`ios/App/App/SettliaIntents.swift`): **"Add expense"** (una nota tipo `taxi 30 con Emma`, o **comercio + importe** para la automatización de Wallet) y **"Scan receipt"**. Al ser App Intents, salen solas en **Siri** (*"Add an expense in Settlia"* / *"Añadir un gasto en Settlia"*), en la app **Atajos**, en el **Botón de Acción** y como acción de la automatización **"Al pagar con Apple Pay"** de Wallet.
 - **No guardan nada por su cuenta:** abren la app con un deep link `app.settlia.pwa://add?text=…&id=…` (o `://scan`) y el gasto entra en el flujo normal → **Revisar y confirmar**. Toda la lógica (IA, reparto, grupo) sigue en un solo sitio, la web.

@@ -275,9 +275,26 @@ export function MarkPaidModal({
                 individualmente en el listado. En Simplificado son los propios
                 gastos pendientes del deudor (no necesariamente con esta
                 persona en particular). */}
-            <label className="text-xs font-semibold text-muted">
-              {t(direct ? "pay.whichExpenses" : "pay.whichExpensesSimplified")}
-            </label>
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-semibold text-muted flex-1 min-w-0">
+                {t(direct ? "pay.whichExpenses" : "pay.whichExpensesSimplified")}
+              </label>
+              {debts.length > 1 && (
+                <button
+                  onClick={() =>
+                    setSelected(
+                      debts.every((d) => selected.has(d.expenseId))
+                        ? new Set()
+                        : new Set(debts.map((d) => d.expenseId))
+                    )
+                  }
+                  className="text-xs font-semibold shrink-0 hover-lift"
+                  style={{ color: "var(--teal)" }}
+                >
+                  {debts.every((d) => selected.has(d.expenseId)) ? t("pay.deselectAll") : t("pay.selectAll")}
+                </button>
+              )}
+            </div>
             <div className="glass rounded-2xl p-1.5 mt-1 space-y-0.5 max-h-56 overflow-y-auto">
               {debts.map((d) => {
                 const on = selected.has(d.expenseId);
