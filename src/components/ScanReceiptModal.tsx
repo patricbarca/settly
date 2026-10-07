@@ -125,7 +125,7 @@ export function ScanReceiptModal({
     // que unidades, no hay un reparto por defecto razonable: se deja vacío
     // para que se asigne a mano (normalmente partiendo en N).
     const itemRows: (ExpenseItem & { qty?: number })[] = res.items.map((s) => {
-      const q = Math.max(1, s.qty || 1);
+      const q = countableQty(s.name, s.qty);
       const defaultIds = allIds.length >= q ? allIds : [];
       return {
         name: s.name,
@@ -497,4 +497,16 @@ export function ScanReceiptModal({
       {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
     </Overlay>
   );
+}
+
+/** Cantidad que tiene sentido repartir por unidades. Una MEDIDA no lo es: 53 L
+ *  de gasolina, 1,2 kg de carne o 3 kWh salían como "Partir en 53". Si el
+ *  nombre habla de litros/kilos/combustible, o la cantidad es absurda para
+ *  repartir entre personas, se trata como una sola línea. */
+const MEASURE_RE =
+  /\b(\d+[.,]?\d*\s?(l|lt|lts|ltr|litre|liter|litro|kg|g|gr|grs|lb|lbs|oz|ml|gal|kwh)s?|kg|kgs|litres?|liters?|litros?|kilos?|gallons?|unleaded|diesel|petrol|gasolina|gasoil|fuel|combustible|e10|u91|u95|u98|premium 9[58]|super 9[58])\b/i;
+function countableQty(name: string, qty: number | undefined): number {
+  const q = Math.max(1, Math.round(qty || 1));
+  if (q > 1 && (MEASURE_RE.test(name || "") || q > 30)) return 1;
+  return q;
 }

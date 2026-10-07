@@ -149,6 +149,7 @@ Rules:
   - ALIGNMENT IS CRITICAL: read each row LEFT-TO-RIGHT as one line. The item name is on the left; its price is the RIGHTMOST money value on that SAME horizontal line. Supermarket receipts (Aldi, Coles, Woolworths…) leave a WIDE gap between the name and the price and list many rows — do NOT shift a price up or down to the wrong row. If two adjacent rows look swapped, re-check which price sits on which line.
   - Do NOT emit the SUBTOTAL, TOTAL, AMOUNT, GST/TAX summary, change, or payment/card lines as items — those are totals, not line items.
   - qty: the quantity of that line. Detect it from "x 2", a leading "2 ...", or from "($X each)" vs the line total. Default 1.
+  - qty counts DISCRETE units only (plates, drinks, items). A MEASURE is not a quantity: fuel litres ("53.12 L @ 1.989"), weight ("1.2 kg"), energy (kWh) → qty 1 and price = the line total.
   - unitPrice: price for a SINGLE unit if shown (e.g. "$6.80 each" / "($23.90 each)"). If not shown, use price/qty.
   - price: the LINE TOTAL printed on the right (for the whole quantity).
   - SELF-CHECK: the sum of all item prices should equal the printed subtotal. If your extracted items don't add up to the subtotal, you misread a price or an alignment — fix it before answering.

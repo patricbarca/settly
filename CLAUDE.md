@@ -50,6 +50,11 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Scan: la gasolina ya no se ofrece "Partir en 53" (2026-10-07)
+- **Bug real:** ticket de combustible con **53 L** → el escáner devolvía `qty: 53` (el servidor redondea la cantidad) y el editor ofrecía partir la línea en 53 unidades.
+- **Fix cliente (`ScanReceiptModal.countableQty`):** una cantidad solo se reparte por unidades si es **discreta**. Si el nombre de la línea es una **medida** (`53.12L`, `kg`, `litres`, `kWh`, `gal`…) o **combustible** (unleaded, diesel, petrol, gasolina, U91/U95/U98, E10…), o si la cantidad es **>30**, se trata como 1 línea. Probado: Unleaded 91 ×53 → 1 · Diesel ×60 → 1 · Bananas kg ×2 → 1 · Steak ×3 → 3 · Corona x6 → 6 · Banquet ×24 → 24.
+- **Prompt de `scan-receipt`:** regla nueva "qty cuenta solo unidades discretas; litros/peso/kWh → qty 1". **Solo en el repo, NO desplegada** (el arreglo del cliente basta; desplegar exige leer antes la versión en producción para no pisarla).
+
 ### Pagar: "Seleccionar todos / Quitar todos" en la lista de gastos (2026-10-06)
 - En `MarkPaidModal`, junto a "¿Qué gastos cubre este pago?", un botón teal que alterna **Seleccionar todos / Quitar todos** (solo si hay >1 gasto). Toca solo el set `selected` (igual que `toggleExpense`, sin efectos extra); los importes parciales editados se conservan. Strings `pay.selectAll/deselectAll`. `tsc` + build limpios; **no verificado en pantalla**.
 
