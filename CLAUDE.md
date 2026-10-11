@@ -50,6 +50,14 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### 🐛 Fix: un móvil con copia vieja BORRABA gastos de otros (caso AlePat, 2026-10-10)
+- **Caso real (grupo `8wpau8c` "AlePat ♥️"):** Alecita añadió *Super $107*, *Entrada $86* y *Reiki $50* el 6-oct (vía `add_expense`, atómico). El 7-oct el móvil de Patric, con una copia del grupo anterior, guardó el blob completo (`update_group_data`) y su lista de `expenses` **reemplazó** la del servidor → los 3 desaparecieron. La actividad sí los conservaba (`expense_added`, sin ningún borrado) porque `activity` ya se unía por id desde migrate_v12; **`expenses` no**.
+- **Fix servidor (`supabase/migrate_v16_expense_merge.sql`, ✅ aplicada en producción vía MCP):** nueva `merge_expenses(server, incoming, tombs)` → los gastos del cliente mandan (sus ediciones), los que **solo están en el servidor se conservan** (añadidos por otro) y se quitan los de la lista de lápidas. `update_group_data` la usa y une `deletedExpenseIds`. `delete_expense` ahora apunta la lápida. Solo `CREATE OR REPLACE` (sin drops → el conector MCP sí la aplicó).
+- **Fix cliente (`store.ts deleteExpense` + `Group.deletedExpenseIds`):** el borrado offline también deja la lápida en el blob. **Builds viejos** que borren offline: el gasto puede reaparecer (el online va por la RPC, que ya pone la lápida).
+- **✅ Verificado en la DB** con un grupo desechable dentro de una transacción abortada (no dejó rastro): otro miembro añade `new` + se borra `b` + un cliente viejo escribe `[a(editado), b]` → resultado `[new, a(editado)]`, `b` sigue borrado, el nombre nuevo se aplica.
+- **Datos reparados:** los 3 gastos repuestos (ids `rst1rki`/`rst2ent`/`rst3sup`, fecha 6-oct, pagó **Alecita**): Reiki $50 y Entrada $86 → 100% Patric; Super $107 → Patric 60% ($64.20) / Alecita 40% ($42.80). Repartos indicados por el usuario.
+- **Pendiente:** lo mismo para `members`/`recurring` (siguen siendo "último en escribir gana"); y las ediciones concurrentes del MISMO gasto siguen siendo last-write-wins (aceptable).
+
 ### Scan: la gasolina ya no se ofrece "Partir en 53" (2026-10-07)
 - **Bug real:** ticket de combustible con **53 L** → el escáner devolvía `qty: 53` (el servidor redondea la cantidad) y el editor ofrecía partir la línea en 53 unidades.
 - **Fix cliente (`ScanReceiptModal.countableQty`):** una cantidad solo se reparte por unidades si es **discreta**. Si el nombre de la línea es una **medida** (`53.12L`, `kg`, `litres`, `kWh`, `gal`…) o **combustible** (unleaded, diesel, petrol, gasolina, U91/U95/U98, E10…), o si la cantidad es **>30**, se trata como 1 línea. Probado: Unleaded 91 ×53 → 1 · Diesel ×60 → 1 · Bananas kg ×2 → 1 · Steak ×3 → 3 · Corona x6 → 6 · Banquet ×24 → 24.

@@ -227,6 +227,10 @@ export interface Group {
   /** true/undefined = pagos simplificados (mínimas transferencias);
    *  false = pagos directos (pagas a quien puso el dinero de cada gasto). */
   simplifyDebts?: boolean;
+  /** Ids de gastos borrados (lápidas, append-only). El servidor une la lista
+   *  de gastos de un blob viejo con la suya (migrate_v16); sin esto, un gasto
+   *  borrado volvería a aparecer. */
+  deletedExpenseIds?: string[];
   meId: string; // quién soy yo
   /** userId del creador/dueño (solo él puede eliminar el grupo). Se rellena al
    *  cargar desde la columna owner_id; no forma parte real del JSON. */

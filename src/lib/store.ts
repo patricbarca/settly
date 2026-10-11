@@ -487,6 +487,7 @@ export async function deleteExpense(
   const apply = (g: Group): Group => ({
     ...g,
     expenses: g.expenses.filter((e) => e.id !== expenseId),
+    deletedExpenseIds: [...new Set([...(g.deletedExpenseIds ?? []), expenseId])],
     activity: opts?.activity ? [...(g.activity ?? []), opts.activity].slice(-200) : g.activity,
     notifications: applyNotifRemove(g.notifications ?? [], opts?.notifRemove),
   });
