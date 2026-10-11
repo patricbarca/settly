@@ -1,0 +1,8 @@
+-- migrate_v17 (✅ aplicada en producción 2026-10-11 vía MCP): redeem_access_code
+-- ya no EMPEORA un Pro vigente. Antes el ON CONFLICT pisaba expires_at, así que
+-- un usuario con Pro permanente que canjeaba un código de 6 meses pasaba a
+-- caducar en 6 meses. Ahora se conserva el Pro existente si es permanente o
+-- dura más que lo que da el código. Ver la definición completa en la DB
+-- (select pg_get_functiondef('public.redeem_access_code'::regproc)).
+-- Probado en transacción abortada: Pro permanente + código 30 días → sigue
+-- permanente; usuario sin Pro → +30 días.

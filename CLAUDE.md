@@ -50,6 +50,13 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Enlace de regalo de Pro: `app.settlia.app/?pro=CODIGO` (2026-10-11)
+- **Qué hace:** abrir el enlace guarda el código (`src/lib/promoLink.ts`, localStorage — sobrevive al login con Google, que vuelve sin el parámetro) y lo quita de la URL; al haber sesión, `App.tsx` lo canjea con `redeemCode` (el mismo RPC del Paywall) y muestra un modal "🎁 ¡Ya tienes Settlia Pro!" o el error (caducado / sin usos / no válido). Strings `promo.*`. El Pro va a la **cuenta** → también en iOS.
+- **⚠️ Bug previo arreglado de paso (migrate_v17, ✅ en producción):** `redeem_access_code` **pisaba** el `expires_at` → un usuario con Pro permanente que canjeaba un código de 6 meses quedaba degradado a 6 meses. Ahora nunca empeora un Pro vigente. Probado en transacción abortada.
+- **Código de campaña creado:** **`AMIGOS2026`** → Pro 6 meses, **50 usos**, canjeable hasta 30-jun-2027. Enlace: `https://app.settlia.app/?pro=AMIGOS2026`.
+- **Regla:** nunca poner `SETTLYBETA` (Pro permanente, sin límite) en un enlace; un código por campaña, con `max_uses` y `expires_at`.
+- El enlace abre la **web**, no la app nativa (Universal Links siguen pendientes del paso de Apple). `tsc` + build limpios; **flujo completo no probado en navegador** (necesita una cuenta real logueada).
+
 ### 🐛 Fix: un móvil con copia vieja BORRABA gastos de otros (caso AlePat, 2026-10-10)
 - **Caso real (grupo `8wpau8c` "AlePat ♥️"):** Alecita añadió *Super $107*, *Entrada $86* y *Reiki $50* el 6-oct (vía `add_expense`, atómico). El 7-oct el móvil de Patric, con una copia del grupo anterior, guardó el blob completo (`update_group_data`) y su lista de `expenses` **reemplazó** la del servidor → los 3 desaparecieron. La actividad sí los conservaba (`expense_added`, sin ningún borrado) porque `activity` ya se unía por id desde migrate_v12; **`expenses` no**.
 - **Fix servidor (`supabase/migrate_v16_expense_merge.sql`, ✅ aplicada en producción vía MCP):** nueva `merge_expenses(server, incoming, tombs)` → los gastos del cliente mandan (sus ediciones), los que **solo están en el servidor se conservan** (añadidos por otro) y se quitan los de la lista de lápidas. `update_group_data` la usa y une `deletedExpenseIds`. `delete_expense` ahora apunta la lápida. Solo `CREATE OR REPLACE` (sin drops → el conector MCP sí la aplicó).

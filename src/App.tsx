@@ -9,6 +9,7 @@ import { joinByToken, getJoinPreview } from "./lib/invite";
 import { ClaimMemberModal } from "./components/ClaimMemberModal";
 import { QuickAddGroupPicker } from "./components/QuickAddGroupPicker";
 import { Icon } from "./components/Icon";
+import { Overlay } from "./components/Overlay";
 import { Login } from "./components/Login";
 import { Home, type HomeTab } from "./components/Home";
 import { GroupView } from "./components/GroupView";
@@ -22,6 +23,8 @@ import { BottomNav, type NavKey } from "./components/BottomNav";
 import { countUnread } from "./lib/notifications";
 import { refreshNativePush } from "./lib/nativePush";
 import { initIAP } from "./lib/iap";
+import { capturePromoFromUrl, takePendingPromo } from "./lib/promoLink";
+import { redeemCode } from "./lib/plan";
 import { initAdTracking, trackConversion } from "./lib/adtrack";
 import { FeedbackModal } from "./components/FeedbackModal";
 import { AIConsentModal } from "./components/AIConsentModal";
@@ -49,6 +52,8 @@ export default function App() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showAIConsent, setShowAIConsent] = useState(false);
+  // Resultado del enlace de regalo de Pro (?pro=CODIGO): "ok" o la clave del error.
+  const [promoResult, setPromoResult] = useState<string | null>(null);
   const [joinPreview, setJoinPreview] = useState<{
     token: string;
     groupName: string;
@@ -210,6 +215,7 @@ export default function App() {
   useEffect(() => {
     // Medición de campañas: no-op en nativo y sin IDs configurados.
     initAdTracking();
+    capturePromoFromUrl();
     // Stripe vuelve a `/?upgraded=1` tras un pago completado: es el único
     // punto en web donde sabemos con certeza que la suscripción se cerró.
     // Se limpia el parámetro para que un refresh no vuelva a contarla.
@@ -227,6 +233,10 @@ export default function App() {
     // Refresca el token de push nativo al iniciar sesión (Apple puede rotarlo).
     // No-op en web o si el usuario no lo activó.
     if (phase === "authenticated") {
+      const promo = takePendingPromo();
+      if (promo) {
+        void redeemCode(promo).then((r) => setPromoResult(r.ok ? "ok" : r.error ?? "invalid"));
+      }
       void refreshNativePush();
       void initIAP(); // RevenueCat: sincroniza el entitlement Pro (no-op en web)
     }
@@ -406,6 +416,28 @@ export default function App() {
       {showFaq && <FaqModal onClose={() => setShowFaq(false)} />}
 
       {showFeedback && <FeedbackModal onClose={() => setShowFeedback(false)} />}
+      {promoResult && (
+        <Overlay onClose={() => setPromoResult(null)}>
+          <div className="glass-strong rounded-3xl w-full max-w-sm p-6 text-center anim-pop" onClick={(e) => e.stopPropagation()}>
+            <div className="text-4xl mb-2">{promoResult === "ok" ? "🎁" : "😕"}</div>
+            <h3 className="font-display text-xl font-bold mb-1">
+              {promoResult === "ok" ? t("promo.okTitle") : t("promo.errTitle")}
+            </h3>
+            <p className="text-sm text-muted mb-4">
+              {promoResult === "ok"
+                ? t("promo.okBody")
+                : t(({ expired: "code.err.expired", exhausted: "code.err.exhausted", network: "code.err.network" } as Record<string, string>)[promoResult] ?? "code.err.invalid")}
+            </p>
+            <button
+              onClick={() => setPromoResult(null)}
+              className="w-full rounded-2xl py-2.5 text-sm font-semibold text-white"
+              style={{ background: "var(--teal)" }}
+            >
+              {t("promo.close")}
+            </button>
+          </div>
+        </Overlay>
+      )}
       {showAIConsent && (
         <AIConsentModal
           onDecide={(ok) => { resolveAIConsent(ok); setShowAIConsent(false); }}
