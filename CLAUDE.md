@@ -56,6 +56,7 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Fix cliente (`store.ts deleteExpense` + `Group.deletedExpenseIds`):** el borrado offline también deja la lápida en el blob. **Builds viejos** que borren offline: el gasto puede reaparecer (el online va por la RPC, que ya pone la lápida).
 - **✅ Verificado en la DB** con un grupo desechable dentro de una transacción abortada (no dejó rastro): otro miembro añade `new` + se borra `b` + un cliente viejo escribe `[a(editado), b]` → resultado `[new, a(editado)]`, `b` sigue borrado, el nombre nuevo se aplica.
 - **Datos reparados:** los 3 gastos repuestos (ids `rst1rki`/`rst2ent`/`rst3sup`, fecha 6-oct, pagó **Alecita**): Reiki $50 y Entrada $86 → 100% Patric; Super $107 → Patric 60% ($64.20) / Alecita 40% ($42.80). Repartos indicados por el usuario.
+- **Auditoría de todos los grupos (2026-10-11):** cruzados los 162 `expense_added` del log de actividad con los gastos actuales (por nombre+importe, descartando borrados y editados). **AlePat era el único caso.** Los otros 3 "huérfanos" eran renombres (Splitwise→Split Canberrita Home, Nota→Groceries, Hotel Phu quoc maria and→Hotel Phu quoc). Límite: el log se cap a 200 eventos/grupo y empezó a mediados de 2026, así que no ve lo anterior.
 - **Pendiente:** lo mismo para `members`/`recurring` (siguen siendo "último en escribir gana"); y las ediciones concurrentes del MISMO gasto siguen siendo last-write-wins (aceptable).
 
 ### Scan: la gasolina ya no se ofrece "Partir en 53" (2026-10-07)
