@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Group, Member } from "../lib/types";
 import { updateGroup } from "../lib/store";
 import { withActivity } from "../lib/activity";
-import { computeSettle } from "../lib/split";
+import { computeSettle, settleOf, mainView } from "../lib/split";
 import { useUser } from "../lib/auth";
 import { memberInitials, sortedMembers, displayName } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -26,7 +26,7 @@ export function Members({ group }: { group: Group }) {
     referenced.add(s.to);
   });
 
-  const { net } = computeSettle(group.members, group.expenses, group.settlements ?? []);
+  const { net } = settleOf(mainView(group));
 
   // Solo el DUEÑO del grupo puede quitar miembros. Antes cualquiera podía
   // eliminar a cualquiera —incluido el propio dueño—, dejándole sin acceso.

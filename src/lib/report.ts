@@ -5,7 +5,7 @@
 // Salidas: datos estructurados (buildReport) para pintar la vista imprimible
 // (→ PDF vía window.print) y un CSV (reportToCsv) para abrir en Excel/Sheets.
 import type { Group, Expense, Settlement } from "./types";
-import { computeSettle, directTransfers, type Transfer } from "./split";
+import { computeSettle, directTransfers, type Transfer, mainView } from "./split";
 import { displayName } from "./format";
 
 /** "all" = histórico completo; "YYYY-MM" = un mes concreto. */
@@ -55,7 +55,10 @@ export interface ReportData {
 }
 
 /** Calcula todos los datos del reporte para un periodo dado. */
-export function buildReport(group: Group, period: Period): ReportData {
+export function buildReport(fullGroup: Group, period: Period): ReportData {
+  // Saldos separados por moneda: por ahora el reporte cubre solo la moneda
+  // principal del grupo (los gastos en otras monedas no se mezclan).
+  const group = mainView(fullGroup);
   const inP = (iso: string) => period === "all" || monthKey(iso) === period;
   const expenses = group.expenses
     .filter((e) => inP(e.date))

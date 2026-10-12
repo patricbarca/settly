@@ -50,6 +50,13 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Saldos separados por moneda (gastos en PEN y USD sin convertir) (2026-10-12)
+- **Qué hace:** ajuste del grupo **"Gastos en varias monedas" → "Saldos por moneda"** (`Group.multiCurrency`, gratis). Con él, el selector de moneda sale al añadir cualquier gasto (manual o IA) y un gasto en otra moneda se guarda **tal cual** (`Expense.currency`, sin convertir ni pedir tasa). Los pagos llevan su moneda (`Settlement.currency`; `MarkPaidModal` y `SettleFriendModal` la estampan siempre).
+- **Cómo se calcula (`split.ts`):** cada moneda es un libro independiente. `currencyView(group, code)` = el mismo grupo con solo los gastos/pagos de esa moneda y `currency = code`; `currencyViews` (principal primero), `mainView`, `settleOf`. Así **no se tocó el cálculo**: `Balances` pinta un bloque completo por moneda; `Hero` añade una línea por moneda extra; `Home` (pills y "al día" en todas las monedas) y `friends.ts` iteran por vista; `ExpenseList` muestra cada gasto en su moneda. Un grupo de una sola moneda devuelve el MISMO objeto (cero cambios de comportamiento).
+- **Solo moneda principal (pendiente):** `report.ts` (PDF/CSV), Stats, `Members`/`GroupSettings`/`UsersModal`/gamification (`mainView`). Recurrentes siempre en la principal. Escaneo de ticket en otra moneda sigue convirtiendo (Pro).
+- **⚠️ Builds viejos:** una app sin este cambio ignora `currency` y **mezclaría** importes (S/60 como $60). No activar el ajuste en grupos con usuarios de iOS hasta el build nuevo de Codemagic.
+- **✅ Verificado:** cálculo PEN+USD (netos/transferencias por moneda, pago en USD solo salda USD, grupo de una moneda = identidad, símbolo `S/`→PEN) y **en navegador** (invitado: activar ajuste → gasto manual S/60,50 → Saldos con bloque USD y bloque PEN, Hero con línea PEN). `tsc` + build limpios.
+
 ### Fix: la COMA decimal del teclado de iPhone no se aceptaba (2026-10-12)
 - **Reporte:** usuarios de iPhone con formato regional europeo/latino ven **coma** en el teclado decimal; `Number("12,50")` = `NaN` → el importe quedaba en 0.
 - **Fix:** helper `decimalInput()` (`format.ts`) que convierte coma→punto y quita lo que no sea número, aplicado al teclear en **todos** los campos de importe: `ExpenseForm` (total, pagos, reparto), `ItemizedExpenseEditor` (total, reparto, precio de ítem, recargos, propina) y `MarkPaidModal` (importe por gasto e importe pagado — este era `type="number"`, que en WebKit descarta la coma; ahora texto + `inputMode="decimal"`, el tope sigue en JS). `tsc` + build limpios; **no probado en iPhone**. Solo web → llega a la PWA al desplegar `master` y a iOS con el próximo build.

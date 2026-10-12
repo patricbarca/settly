@@ -103,6 +103,10 @@ export interface Expense {
   originalAmount?: number;
   originalCurrency?: string;
   fxRate?: number;
+  /** Moneda PROPIA del gasto (ISO) cuando el grupo lleva saldos separados por
+   *  moneda (`multiCurrency`). Ausente = la moneda del grupo. Un gasto en otra
+   *  moneda NO se convierte: suma solo a los saldos de esa moneda. */
+  currency?: string;
   /** Ronda de auto-asignación ("¿qué consumiste?"): el gasto se crea con los
    *  ítems sin asignar y cada miembro elige los suyos. Mientras `status` sea
    *  "open" el reparto es PROVISIONAL (los ítems que nadie ha reclamado se
@@ -156,6 +160,9 @@ export interface Settlement {
    *  listado); `expensePayments` lleva el monto exacto por gasto (parcial o
    *  total). El `amount` del settlement = suma de estos. */
   expensePayments?: { expenseId: string; amount: number }[];
+  /** Moneda del pago (ISO). Ausente = la moneda del grupo. Salda solo deudas
+   *  en esa moneda (saldos separados por moneda). */
+  currency?: string;
 }
 
 export type NotificationType = "expense_added" | "claim_requested" | "payment_made" | "payment_rejected" | "review_requested" | "delete_requested" | "recurring_generated";
@@ -254,6 +261,9 @@ export interface Group {
   /** Moneda activa para mostrar: `currency` o `secondaryCurrency`. Por
    *  defecto `currency` si falta. */
   displayCurrency?: string;
+  /** Saldos separados por moneda: los gastos en otra moneda se guardan tal
+   *  cual (sin convertir) y en Saldos sale un bloque por moneda. */
+  multiCurrency?: boolean;
 }
 
 import type { IconName } from "../components/Icon";

@@ -129,6 +129,7 @@ export function SettleFriendModal({ friend, onClose }: { friend: Friend; onClose
             date: new Date().toISOString().slice(0, 10),
             status: "pending", // lo confirma quien cobra
             expenseIds: picked.map((d) => d.expenseId),
+            currency: resolveToCode(fg.currency),
           },
         ],
         { activity: makeActivity(evt), notifs: [makeNotif(evt)] }
@@ -165,7 +166,7 @@ export function SettleFriendModal({ friend, onClose }: { friend: Friend; onClose
             {/* Un bloque por grupo con sus gastos elegibles */}
             <div className="space-y-3">
               {owedGroups.map((g) => (
-                <div key={g.groupId} className="glass rounded-2xl p-3">
+                <div key={`${g.groupId}-${g.currency}`} className="glass rounded-2xl p-3">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="font-semibold text-sm truncate leading-relaxed">{g.groupName}</span>
                     <span className="font-mono font-bold text-sm shrink-0">{money(groupTotal(g), g.currency)}</span>

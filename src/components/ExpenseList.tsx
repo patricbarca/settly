@@ -1,3 +1,5 @@
+import { currencyOf } from "../lib/split";
+import { resolveToCode } from "../lib/currencies";
 import { useState, useMemo, useRef } from "react";
 import type { Group, Category } from "../lib/types";
 import { catOf } from "../lib/types";
@@ -29,6 +31,8 @@ export function ExpenseList({ group }: { group: Group }) {
   const t = useT();
   const lang = useLang();
   const money = useGroupMoney(group);
+  // Saldos separados por moneda: un gasto en otra moneda se muestra en la suya.
+  const mainCode = resolveToCode(group.currency);
   const ids = group.members.map((m) => m.id);
   const [editId, setEditId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -415,7 +419,7 @@ export function ExpenseList({ group }: { group: Group }) {
           ids={ids}
           labels={labels}
           name={name}
-          money={money}
+          money={currencyOf(e, group) === mainCode ? money : (n: number) => rawMoney(n, currencyOf(e, group))}
           t={t}
           open={openId === e.id}
           onToggleOpen={() => setOpenId(openId === e.id ? null : e.id)}
@@ -471,6 +475,7 @@ export function ExpenseList({ group }: { group: Group }) {
             ) : (
             <ExpenseForm
               group={group}
+              amountCurrency={editing.currency}
               initial={{
                 label: editing.label,
                 amount: editing.amount,
@@ -590,7 +595,11 @@ function ExpenseRow({
   // corresponde a gastos reales entre ese par. En Simplificado el estado real
   // vive en los saldos/liquidación (pestaña Balances), no aquí.
   const directMode = group.simplifyDebts === false;
-  const { debtorIds, settledIds, partialIds } = expenseSettledStatus(e, ids, group.settlements ?? []);
+  const { debtorIds, settledIds, partialIds } = expenseSettledStatus(
+    e,
+    ids,
+    (group.settlements ?? []).filter((s) => currencyOf(s, group) === currencyOf(e, group))
+  );
   const pendingCount = debtorIds.filter((id) => !settledIds.has(id)).length;
   const paidStatus: "paid" | "partial" | "pending" | null = !directMode
     ? null

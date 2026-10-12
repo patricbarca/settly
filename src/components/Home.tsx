@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useGroups, useTrashedGroups, setActiveGroup, archiveGroup, recoverGroup, purgeGroup } from "../lib/store";
 import { useArchivedGroups } from "../lib/archivedGroups";
-import { computeSettle, shareFor } from "../lib/split";
+import { computeSettle, shareFor, settleOf, mainView, currencyViews } from "../lib/split";
 import { groupSettleScore } from "../lib/gamification";
 import { money, personColor, memberInitials } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -65,7 +65,8 @@ export function Home({ tab }: { tab: HomeTab }) {
   const mainCur = user?.mainCurrency || mostCommonCur || active[0]?.currency || "$";
 
   // Aporte por grupo en su propia moneda.
-  const perGroup = active.map((g) => {
+  // Saldos separados por moneda: cada moneda del grupo aporta en la suya.
+  const perGroup = active.flatMap(currencyViews).map((g) => {
     const ids = g.members.map((m) => m.id);
     let s = 0;
     for (const e of g.expenses) s += shareFor(e, ids)[g.meId] || 0;
@@ -392,10 +393,12 @@ function GroupCard({
   onOpen: () => void;
   onArchive: () => void;
 }) {
-  const { net } = computeSettle(g.members, g.expenses, g.settlements ?? []);
+  const main = mainView(g);
+  const { net } = settleOf(main);
   const mine = net[g.meId] || 0;
-  const total = g.expenses.reduce((s, e) => s + e.amount, 0);
-  const ok = Math.abs(mine) < 0.01;
+  const total = main.expenses.reduce((s, e) => s + e.amount, 0);
+  // Al día solo si lo está en TODAS sus monedas.
+  const ok = currencyViews(g).every((v) => Math.abs(settleOf(v).net[g.meId] || 0) < 0.01);
 
   const [swipeX, setSwipeX] = useState(0);
   const drag = useRef<{ startX: number; startY: number; startSwipe: number; horiz: boolean | null; active: boolean }>({

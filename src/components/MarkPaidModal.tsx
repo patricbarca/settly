@@ -1,3 +1,4 @@
+import { resolveToCode } from "../lib/currencies";
 import { useMemo, useState, type ChangeEvent } from "react";
 import type { Group } from "../lib/types";
 import { addSettlements } from "../lib/store";
@@ -210,6 +211,7 @@ export function MarkPaidModal({
         ...(onBehalf ? { settledBy: payer } : {}),
         ...(fullyCovered.length ? { expenseIds: fullyCovered } : {}),
         ...(picks.length ? { expensePayments: picks } : {}),
+        currency: resolveToCode(group.currency),
       },
       ...coveredList.map((c) => ({
         id: uid(),
@@ -222,6 +224,7 @@ export function MarkPaidModal({
         // pagador (cubro a otros) el dinero lo pongo yo → settledBy = payer.
         ...(confirmReceipt ? {} : { settledBy: payer }),
         expenseIds: fifoExpenseIdsForAmount(group.members, group.expenses, group.settlements ?? [], c.from, c.amount),
+        currency: resolveToCode(group.currency),
       })),
     ];
     // Una notificación por cada deudor saldado (el mío + los cubiertos).

@@ -182,3 +182,5 @@ movidos arriba en el form de gasto · miembros **ordenados alfabéticamente** en
 toda la app · tipografía unificada a **Baloo 2** (self-hosted, reemplaza
 Bricolage/Inter/Space Mono) · pills de balance global: Total, debo y me deben
 cada una en su propia pill separada.
+
+- ✅ Saldos separados por moneda (`Group.multiCurrency`, 2026-10-12). ⬜ Pendiente: reporte/Stats por moneda, escaneo sin convertir, botón "juntar todo en una moneda".

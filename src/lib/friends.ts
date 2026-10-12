@@ -13,8 +13,7 @@ import {
   expenseDebtsBetween,
   fifoExpenseIdsForAmount,
   shareFor,
-  type ExpenseDebt,
-} from "./split";
+  type ExpenseDebt, currencyViews } from "./split";
 import { getNetwork } from "./contacts";
 import { memberPays } from "./pay";
 import { loadArchivedGroups } from "./archivedGroups";
@@ -109,7 +108,8 @@ export function useFriends(): { friends: Friend[]; loading: boolean } {
         const info = new Map(network.map((c) => [c.userId, c]));
 
         const byFriend = new Map<string, Friend>();
-        for (const g of active) {
+        // Una pasada por moneda del grupo (saldos separados por moneda).
+        for (const g of active.flatMap(currencyViews)) {
           const map = memByGroup.get(g.id);
           if (!map) continue;
           const myMemberId = map.get(user.id) ?? g.meId;

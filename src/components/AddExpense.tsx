@@ -100,6 +100,8 @@ export function AddExpense({ group }: { group: Group }) {
   function toggleRecurring() {
     if (!pro) { setShowPaywall(true); return; }
     setExpenseType((e) => (e === "recurring" ? "one-time" : "recurring"));
+    // Los recurrentes van siempre en la moneda del grupo.
+    if (group.multiCurrency) setManualCurrency(resolveToCode(group.currency));
   }
 
   // Cambiar la moneda del gasto manual: si es distinta a la del grupo, Pro
@@ -109,6 +111,13 @@ export function AddExpense({ group }: { group: Group }) {
     const groupCode = resolveToCode(group.currency);
     if (code === groupCode) {
       setManualCurrency(groupCode);
+      setManualRate(null);
+      setFxError(null);
+      return;
+    }
+    // Saldos separados por moneda: se guarda tal cual, sin tasa ni Pro.
+    if (group.multiCurrency) {
+      setManualCurrency(code);
       setManualRate(null);
       setFxError(null);
       return;
@@ -180,7 +189,11 @@ export function AddExpense({ group }: { group: Group }) {
 
     // Moneda distinta a la del grupo (solo la vía IA la detecta): convertir
     // (Pro) o avisar (free), igual que en el escaneo de recibos.
-    if (r.currency && r.currency !== group.currency) {
+    setManualCurrency(resolveToCode(group.currency));
+    if (r.currency && group.multiCurrency && resolveToCode(r.currency) !== resolveToCode(group.currency)) {
+      // Saldos separados: el gasto se queda en su moneda (sin convertir).
+      setManualCurrency(resolveToCode(r.currency));
+    } else if (r.currency && r.currency !== group.currency) {
       if (pro) {
         const fxRes = await convertCurrency(1, r.currency, group.currency);
         if (fxRes) {
@@ -350,7 +363,9 @@ function sanitizePercents(
     // Moneda distinta elegida a mano (Pro): convierte monto, pagos y splits
     // con la misma tasa, y guarda el original para el badge (igual que IA).
     const groupCode = resolveToCode(group.currency);
-    const manualForeign = manualMode && manualCurrency !== groupCode && manualRate != null;
+    // Saldos separados por moneda: moneda propia del gasto, sin convertir.
+    const nativeCode = group.multiCurrency && manualCurrency !== groupCode ? manualCurrency : undefined;
+    const manualForeign = !nativeCode && manualMode && manualCurrency !== groupCode && manualRate != null;
     const rate = manualForeign ? manualRate! : 1;
     const conv = (n: number) => Math.round(n * rate * 100) / 100;
     const rawAmount = Number(d.amount) || 0;
@@ -392,6 +407,7 @@ function sanitizePercents(
           createdBy: group.meId,
           allowEdits: d.allowEdits ?? false,
           ...(d.receiptPath ? { receiptPath: d.receiptPath } : {}),
+          ...(nativeCode ? { currency: nativeCode } : {}),
           ...(effectiveFx ? { originalAmount: effectiveFx.originalAmount, originalCurrency: effectiveFx.originalCurrency, fxRate: effectiveFx.fxRate } : {}),
         },
         {
@@ -414,7 +430,7 @@ function sanitizePercents(
       notifyGroup(
         group.id,
         group.name,
-        t("notif.expense_added", { name: meName, label: d.label.trim(), amt: money(amount, group.currency) }),
+        t("notif.expense_added", { name: meName, label: d.label.trim(), amt: money(amount, nativeCode ?? group.currency) }),
         "expenses"
       );
     }
@@ -506,7 +522,7 @@ function sanitizePercents(
         <div className="mt-4 glass rounded-3xl p-4 anim-pop">
           <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{aiSummary ? t("add.review") : t("add.manualReview")}</div>
 
-          {manualMode && (
+          {(manualMode || group.multiCurrency) && expenseType !== "recurring" && (
             <div className="mb-3">
               <label className="text-xs font-semibold text-muted">{t("add.manualCurrency")}</label>
               <select
@@ -520,6 +536,11 @@ function sanitizePercents(
                   </option>
                 ))}
               </select>
+              {group.multiCurrency && manualCurrency !== resolveToCode(group.currency) && (
+                <p className="text-[11px] mt-1" style={{ color: "var(--teal)" }}>
+                  {t("add.multiCurrencyHint", { code: manualCurrency })}
+                </p>
+              )}
               {manualCurrency !== resolveToCode(group.currency) && manualRate != null && (
                 <p className="text-[11px] mt-1" style={{ color: "var(--teal)" }}>
                   {t("add.manualCurrencyHint", {
@@ -569,7 +590,7 @@ function sanitizePercents(
             onSave={save}
             onCancel={() => { setDraft(null); setExpenseType("one-time"); setAiSummary(null); setManualMode(false); setFx(null); setFxUpsell(null); setFxError(null); }}
             submitLabel={expenseType === "recurring" ? t("recur.save") : t("add.submit")}
-            amountCurrency={manualMode ? manualCurrency : undefined}
+            amountCurrency={manualMode || group.multiCurrency ? manualCurrency : undefined}
           >
             {/* Recurring toggle — sits between category and save button */}
             <div className="border-t pt-3 mt-1" style={{ borderColor: "var(--line)" }}>

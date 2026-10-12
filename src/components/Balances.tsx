@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { Group, Settlement } from "../lib/types";
-import { computeSettle, directTransfers } from "../lib/split";
+import { computeSettle, directTransfers, currencyViews } from "../lib/split";
+import { resolveToCode, localCurrencyName } from "../lib/currencies";
+import { getLang } from "../lib/i18n";
 import { setSettlementStatus, removeSettlement, rejectSettlement } from "../lib/store";
 import { useUser } from "../lib/auth";
 import { memberInitials, sortedMembers, fmtDate, displayName } from "../lib/format";
@@ -15,7 +17,33 @@ import { ConfirmModal } from "./ConfirmModal";
 import { BalanceExplainer } from "./BalanceExplainer";
 import { TransferExplainer } from "./TransferExplainer";
 
+/** Saldos del grupo. Con gastos en varias monedas (saldos separados), un
+ *  bloque completo por moneda: cada uno se calcula y se salda por separado. */
 export function Balances({ group }: { group: Group }) {
+  const views = currencyViews(group);
+  if (views.length === 1) return <CurrencyBalances group={views[0]} />;
+  const locale = getLang() === "en" ? "en" : "es";
+  return (
+    <div className="space-y-6">
+      {views.map((v) => {
+        const code = resolveToCode(v.currency);
+        return (
+          <div key={code} className="space-y-2">
+            <div className="flex items-center gap-2 px-1">
+              <span className="rounded-full px-2.5 py-0.5 text-xs font-bold" style={{ background: "var(--teal)", color: "#fff" }}>
+                {code}
+              </span>
+              <span className="text-sm font-semibold text-muted">{localCurrencyName(code, locale)}</span>
+            </div>
+            <CurrencyBalances group={v} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CurrencyBalances({ group }: { group: Group }) {
   const t = useT();
   const user = useUser();
   const isOwner = !group.ownerId || group.ownerId === user?.id;

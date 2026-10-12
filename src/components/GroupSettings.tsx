@@ -3,7 +3,7 @@ import type { Group, GroupKind } from "../lib/types";
 import { updateGroup, deleteGroup, leaveGroup } from "../lib/store";
 import { useUser } from "../lib/auth";
 import { withActivity } from "../lib/activity";
-import { computeSettle } from "../lib/split";
+import { computeSettle, settleOf, mainView } from "../lib/split";
 import { money, memberInitials, sortedMembers } from "../lib/format";
 import { Avatar } from "./Avatar";
 import { useT, useLang } from "../lib/i18n";
@@ -36,6 +36,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
     else setSimplify(s);
   }
   const [secondaryCurrency, setSecondaryCurrency] = useState(group.secondaryCurrency ?? "");
+  const [multi, setMulti] = useState(!!group.multiCurrency);
   const [displayCurrency, setDisplayCurrency] = useState(group.displayCurrency ?? group.currency);
   const [saved, setSaved] = useState(false);
   const [confirmDanger, setConfirmDanger] = useState(false);
@@ -52,7 +53,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
     onClose();
   }
 
-  const { net } = computeSettle(group.members, group.expenses, group.settlements ?? []);
+  const { net } = settleOf(mainView(group));
 
   const referenced = new Set<string>();
   group.expenses.forEach((e) => {
@@ -71,7 +72,8 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
     kind !== (group.kind ?? "trip") ||
     simplify !== (group.simplifyDebts !== false) ||
     secondaryCurrency !== (group.secondaryCurrency ?? "") ||
-    displayCurrency !== (group.displayCurrency ?? group.currency);
+    displayCurrency !== (group.displayCurrency ?? group.currency) ||
+    multi !== !!group.multiCurrency;
 
   function save() {
     const n = name.trim();
@@ -87,6 +89,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
       simplifyDebts: simplify,
       secondaryCurrency: sc,
       displayCurrency: dc,
+      multiCurrency: multi || undefined,
     }));
     setSaved(true);
     setTimeout(() => { setSaved(false); onClose(); }, 800);
@@ -169,6 +172,24 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Saldos separados por moneda: gastos en varias monedas sin convertir. */}
+        <div className="mb-5">
+          <label className="text-xs font-semibold text-muted">{t("settings.multiCurrency")}</label>
+          <p className="text-xs text-muted mt-0.5 mb-2">{t("settings.multiCurrencyHint")}</p>
+          <div className="glass rounded-full p-0.5 flex text-sm font-semibold">
+            {[false, true].map((v) => (
+              <button
+                key={String(v)}
+                onClick={() => setMulti(v)}
+                className={`flex-1 px-3 py-1.5 rounded-full ${multi === v ? "" : "text-muted"}`}
+                style={multi === v ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+              >
+                {v ? t("settings.multiCurrencyOn") : t("settings.multiCurrencyOff")}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Segunda moneda + toggle de visualización (Pro) */}
