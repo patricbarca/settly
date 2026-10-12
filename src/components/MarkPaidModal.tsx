@@ -5,7 +5,7 @@ import { makeNotif } from "../lib/notifications";
 import { makeActivity } from "../lib/activity";
 import type { Settlement } from "../lib/types";
 import { notifyGroup } from "../lib/push";
-import { uid, money, displayName } from "../lib/format";
+import { uid, money, displayName, decimalInput } from "../lib/format";
 import { computeSettle, expenseDebtsBetween, fifoExpenseIdsForAmount } from "../lib/split";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
@@ -326,7 +326,7 @@ export function MarkPaidModal({
                         <div className="flex items-center gap-1 shrink-0">
                           <input
                             value={amounts[d.expenseId] ?? String(d.amount)}
-                            onChange={(e) => setAmounts((p) => ({ ...p, [d.expenseId]: e.target.value }))}
+                            onChange={(e) => setAmounts((p) => ({ ...p, [d.expenseId]: decimalInput(e.target.value) }))}
                             inputMode="decimal"
                             autoFocus
                             className="glass rounded-lg px-2 py-1 text-right text-sm font-mono w-20"
@@ -371,13 +371,9 @@ export function MarkPaidModal({
             <label className="text-xs font-semibold text-muted">{t("pay.amountPaid")}</label>
             <div className="flex gap-2 mt-1">
               <input
-                type="number"
                 inputMode="decimal"
-                min="0"
-                max={max}
-                step="0.01"
                 value={amt}
-                onChange={(e) => setAmt(e.target.value)}
+                onChange={(e) => setAmt(decimalInput(e.target.value))}
                 className="glass rounded-xl px-3 py-2.5 text-sm flex-1 font-mono"
               />
               <button

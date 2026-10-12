@@ -50,6 +50,10 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Fix: la COMA decimal del teclado de iPhone no se aceptaba (2026-10-12)
+- **Reporte:** usuarios de iPhone con formato regional europeo/latino ven **coma** en el teclado decimal; `Number("12,50")` = `NaN` → el importe quedaba en 0.
+- **Fix:** helper `decimalInput()` (`format.ts`) que convierte coma→punto y quita lo que no sea número, aplicado al teclear en **todos** los campos de importe: `ExpenseForm` (total, pagos, reparto), `ItemizedExpenseEditor` (total, reparto, precio de ítem, recargos, propina) y `MarkPaidModal` (importe por gasto e importe pagado — este era `type="number"`, que en WebKit descarta la coma; ahora texto + `inputMode="decimal"`, el tope sigue en JS). `tsc` + build limpios; **no probado en iPhone**. Solo web → llega a la PWA al desplegar `master` y a iOS con el próximo build.
+
 ### Enlace de regalo de Pro: `app.settlia.app/?pro=CODIGO` (2026-10-11)
 - **Qué hace:** abrir el enlace guarda el código (`src/lib/promoLink.ts`, localStorage — sobrevive al login con Google, que vuelve sin el parámetro) y lo quita de la URL; al haber sesión, `App.tsx` lo canjea con `redeemCode` (el mismo RPC del Paywall) y muestra un modal "🎁 ¡Ya tienes Settlia Pro!" o el error (caducado / sin usos / no válido). Strings `promo.*`. El Pro va a la **cuenta** → también en iOS.
 - **⚠️ Bug previo arreglado de paso (migrate_v17, ✅ en producción):** `redeem_access_code` **pisaba** el `expires_at` → un usuario con Pro permanente que canjeaba un código de 6 meses quedaba degradado a 6 meses. Ahora nunca empeora un Pro vigente. Probado en transacción abortada.
