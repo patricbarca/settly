@@ -180,3 +180,10 @@ export function looksLikeSameName(a: string, b: string): boolean {
 export function similarNames(name: string, existing: string[]): string[] {
   return existing.filter((e) => looksLikeSameName(name, e));
 }
+
+/** Campo de importe: el teclado decimal de iOS con formato regional europeo o
+ *  latino escribe COMA ("12,50") y Number() la convierte en NaN → 0. Se
+ *  normaliza a punto al teclear y se quita lo que no sea número. */
+export function decimalInput(v: string): string {
+  return v.replace(/,/g, ".").replace(/[^\d.\-]/g, "").replace(/(\..*)\./g, "$1");
+}

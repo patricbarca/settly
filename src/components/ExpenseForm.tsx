@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import type { Category, Group } from "../lib/types";
 import type { SplitMode } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
-import { personColor, money, sortedMembers } from "../lib/format";
+import { personColor, money, sortedMembers, decimalInput } from "../lib/format";
 import { Avatar } from "./Avatar";
 import { currencySymbol } from "../lib/currencies";
 import { uploadReceipt } from "../lib/storage";
@@ -317,7 +317,7 @@ export function ExpenseForm({
         <div className="glass rounded-xl px-3 py-2.5 flex items-center gap-1 w-28 shrink-0">
           <input
             value={f.amount}
-            onChange={(e) => changeAmount(e.target.value)}
+            onChange={(e) => changeAmount(decimalInput(e.target.value))}
             inputMode="decimal"
             placeholder="0"
             className="bg-transparent text-sm w-full text-right font-mono"
@@ -385,7 +385,7 @@ export function ExpenseForm({
                 <div className="glass rounded-lg px-2 py-1 flex items-center gap-1 w-28 shrink-0">
                   <input
                     value={f.payments[m.id] ?? ""}
-                    onChange={(e) => setPaymentAmt(m.id, e.target.value)}
+                    onChange={(e) => setPaymentAmt(m.id, decimalInput(e.target.value))}
                     inputMode="decimal"
                     placeholder="0"
                     className="bg-transparent text-sm w-full text-right font-mono"
@@ -489,7 +489,7 @@ export function ExpenseForm({
                   <div className="glass rounded-lg px-2 py-1 flex items-center gap-1 w-28 shrink-0">
                     <input
                       value={val === 0 ? "" : val}
-                      onChange={(e) => setSplitValue(id, e.target.value)}
+                      onChange={(e) => setSplitValue(id, decimalInput(e.target.value))}
                       inputMode="decimal"
                       placeholder="0"
                       className="bg-transparent text-sm w-full text-right font-mono"

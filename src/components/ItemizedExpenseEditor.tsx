@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Group, Category, ExpenseItem, SplitMode } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
 import type { ScanTax } from "../lib/ai";
-import { uid, money, personColor, memberInitials, sortedMembers } from "../lib/format";
+import { uid, money, personColor, memberInitials, sortedMembers, decimalInput } from "../lib/format";
 import { Avatar } from "./Avatar";
 import { currencySymbol } from "../lib/currencies";
 import { useT } from "../lib/i18n";
@@ -484,7 +484,7 @@ export function ItemizedExpenseEditor({
             <div className="glass rounded-xl px-3 py-2 flex items-center gap-1 mt-1">
               <input
                 value={totalAmount}
-                onChange={(e) => onTotalAmountChange(e.target.value)}
+                onChange={(e) => onTotalAmountChange(decimalInput(e.target.value))}
                 inputMode="decimal"
                 placeholder="0"
                 className="bg-transparent text-sm flex-1 min-w-0 font-mono"
@@ -545,7 +545,7 @@ export function ItemizedExpenseEditor({
                       <div className="glass rounded-lg px-2 py-1 flex items-center gap-1 w-24 shrink-0">
                         <input
                           value={val === 0 ? "" : val}
-                          onChange={(e) => setSplitVal(id, e.target.value)}
+                          onChange={(e) => setSplitVal(id, decimalInput(e.target.value))}
                           inputMode="decimal"
                           placeholder="0"
                           className="bg-transparent text-sm w-full text-right font-mono"
@@ -592,7 +592,7 @@ export function ItemizedExpenseEditor({
               />
               <input
                 value={showOriginal ? origDisplay(it.price, it.originalPrice) : it.price}
-                onChange={(e) => setItemPrice(it.id, e.target.value)}
+                onChange={(e) => setItemPrice(it.id, decimalInput(e.target.value))}
                 inputMode="decimal"
                 placeholder="0"
                 className={`glass rounded-lg px-1.5 py-1 text-right font-mono shrink-0 ${showOriginal ? "text-xs w-24" : "text-sm w-20"}`}
@@ -663,7 +663,7 @@ export function ItemizedExpenseEditor({
               />
               <input
                 value={showOriginal ? origDisplay(f.amount, f.originalAmount) : f.amount}
-                onChange={(e) => setFeeAmount(f.id, e.target.value)}
+                onChange={(e) => setFeeAmount(f.id, decimalInput(e.target.value))}
                 inputMode="decimal"
                 placeholder="0"
                 className={`glass rounded-lg px-1.5 py-1 text-right font-mono shrink-0 ${showOriginal ? "text-xs w-24" : "text-sm w-20"}`}
@@ -686,7 +686,7 @@ export function ItemizedExpenseEditor({
           <div className="flex items-center gap-1">
             <input
               value={tipDisplay}
-              onChange={(e) => onTipChange(e.target.value)}
+              onChange={(e) => onTipChange(decimalInput(e.target.value))}
               inputMode="decimal"
               placeholder="0"
               className={`glass rounded-lg px-1.5 py-1 text-right font-mono shrink-0 ${showOriginal ? "text-xs w-24" : "text-sm w-20"}`}
