@@ -59,3 +59,4 @@ jobs:
           echo "App bundle: $APP"
           ls "$APP/Metadata.appintents" || { echo "No Metadata.appintents: Siri won't see the actions"; exit 1; }
           ls "$APP/es.lproj" || { echo "No es.lproj: the Spanish catalog was not compiled"; exit 1; }
+          ls "$APP/PlugIns/ShareExtension.appex" || { echo "No ShareExtension.appex: Compartir con Settlia no viene en la app"; exit 1; }
