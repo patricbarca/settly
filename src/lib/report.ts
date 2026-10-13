@@ -5,7 +5,7 @@
 // Salidas: datos estructurados (buildReport) para pintar la vista imprimible
 // (→ PDF vía window.print) y un CSV (reportToCsv) para abrir en Excel/Sheets.
 import type { Group, Expense, Settlement } from "./types";
-import { computeSettle, directTransfers, type Transfer, mainView } from "./split";
+import { computeSettle, directTransfers, type Transfer, currencyViews } from "./split";
 import { displayName } from "./format";
 
 /** "all" = histórico completo; "YYYY-MM" = un mes concreto. */
@@ -55,10 +55,9 @@ export interface ReportData {
 }
 
 /** Calcula todos los datos del reporte para un periodo dado. */
-export function buildReport(fullGroup: Group, period: Period): ReportData {
-  // Saldos separados por moneda: por ahora el reporte cubre solo la moneda
-  // principal del grupo (los gastos en otras monedas no se mezclan).
-  const group = mainView(fullGroup);
+// Saldos separados por moneda: `buildReport` trabaja sobre UNA moneda — se le
+// pasa una vista por moneda (`currencyView`), nunca un grupo con monedas mezcladas.
+export function buildReport(group: Group, period: Period): ReportData {
   const inP = (iso: string) => period === "all" || monthKey(iso) === period;
   const expenses = group.expenses
     .filter((e) => inP(e.date))
@@ -114,6 +113,15 @@ const n2 = (n: number) => (Math.round((n + Number.EPSILON) * 100) / 100).toFixed
 
 /** Genera el CSV (multi-sección) del reporte. */
 export function reportToCsv(group: Group, period: Period, t: T, lang: "es" | "en"): string {
+  // Varias monedas: un bloque completo por moneda, uno detrás de otro.
+  const views = currencyViews(group);
+  if (views.length > 1) {
+    return views.map((v) => `=== ${v.currency} ===\n` + currencyCsv(v, period, t, lang)).join("\n\n");
+  }
+  return currencyCsv(group, period, t, lang);
+}
+
+function currencyCsv(group: Group, period: Period, t: T, lang: "es" | "en"): string {
   const r = buildReport(group, period);
   const name = (id: string) => {
     const m = group.members.find((mm) => mm.id === id);

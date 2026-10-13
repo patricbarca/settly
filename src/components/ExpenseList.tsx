@@ -1,3 +1,5 @@
+import { canConvert, convertExpense, revertExpense, replacePatch } from "../lib/fxConvert";
+import { getDailyRate } from "../lib/fxCache";
 import { currencyOf } from "../lib/split";
 import { resolveToCode } from "../lib/currencies";
 import { useState, useMemo, useRef } from "react";
@@ -620,6 +622,8 @@ function ExpenseRow({
   // original del recibo (en vez de la ya convertida) para validar que el
   // escaneo corresponde con lo que realmente decía el ticket.
   const [showOriginal, setShowOriginal] = useState(false);
+  const [converting, setConverting] = useState(false);
+  const [fxFail, setFxFail] = useState(false);
   const canShowOriginal = !!(e.originalCurrency && e.fxRate);
   // Preferimos el monto nativo tal cual lo detectó el escaneo (`original`);
   // si no existe (propina, o gastos guardados antes de este cambio), lo
@@ -793,6 +797,35 @@ function ExpenseRow({
 
         {open && (
           <div className="px-3 pb-3 anim-pop">
+            {/* Saldos por moneda: pasar este gasto a la moneda del grupo, o deshacerlo. */}
+            {(e.native || (group.multiCurrency && canConvert(e, group))) && (
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                {e.native ? (
+                  <button
+                    onClick={() => patchExpense(group.id, e.id, replacePatch(e, revertExpense(e)))}
+                    className="glass rounded-full px-2.5 py-1 text-[11px] font-semibold hover-lift inline-flex items-center gap-1"
+                  >
+                    <Icon name="repeat" size={11} /> {t("fx.revertOne", { code: e.native.currency })}
+                  </button>
+                ) : (
+                  <button
+                    disabled={converting}
+                    onClick={async () => {
+                      setConverting(true);
+                      const from = currencyOf(e, group);
+                      const rate = await getDailyRate(from, resolveToCode(group.currency));
+                      setConverting(false);
+                      if (!rate) { setFxFail(true); return; }
+                      patchExpense(group.id, e.id, replacePatch(e, convertExpense({ ...e, currency: from }, rate)));
+                    }}
+                    className="glass rounded-full px-2.5 py-1 text-[11px] font-semibold hover-lift inline-flex items-center gap-1 disabled:opacity-50"
+                  >
+                    <Icon name="repeat" size={11} /> {t("fx.convertOne", { code: resolveToCode(group.currency) })}
+                  </button>
+                )}
+                {fxFail && <span className="text-[11px]" style={{ color: "var(--coral)" }}>{t("fx.rateError")}</span>}
+              </div>
+            )}
             {e.originalCurrency && e.originalAmount != null && (
               <div className="text-[11px] text-muted mb-2">
                 {t("scan.fxConvertedShort", {

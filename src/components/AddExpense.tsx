@@ -100,8 +100,6 @@ export function AddExpense({ group }: { group: Group }) {
   function toggleRecurring() {
     if (!pro) { setShowPaywall(true); return; }
     setExpenseType((e) => (e === "recurring" ? "one-time" : "recurring"));
-    // Los recurrentes van siempre en la moneda del grupo.
-    if (group.multiCurrency) setManualCurrency(resolveToCode(group.currency));
   }
 
   // Cambiar la moneda del gasto manual: si es distinta a la del grupo, Pro
@@ -389,6 +387,7 @@ function sanitizePercents(
         interval: recurInterval,
         nextDate: recurStartDate,
         active: true,
+        ...(nativeCode ? { currency: nativeCode } : {}),
       });
     } else {
       const meName = group.members.find((m) => m.id === group.meId)?.name ?? "?";
@@ -522,7 +521,7 @@ function sanitizePercents(
         <div className="mt-4 glass rounded-3xl p-4 anim-pop">
           <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{aiSummary ? t("add.review") : t("add.manualReview")}</div>
 
-          {(manualMode || group.multiCurrency) && expenseType !== "recurring" && (
+          {(manualMode || group.multiCurrency) && (
             <div className="mb-3">
               <label className="text-xs font-semibold text-muted">{t("add.manualCurrency")}</label>
               <select

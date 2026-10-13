@@ -183,4 +183,4 @@ toda la app · tipografía unificada a **Baloo 2** (self-hosted, reemplaza
 Bricolage/Inter/Space Mono) · pills de balance global: Total, debo y me deben
 cada una en su propia pill separada.
 
-- ✅ Saldos separados por moneda (`Group.multiCurrency`, 2026-10-12). ⬜ Pendiente: reporte/Stats por moneda, escaneo sin convertir, botón "juntar todo en una moneda".
+- ✅ Saldos separados por moneda (`Group.multiCurrency`, 2026-10-12). ✅ 2026-10-13: reporte/Stats por moneda, recurrentes con moneda, escaneo "en su moneda / convertir", convertir un gasto, "Convertir todo" + "Volver a separar".

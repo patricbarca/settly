@@ -1,3 +1,5 @@
+import { currencyViews } from "../lib/split";
+import { resolveToCode } from "../lib/currencies";
 import { useState, useEffect } from "react";
 import { useQuickAdd } from "../lib/quickAdd";
 import type { Group } from "../lib/types";
@@ -177,8 +179,18 @@ export function GroupView({ group }: { group: Group }) {
       )}
       {tab === "stats" && (
         <div className="space-y-4 anim-up">
-          <CategoryChart group={group} />
-          <Analytics group={group} />
+          {/* Saldos por moneda: unas estadísticas por moneda (sin mezclar). */}
+          {currencyViews(group).map((v, i, all) => (
+            <div key={v.currency} className="space-y-4">
+              {all.length > 1 && (
+                <span className="inline-block rounded-full px-2.5 py-0.5 text-xs font-bold" style={{ background: "var(--teal)", color: "#fff" }}>
+                  {resolveToCode(v.currency)}
+                </span>
+              )}
+              <CategoryChart group={v} />
+              <Analytics group={v} />
+            </div>
+          ))}
         </div>
       )}
       {tab === "achievements" && (

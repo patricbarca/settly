@@ -30,6 +30,8 @@ export interface RecurringExpense {
   interval: RecurrenceInterval;
   nextDate: string; // YYYY-MM-DD
   active: boolean;
+  /** Moneda propia (saldos separados por moneda). Ausente = la del grupo. */
+  currency?: string;
 }
 
 export type PayType = "payid" | "bank" | "paypal" | "revolut" | "wise" | "bizum" | "bunq" | "other";
@@ -107,6 +109,10 @@ export interface Expense {
    *  moneda (`multiCurrency`). Ausente = la moneda del grupo. Un gasto en otra
    *  moneda NO se convierte: suma solo a los saldos de esa moneda. */
   currency?: string;
+  /** Copia de los importes ORIGINALES de un gasto en otra moneda que se
+   *  convirtió a la del grupo ("Convertir"). Permite deshacerlo exactamente
+   *  ("Volver a separar"). Ausente = nunca se convirtió así. */
+  native?: NativeSnapshot;
   /** Ronda de auto-asignación ("¿qué consumiste?"): el gasto se crea con los
    *  ítems sin asignar y cada miembro elige los suyos. Mientras `status` sea
    *  "open" el reparto es PROVISIONAL (los ítems que nadie ha reclamado se
@@ -163,6 +169,20 @@ export interface Settlement {
   /** Moneda del pago (ISO). Ausente = la moneda del grupo. Salda solo deudas
    *  en esa moneda (saldos separados por moneda). */
   currency?: string;
+  /** Importes originales si el pago se convirtió a la moneda del grupo. */
+  native?: { currency: string; rate: number; amount: number; expensePayments?: { expenseId: string; amount: number }[] };
+}
+
+/** Importes de un gasto en su moneda original, antes de convertirlo. */
+export interface NativeSnapshot {
+  currency: string;
+  rate: number;
+  amount: number;
+  payments?: { memberId: string; amount: number }[] | null;
+  splits?: Record<string, number> | null;
+  items?: ExpenseItem[];
+  fees?: { name: string; amount: number; originalAmount?: number }[];
+  tip?: number;
 }
 
 export type NotificationType = "expense_added" | "claim_requested" | "payment_made" | "payment_rejected" | "review_requested" | "delete_requested" | "recurring_generated";

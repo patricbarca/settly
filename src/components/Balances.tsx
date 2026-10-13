@@ -2,8 +2,10 @@ import { useState } from "react";
 import type { Group, Settlement } from "../lib/types";
 import { computeSettle, directTransfers, currencyViews } from "../lib/split";
 import { resolveToCode, localCurrencyName } from "../lib/currencies";
+import { foreignCurrencies, hasConverted, convertAll, revertAll, diffPatches } from "../lib/fxConvert";
+import { getDailyRate } from "../lib/fxCache";
 import { getLang } from "../lib/i18n";
-import { setSettlementStatus, removeSettlement, rejectSettlement } from "../lib/store";
+import { setSettlementStatus, removeSettlement, rejectSettlement, rewriteGroupItems } from "../lib/store";
 import { useUser } from "../lib/auth";
 import { memberInitials, sortedMembers, fmtDate, displayName } from "../lib/format";
 import { useT } from "../lib/i18n";
@@ -21,10 +23,17 @@ import { TransferExplainer } from "./TransferExplainer";
  *  bloque completo por moneda: cada uno se calcula y se salda por separado. */
 export function Balances({ group }: { group: Group }) {
   const views = currencyViews(group);
-  if (views.length === 1) return <CurrencyBalances group={views[0]} />;
+  if (views.length === 1)
+    return (
+      <div className="space-y-3">
+        {hasConverted(group) && <CurrencyMergeBar group={group} />}
+        <CurrencyBalances group={views[0]} />
+      </div>
+    );
   const locale = getLang() === "en" ? "en" : "es";
   return (
     <div className="space-y-6">
+      <CurrencyMergeBar group={group} />
       {views.map((v) => {
         const code = resolveToCode(v.currency);
         return (
@@ -39,6 +48,70 @@ export function Balances({ group }: { group: Group }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/** "Convertir todo a {moneda del grupo}" (tasa del día) y su inverso,
+ *  "Volver a separar", que restaura cada gasto/pago a su moneda original. */
+function CurrencyMergeBar({ group }: { group: Group }) {
+  const t = useT();
+  const main = resolveToCode(group.currency);
+  const foreign = foreignCurrencies(group);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<"merge" | "split" | null>(null);
+
+  async function merge() {
+    setBusy(true);
+    setErr(null);
+    const rates: Record<string, number> = {};
+    for (const c of foreign) {
+      const r = await getDailyRate(c, main);
+      if (!r) { setBusy(false); setErr(t("fx.rateError")); return; }
+      rates[c] = r;
+    }
+    const next = convertAll(group, rates);
+    const ok = await rewriteGroupItems(group.id, next, diffPatches(group, next));
+    setBusy(false);
+    if (!ok) setErr(t("fx.offline"));
+  }
+  async function split() {
+    setBusy(true);
+    setErr(null);
+    const next = revertAll(group);
+    const ok = await rewriteGroupItems(group.id, next, diffPatches(group, next));
+    setBusy(false);
+    if (!ok) setErr(t("fx.offline"));
+  }
+
+  return (
+    <div className="glass rounded-3xl p-3 flex items-center gap-2 flex-wrap">
+      <Icon name="repeat" size={15} className="text-muted shrink-0" />
+      <span className="text-xs text-muted flex-1 min-w-0">
+        {foreign.length ? t("fx.mergeHint", { codes: foreign.join(", "), main }) : t("fx.splitHint")}
+      </span>
+      {foreign.length > 0 && (
+        <button disabled={busy} onClick={() => setConfirm("merge")} className="rounded-full px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50" style={{ background: "var(--teal)" }}>
+          {t("fx.mergeAll", { main })}
+        </button>
+      )}
+      {hasConverted(group) && (
+        <button disabled={busy} onClick={() => setConfirm("split")} className="glass rounded-full px-3 py-1.5 text-xs font-semibold disabled:opacity-50">
+          {t("fx.splitAll")}
+        </button>
+      )}
+      {err && <span className="w-full text-[11px]" style={{ color: "var(--coral)" }}>{err}</span>}
+      {confirm && (
+        <ConfirmModal
+          title={confirm === "merge" ? t("fx.mergeConfirmTitle", { main }) : t("fx.splitConfirmTitle")}
+          danger={false}
+          message={confirm === "merge" ? t("fx.mergeConfirmBody", { main }) : t("fx.splitConfirmBody")}
+          confirmLabel={confirm === "merge" ? t("fx.mergeAll", { main }) : t("fx.splitAll")}
+          onConfirm={() => { const c = confirm; setConfirm(null); void (c === "merge" ? merge() : split()); }}
+          onClose={() => setConfirm(null)}
+        />
+      )}
     </div>
   );
 }
