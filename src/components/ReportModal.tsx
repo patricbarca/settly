@@ -172,7 +172,7 @@ export function ReportModal({ group: fullGroup, onClose }: { group: Group; onClo
               <div className="glass rounded-2xl p-1">
                 <Logo size={22} />
               </div>
-              <span className="font-display font-bold text-lg">Settlia</span>
+              <span className="font-brand font-bold text-lg">Settlia</span>
             </div>
             <div className="font-display text-xl font-bold">{group.name}</div>
             <div className="text-sm text-muted">

@@ -709,8 +709,10 @@ function ExpenseRow({
             <Icon name={c.icon} size={17} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-semibold truncate flex items-center gap-2 text-[15px] leading-tight">
-              {e.label}
+            {/* El título se recorta con "…" para que las píldoras de estado
+                (pendiente, en revisión, reparto…) quepan siempre a su lado. */}
+            <div className="font-semibold flex items-center gap-2 text-[15px] leading-tight min-w-0">
+              <span className="truncate min-w-0">{e.label}</span>
               {e.reviewRequested && (
                 <span
                   className="text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded-full inline-flex items-center gap-1 shrink-0"

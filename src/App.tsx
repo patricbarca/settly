@@ -304,7 +304,7 @@ export default function App() {
         <div className="anim-logo-pulse">
           <Logo size={64} />
         </div>
-        <div className="text-white font-display text-2xl font-extrabold">Settlia</div>
+        <div className="text-white font-brand text-2xl font-extrabold">Settlia</div>
       </div>
     );
   }

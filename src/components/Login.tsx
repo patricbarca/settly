@@ -152,7 +152,7 @@ export function Login() {
             <div className="mb-3">
               <Logo size={48} />
             </div>
-            <h1 className="text-white font-display text-4xl font-extrabold">Settlia</h1>
+            <h1 className="text-white font-brand text-4xl font-extrabold">Settlia</h1>
             <p className="text-white/85 text-sm mt-2 max-w-xs">{t("login.tagline")}</p>
             <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/60 mt-1.5">{t("app.poweredAI")}</div>
           </div>
