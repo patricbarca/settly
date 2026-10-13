@@ -15,6 +15,7 @@ import { fmtRate } from "../lib/fx";
 import { monthKey, monthsWithExpenses, monthLabel } from "../lib/report";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
+import { haptic } from "../lib/haptics";
 import { Avatar } from "./Avatar";
 import { ConfirmModal } from "./ConfirmModal";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
@@ -660,7 +661,11 @@ function ExpenseRow({
   function onTouchEnd() {
     if (!drag.current.active) return;
     drag.current.active = false;
-    setSwipeX((v) => (v < -SWIPE_W / 2 ? -SWIPE_W : 0));
+    setSwipeX((v) => {
+      const open = v < -SWIPE_W / 2;
+      if (open && drag.current.startSwipe === 0) haptic("light");
+      return open ? -SWIPE_W : 0;
+    });
   }
 
   function handleHeaderClick() {

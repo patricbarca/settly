@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import { haptic } from "../lib/haptics";
 import type { Group, RecurrenceInterval } from "../lib/types";
 import { addExpense, addRecurring } from "../lib/store";
 import { parseExpense, type ParsedExpense } from "../lib/parse";
@@ -71,12 +73,21 @@ export function AddExpense({ group }: { group: Group }) {
   useEffect(() => {
     void loadMerchantMemory(group.id);
   }, [group.id]);
-  const sectionRef = useRef<HTMLElement>(null);
+  // La píldora de añadir vive plegada en un botón + flotante (estilo iOS) y se
+  // despliega al tocarlo. Sigue montada aunque esté plegada, para que un gasto
+  // de Siri / Atajos / Wallet se recoja igual (y la abra).
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
   useEffect(() => {
     if (!quick || quick.groupId !== group.id || draft || interpreting) return;
     const q = takeQuickAdd();
     if (!q) return;
-    sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setOpen(true);
     if (q.kind === "scan") {
       openScan(q.paid);
     } else {
@@ -93,8 +104,11 @@ export function AddExpense({ group }: { group: Group }) {
   function openScan(paid?: number) {
     // Escaneo de recibo: cuota propia de IA (3/mes en free).
     setScanPaid(paid);
-    if (pro || consumeAI("scan")) setScan(true);
-    else setShowPaywall(true);
+    if (pro || consumeAI("scan")) {
+      // El escáner ocupa toda la pantalla: la píldora se pliega detrás.
+      setOpen(false);
+      setScan(true);
+    } else setShowPaywall(true);
   }
 
   function toggleRecurring() {
@@ -391,6 +405,7 @@ function sanitizePercents(
       });
     } else {
       const meName = group.members.find((m) => m.id === group.meId)?.name ?? "?";
+      haptic("success");
       addExpense(
         group.id,
         {
@@ -434,6 +449,7 @@ function sanitizePercents(
       );
     }
     setDraft(null);
+    setOpen(false);
     setText("");
     setExpenseType("one-time");
     setAiSummary(null);
@@ -443,9 +459,55 @@ function sanitizePercents(
     setManualMode(false);
   }
 
+  // Mismo ancho y mismo borde inferior que la barra flotante (BottomNav), para
+  // que el + y la píldora queden alineados justo encima de ella.
+  const dockStyle = {
+    bottom: "calc(max(calc(env(safe-area-inset-bottom) - 6px), 10px) + 70px)",
+  };
+
+  // Va en un portal a <body>: la pestaña de Gastos se anima con `transform`, y
+  // un ancestro con transform convierte `fixed` en relativo a él (el panel
+  // aparecía a media pantalla en vez de pegado a la barra inferior).
   return (
-    <section ref={sectionRef} className="glass-strong rounded-3xl p-5 anim-up">
-      <div className="text-xs uppercase tracking-widest font-mono mb-2" style={{ color: "var(--muted)" }}>{t("add.title")}</div>
+    <>
+      {createPortal(<>
+      {open && (
+        <div className="fixed inset-0 z-[38] bg-black/25 sheet-overlay" onClick={() => setOpen(false)} aria-hidden />
+      )}
+      <div className="fixed inset-x-3 z-[39] mx-auto max-w-md flex flex-col items-end pointer-events-none" style={dockStyle}>
+        {!open && (
+          <button
+            onClick={() => {
+              haptic("light");
+              setOpen(true);
+            }}
+            className="glass-chrome relative pointer-events-auto h-14 w-14 rounded-full flex items-center justify-center hover-lift anim-pop"
+            style={{ color: "var(--teal)" }}
+            aria-label={t("add.title")}
+            title={t("add.title")}
+          >
+            <Icon name="plus" size={26} />
+            {draft && (
+              <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full" style={{ background: "var(--coral)" }} />
+            )}
+          </button>
+        )}
+    <section
+      hidden={!open}
+      className="glass-strong pointer-events-auto rounded-3xl p-5 w-full overflow-y-auto overscroll-contain add-expand"
+      style={{ maxHeight: "calc(100dvh - env(safe-area-inset-top) - 150px)" }}
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="text-xs uppercase tracking-widest font-mono" style={{ color: "var(--muted)" }}>{t("add.title")}</div>
+        <button
+          onClick={() => setOpen(false)}
+          className="glass rounded-full h-7 w-7 flex items-center justify-center text-muted hover-lift"
+          aria-label={t("common.close")}
+          title={t("common.close")}
+        >
+          <Icon name="close" size={14} />
+        </button>
+      </div>
       {/* Mientras hay un borrador en revisión, ocultamos el input y los métodos
           para que el flujo sea: agregar -> revisar/confirmar (sin poder meter
           otro gasto encima). Vuelven a aparecer al guardar o cancelar. */}
@@ -656,8 +718,11 @@ function sanitizePercents(
         </div>
       )}
 
+    </section>
+      </div>
+      </>, document.body)}
       {scan && <ScanReceiptModal group={group} paidTotal={scanPaid} onClose={() => { setScan(false); setScanPaid(undefined); }} />}
       {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
-    </section>
+    </>
   );
 }

@@ -35,7 +35,7 @@ export function ReceiptButton({ path }: { path: string }) {
         <Icon name="paperclip" size={13} /> {t("exp.viewReceipt")}
       </button>
       {open && (
-        <Overlay onClose={() => setOpen(false)}>
+        <Overlay center onClose={() => setOpen(false)}>
           <div className="anim-pop max-w-lg w-full relative" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setOpen(false)}

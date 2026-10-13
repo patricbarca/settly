@@ -2,10 +2,11 @@ import { useT } from "../lib/i18n";
 import { initials } from "../lib/format";
 import { Icon, type IconName } from "./Icon";
 import { Avatar } from "./Avatar";
+import { haptic } from "../lib/haptics";
 
 export type NavKey = "groups" | "friends" | "activity" | "profile";
 
-/** Barra de navegación inferior, siempre visible tras el login — sustituye el
+/** Barra de navegación inferior flotante (cristal), siempre visible tras el login — sustituye el
  *  antiguo toggle Grupos|Contactos y el bloque de perfil de la cabecera, y
  *  añade un acceso directo a Actividad/Notificaciones (antes solo la campana). */
 export function BottomNav({
@@ -35,54 +36,58 @@ export function BottomNav({
     { key: "activity", label: t("nav.activity"), icon: "bell", onClick: onActivity },
   ];
 
+  const tap = (fn: () => void) => () => {
+    haptic("selection");
+    fn();
+  };
+  const itemCls = "flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-full relative transition-colors";
+  const onBg = (on: boolean) => (on ? { background: "var(--seg-track)" } : undefined);
+
   return (
-    <>
-      {/* Relleno por si algún dispositivo deja asomar un resquicio por debajo
-       *  del nav (viewport visual vs real, notch, etc.) — mismo color, se
-       *  extiende bien por debajo de la pantalla real así que cubre
-       *  cualquier hueco sin importar la causa exacta. */}
-      <div
-        className="fixed inset-x-0 z-30 surface"
-        style={{ bottom: "-50vh", height: "50vh", transform: "translateZ(0)", willChange: "transform" }}
-      />
-      <nav
-        className="fixed bottom-0 inset-x-0 z-40 surface"
-        style={{
-          paddingBottom: "env(safe-area-inset-bottom)",
-          borderTop: "1px solid var(--line)",
-          // Fuerza a la barra a su propia capa GPU: en iOS Safari/WKWebView una
-          // barra `fixed` sin capa propia se "arrastra" a mitad de pantalla
-          // durante el scroll con inercia. translateZ(0) la ancla al viewport.
-          transform: "translateZ(0)",
-          willChange: "transform",
-        }}
-      >
-      <div className="max-w-2xl mx-auto px-2 flex items-stretch">
-        {items.map((it) => (
-          <button
-            key={it.key}
-            onClick={it.onClick}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 relative"
-            style={{ color: active === it.key ? "var(--teal)" : "var(--muted)" }}
-          >
-            <span className="relative">
-              <Icon name={it.icon} size={20} />
-              {it.key === "activity" && unread > 0 && (
-                <span
-                  className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] px-[3px] rounded-full text-[9px] font-bold text-white flex items-center justify-center leading-none tabular-nums"
-                  style={{ background: "var(--coral)" }}
-                >
-                  {unread > 9 ? "9+" : unread}
-                </span>
-              )}
-            </span>
-            <span className="text-[11px] font-medium">{it.label}</span>
-          </button>
-        ))}
+    <nav
+      className="fixed inset-x-3 z-40 mx-auto max-w-md"
+      style={{
+        // Barra flotante estilo iOS 26: separada del borde, encima del
+        // indicador de inicio.
+        bottom: "max(calc(env(safe-area-inset-bottom) - 6px), 10px)",
+        // Fuerza a la barra a su propia capa GPU: en iOS Safari/WKWebView una
+        // barra `fixed` sin capa propia se "arrastra" a mitad de pantalla
+        // durante el scroll con inercia. translateZ(0) la ancla al viewport.
+        transform: "translateZ(0)",
+        willChange: "transform",
+      }}
+    >
+      <div className="glass-chrome rounded-full p-1 flex items-stretch">
+        {items.map((it) => {
+          const on = active === it.key;
+          return (
+            <button
+              key={it.key}
+              onClick={tap(it.onClick)}
+              className={itemCls}
+              style={{ color: on ? "var(--teal)" : "var(--ink)", ...onBg(on) }}
+              aria-current={on ? "page" : undefined}
+            >
+              <span className="relative">
+                <Icon name={it.icon} size={20} />
+                {it.key === "activity" && unread > 0 && (
+                  <span
+                    className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] px-[3px] rounded-full text-[9px] font-bold text-white flex items-center justify-center leading-none tabular-nums"
+                    style={{ background: "var(--coral)" }}
+                  >
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                )}
+              </span>
+              <span className="text-[10px] font-semibold">{it.label}</span>
+            </button>
+          );
+        })}
         <button
-          onClick={onProfile}
-          className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5"
-          style={{ color: active === "profile" ? "var(--teal)" : "var(--muted)" }}
+          onClick={tap(onProfile)}
+          className={itemCls}
+          style={{ color: active === "profile" ? "var(--teal)" : "var(--ink)", ...onBg(active === "profile") }}
+          aria-current={active === "profile" ? "page" : undefined}
         >
           <span
             className="rounded-full shrink-0 inline-flex items-center justify-center leading-none"
@@ -90,10 +95,9 @@ export function BottomNav({
           >
             <Avatar name={userName} avatar={userAvatar} initials={initials(userName)} size={20} />
           </span>
-          <span className="text-[11px] font-medium">{t("nav.profile")}</span>
+          <span className="text-[10px] font-semibold">{t("nav.profile")}</span>
         </button>
       </div>
-      </nav>
-    </>
+    </nav>
   );
 }

@@ -315,7 +315,7 @@ export default function App() {
   if (!user) return <Login />;
 
   return (
-    <div className="pb-20" style={{ minHeight: "calc(var(--app-height, 100dvh) + 1px)" }}>
+    <div style={{ minHeight: "calc(var(--app-height, 100dvh) + 1px)", paddingBottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 12px)" }}>
       <OfflineBanner />
       {!group && homeTab === "groups" && (
         <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">
