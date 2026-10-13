@@ -36,10 +36,10 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - `supabase/migrate_v4_network_rls.sql` — **run once in SQL Editor** on existing DBs: adds `is_member_of()` + `View co-members` SELECT policy on `group_members` so `getNetwork` can read other members of your groups (fixes empty suggested list). Definer fn avoids RLS recursion.
 
 ## Logo y assets de marca
-- **Logo actual:** `public/icons/logo-s.png` — letra S estilo ribbon, gradiente teal→azul, fondo transparente (452×552 RGBA). Es el logo canónico para toda generación de imágenes y contenido de marketing.
-- **Ícono PWA** (logo sobre fondo navy `#0D1B2A`, esquinas redondeadas estilo iOS squircle): `public/icons/icon-512.png` (512×512), `icon-192.png` (192×192), `apple-touch-icon.png` (180×180). Padding 10% en cada lado.
-- **En la app** (`src/components/Logo.tsx`): la S se muestra dentro de un cuadro redondeado con `background: linear-gradient(145deg, #0f2d54, #0a1a2e, #0d2340)`, `border-radius` al 22% del tamaño, borde translúcido y sombra inset — efecto liquid glass oscuro.
-- **Para redes sociales / imágenes de marketing:** usar `public/icons/logo-s.png` como logo. Fondo recomendado: navy `#0D1B2A` o el gradiente hero (`#241C53 → #0D1B2A`). Colores de marca: teal `#0FA3A3`, indigo `#5B5BF0`, azul claro `#0EA5E9`. Tipografía display: Bricolage Grotesque.
+- **Logo:** la S de cinta de siempre (gradiente teal→azul, pliegues sombreados), **recreada en alta definición (2026-10-13)**. **Fuente de verdad: `public/icons/logo-s.svg`** = contorno VECTORIAL trazado del icono original de 1024 px (40 curvas Bézier, esquinas de los cortes de la cinta vivas) + el degradado/sombras originales como imagen de color suave recortada por ese contorno → borde nítido a cualquier tamaño, color idéntico al original. El usuario probó una S redibujada ("A1") y prefirió **la original exacta**.
+- **PNG:** todos salen de **`scripts/generate-icons.cjs`** (`node scripts/generate-icons.cjs .`, Playwright/Chromium) con la composición medida en los originales: `logo-s.png` (452×552, transparente) + **`logo-s@4x.png`** (1808×2208, para marketing), `icon-192/512` (S al 57%, esquinas 20%, navy `#0D1B2A`), **`icon-maskable-512`** (nuevo, a sangre), `apple-touch-icon`, `favicon-32`, `icon.svg` (favicon vectorial), el **AppIcon iOS 1024** (S al 48,6%, a sangre, **sin alfa**) y los mipmaps de Android (adaptativo: S al 41%). **Cambio respecto a los originales:** en `icon-192/512`, `apple-touch-icon` y los iconos de Android la S estaba **estirada en horizontal** (proporción 0,88 en vez de 0,73); ahora todos usan la forma real de la S (la del icono iOS/`logo-s.png`). Para cambiar el logo: reemplazar `logo-s.svg` y correr el script; nunca retocar PNG a mano.
+- **En la app** (`src/components/Logo.tsx`): `logo-s.svg` al 70% del alto de un cuadro redondeado (`linear-gradient(145deg, #0f2d54, #0a1a2e, #0d2340)`, `border-radius` 22%, borde translúcido y sombra inset). El alto va por `style` porque el reset de Tailwind pone `height: auto` a las `<img>`.
+- **Para redes sociales / imágenes de marketing:** usar `public/icons/logo-s.svg` o `logo-s@4x.png` como logo. Fondo recomendado: navy `#0D1B2A` o el gradiente hero (`#241C53 → #0D1B2A`). Colores de marca: teal `#0FA3A3`, indigo `#5B5BF0`, azul claro `#0EA5E9`. Tipografía display: Bricolage Grotesque.
 
 ## Design system
 - **Glass morphism**: `.glass` and `.glass-strong` utility classes with `backdrop-filter` + reflejo (`--glass-sheen`, como `background-image`) y borde de luz arriba/abajo. **`.glass-chrome`** = cristal de las barras fijas (barra inferior flotante, cabecera compacta del grupo).
@@ -51,6 +51,13 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Logo original recreado en alta definición (2026-10-13)
+- **Por qué:** el logo era un raster pequeño y algo borroso. Se exploraron rediseños (lienzo privado "Settlia logo S": 4 direcciones + 5 variantes de cinta) pero el usuario prefirió **su logo actual, exacto, en HD**.
+- **Cómo:** se trazó el contorno de la S sobre el icono iOS original (1024 px; la S mide 362×498): alfa estimada por distancia al navy, contorno subpíxel, 6 esquinas fijadas (los dos cortes de cada punta + los dos pliegues junto al hueco) y el resto ajustado con B-splines convertidos a Bézier. El color (degradado y sombras de los pliegues) se toma del original, suavizado para quitar el ruido JPEG y extendido fuera del borde para que el recorte vectorial no deje halo. Resultado: `public/icons/logo-s.svg` (~60 KB).
+- **Qué cambió:** todos los iconos regenerados (app, PWA, iOS, Android) con `scripts/generate-icons.cjs`; `Logo.tsx` usa el SVG; favicon SVG + PNG; el manifiesto separa `any` (`icon-512`) de `maskable` (`icon-maskable-512`, a sangre). **Landing:** `logo-s.png/svg`, favicons, `favicon.ico`, `apple-touch-icon` e `icon-512` con la S en HD (`og.png` se dejó igual).
+- **✅ Verificado:** comparado lado a lado con los originales (iOS, PWA, `logo-s.png`, Android); logo dentro de la app revisado en capturas; `tsc` + build limpios; AppIcon iOS RGB sin alfa.
+- **⬜ Falta:** build de Codemagic para ver el icono en el iPhone.
+
 ### Títulos largos de gasto ya no tapan las píldoras de estado (2026-10-13)
 - En `ExpenseList` el título de la fila iba como texto suelto dentro de un flex con `truncate` (que no recorta a sus hijos) → una descripción larga empujaba fuera las píldoras **Pendiente / En revisión / Reparto**. Ahora el título va en su propio `<span className="truncate min-w-0">` y se recorta con "…"; las píldoras (`shrink-0`) quedan siempre visibles. Verificado en navegador con un título de 70 caracteres.
 
