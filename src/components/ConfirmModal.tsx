@@ -1,6 +1,7 @@
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
+import { haptic } from "../lib/haptics";
 
 /** Diálogo de confirmación genérico (para acciones destructivas como borrar
  *  un gasto o un recurrente). Evita borrados accidentales con un paso extra. */
@@ -36,6 +37,7 @@ export function ConfirmModal({
         <div className="flex gap-2 mt-4">
           <button
             onClick={() => {
+              haptic(danger ? "warning" : "success");
               onConfirm();
               onClose();
             }}

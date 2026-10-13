@@ -24,6 +24,7 @@ import { Paywall } from "./Paywall";
 import { ShareLinkModal } from "./ShareLinkModal";
 import { PayMethodReminder } from "./PayMethodReminder";
 import { isPro } from "../lib/plan";
+import { haptic } from "../lib/haptics";
 
 type Tab = "expenses" | "balances" | "stats" | "achievements";
 
@@ -43,6 +44,16 @@ export function GroupView({ group }: { group: Group }) {
   const [copied, setCopied] = useState(false);
   const [inviteError, setInviteError] = useState(false);
   const [shareLink, setShareLink] = useState<string | null>(null);
+  // Cabecera compacta estilo iOS: al bajar más allá del hero, la barra de
+  // arriba pasa a cristal y muestra el nombre del grupo (el "título grande"
+  // del hero se sustituye por uno pequeño).
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setCompact(window.scrollY > 110);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   function openReport() {
     if (isPro()) setShowReport(true);
@@ -99,16 +110,28 @@ export function GroupView({ group }: { group: Group }) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 pb-10">
-      <div className="flex items-center justify-between pt-4 pb-3">
-        <div className="flex items-center gap-2">
-          <div className="glass rounded-2xl p-1">
-            <Logo size={24} />
-          </div>
+      <div
+        className={`sticky z-20 -mx-4 px-4 pt-2 pb-2 mb-1 flex items-center justify-between gap-2 transition-[background-color,box-shadow] duration-200 ${compact ? "glass-chrome rounded-b-3xl" : ""}`}
+        style={{ top: "env(safe-area-inset-top)", ...(compact ? { borderTop: 0 } : { border: "1px solid transparent" }) }}
+      >
+        <div className="flex items-center gap-2 shrink-0">
+          {!compact && (
+            <div className="glass rounded-2xl p-1">
+              <Logo size={24} />
+            </div>
+          )}
           <button onClick={() => setActiveGroup(null)} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift" title={t("group.back")}>
             <Icon name="back" size={16} />
           </button>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div
+          className="min-w-0 flex-1 text-center font-semibold text-[15px] truncate transition-opacity duration-200"
+          style={{ opacity: compact ? 1 : 0 }}
+          aria-hidden={!compact}
+        >
+          {group.name}
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
           <button onClick={() => setShowUsers(true)} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift" title={t("users.title")}>
             <Icon name="users" size={15} />
           </button>
@@ -149,20 +172,20 @@ export function GroupView({ group }: { group: Group }) {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1.5 my-4">
-        {TABS.map((tb) => {
-          const on = tab === tb.id;
-          return (
-            <button
-              key={tb.id}
-              onClick={() => setTab(tb.id)}
-              className={`flex-auto rounded-full px-3 py-2 text-sm font-semibold text-center whitespace-nowrap ${on ? "" : "glass text-muted"}`}
-              style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
-            >
-              {tb.label}
-            </button>
-          );
-        })}
+      <div className="seg my-4" role="tablist">
+        {TABS.map((tb) => (
+          <button
+            key={tb.id}
+            role="tab"
+            aria-selected={tab === tb.id}
+            onClick={() => {
+              if (tab !== tb.id) haptic("selection");
+              setTab(tb.id);
+            }}
+          >
+            {tb.label}
+          </button>
+        ))}
       </div>
 
       {tab === "expenses" && (

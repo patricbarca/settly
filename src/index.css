@@ -5,7 +5,18 @@
   /* Alto del contenido de BottomNav (sin el safe-area, que ya suma su propio
      padding) — usado por las vistas que deben dejarla siempre visible
      (Activity, Profile) para no dibujarse detrás. */
-  --bottomnav-h: 62px;
+  --bottomnav-h: 74px;
+  /* Fuente del sistema (SF Pro en iPhone/Mac, Roboto en Android). Para volver
+     a la fuente anterior basta con poner aquí 'Baloo 2', system-ui, sans-serif. */
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif;
+  --font-ui-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif;
+  /* Brillo especular del cristal (borde de luz arriba, reflejo suave abajo). */
+  --glass-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 42%);
+  --glass-edge-lo: rgba(255, 255, 255, 0.35);
+  --chrome-bg: rgba(255, 255, 255, 0.72);
+  --chrome-border: rgba(255, 255, 255, 0.75);
+  --seg-track: rgba(118, 118, 128, 0.12);
+  --seg-thumb: #ffffff;
   --ink: #191b22;
   --muted: #6b6f7a;
   --teal: #0fa3a3;
@@ -39,6 +50,12 @@
   --glass-strong-solid: rgba(44, 48, 58, 0.97);
   --glass-border: rgba(255, 255, 255, 0.12);
   --glass-hi: rgba(255, 255, 255, 0.08);
+  --glass-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0) 42%);
+  --glass-edge-lo: rgba(255, 255, 255, 0.04);
+  --chrome-bg: rgba(30, 33, 41, 0.74);
+  --chrome-border: rgba(255, 255, 255, 0.12);
+  --seg-track: rgba(118, 118, 128, 0.24);
+  --seg-thumb: #3a3d47;
   --surface: #262a33;
   --surface-soft: rgba(255, 255, 255, 0.06);
   --line: rgba(255, 255, 255, 0.1);
@@ -57,7 +74,7 @@ html, body, #root { height: 100%; margin: 0; }
 html, body { overscroll-behavior: none; }
 
 body {
-  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-family: var(--font-ui);
   color: var(--ink);
   background: var(--bg);
   background-attachment: fixed;
@@ -87,7 +104,9 @@ body::before {
   left: 0;
   right: 0;
   height: env(safe-area-inset-top);
-  background: var(--surface);
+  background: var(--chrome-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   z-index: 2000;
   pointer-events: none;
 }
@@ -106,48 +125,132 @@ body.splash-active {
   background: #0D1B2A !important;
 }
 
-.font-display { font-family: 'Baloo 2', sans-serif; letter-spacing: -0.02em; }
-.font-mono { font-family: 'Baloo 2', sans-serif; }
+.font-display { font-family: var(--font-ui-display); letter-spacing: -0.02em; }
+.font-mono { font-family: var(--font-ui); font-variant-numeric: tabular-nums; }
 .text-muted { color: var(--muted); }
 
 @layer components {
+  /* Cristal estilo iOS: blur + saturación, borde de luz arriba y un reflejo
+     (sheen) en diagonal. El sheen va como background-image, así el color de
+     fondo sigue saliendo del token y el fallback de iOS solo cambia ese color. */
   .glass {
-    background: var(--glass-bg);
-    backdrop-filter: blur(16px) saturate(150%);
-    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    background-color: var(--glass-bg);
+    background-image: var(--glass-sheen);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid var(--glass-border);
-    box-shadow: var(--elev-2), inset 0 1px 0 var(--glass-hi);
+    box-shadow: var(--elev-2), inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-edge-lo);
     overflow: hidden;
   }
   .glass-strong {
-    background: var(--glass-strong-bg);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    background-color: var(--glass-strong-bg);
+    background-image: var(--glass-sheen);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
     border: 1px solid var(--glass-border);
-    box-shadow: var(--elev-3), inset 0 1px 0 var(--glass-hi);
+    box-shadow: var(--elev-3), inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-edge-lo);
     overflow: hidden;
+  }
+  /* Barras fijas (barra inferior, cabecera fija del grupo): cristal SIEMPRE,
+     también en iOS. */
+  .glass-chrome {
+    background-color: var(--chrome-bg);
+    background-image: var(--glass-sheen);
+    backdrop-filter: blur(22px) saturate(190%);
+    -webkit-backdrop-filter: blur(22px) saturate(190%);
+    border: 1px solid var(--chrome-border);
+    box-shadow: 0 10px 30px -12px rgba(30, 30, 60, 0.35), inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-edge-lo);
   }
 }
 
 /* iOS Safari bleeds backdrop-filter past border-radius (rectangular corner
-   artifacts). Detect iOS via -webkit-touch-callout and drop the blur, using a
-   higher-opacity solid background so corners clip cleanly to the radius. */
+   artifacts). Detect iOS via -webkit-touch-callout and drop the blur on the
+   (many, scrolling) cards, using a higher-opacity solid background so corners
+   clip cleanly to the radius. The sheen/highlights stay. */
 @supports (-webkit-touch-callout: none) {
   .glass {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    background: var(--glass-solid);
+    background-color: var(--glass-solid);
   }
   .glass-strong {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    background: var(--glass-strong-solid);
+    background-color: var(--glass-strong-solid);
+  }
+  /* Las barras SÍ llevan blur en iOS: son pocas y fijas. El truco de la
+     máscara (el mismo del hero) recorta el blur al radio y evita las esquinas
+     rectangulares. */
+  .glass-chrome {
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+    transform: translateZ(0);
+  }
+}
+
+/* Control segmentado estilo iOS (pestañas del grupo). */
+.seg {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 10px;
+  background: var(--seg-track);
+}
+.seg > button {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+.seg > button[aria-selected="true"] {
+  background: var(--seg-thumb);
+  font-weight: 600;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
+}
+
+/* Modales como HOJA inferior en móvil (estilo iOS): pegada abajo, solo las
+   esquinas de arriba redondeadas, asa para arrastrar y entrada deslizando. En
+   pantallas anchas siguen centrados. */
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.sheet-overlay { animation: fadeIn 0.2s ease both; }
+@media (max-width: 639px) {
+  .sheet-overlay > * {
+    position: relative;
+    width: 100% !important;
+    max-width: none !important;
+    border-bottom-left-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+    border-bottom: 0 !important;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom)) !important;
+    max-height: calc(100dvh - env(safe-area-inset-top) - 12px) !important;
+    animation: sheetUp 0.36s cubic-bezier(0.2, 0.9, 0.25, 1) backwards !important;
+  }
+  .sheet-overlay > *::before {
+    content: "";
+    position: absolute;
+    top: 7px;
+    left: 50%;
+    width: 36px;
+    height: 5px;
+    margin-left: -18px;
+    border-radius: 3px;
+    background: var(--muted);
+    opacity: 0.45;
+    pointer-events: none;
   }
 }
 
 .hover-lift { transition: transform 0.12s ease, box-shadow 0.15s ease; }
-.hover-lift:hover { transform: translateY(-2px); box-shadow: 0 18px 34px -20px rgba(58, 58, 90, 0.6); }
-.hover-lift:active { transform: translateY(0); }
+/* El "levantar" solo con ratón: en pantallas táctiles el :hover se queda
+   pegado tras tocar. Al pulsar, todo encoge un poco (respuesta tipo iOS). */
+@media (hover: hover) {
+  .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 18px 34px -20px rgba(58, 58, 90, 0.6); }
+}
+.hover-lift:active { transform: scale(0.97); }
 
 input:focus, textarea:focus, select:focus { outline: none; }
 button { cursor: pointer; font-family: inherit; }
@@ -175,7 +278,7 @@ button { cursor: pointer; font-family: inherit; }
   --elev-2: 0 2px 6px rgba(40, 40, 70, 0.05), 0 16px 34px -18px rgba(40, 40, 70, 0.2);
   --elev-3: 0 6px 16px rgba(40, 40, 70, 0.08), 0 30px 56px -24px rgba(40, 40, 70, 0.3);
 }
-.hover-lift:hover { box-shadow: var(--elev-3); }
+@media (hover: hover) { .hover-lift:hover { box-shadow: var(--elev-3); } }
 button:focus-visible, input:focus-visible, a:focus-visible, [role="button"]:focus-visible {
   outline: 2px solid var(--indigo);
   outline-offset: 2px;

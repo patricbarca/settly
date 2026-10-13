@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { haptic } from "../lib/haptics";
 import type { Group, RecurrenceInterval } from "../lib/types";
 import { addExpense, addRecurring } from "../lib/store";
 import { parseExpense, type ParsedExpense } from "../lib/parse";
@@ -391,6 +392,7 @@ function sanitizePercents(
       });
     } else {
       const meName = group.members.find((m) => m.id === group.meId)?.name ?? "?";
+      haptic("success");
       addExpense(
         group.id,
         {
