@@ -6,10 +6,12 @@
      padding) — usado por las vistas que deben dejarla siempre visible
      (Activity, Profile) para no dibujarse detrás. */
   --bottomnav-h: 74px;
-  /* Fuente del sistema (SF Pro en iPhone/Mac, Roboto en Android). Para volver
-     a la fuente anterior basta con poner aquí 'Baloo 2', system-ui, sans-serif. */
+  /* Fuente del sistema (SF Pro en iPhone/Mac, Roboto en Android) para toda la
+     UI. Baloo 2 (auto-hospedada en fonts.css) queda SOLO para el nombre
+     "Settlia" (clase .font-brand). */
   --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif;
   --font-ui-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, "Helvetica Neue", system-ui, sans-serif;
+  --font-brand: 'Baloo 2', system-ui, sans-serif;
   /* Brillo especular del cristal (borde de luz arriba, reflejo suave abajo). */
   --glass-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0) 42%);
   --glass-edge-lo: rgba(255, 255, 255, 0.35);
@@ -127,6 +129,8 @@ body.splash-active {
 
 .font-display { font-family: var(--font-ui-display); letter-spacing: -0.02em; }
 .font-mono { font-family: var(--font-ui); font-variant-numeric: tabular-nums; }
+/* Wordmark "Settlia": la única pieza que conserva Baloo 2. */
+.font-brand { font-family: var(--font-brand); letter-spacing: -0.02em; }
 .text-muted { color: var(--muted); }
 
 @layer components {
