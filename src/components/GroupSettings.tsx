@@ -137,106 +137,133 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
         </div>
 
         {/* Currency */}
-        <div className="mb-5">
-          <label className="text-xs font-semibold text-muted">{t("settings.currency")}</label>
+        {/* ── Monedas: todo en una tarjeta, de lo básico a lo opcional ── */}
+        <div className="mb-5 glass rounded-3xl p-4 space-y-4">
+          <div className="text-xs uppercase tracking-widest font-mono text-muted">{t("settings.currencySection")}</div>
 
-          {/* Common currencies as quick-pick pills */}
-          <div className="flex gap-1.5 flex-wrap mt-1.5">
-            {COMMON_CODES.map((code) => {
-              const c = currencyOf(code);
-              const on = currency === code;
-              return (
-                <button
-                  key={code}
-                  onClick={() => setCurrency(code)}
-                  className={`rounded-full px-3 py-1.5 text-sm font-medium ${on ? "" : "glass text-muted"}`}
-                  style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
-                  title={localCurrencyName(code, locale)}
-                >
-                  {c.symbol}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Full searchable dropdown */}
-          <select
-            value={isCommon ? "" : currency}
-            onChange={(e) => { if (e.target.value) setCurrency(e.target.value); }}
-            className="glass rounded-xl px-3 py-2 text-sm mt-2 w-full"
-          >
-            <option value="">{t("settings.currencyOther")}</option>
-            {CURRENCIES.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.symbol} {c.code} — {localCurrencyName(c.code, locale)}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Saldos separados por moneda: gastos en varias monedas sin convertir. */}
-        <div className="mb-5">
-          <label className="text-xs font-semibold text-muted">{t("settings.multiCurrency")}</label>
-          <p className="text-xs text-muted mt-0.5 mb-2">{t("settings.multiCurrencyHint")}</p>
-          <div className="glass rounded-full p-0.5 flex text-sm font-semibold">
-            {[false, true].map((v) => (
-              <button
-                key={String(v)}
-                onClick={() => setMulti(v)}
-                className={`flex-1 px-3 py-1.5 rounded-full ${multi === v ? "" : "text-muted"}`}
-                style={multi === v ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
-              >
-                {v ? t("settings.multiCurrencyOn") : t("settings.multiCurrencyOff")}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Segunda moneda + toggle de visualización (Pro) */}
-        <div className="mb-5">
-          <div className="flex items-center justify-between">
-            <label className="text-xs font-semibold text-muted">{t("settings.secondaryCurrency")}</label>
-            {plan !== "pro" && (
-              <button onClick={() => setShowPaywall(true)} className="text-xs font-semibold" style={{ color: "var(--indigo)" }}>
-                {t("pro.upgrade")}
-              </button>
-            )}
-          </div>
-          <p className="text-xs text-muted mt-0.5 mb-2">{t("settings.secondaryCurrencyHint")}</p>
-          <select
-            value={secondaryCurrency}
-            disabled={plan !== "pro"}
-            onChange={(e) => {
-              setSecondaryCurrency(e.target.value);
-              if (!e.target.value) setDisplayCurrency(currency);
-            }}
-            className="glass rounded-xl px-3 py-2 text-sm w-full disabled:opacity-50"
-          >
-            <option value="">{t("settings.secondaryCurrencyNone")}</option>
-            {CURRENCIES.filter((c) => c.code !== currency).map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.symbol} {c.code} — {localCurrencyName(c.code, locale)}
-              </option>
-            ))}
-          </select>
-
-          {plan === "pro" && secondaryCurrency && (
-            <div className="glass rounded-full p-0.5 flex text-sm font-semibold mt-2">
-              {[currency, secondaryCurrency].map((code) => {
-                const on = displayCurrency === code;
+          {/* 1. Moneda principal: pastillas con el CÓDIGO (el símbolo "$" es ambiguo) + lista completa */}
+          <div>
+            <label className="text-sm font-semibold">{t("settings.mainCurrency")}</label>
+            <p className="text-xs text-muted mt-0.5 mb-2">{t("settings.mainCurrencyHint")}</p>
+            <div className="flex gap-1.5 flex-wrap">
+              {COMMON_CODES.map((code) => {
+                const on = currency === code;
                 return (
                   <button
                     key={code}
-                    onClick={() => setDisplayCurrency(code)}
-                    className={`flex-1 px-3 py-1.5 rounded-full ${on ? "" : "text-muted"}`}
+                    onClick={() => setCurrency(code)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-bold ${on ? "" : "glass text-muted"}`}
                     style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                    title={localCurrencyName(code, locale)}
                   >
                     {code}
                   </button>
                 );
               })}
             </div>
-          )}
+            <select
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
+              className="glass rounded-xl px-3 py-2 text-sm mt-2 w-full min-w-0"
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.symbol} {c.code} — {localCurrencyName(c.code, locale)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* 2. ¿Qué hacer con un gasto en otra moneda? — dos opciones explicadas */}
+          <div>
+            <label className="text-sm font-semibold">{t("settings.foreignTitle")}</label>
+            <div className="space-y-2 mt-2">
+              {[false, true].map((v) => {
+                const on = multi === v;
+                return (
+                  <button
+                    key={String(v)}
+                    onClick={() => setMulti(v)}
+                    className="w-full text-left rounded-2xl p-3 flex items-start gap-3 hover-lift"
+                    style={{
+                      background: on ? "rgba(15,163,163,0.12)" : "var(--surface-soft)",
+                      border: `1.5px solid ${on ? "var(--teal)" : "transparent"}`,
+                    }}
+                  >
+                    <span
+                      className="mt-0.5 h-4 w-4 rounded-full shrink-0 flex items-center justify-center"
+                      style={{ border: `2px solid ${on ? "var(--teal)" : "var(--muted)"}` }}
+                    >
+                      {on && <span className="h-2 w-2 rounded-full" style={{ background: "var(--teal)" }} />}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-semibold">
+                        {v ? t("settings.foreignSeparate") : t("settings.foreignConvert", { main: currency })}
+                      </span>
+                      <span className="block text-xs text-muted mt-0.5">
+                        {v ? t("settings.foreignSeparateHint", { main: currency }) : t("settings.foreignConvertHint", { main: currency })}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. Ver los importes también en otra moneda (Pro, solo visual) */}
+          <div>
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-sm font-semibold">{t("settings.viewAlsoTitle")}</label>
+              {plan !== "pro" && (
+                <button onClick={() => setShowPaywall(true)} className="text-xs font-semibold shrink-0" style={{ color: "var(--indigo)" }}>
+                  {t("pro.upgrade")}
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-muted mt-0.5 mb-2">{t("settings.viewAlsoHint")}</p>
+            <select
+              value={secondaryCurrency}
+              disabled={plan !== "pro"}
+              onChange={(e) => {
+                setSecondaryCurrency(e.target.value);
+                setDisplayCurrency(currency);
+              }}
+              className="glass rounded-xl px-3 py-2 text-sm w-full min-w-0 disabled:opacity-50"
+            >
+              <option value="">{t("settings.viewAlsoNone")}</option>
+              {CURRENCIES.filter((c) => c.code !== currency).map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.symbol} {c.code} — {localCurrencyName(c.code, locale)}
+                </option>
+              ))}
+            </select>
+
+            {plan === "pro" && secondaryCurrency && (
+              <div className="mt-3">
+                <div className="text-xs text-muted mb-1.5">{t("settings.showAmountsIn")}</div>
+                <div className="glass rounded-full p-0.5 flex text-sm font-semibold">
+                  {[currency, secondaryCurrency].map((code) => {
+                    const on = displayCurrency === code;
+                    return (
+                      <button
+                        key={code}
+                        onClick={() => setDisplayCurrency(code)}
+                        className={`flex-1 px-3 py-1.5 rounded-full ${on ? "" : "text-muted"}`}
+                        style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                      >
+                        {code}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-muted mt-1.5">
+                  {displayCurrency === secondaryCurrency
+                    ? t("settings.showingConverted", { code: secondaryCurrency, main: currency })
+                    : t("settings.showingMain", { main: currency })}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Group kind */}
