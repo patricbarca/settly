@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import type { Group, Category, ExpenseItem } from "../lib/types";
 import { scanReceipt, type ScanResult, type ScanTax } from "../lib/ai";
 import { addExpense } from "../lib/store";
@@ -25,9 +25,12 @@ type FxInfo = { originalAmount: number; originalCurrency: string; fxRate: number
 export function ScanReceiptModal({
   group,
   paidTotal,
+  initialFile,
   onClose,
 }: {
   group: Group;
+  /** Imagen ya elegida (p. ej. de "Compartir con Settlia"): se escanea sola. */
+  initialFile?: File;
   /** Lo cobrado en la tarjeta (automatización de Wallet), en la moneda del grupo. */
   paidTotal?: number;
   onClose: () => void;
@@ -59,7 +62,19 @@ export function ScanReceiptModal({
 
   function onFile(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (file) processFile(file);
+  }
+  // Compartida desde otra app: arranca el escaneo al abrir, una sola vez.
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (initialFile && !startedRef.current) {
+      startedRef.current = true;
+      processFile(initialFile);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialFile]);
+
+  function processFile(file: File) {
     setFile(file);
     const reader = new FileReader();
     reader.onload = async () => {
