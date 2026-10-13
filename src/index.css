@@ -187,6 +187,13 @@ body.splash-active {
   }
 }
 
+/* La píldora de añadir gasto se despliega desde el botón + (abajo a la derecha). */
+@keyframes addExpand {
+  from { opacity: 0; transform: scale(0.25); border-radius: 999px; }
+  to { opacity: 1; transform: none; }
+}
+.add-expand { transform-origin: bottom right; animation: addExpand 0.32s cubic-bezier(0.2, 0.9, 0.25, 1) both; }
+
 /* Control segmentado estilo iOS (pestañas del grupo). */
 .seg {
   display: flex;

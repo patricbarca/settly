@@ -189,7 +189,8 @@ export function GroupView({ group }: { group: Group }) {
       </div>
 
       {tab === "expenses" && (
-        <div className="space-y-4 anim-up">
+        // pb-20: hueco para que el botón + flotante no tape el último gasto.
+        <div className="space-y-4 anim-up pb-20">
           <AddExpense group={group} />
           <ExpenseList group={group} />
         </div>
