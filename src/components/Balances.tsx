@@ -1,13 +1,13 @@
 import { useState } from "react";
 import type { Group, Settlement } from "../lib/types";
-import { computeSettle, directTransfers, currencyViews } from "../lib/split";
+import { computeSettle, directTransfers, currencyViews, currencyOf } from "../lib/split";
 import { resolveToCode, localCurrencyName } from "../lib/currencies";
 import { foreignCurrencies, hasConverted, convertAll, revertAll, diffPatches } from "../lib/fxConvert";
 import { getDailyRate } from "../lib/fxCache";
 import { getLang } from "../lib/i18n";
 import { setSettlementStatus, removeSettlement, rejectSettlement, rewriteGroupItems } from "../lib/store";
 import { useUser } from "../lib/auth";
-import { memberInitials, sortedMembers, fmtDate, displayName } from "../lib/format";
+import { money as rawMoney, memberInitials, sortedMembers, fmtDate, displayName } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { useGroupMoney } from "../lib/displayCurrency";
 import { Icon } from "./Icon";
@@ -44,10 +44,12 @@ export function Balances({ group }: { group: Group }) {
               </span>
               <span className="text-sm font-semibold text-muted">{localCurrencyName(code, locale)}</span>
             </div>
-            <CurrencyBalances group={v} />
+            <CurrencyBalances group={v} mode="noLog" />
           </div>
         );
       })}
+      {/* Un solo historial de pagos con todas las monedas. */}
+      <CurrencyBalances group={group} mode="logOnly" />
     </div>
   );
 }
@@ -86,22 +88,33 @@ function CurrencyMergeBar({ group }: { group: Group }) {
   }
 
   return (
-    <div className="glass rounded-3xl p-3 flex items-center gap-2 flex-wrap">
-      <Icon name="repeat" size={15} className="text-muted shrink-0" />
-      <span className="text-xs text-muted flex-1 min-w-0">
-        {foreign.length ? t("fx.mergeHint", { codes: foreign.join(", "), main }) : t("fx.splitHint")}
-      </span>
-      {foreign.length > 0 && (
-        <button disabled={busy} onClick={() => setConfirm("merge")} className="rounded-full px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50" style={{ background: "var(--teal)" }}>
-          {t("fx.mergeAll", { main })}
-        </button>
-      )}
-      {hasConverted(group) && (
-        <button disabled={busy} onClick={() => setConfirm("split")} className="glass rounded-full px-3 py-1.5 text-xs font-semibold disabled:opacity-50">
-          {t("fx.splitAll")}
-        </button>
-      )}
-      {err && <span className="w-full text-[11px]" style={{ color: "var(--coral)" }}>{err}</span>}
+    <div className="glass rounded-3xl p-4">
+      <div className="flex items-start gap-2.5">
+        <span className="h-8 w-8 rounded-full flex items-center justify-center shrink-0" style={{ background: "rgba(15,163,163,0.14)", color: "var(--teal)" }}>
+          <Icon name="repeat" size={15} />
+        </span>
+        <div className="min-w-0">
+          <div className="text-sm font-semibold">
+            {foreign.length ? t("fx.barTitleMulti", { codes: [main, ...foreign].join(" + ") }) : t("fx.barTitleMerged", { main })}
+          </div>
+          <div className="text-xs text-muted mt-0.5">
+            {foreign.length ? t("fx.mergeHint", { codes: foreign.join(", "), main }) : t("fx.splitHint", { main })}
+          </div>
+        </div>
+      </div>
+      <div className="flex gap-2 mt-3">
+        {foreign.length > 0 && (
+          <button disabled={busy} onClick={() => setConfirm("merge")} className="flex-1 rounded-full px-3 py-2 text-xs font-semibold text-white disabled:opacity-50" style={{ background: "var(--teal)" }}>
+            {t("fx.mergeAll", { main })}
+          </button>
+        )}
+        {hasConverted(group) && (
+          <button disabled={busy} onClick={() => setConfirm("split")} className="flex-1 glass rounded-full px-3 py-2 text-xs font-semibold disabled:opacity-50">
+            {t("fx.splitAll")}
+          </button>
+        )}
+      </div>
+      {err && <div className="mt-2 text-[11px]" style={{ color: "var(--coral)" }}>{err}</div>}
       {confirm && (
         <ConfirmModal
           title={confirm === "merge" ? t("fx.mergeConfirmTitle", { main }) : t("fx.splitConfirmTitle")}
@@ -116,12 +129,15 @@ function CurrencyMergeBar({ group }: { group: Group }) {
   );
 }
 
-function CurrencyBalances({ group }: { group: Group }) {
+function CurrencyBalances({ group, mode = "full" }: { group: Group; mode?: "full" | "noLog" | "logOnly" }) {
   const t = useT();
   const user = useUser();
   const isOwner = !group.ownerId || group.ownerId === user?.id;
   const direct = group.simplifyDebts === false;
   const money = useGroupMoney(group);
+  // Log combinado (varias monedas): cada pago en SU moneda.
+  const logMoney = (s: Settlement) =>
+    currencyOf(s, group) === resolveToCode(group.currency) ? money(s.amount) : rawMoney(s.amount, currencyOf(s, group));
   const settlements = group.settlements ?? [];
   const { paid, net, transfers: minTransfers } = computeSettle(group.members, group.expenses, settlements);
   // Modo de pago: simplificado (mínimas transferencias) por defecto, o directo.
@@ -180,6 +196,7 @@ function CurrencyBalances({ group }: { group: Group }) {
 
   return (
     <section className="space-y-3">
+      {mode !== "logOnly" && (<>
       {/* Pagos por confirmar (los ve quien cobra). Arriba del todo para que no
           se pierda: alguien marcó que te pagó y falta tu confirmación. */}
       {toConfirm.length > 0 && (
@@ -222,7 +239,9 @@ function CurrencyBalances({ group }: { group: Group }) {
         <span className="font-mono font-bold">{money(total)}</span>
       </div>
 
+      </>)}
       <div className="space-y-3">
+      {mode !== "logOnly" && (<>
       {/* Saldos por persona */}
       <div className="glass rounded-3xl p-5">
         <div className="text-xs uppercase tracking-widest font-mono text-muted">{t("bal.title")}</div>
@@ -388,6 +407,8 @@ function CurrencyBalances({ group }: { group: Group }) {
         </div>
       )}
 
+      </>)}
+      {mode !== "noLog" && (<>
       {/* Log de pagos: historial completo (con fecha) filtrable por persona,
           para ver quién pagó qué y cuándo. */}
       <div className="glass rounded-3xl p-5">
@@ -454,7 +475,7 @@ function CurrencyBalances({ group }: { group: Group }) {
                     {s.settledBy && s.settledBy !== s.from && (
                       <span className="text-[10px] text-muted">({t("pay.coveredBy", { name: name(s.settledBy) })})</span>
                     )}
-                    <span className="font-mono font-bold ml-auto shrink-0 whitespace-nowrap">{money(s.amount)}</span>
+                    <span className="font-mono font-bold ml-auto shrink-0 whitespace-nowrap">{logMoney(s)}</span>
                     {hasDetail && (
                       <Icon name="chevron" size={14} className="shrink-0 text-muted transition-transform" style={open ? { transform: "rotate(180deg)" } : undefined} />
                     )}
@@ -498,6 +519,7 @@ function CurrencyBalances({ group }: { group: Group }) {
           </div>
         )}
       </div>
+      </>)}
 
       {paySheet && (
         <PaySheet group={group} to={paySheet.to} amount={paySheet.amount} onClose={() => setPaySheet(null)} />
