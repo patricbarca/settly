@@ -1,5 +1,5 @@
 import type { Group } from "./types";
-import { computeSettle } from "./split";
+import { computeSettle, settleOf, mainView } from "./split";
 import type { IconName } from "../components/Icon";
 
 export interface Achievement {
@@ -21,7 +21,7 @@ export interface MemberStats {
 /** Settle Score del grupo (0-100, verde = todos al día). */
 export function groupSettleScore(group: Group): number {
   if (group.expenses.length === 0) return 100;
-  const { net } = computeSettle(group.members, group.expenses, group.settlements ?? []);
+  const { net } = settleOf(mainView(group));
   const total = group.expenses.reduce((s, e) => s + e.amount, 0);
   const outstanding = group.members.reduce((s, m) => s + Math.abs(net[m.id] || 0), 0) / 2;
   const ratio = total > 0 ? Math.min(outstanding / total, 1) : 0;

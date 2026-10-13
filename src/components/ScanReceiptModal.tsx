@@ -11,6 +11,7 @@ import { uid, money } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
 import { usePlan } from "../lib/plan";
 import { convertCurrency, fmtRate } from "../lib/fx";
+import { resolveToCode } from "../lib/currencies";
 import { CURRENCIES, localCurrencyName } from "../lib/currencies";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
@@ -46,6 +47,10 @@ export function ScanReceiptModal({
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
   const [fx, setFx] = useState<FxInfo | null>(null);
+  // Ticket en otra moneda: convertirlo a la del grupo o guardarlo tal cual
+  // (saldo aparte en esa moneda). Por defecto según el ajuste del grupo.
+  const [scanMode, setScanMode] = useState<"convert" | "keep">(group.multiCurrency ? "keep" : "convert");
+  const [nativeCode, setNativeCode] = useState<string | null>(null);
   const [fxUpsell, setFxUpsell] = useState<string | null>(null); // moneda detectada, si es free
   const [fxError, setFxError] = useState<string | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
@@ -62,6 +67,7 @@ export function ScanReceiptModal({
       setStage("analyzing");
       setScanError(false);
       setFx(null);
+      setNativeCode(null);
       setFxUpsell(null);
       setFxError(null);
       try {
@@ -94,7 +100,9 @@ export function ScanReceiptModal({
 
     let rate = 1;
     let fxInfo: FxInfo | null = null;
-    if (code !== group.currency) {
+    const keep = scanMode === "keep" && resolveToCode(code) !== resolveToCode(group.currency);
+    setNativeCode(keep ? resolveToCode(code) : null);
+    if (!keep && code !== group.currency) {
       if (plan === "pro") {
         const fxRes = await convertCurrency(1, code, group.currency);
         if (fxRes) {
@@ -324,6 +332,7 @@ export function ScanReceiptModal({
           : {}),
         ...(receiptPath ? { receiptPath } : {}),
         ...(fx ? { originalAmount: fx.originalAmount, originalCurrency: fx.originalCurrency, fxRate: fx.fxRate } : {}),
+        ...(nativeCode ? { currency: nativeCode } : {}),
         createdBy: group.meId,
       },
       {
@@ -405,6 +414,20 @@ export function ScanReceiptModal({
             <p className="text-sm text-muted mb-4">
               {t("scan.confirmCurrencyBody", { code: detected })}
             </p>
+            {/* Cómo ingresarlo si la moneda no es la del grupo. */}
+            <p className="text-xs text-muted mb-1.5">{t("scan.howToEnter", { main: resolveToCode(group.currency) })}</p>
+            <div className="glass rounded-full p-0.5 flex text-xs font-semibold mb-4">
+              {(["keep", "convert"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setScanMode(m)}
+                  className={`flex-1 px-3 py-1.5 rounded-full ${scanMode === m ? "" : "text-muted"}`}
+                  style={scanMode === m ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                >
+                  {m === "keep" ? t("scan.modeKeep") : t("scan.modeConvert", { main: resolveToCode(group.currency) })}
+                </button>
+              ))}
+            </div>
             {quickPicks.length > 0 && (
               <div className="flex gap-2 mb-4">
                 {quickPicks.map((c) => (
@@ -476,7 +499,8 @@ export function ScanReceiptModal({
             )}
 
             <ItemizedExpenseEditor
-              group={group}
+              // Guardado en su moneda: el editor muestra símbolo e importes en ella.
+              group={nativeCode ? { ...group, currency: nativeCode } : group}
               initial={{ ...initial, canAskEveryone: true }}
               taxInfo={tax}
               scannedTotal={scannedTotal}
@@ -484,7 +508,7 @@ export function ScanReceiptModal({
               // en otra: convertido, la tasa del banco y la nuestra no coinciden
               // al céntimo; sin convertir (plan gratis o tasa caída), seria
               // comparar euros con dólares.
-              paidTotal={fx || fxUpsell || fxError ? undefined : paidTotal}
+              paidTotal={fx || fxUpsell || fxError || nativeCode ? undefined : paidTotal}
               banner={scanError ? t("scan.error") : undefined}
               submitLabel={t("scan.save")}
               submitting={saving}

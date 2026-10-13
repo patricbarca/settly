@@ -1,4 +1,5 @@
-import type { Expense, Member, Settlement } from "./types";
+import type { Expense, Group, Member, Settlement } from "./types";
+import { resolveToCode } from "./currencies";
 
 /** Un pago cuenta como saldado en cuanto el deudor lo marca (`pending`), no solo
  *  cuando el acreedor lo confirma (`confirmed`) — así el que pagó aparece
@@ -316,4 +317,62 @@ export function myPendingExpenses(
     if (remaining > 0.005) out.push({ expenseId: e.id, label: e.label, amount: remaining });
   }
   return out;
+}
+
+// ── Saldos separados por moneda ─────────────────────────────────────────────
+// Un grupo puede tener gastos en varias monedas SIN convertir (`Expense.currency`
+// / `Settlement.currency`; ausente = la del grupo). Cada moneda es un "libro"
+// independiente: sus gastos solo los saldan pagos en esa misma moneda. Para no
+// tocar el cálculo, se construye una VISTA del grupo por moneda (mismo grupo con
+// `currency` = esa moneda y solo sus gastos/pagos) y el resto de la app la usa
+// como si fuera un grupo normal.
+
+
+/** Moneda (ISO) de un gasto o pago dentro de su grupo. */
+export function currencyOf(x: { currency?: string }, group: Group): string {
+  return resolveToCode(x.currency || group.currency);
+}
+
+/** Monedas con movimientos en el grupo; la del grupo siempre primero. */
+export function groupCurrencies(group: Group): string[] {
+  const main = resolveToCode(group.currency);
+  const set = new Set<string>([main]);
+  for (const e of group.expenses) set.add(currencyOf(e, group));
+  for (const s of group.settlements ?? []) set.add(currencyOf(s, group));
+  return [...set];
+}
+
+/** Vista del grupo restringida a UNA moneda. La de la moneda principal
+ *  conserva `currency` tal cual (símbolo heredado incluido) y el toggle de
+ *  visualización; las demás lo desactivan (no se convierte nada). */
+export function currencyView(group: Group, code: string): Group {
+  const main = resolveToCode(group.currency);
+  const isMain = code === main;
+  const expenses = group.expenses.filter((e) => currencyOf(e, group) === code);
+  const settlements = (group.settlements ?? []).filter((s) => currencyOf(s, group) === code);
+  if (isMain && expenses.length === group.expenses.length && settlements.length === (group.settlements ?? []).length) {
+    return group; // grupo de una sola moneda: identidad, cero coste
+  }
+  return {
+    ...group,
+    currency: isMain ? group.currency : code,
+    expenses,
+    settlements,
+    ...(isMain ? {} : { secondaryCurrency: undefined, displayCurrency: undefined }),
+  };
+}
+
+/** Una vista por moneda con movimientos (la principal primero). */
+export function currencyViews(group: Group): Group[] {
+  return groupCurrencies(group).map((c) => currencyView(group, c));
+}
+
+/** Solo la moneda principal: para resúmenes de un único número (Hero, Home…). */
+export function mainView(group: Group): Group {
+  return currencyView(group, resolveToCode(group.currency));
+}
+
+/** `computeSettle` sobre los arrays de un grupo (o de una vista por moneda). */
+export function settleOf(group: Group): Settlement_ {
+  return computeSettle(group.members, group.expenses, group.settlements ?? []);
 }

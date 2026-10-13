@@ -712,6 +712,7 @@ export function processRecurring(groupId: string) {
             splits: r.splits ?? null,
             category: r.category,
             date: nextDate,
+            ...(r.currency ? { currency: r.currency } : {}),
           });
           count++;
         }
@@ -730,7 +731,7 @@ export function processRecurring(groupId: string) {
           ...activity,
           makeActivity({ type: "recurring_generated", label: r.label, amount: r.amount, toId: r.payerId, toName: payerName }),
         ].slice(-200);
-        pushed.push({ label: r.label, amount: r.amount, payerName, currency: g.currency });
+        pushed.push({ label: r.label, amount: r.amount, payerName, currency: r.currency || g.currency });
       }
       return { ...r, nextDate };
     });
@@ -877,4 +878,33 @@ export function resetSeed() {
   if (currentUserId) return;
   state = { groups: [createSeed()], activeId: null, loading: false };
   emit();
+}
+
+/** Reescribe varios gastos y pagos de golpe ("Convertir todo" / "Volver a
+ *  separar", saldos por moneda). Cada uno va por su RPC atómico: los pagos NO
+ *  pueden ir por el blob porque `update_group_data` deja ganar al servidor en
+ *  los pagos ya guardados. Requiere conexión (devuelve false si no la hay o si
+ *  algo falla; el estado local se recarga de Realtime). */
+export async function rewriteGroupItems(
+  groupId: string,
+  next: Group,
+  patches: { expenses: { id: string; patch: Partial<Expense> }[]; settlements: { id: string; patch: Partial<Settlement> }[] }
+): Promise<boolean> {
+  if (!currentUserId) {
+    // Modo invitado: no hay servidor, basta con el estado local.
+    updateGroup(groupId, () => next);
+    return true;
+  }
+  if (!isOnline) return false;
+  applyLocal(groupId, () => next);
+  let ok = true;
+  for (const p of patches.expenses) {
+    const { error } = await supabase.rpc("patch_expense", { p_group_id: groupId, p_expense_id: p.id, p_patch: p.patch });
+    if (error) { console.error("patch_expense:", error); ok = false; }
+  }
+  for (const p of patches.settlements) {
+    const { error } = await supabase.rpc("patch_settlement", { p_group_id: groupId, p_settlement_id: p.id, p_patch: p.patch });
+    if (error) { console.error("patch_settlement:", error); ok = false; }
+  }
+  return ok;
 }

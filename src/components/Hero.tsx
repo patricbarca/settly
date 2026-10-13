@@ -1,7 +1,8 @@
+import { money as rawMoney } from "../lib/format";
 import { useState } from "react";
 import type { Group } from "../lib/types";
 import { groupSettleScore } from "../lib/gamification";
-import { computeSettle } from "../lib/split";
+import { computeSettle, settleOf, mainView, currencyViews } from "../lib/split";
 import { useT } from "../lib/i18n";
 import { useGroupMoney } from "../lib/displayCurrency";
 import { SettleRing } from "./SettleRing";
@@ -15,12 +16,15 @@ export function Hero({ group }: { group: Group }) {
   const direct = group.simplifyDebts === false;
   const [showModeInfo, setShowModeInfo] = useState(false);
 
-  const { net } = computeSettle(group.members, group.expenses, group.settlements ?? []);
+  const { net } = settleOf(mainView(group));
   const mine = net[group.meId] || 0;
   const owe = mine < -0.01 ? -mine : 0;
   const owed = mine > 0.01 ? mine : 0;
 
-  const total = group.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const extra = currencyViews(group)
+    .slice(1)
+    .map((v) => ({ code: v.currency, mine: settleOf(v).net[group.meId] || 0 }));
+  const total = mainView(group).expenses.reduce((sum, exp) => sum + exp.amount, 0);
   return (
     <div className="hero anim-up">
       <span className="blob b1" />
@@ -50,6 +54,23 @@ export function Hero({ group }: { group: Group }) {
               ↑ {money(owed)}
             </span>
           </div>
+          {/* Saldos separados por moneda: mi saldo en cada moneda extra. */}
+          {extra.map((x) => (
+            <div key={x.code} className="flex items-center gap-1.5 mt-1">
+              <span className="text-[10px] font-mono font-bold text-white/70 w-8">{x.code}</span>
+              {x.mine < -0.01 && (
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold" style={{ background: "rgba(255,90,77,0.22)", color: "#FFC2BB" }}>
+                  ↓ {rawMoney(-x.mine, x.code)}
+                </span>
+              )}
+              {x.mine > 0.01 && (
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-mono font-bold" style={{ background: "rgba(46,213,115,0.22)", color: "#9BF6C9" }}>
+                  ↑ {rawMoney(x.mine, x.code)}
+                </span>
+              )}
+              {Math.abs(x.mine) <= 0.01 && <span className="text-[11px] text-white/70">✓</span>}
+            </div>
+          ))}
           <button
             onClick={() => setShowModeInfo(true)}
             className="inline-flex items-center gap-1 mt-1.5 text-[11px] text-white/70 hover-lift"

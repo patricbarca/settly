@@ -1,3 +1,4 @@
+import { groupCurrencies, currencyView } from "../lib/split";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import type { Group } from "../lib/types";
@@ -18,11 +19,17 @@ import { Icon } from "./Icon";
 import { Logo } from "./Logo";
 import { getReceiptUrl } from "../lib/storage";
 
-export function ReportModal({ group, onClose }: { group: Group; onClose: () => void }) {
+export function ReportModal({ group: fullGroup, onClose }: { group: Group; onClose: () => void }) {
   const t = useT();
   const lang = useLang();
-  const months = monthsWithExpenses(group);
+  const months = monthsWithExpenses(fullGroup);
   const [period, setPeriod] = useState<Period>("all");
+  // Saldos por moneda: el reporte en pantalla/PDF va por moneda (selector);
+  // el CSV las incluye todas.
+  const currencies = groupCurrencies(fullGroup);
+  const [curCode, setCurCode] = useState(currencies[0]);
+  const activeCode = currencies.includes(curCode) ? curCode : currencies[0];
+  const group = currencyView(fullGroup, activeCode);
   const r = buildReport(group, period);
   const cur = group.currency;
   const name = (id: string) => {
@@ -67,7 +74,7 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
   ];
 
   function downloadCsv() {
-    downloadFile(reportFilename(group, periodLabel, genIso, "csv"), reportToCsv(group, period, t, lang));
+    downloadFile(reportFilename(group, periodLabel, genIso, "csv"), reportToCsv(fullGroup, period, t, lang));
   }
 
   // El navegador (incl. iOS Safari → "Guardar en Archivos") usa document.title
@@ -103,6 +110,25 @@ export function ReportModal({ group, onClose }: { group: Group; onClose: () => v
           </button>
           <h2 className="font-display text-2xl font-bold flex-1">{t("report.title")}</h2>
         </div>
+
+        {/* Selector de moneda (solo con varias; no se imprime) */}
+        {currencies.length > 1 && (
+          <div className="flex gap-1.5 mb-2 no-print">
+            {currencies.map((c) => {
+              const on = c === activeCode;
+              return (
+                <button
+                  key={c}
+                  onClick={() => setCurCode(c)}
+                  className={`rounded-full px-3 py-1.5 text-sm font-bold ${on ? "" : "glass text-muted"}`}
+                  style={on ? { background: "var(--teal)", color: "#fff" } : undefined}
+                >
+                  {c}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* Selector de periodo (no se imprime) */}
         <div className="flex gap-1.5 mb-3 overflow-x-auto no-print pb-1">

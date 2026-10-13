@@ -256,7 +256,7 @@ export function RecurringList({ group }: { group: Group }) {
                     )}
                   </div>
                   <div className="font-mono font-semibold text-sm shrink-0">
-                    {r.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} {group.currency}
+                    {r.amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} {r.currency || group.currency}
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     <button
