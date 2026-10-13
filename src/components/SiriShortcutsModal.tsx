@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
+import { WalletGuideAnimation } from "./WalletGuideAnimation";
 
 // "Siri y Atajos": lo que la app expone a iOS (ios/App/App/SettliaIntents.swift)
 // y cómo montar la automatización de Wallet. Solo se muestra en la app nativa
@@ -97,6 +98,9 @@ export function SiriShortcutsModal({ onClose }: { onClose: () => void }) {
 
               <div className="rounded-2xl p-3" style={{ background: "rgba(15,163,163,0.10)" }}>
                 <div className="text-sm font-semibold mb-1">{t("siri.guideTitle")}</div>
+                <div className="my-3">
+                  <WalletGuideAnimation />
+                </div>
                 <ol className="space-y-2.5 mt-2">
                   {steps.map((s, i) => (
                     <li key={i} className="flex gap-2.5">
@@ -135,6 +139,16 @@ export function SiriShortcutsModal({ onClose }: { onClose: () => void }) {
                 >
                   {t("siri.installShortcut")} <Icon name="external" size={14} />
                 </button>
+              </div>
+
+              {/* Lo que falla en la práctica: se abre la app Atajos en vez de ir solo. */}
+              <div className="rounded-2xl p-3" style={{ background: "rgba(232,146,12,0.12)" }}>
+                <div className="text-sm font-semibold">{t("siriFix.title")}</div>
+                <ol className="list-decimal pl-4 mt-1.5 space-y-1 text-xs leading-relaxed">
+                  <li>{t("siriFix.one")}</li>
+                  <li>{t("siriFix.two")}</li>
+                  <li>{t("siriFix.three")}</li>
+                </ol>
               </div>
 
               <p className="text-xs text-muted leading-relaxed">{t("siri.applePayOnly")}</p>
