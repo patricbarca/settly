@@ -5,6 +5,7 @@
 //
 //   app.settlia.pwa://add?text=<nota>&id=<uuid>   → interpreta la nota
 //   app.settlia.pwa://scan?id=<uuid>              → abre el escáner de tickets
+//   app.settlia.pwa://scan?shared=1&id=<uuid>     → escanea la imagen compartida (menú Compartir)
 //
 // Aquí lo guardamos como "pendiente" hasta que haya un grupo abierto: si tienes
 // varios, App.tsx te pregunta a cuál va; AddExpense lo recoge y lanza el flujo
@@ -18,7 +19,7 @@ export type QuickAdd = (
   | { kind: "text"; text: string; paid?: number }
   /** `paid` = lo cobrado en la tarjeta (automatización de Wallet). El escáner lo
    *  usa para comprobar que el ticket leído suma lo mismo. */
-  | { kind: "scan"; paid?: number; merchant?: string }
+  | { kind: "scan"; paid?: number; merchant?: string; shared?: boolean }
 ) & { groupId?: string };
 
 /** Importe tal como lo entrega Wallet/Atajos, en el formato del iPhone:
@@ -105,7 +106,9 @@ export function captureQuickAddFromUrl(url: string): boolean {
   if (route === "scan") {
     const paid = parseMoney(u.searchParams.get("paid"));
     const merchant = (u.searchParams.get("merchant") || "").trim().slice(0, 80) || undefined;
-    store({ kind: "scan", ...(paid ? { paid } : {}), ...(merchant ? { merchant } : {}) });
+    // shared=1 → viene de "Compartir con Settlia" con una imagen (sharedImage.ts).
+    const shared = u.searchParams.get("shared") === "1";
+    store({ kind: "scan", ...(paid ? { paid } : {}), ...(merchant ? { merchant } : {}), ...(shared ? { shared } : {}) });
     return true;
   }
   const paid = parseMoney(u.searchParams.get("paid"));

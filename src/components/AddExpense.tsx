@@ -21,6 +21,7 @@ import { usePlan, useAIRemaining, aiRemaining, consumeAI, FREE_AI_QUOTA, type AI
 import { Icon } from "./Icon";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 import { ScanReceiptModal } from "./ScanReceiptModal";
+import { takeSharedImage } from "../lib/sharedImage";
 import { Paywall } from "./Paywall";
 
 type FxInfo = { originalAmount: number; originalCurrency: string; fxRate: number };
@@ -89,7 +90,8 @@ export function AddExpense({ group }: { group: Group }) {
     if (!q) return;
     setOpen(true);
     if (q.kind === "scan") {
-      openScan(q.paid);
+      if (q.shared) void takeSharedImage().then((f) => openScan(q.paid, f ?? undefined));
+      else openScan(q.paid);
     } else {
       setText(q.text);
       interpret(q.text, "text", q.paid);
@@ -101,9 +103,11 @@ export function AddExpense({ group }: { group: Group }) {
   // Lo cobrado en la tarjeta, si el escaneo viene de pagar con Apple Pay: el
   // editor comprueba en vivo que el ticket leído suma lo mismo.
   const [scanPaid, setScanPaid] = useState<number | undefined>(undefined);
-  function openScan(paid?: number) {
+  const [scanFile, setScanFile] = useState<File | undefined>(undefined);
+  function openScan(paid?: number, file?: File) {
     // Escaneo de recibo: cuota propia de IA (3/mes en free).
     setScanPaid(paid);
+    setScanFile(file);
     if (pro || consumeAI("scan")) {
       // El escáner ocupa toda la pantalla: la píldora se pliega detrás.
       setOpen(false);
@@ -721,7 +725,7 @@ function sanitizePercents(
     </section>
       </div>
       </>, document.body)}
-      {scan && <ScanReceiptModal group={group} paidTotal={scanPaid} onClose={() => { setScan(false); setScanPaid(undefined); }} />}
+      {scan && <ScanReceiptModal group={group} paidTotal={scanPaid} initialFile={scanFile} onClose={() => { setScan(false); setScanPaid(undefined); setScanFile(undefined); }} />}
       {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
     </>
   );
