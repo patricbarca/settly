@@ -24,7 +24,7 @@ export default defineConfig({
         navigateFallbackDenylist: [/^\/api/],
         importScripts: ["push-sw.js"],
       },
-      includeAssets: ["icons/icon.svg", "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png"],
+      includeAssets: ["icons/icon.svg", "icons/logo-s.svg", "icons/favicon-32.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png"],
       manifest: {
         name: "Settlia",
         short_name: "Settlia",
@@ -46,7 +46,14 @@ export default defineConfig({
             src: "icons/icon-512.png",
             sizes: "512x512",
             type: "image/png",
-            purpose: "any maskable",
+            purpose: "any",
+          },
+          {
+            // Cuadrado a sangre (sin esquinas): Android recorta su propia forma.
+            src: "icons/icon-maskable-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
           },
         ],
       },

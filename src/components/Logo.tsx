@@ -1,6 +1,8 @@
 export function Logo({ size = 40 }: { size?: number }) {
   const radius = Math.round(size * 0.22);
-  const pad = Math.round(size * 0.10);
+  // logo-s.svg va recortado a la S (el PNG traía su propio aire): la S ocupa el
+  // 70% del alto del cuadro, igual que se veía con el PNG original.
+  const sHeight = Math.round(size * 0.7);
   return (
     <div
       style={{
@@ -18,11 +20,11 @@ export function Logo({ size = 40 }: { size?: number }) {
       }}
     >
       <img
-        src="/icons/logo-s.png"
-        width={size - pad * 2}
-        height={size - pad * 2}
+        src="/icons/logo-s.svg"
+        height={sHeight}
         alt="Settlia"
-        style={{ display: "block", objectFit: "contain" }}
+        // Alto por estilo: el reset de Tailwind pone `height: auto` a las imágenes.
+        style={{ display: "block", height: sHeight, width: "auto" }}
       />
     </div>
   );
