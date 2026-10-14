@@ -22,6 +22,7 @@ import { UsersModal } from "./UsersModal";
 import { ReportModal } from "./ReportModal";
 import { Paywall } from "./Paywall";
 import { ShareLinkModal } from "./ShareLinkModal";
+import { ImportExpensesModal } from "./ImportExpensesModal";
 import { PayMethodReminder } from "./PayMethodReminder";
 import { isPro } from "../lib/plan";
 import { haptic } from "../lib/haptics";
@@ -44,6 +45,7 @@ export function GroupView({ group }: { group: Group }) {
   const [copied, setCopied] = useState(false);
   const [inviteError, setInviteError] = useState(false);
   const [shareLink, setShareLink] = useState<string | null>(null);
+  const [showImport, setShowImport] = useState(false);
   // Cabecera compacta estilo iOS: al bajar más allá del hero, la barra de
   // arriba pasa a cristal y muestra el nombre del grupo (el "título grande"
   // del hero se sustituye por uno pequeño).
@@ -149,25 +151,25 @@ export function GroupView({ group }: { group: Group }) {
 
       <PayMethodReminder group={group} />
 
-      <Hero group={group} />
+      <Hero group={group} onShare={share} shareState={inviteError ? "error" : copied ? "copied" : undefined} />
 
       <div className="mt-4">
         <Members group={group} />
       </div>
 
-      {/* Share group card */}
+      {/* Importar gastos (Splitwise CSV). Compartir vive ahora junto al nombre del grupo, en el Hero. */}
       <div className="glass rounded-3xl px-4 py-3 mt-3 flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-sm font-semibold">{t("group.shareTitle")}</div>
-          <div className="text-xs text-muted mt-0.5">{t("group.shareHint")}</div>
+          <div className="text-sm font-semibold">{t("import.cardTitle")}</div>
+          <div className="text-xs text-muted mt-0.5">{t("import.cardHint")}</div>
         </div>
         <button
-          onClick={share}
+          onClick={() => setShowImport(true)}
           className="glass-strong rounded-full px-4 py-2 text-sm font-semibold hover-lift inline-flex items-center gap-1.5 shrink-0"
-          style={inviteError ? { color: "#D14444" } : copied ? { color: "#0A8B5E" } : { color: "var(--teal)" }}
+          style={{ color: "var(--teal)" }}
         >
-          <Icon name="copy" size={14} />
-          {inviteError ? t("group.inviteError") : copied ? t("group.copied") : t("group.shareBtn")}
+          <Icon name="doc" size={14} />
+          {t("import.cardBtn")}
         </button>
       </div>
 
@@ -227,6 +229,7 @@ export function GroupView({ group }: { group: Group }) {
       {showSettings && <GroupSettings group={group} onClose={() => setShowSettings(false)} />}
       {showReport && <ReportModal group={group} onClose={() => setShowReport(false)} />}
       {paywall && <Paywall onClose={() => setPaywall(false)} reason={t("report.proReason")} />}
+      {showImport && <ImportExpensesModal group={group} onClose={() => setShowImport(false)} />}
       {shareLink && <ShareLinkModal link={shareLink} title={group.name} onClose={() => setShareLink(null)} />}
 
     </div>

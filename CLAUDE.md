@@ -51,6 +51,13 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Importar gastos desde Splitwise (CSV) + compartir junto al nombre del grupo (2026-10-15)
+- **Qué hace:** en el grupo, la tarjeta **"Importar gastos"** (donde estaba "Compartir grupo") abre `ImportExpensesModal`: el usuario sube el CSV de Splitwise ("Export as spreadsheet"), ve un resumen (gastos · pagos · total por moneda), asigna **quién es quién** (cada columna del CSV → un miembro existente, adivinado por nombre/primer nombre, o "+ Nuevo" como plaza sin reclamar) e importa todo de una vez.
+- **`src/lib/splitwiseImport.ts`:** parser CSV propio (comillas, BOM). Columnas fijas Date/Description/Category/Cost/Currency + una por persona con su **neto**. Filas `Payment` → pagos confirmados (positivo = quien pagó). Fila "Total balance" → solo para comprobar. Reconstrucción: **un pagador → exacto** (su parte = coste − su neto; la de los demás = −neto); varios pagadores → el resto a partes iguales entre ellos (`guessed`). Céntimo suelto a la parte mayor. Moneda por fila: si ≠ la del grupo se guarda como `Expense/Settlement.currency` y se activa `multiCurrency`. Categorías de Splitwise mapeadas (`mapCategory`). **Ids estables** (`sw_`/`swp_` + hash de la fila) → reimportar el mismo CSV no duplica.
+- **✅ Verificado** con un CSV real (9 personas, 13 gastos, 9 pagos, AUD): los netos reconstruidos coinciden **al céntimo** con la fila "Total balance" de Splitwise; todos los repartos suman el coste. En navegador (invitado): tarjeta → elegir CSV → resumen "✓ Los saldos cuadran" → importar 22 → bloque AUD aparte en Saldos.
+- **Compartir grupo:** ahora es un botón pequeño (icono `share`, nuevo en `Icon.tsx`) junto al nombre en el `Hero` (`onShare`/`shareState`); muestra "¡Copiado!"/error en el propio botón.
+- **Pendiente:** importar desde **captura de pantalla** de Splitwise (modo "lista de gastos" en la IA de visión; no sabe entre quiénes se repartió con 3+ personas). Crear el grupo directamente desde el CSV (hoy se importa a un grupo existente).
+
 ### iOS 1.4 (2026-10-14)
 - La 1.3 ya está **aprobada**, así que Apple cierra ese "train": el build de Codemagic falló al subir con `90062` (la versión debe ser mayor que la aprobada) y `90186` ("train version '1.3' is closed"). `MARKETING_VERSION` 1.3 → **1.4** en los 4 `buildSettings` (App + ShareExtension, Debug/Release). **Regla:** tras cada aprobación, subir la versión antes del siguiente build.
 

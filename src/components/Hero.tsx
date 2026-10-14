@@ -9,7 +9,7 @@ import { SettleRing } from "./SettleRing";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 
-export function Hero({ group }: { group: Group }) {
+export function Hero({ group, onShare, shareState }: { group: Group; onShare?: () => void; shareState?: "copied" | "error" }) {
   const t = useT();
   const money = useGroupMoney(group);
   const score = groupSettleScore(group);
@@ -33,7 +33,21 @@ export function Hero({ group }: { group: Group }) {
       <div className="relative z-10 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="text-white/70 text-[11px] uppercase tracking-widest font-mono mb-1">{t("hero.groupLabel")}</div>
-          <div className="text-white font-display text-2xl font-extrabold truncate leading-relaxed">{group.name}</div>
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="text-white font-display text-2xl font-extrabold truncate leading-relaxed min-w-0">{group.name}</div>
+            {onShare && (
+              <button
+                onClick={onShare}
+                className="shrink-0 h-6 min-w-6 rounded-full px-1.5 inline-flex items-center justify-center gap-1 text-[10px] font-semibold hover-lift"
+                style={{ background: "rgba(255,255,255,0.22)", color: shareState === "error" ? "#FFC2BB" : "#FFFFFF" }}
+                title={t("hero.share")}
+                aria-label={t("hero.share")}
+              >
+                <Icon name={shareState === "copied" ? "check" : "share"} size={12} />
+                {shareState === "copied" ? t("group.copied") : shareState === "error" ? t("group.inviteError") : null}
+              </button>
+            )}
+          </div>
           <div className="flex items-center gap-1.5 mt-2">
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold"
