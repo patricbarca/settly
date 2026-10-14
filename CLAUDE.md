@@ -51,6 +51,10 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Fix: los recurrentes perdían un día en cada repetición (2026-10-14)
+- **Bug:** `advanceDate` (`store.ts`) parseaba la fecha a medianoche LOCAL y la devolvía con `toISOString()` (UTC). En zonas por delante de UTC (Australia) cada paso restaba un día → **semanales cada 6 días** (Rent: 21-sep, 27-sep, 3-oct, 9-oct) y **mensuales un día antes cada mes** (21-sep → 20-oct). **Fix:** todo en UTC (`T00:00:00Z` + `setUTC*`); `today` de `processRecurring` pasa a la fecha LOCAL (`toLocaleDateString("en-CA")`). Probado con `TZ=Australia/Brisbane`: 21-sep → 28-sep → 5-oct → 12-oct. `tsc` limpio.
+- **Datos afectados (NO corregidos aún, pendiente de OK del usuario):** semanales en `BrisHome 🏙️` (`aa6soih`) y `AlePat ♥️` (`8wpau8c`), `nextDate` 15-oct; y los mensuales de ambos grupos con un día de deriva (`nextDate` 20-oct, 28-oct, 18-oct). Las ocurrencias ya generadas siguen con fechas corridas.
+
 ### Logo original recreado en alta definición (2026-10-13)
 - **Por qué:** el logo era un raster pequeño y algo borroso. Se exploraron rediseños (lienzo privado "Settlia logo S": 4 direcciones + 5 variantes de cinta) pero el usuario prefirió **su logo actual, exacto, en HD**.
 - **Cómo:** se trazó el contorno de la S sobre el icono iOS original (1024 px; la S mide 362×498): alfa estimada por distancia al navy, contorno subpíxel, 6 esquinas fijadas (los dos cortes de cada punta + los dos pliegues junto al hueco) y el resto ajustado con B-splines convertidos a Bézier. El color (degradado y sombras de los pliegues) se toma del original, suavizado para quitar el ruido JPEG y extendido fuera del borde para que el recorte vectorial no deje halo. Resultado: `public/icons/logo-s.svg` (~60 KB).

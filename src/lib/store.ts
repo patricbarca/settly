@@ -668,16 +668,19 @@ export function deleteRecurring(groupId: string, id: string) {
 }
 
 function advanceDate(date: string, interval: RecurrenceInterval): string {
-  const d = new Date(date + "T00:00:00");
-  if (interval === "daily")   d.setDate(d.getDate() + 1);
-  if (interval === "weekly")  d.setDate(d.getDate() + 7);
-  if (interval === "monthly") d.setMonth(d.getMonth() + 1);
-  if (interval === "yearly")  d.setFullYear(d.getFullYear() + 1);
+  // Todo en UTC: parsear a medianoche LOCAL y luego `toISOString()` (UTC) en
+  // una zona por delante de UTC (Australia) restaba un día en cada paso → los
+  // semanales salían cada 6 días.
+  const d = new Date(date + "T00:00:00Z");
+  if (interval === "daily")   d.setUTCDate(d.getUTCDate() + 1);
+  if (interval === "weekly")  d.setUTCDate(d.getUTCDate() + 7);
+  if (interval === "monthly") d.setUTCMonth(d.getUTCMonth() + 1);
+  if (interval === "yearly")  d.setUTCFullYear(d.getUTCFullYear() + 1);
   return d.toISOString().slice(0, 10);
 }
 
 export function processRecurring(groupId: string) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString("en-CA"); // fecha LOCAL (YYYY-MM-DD)
   // Reglas que generaron ≥1 gasto en esta pasada → push tras persistir (a los
   // demás miembros; quien dispara la generación está en la app y ya ve la
   // notificación in-app, así que no necesita push).
