@@ -51,6 +51,10 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Fix: al pagar, elegir UN gasto llenaba el total entero (2026-10-14)
+- **Caso real (`BrisHome 🏙️`, modo Directo):** Alex pagó $400 de un Rent semanal; luego se borraron los semanales y se creó un Rent mensual de $1600. Ese pago quedó ligado a un gasto **borrado**, así que no se descontaba de ningún gasto vivo: la lista de "Marcar pagado" mostraba **Rent $1600** con una deuda real de **$1202,66**, y al elegir solo Rent el total ya llegaba al tope (parecía que sumaba todo).
+- **Fix (`MarkPaidModal`):** la deuda por gasto se recorta para que sume como mucho lo adeudado de verdad (`max`), quitando el exceso de los gastos **más antiguos** primero. Ahora: Rent $1200 + Bin bags $2,66. `tsc` limpio; **no probado en pantalla**.
+
 ### Fix: los recurrentes perdían un día en cada repetición (2026-10-14)
 - **Bug:** `advanceDate` (`store.ts`) parseaba la fecha a medianoche LOCAL y la devolvía con `toISOString()` (UTC). En zonas por delante de UTC (Australia) cada paso restaba un día → **semanales cada 6 días** (Rent: 21-sep, 27-sep, 3-oct, 9-oct) y **mensuales un día antes cada mes** (21-sep → 20-oct). **Fix:** todo en UTC (`T00:00:00Z` + `setUTC*`); `today` de `processRecurring` pasa a la fecha LOCAL (`toLocaleDateString("en-CA")`). Probado con `TZ=Australia/Brisbane`: 21-sep → 28-sep → 5-oct → 12-oct. `tsc` limpio.
 - **Datos afectados (NO corregidos aún, pendiente de OK del usuario):** semanales en `BrisHome 🏙️` (`aa6soih`) y `AlePat ♥️` (`8wpau8c`), `nextDate` 15-oct; y los mensuales de ambos grupos con un día de deriva (`nextDate` 20-oct, 28-oct, 18-oct). Las ocurrencias ya generadas siguen con fechas corridas.
