@@ -89,13 +89,29 @@ export function MarkPaidModal({
   // el total no cuadraba con lo adeudado. En Simplificado solo se paga el monto
   // neto que se le debe a esta persona (con opción de pago parcial).
   const direct = group.simplifyDebts === false;
-  const debts = useMemo(
-    () =>
-      direct
-        ? expenseDebtsBetween(group.members, group.expenses, group.settlements ?? [], from, to)
-        : [],
-    [direct, group.members, group.expenses, group.settlements, from, to]
-  );
+  // La deuda bruta por gasto puede superar lo que de verdad se debe (`max`):
+  // p. ej. un pago ya hecho quedó ligado a un gasto que luego se borró, así que
+  // no se descuenta de ningún gasto vivo. Se recorta el exceso empezando por los
+  // gastos MÁS ANTIGUOS (lo ya pagado suele ser lo viejo). Sin esto, elegir un
+  // solo gasto llenaba el total entero (Rent $1600 con una deuda real de $1202).
+  const debts = useMemo(() => {
+    if (!direct) return [];
+    const raw = expenseDebtsBetween(group.members, group.expenses, group.settlements ?? [], from, to);
+    let excess = Math.round((raw.reduce((s, d) => s + d.amount, 0) - max) * 100) / 100;
+    if (excess <= 0.005) return raw;
+    const dateOf = (id: string) => group.expenses.find((e) => e.id === id)?.date ?? "";
+    const oldestFirst = [...raw].sort((a, b) => dateOf(a.expenseId).localeCompare(dateOf(b.expenseId)));
+    const cut: Record<string, number> = {};
+    for (const d of oldestFirst) {
+      if (excess <= 0.005) break;
+      const c = Math.min(d.amount, excess);
+      cut[d.expenseId] = c;
+      excess = Math.round((excess - c) * 100) / 100;
+    }
+    return raw
+      .map((d) => ({ ...d, amount: Math.round((d.amount - (cut[d.expenseId] ?? 0)) * 100) / 100 }))
+      .filter((d) => d.amount > 0.005);
+  }, [direct, group.members, group.expenses, group.settlements, from, to, max]);
   // Preselección (solo Directo): todo lo que compone la deuda con esta persona.
   const [selected, setSelected] = useState<Set<string>>(() => new Set(debts.map((d) => d.expenseId)));
   const usingPicker = direct && debts.length > 0;
