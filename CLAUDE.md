@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### iOS 1.4 (2026-10-14)
+- La 1.3 ya está **aprobada**, así que Apple cierra ese "train": el build de Codemagic falló al subir con `90062` (la versión debe ser mayor que la aprobada) y `90186` ("train version '1.3' is closed"). `MARKETING_VERSION` 1.3 → **1.4** en los 4 `buildSettings` (App + ShareExtension, Debug/Release). **Regla:** tras cada aprobación, subir la versión antes del siguiente build.
+
 ### Fix: al pagar, elegir UN gasto llenaba el total entero (2026-10-14)
 - **Caso real (`BrisHome 🏙️`, modo Directo):** Alex pagó $400 de un Rent semanal; luego se borraron los semanales y se creó un Rent mensual de $1600. Ese pago quedó ligado a un gasto **borrado**, así que no se descontaba de ningún gasto vivo: la lista de "Marcar pagado" mostraba **Rent $1600** con una deuda real de **$1202,66**, y al elegir solo Rent el total ya llegaba al tope (parecía que sumaba todo).
 - **Fix (`MarkPaidModal`):** la deuda por gasto se recorta para que sume como mucho lo adeudado de verdad (`max`), quitando el exceso de los gastos **más antiguos** primero. Ahora: Rent $1200 + Bin bags $2,66. `tsc` limpio; **no probado en pantalla**.
