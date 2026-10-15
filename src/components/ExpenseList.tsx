@@ -5,7 +5,7 @@ import { resolveToCode } from "../lib/currencies";
 import { useState, useMemo, useRef } from "react";
 import type { Group, Category } from "../lib/types";
 import { catOf } from "../lib/types";
-import { patchExpense, deleteExpense } from "../lib/store";
+import { patchExpense, deleteExpense, updateGroup } from "../lib/store";
 import { shareFor, expenseSettledStatus } from "../lib/split";
 import { money as rawMoney, fmtDate, memberLabels, displayName } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
@@ -180,6 +180,10 @@ export function ExpenseList({ group }: { group: Group }) {
   }
   function saveEdit(id: string, d: ExpenseDraft) {
     const { payerId, payments, splits } = draftToExpenseFields(d);
+    // Un gasto en otra moneda solo tiene sentido con saldos por moneda.
+    if (d.currency && d.currency !== resolveToCode(group.currency) && !group.multiCurrency) {
+      updateGroup(group.id, (g) => ({ ...g, multiCurrency: true }));
+    }
     patchExpense(
       group.id,
       id,
@@ -193,6 +197,12 @@ export function ExpenseList({ group }: { group: Group }) {
         splits,
         allowEdits: d.allowEdits ?? false,
         ...(d.receiptPath ? { receiptPath: d.receiptPath } : {}),
+        ...(d.date ? { date: d.date } : {}),
+        // Moneda: solo cambia la etiqueta (sin convertir). La del grupo = null
+        // (el servidor FUSIONA el patch, así se borra la clave).
+        ...(d.currency
+          ? { currency: (d.currency === resolveToCode(group.currency) ? null : d.currency) as unknown as string }
+          : {}),
       },
       {
         activity: makeActivity({
@@ -493,7 +503,10 @@ export function ExpenseList({ group }: { group: Group }) {
                 category: editing.category,
                 allowEdits: editing.allowEdits ?? false,
                 receiptPath: editing.receiptPath,
+                date: editing.date,
+                currency: resolveToCode(editing.currency || group.currency),
               }}
+              currencyEditable
               onSave={(d) => saveEdit(editing.id, d)}
               onCancel={() => setEditId(null)}
             />

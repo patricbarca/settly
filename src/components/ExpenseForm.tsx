@@ -4,9 +4,9 @@ import type { SplitMode } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
 import { personColor, money, sortedMembers, decimalInput } from "../lib/format";
 import { Avatar } from "./Avatar";
-import { currencySymbol } from "../lib/currencies";
+import { currencySymbol, CURRENCIES, localCurrencyName } from "../lib/currencies";
 import { uploadReceipt } from "../lib/storage";
-import { useT } from "../lib/i18n";
+import { useT, useLang } from "../lib/i18n";
 import { Icon } from "./Icon";
 
 export type { SplitMode };
@@ -28,7 +28,14 @@ export interface ExpenseDraft {
   allowEdits?: boolean;
   /** Ruta del recibo adjunto en Storage (si se adjuntó uno). */
   receiptPath?: string;
+  /** Fecha del gasto (YYYY-MM-DD). Vacía = hoy. */
+  date?: string;
+  /** Moneda del gasto (código ISO) cuando se edita (`currencyEditable`). */
+  currency?: string;
 }
+
+/** Hoy en la fecha LOCAL del teléfono (YYYY-MM-DD). */
+export const todayLocal = () => new Date().toLocaleDateString("en-CA");
 
 /** Initialize splitValues for a given mode, participant list, and total amount */
 function initSplitValues(
@@ -137,6 +144,8 @@ export function ExpenseForm({
   submitLabel,
   children,
   amountCurrency,
+  showDate = true,
+  currencyEditable = false,
 }: {
   group: Group;
   initial: ExpenseDraft;
@@ -148,11 +157,16 @@ export function ExpenseForm({
    *  (selector manual de moneda). Solo cambia símbolos/formato mostrados; la
    *  conversión real a la moneda del grupo ocurre al guardar. */
   amountCurrency?: string;
+  /** Mostrar el campo de fecha (no en recurrentes: tienen su fecha de inicio). */
+  showDate?: boolean;
+  /** Permite cambiar la moneda del gasto (al editar). Solo cambia la etiqueta:
+   *  el importe se queda tal cual, no se convierte. */
+  currencyEditable?: boolean;
 }) {
   const t = useT();
-  const currencyCode = amountCurrency || group.currency;
-  const sym = currencySymbol(currencyCode);
-  const [f, setF] = useState<ExpenseDraft>(initial);
+  const lang = useLang();
+  const [f, setF] = useState<ExpenseDraft>(() => ({ ...initial, date: initial.date || todayLocal() }));
+  const currencyCode = (currencyEditable && f.currency) || amountCurrency || group.currency;
   // Recibo adjunto (opcional) — para gastos manuales, por voz o texto. La foto
   // se sube a Storage al guardar y se guarda solo la ruta en el gasto.
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
@@ -171,6 +185,7 @@ export function ExpenseForm({
   const up = <K extends keyof ExpenseDraft>(k: K, v: ExpenseDraft[K]) =>
     setF((s) => ({ ...s, [k]: v }));
 
+  const sym = currencySymbol(currencyCode);
   const amt = Number(f.amount) || 0;
 
   // Toggle participant (for equal mode) or toggle+reinit for non-equal
@@ -325,6 +340,40 @@ export function ExpenseForm({
           <span className="text-muted text-sm">{sym}</span>
         </div>
       </div>
+
+      {/* Fecha (y moneda al editar) */}
+      {(showDate || currencyEditable) && (
+        <div className="flex gap-2">
+          {showDate && (
+            <div className="flex-1 min-w-0">
+              <label className="text-xs font-semibold text-muted">{t("form.date")}</label>
+              <input
+                type="date"
+                value={f.date || ""}
+                max={todayLocal()}
+                onChange={(e) => up("date", e.target.value || todayLocal())}
+                className="glass rounded-xl px-3 py-2 text-sm w-full mt-1"
+              />
+            </div>
+          )}
+          {currencyEditable && (
+            <div className="flex-1 min-w-0">
+              <label className="text-xs font-semibold text-muted">{t("form.currency")}</label>
+              <select
+                value={currencyCode}
+                onChange={(e) => up("currency", e.target.value)}
+                className="glass rounded-xl px-3 py-2 text-sm w-full min-w-0 mt-1"
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.symbol} {c.code} — {localCurrencyName(c.code, lang === "es" ? "es-ES" : "en-US")}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Category */}
       <div>
