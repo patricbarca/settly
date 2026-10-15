@@ -11,12 +11,14 @@ import { usePlan } from "../lib/plan";
 import { CURRENCIES, currencyOf, localCurrencyName, resolveToCode } from "../lib/currencies";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
+import { ImportExpensesModal } from "./ImportExpensesModal";
 import { Paywall } from "./Paywall";
 import { ConfirmModal } from "./ConfirmModal";
 
 const COMMON_CODES = ["EUR", "USD", "GBP", "AUD", "CAD", "CHF", "MXN", "BRL", "COP", "ARS", "JPY"];
 
 export function GroupSettings({ group, onClose }: { group: Group; onClose: () => void }) {
+  const [showImport, setShowImport] = useState(false);
   const t = useT();
   const lang = useLang();
   const locale = lang === "es" ? "es-ES" : "en-US";
@@ -365,6 +367,23 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
           {saved ? `✓ ${t("settings.saved")}` : t("common.save")}
         </button>
 
+        {/* Importar gastos (CSV de Splitwise): añade gastos, pagos y personas,
+            cada gasto en la moneda que trae el archivo. */}
+        <div className="glass rounded-2xl px-4 py-3 mt-4 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold">{t("import.cardTitle")}</div>
+            <div className="text-xs text-muted mt-0.5">{t("import.cardHint")}</div>
+          </div>
+          <button
+            onClick={() => setShowImport(true)}
+            className="glass-strong rounded-full px-4 py-2 text-sm font-semibold hover-lift inline-flex items-center gap-1.5 shrink-0"
+            style={{ color: "var(--teal)" }}
+          >
+            <Icon name="doc" size={14} />
+            {t("import.cardBtn")}
+          </button>
+        </div>
+
         {/* Zona de riesgo: eliminar (dueño) o salir (miembro) */}
         <div className="mt-6 pt-4" style={{ borderTop: "1px solid var(--line)" }}>
           {!confirmDanger ? (
@@ -401,6 +420,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
         </div>
       </div>
       {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
+      {showImport && <ImportExpensesModal group={group} onClose={() => setShowImport(false)} />}
       {pendingMode !== null && (
         <ConfirmModal
           danger={false}
