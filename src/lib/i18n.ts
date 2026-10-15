@@ -596,6 +596,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "form.missAmount": { es: "importe", en: "amount" },
   "form.missPay": { es: "lo que pagó cada uno no suma el total", en: "payments don't add up to the total" },
   "form.missSplit": { es: "reparto (elige quiénes o cuadra los importes)", en: "split (pick who, or make it add up)" },
+  "pay.offsetPending": { es: "Lo que debe {to} ({amt}) se descuenta cuando los gastos elegidos lleguen a {amt}.", en: "What {to} owes ({amt}) is deducted once the selected expenses reach {amt}." },
   "pay.expensesSubtotal": { es: "Gastos elegidos", en: "Selected expenses" },
   "pay.offsetLine": { es: "Menos lo que debe {to}", en: "Less what {to} owes" },
   "pay.selectedTotal": { es: "Total seleccionado", en: "Selected total" },

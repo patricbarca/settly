@@ -165,7 +165,10 @@ export function MarkPaidModal({
   }
 
   const pickedGross = Math.round(debts.filter((d) => selected.has(d.expenseId)).reduce((s, d) => s + amtFor(d.expenseId), 0) * 100) / 100;
-  const offsetApplied = offsets.length > 0 ? Math.min(offsetTotal, pickedGross) : 0;
+  // El descuento entra ENTERO solo cuando lo elegido lo cubre; si no, se paga lo
+  // elegido tal cual y el descuento queda pendiente (así nunca sale un total de 0).
+  const offsetApplied = offsets.length > 0 && pickedGross >= offsetTotal - 0.005 ? offsetTotal : 0;
+  const offsetPending = offsets.length > 0 && offsetApplied === 0;
   const pickedTotal = Math.round((pickedGross - offsetApplied) * 100) / 100;
 
   // Si el usuario cubre TODOS los gastos al 100%, es un pago total: registramos
@@ -446,6 +449,11 @@ export function MarkPaidModal({
                   </div>
                 ))}
               </div>
+            )}
+            {offsetPending && (
+              <p className="text-[11px] text-muted mt-1.5">
+                {t("pay.offsetPending", { amt: money(offsetTotal, group.currency), to: name(to) })}
+              </p>
             )}
             {offsetApplied > 0 && (
               <>
