@@ -13,7 +13,7 @@ export const HERO_COLORS: { id: string; a: string; b: string }[] = [
   { id: "slate", a: "#475569", b: "#0f172a" },
 ];
 
-export function heroColor(id?: string) {
+export function heroColor(id?: string | null) {
   return HERO_COLORS.find((c) => c.id === id);
 }
 

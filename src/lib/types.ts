@@ -285,11 +285,11 @@ export interface Group {
    *  cual (sin convertir) y en Saldos sale un bloque por moneda. */
   multiCurrency?: boolean;
   /** Color de la tarjeta del grupo (id de `HERO_COLORS`). Ausente = el degradado de siempre. */
-  heroColor?: string;
+  heroColor?: string | null;
   /** Foto de portada de la tarjeta del grupo (JPEG pequeño en data URL). Manda sobre `heroColor`. */
-  heroImage?: string;
+  heroImage?: string | null;
   /** Encuadre de la foto: punto de enfoque x/y en % (0-100) y zoom (1-3). */
-  heroImagePos?: { x: number; y: number; z: number };
+  heroImagePos?: { x: number; y: number; z: number } | null;
 }
 
 import type { IconName } from "../components/Icon";
