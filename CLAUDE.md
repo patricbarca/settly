@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### iOS 1.5 (2026-10-15)
+- La 1.4 fue **aprobada** → su train se cierra. `MARKETING_VERSION` 1.4 → **1.5** en los 4 `buildSettings` (App + ShareExtension), para que el próximo build de Codemagic no falle con 90062/90186.
+
 ### Formulario de gasto: aviso de lo que falta (2026-10-15)
 - `ExpenseForm`: el botón Guardar ya no queda apagado sin explicación. Al pulsarlo con datos incompletos sale un aviso coral "Falta completar: concepto · importe · …", se marca con borde coral cada campo que falta (concepto, importe, quién pagó si los pagos no suman, reparto) y se hace scroll al primero. Strings `form.miss*`. Aplica a crear y editar (no al editor por ítems del escaneo). `tsc` limpio; no probado en pantalla.
 
