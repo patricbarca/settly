@@ -141,6 +141,7 @@ function RecurringModal({ group, onClose }: { group: Group; onClose: () => void 
           onSave={handleSave}
           onCancel={onClose}
           submitLabel={t("recur.save")}
+          showDate={false}
         />
       </div>
     </Overlay>

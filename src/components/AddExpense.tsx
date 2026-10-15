@@ -19,7 +19,7 @@ import { uid, money } from "../lib/format";
 import { useT, useLang } from "../lib/i18n";
 import { usePlan, useAIRemaining, aiRemaining, consumeAI, FREE_AI_QUOTA, type AIKind } from "../lib/plan";
 import { Icon } from "./Icon";
-import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
+import { ExpenseForm, draftToExpenseFields, todayLocal, type ExpenseDraft } from "./ExpenseForm";
 import { ScanReceiptModal } from "./ScanReceiptModal";
 import { takeSharedImage } from "../lib/sharedImage";
 import { Paywall } from "./Paywall";
@@ -421,7 +421,7 @@ function sanitizePercents(
           participantIds: d.participantIds,
           splits,
           category: d.category,
-          date: new Date().toISOString().slice(0, 10),
+          date: d.date || todayLocal(),
           createdBy: group.meId,
           allowEdits: d.allowEdits ?? false,
           ...(d.receiptPath ? { receiptPath: d.receiptPath } : {}),
@@ -656,6 +656,7 @@ function sanitizePercents(
             onCancel={() => { setDraft(null); setExpenseType("one-time"); setAiSummary(null); setManualMode(false); setFx(null); setFxUpsell(null); setFxError(null); }}
             submitLabel={expenseType === "recurring" ? t("recur.save") : t("add.submit")}
             amountCurrency={manualMode || group.multiCurrency ? manualCurrency : undefined}
+            showDate={expenseType !== "recurring"}
           >
             {/* Recurring toggle — sits between category and save button */}
             <div className="border-t pt-3 mt-1" style={{ borderColor: "var(--line)" }}>

@@ -51,6 +51,11 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Fecha al añadir un gasto + editar fecha y moneda (2026-10-15)
+- **`ExpenseForm`:** campo **Fecha** (`type=date`, por defecto hoy en hora LOCAL vía `todayLocal()`, sin fechas futuras) al añadir (no en recurrentes: `showDate={false}`, tienen su fecha de inicio) y al editar. Al **editar** sale también **Moneda** (`currencyEditable`): cambia solo la etiqueta, el importe NO se convierte (para convertir sigue el botón "Convertir a X" del detalle). Elegir la moneda del grupo guarda `currency: null` (el servidor fusiona el patch); elegir otra activa `multiCurrency` en el grupo.
+- `ExpenseDraft` gana `date`/`currency`; `AddExpense` guarda `d.date`; `ExpenseList.saveEdit` parchea `date` y `currency`. Strings `form.date`/`form.currency`.
+- **✅ Verificado en navegador (invitado):** gasto manual con fecha 1-sep → editar a 15-ago y PEN → la fila muestra "15 ago · S/50". `tsc` limpio.
+
 ### "Marcar pagado": cada gasto con su importe COMPLETO y lo que se debe en sentido contrario como descuento (2026-10-15)
 - **Caso real (`BrisHome 🏙️`, modo Directo):** la lista mostraba **Rent $1505** cuando el Rent es $1600: se le había restado en silencio la mitad de **Gummies** ($190 que pagó Alex → Patric le debe $95). Confundía.
 - **Ahora (`MarkPaidModal`):** los gastos salen con su importe completo (Rent $1600, Bin bags $2,66) y debajo un bloque **"Restar lo que {acreedor} le debe a {deudor}"** con las líneas en sentido contrario (`expenseDebtsBetween(to, from)`, p. ej. "Gummies −$95"), activado por defecto y desmarcable. Total = elegidos − descuento, con el tope de siempre (`max`). El recorte por los más antiguos (fix del 14-oct) solo se aplica ya a lo que quede **sin explicar** (p. ej. pagos ligados a gastos borrados).

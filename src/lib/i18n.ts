@@ -384,6 +384,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "form.attachReceipt": { es: "Adjuntar recibo (opcional)", en: "Attach receipt (optional)" },
   "form.receiptAttached": { es: "Recibo adjunto", en: "Receipt attached" },
   "common.remove": { es: "Quitar", en: "Remove" },
+  "form.date": { es: "Fecha", en: "Date" },
+  "form.currency": { es: "Moneda", en: "Currency" },
   "form.category": { es: "Categoría", en: "Category" },
   "form.multiPay": { es: "Varios pagaron", en: "Multiple payers" },
   "form.singlePay": { es: "Solo uno pagó", en: "One payer" },
