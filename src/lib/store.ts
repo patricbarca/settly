@@ -189,7 +189,10 @@ if (typeof window !== "undefined") {
 supabase.auth.onAuthStateChange((_event, session) => {
   if (session) {
     currentUserId = session.user.id;
-    loadFromIndexedDB().then(() => {
+    // Antes de recargar del servidor, reenvía lo que quedó pendiente (outbox):
+    // si no, una escritura fallida se perdía al abrir la app (solo se reintentaba
+    // al volver de offline).
+    loadFromIndexedDB().then(syncOutbox).then(() => {
       if (currentUserId) loadGroups(currentUserId);
     });
     subscribeRealtime(session.user.id);
