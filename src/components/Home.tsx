@@ -1,3 +1,4 @@
+import { heroBackground, HeroCover } from "../lib/heroStyle";
 import { useState, useRef, useEffect } from "react";
 import { useGroups, useTrashedGroups, setActiveGroup, archiveGroup, recoverGroup, purgeGroup } from "../lib/store";
 import { useArchivedGroups } from "../lib/archivedGroups";
@@ -439,6 +440,9 @@ function GroupCard({
     onOpen();
   }
 
+  // Color o foto elegidos en Ajustes del grupo (misma apariencia que la tarjeta del grupo).
+  const cover = heroBackground(g);
+
   return (
     <div className="relative rounded-3xl overflow-hidden">
       {swipeX !== 0 && (
@@ -471,14 +475,16 @@ function GroupCard({
           /* Sin rounded propio: el borde izquierdo debe quedar RECTO y a ras del
              panel de Archive al deslizar. El contenedor externo (rounded-3xl +
              overflow-hidden) ya da la forma redondeada y recorta las esquinas. */
-          className="glass p-4 w-full text-left hover-lift flex items-center gap-3"
+          className={`${cover ? "relative isolate overflow-hidden text-white" : "glass"} p-4 w-full text-left hover-lift flex items-center gap-3`}
+          style={cover}
         >
+          {cover && <HeroCover g={g} />}
           <div className="shrink-0">
-            <SettleRing value={groupSettleScore(g)} size={44} stroke={5} color="#0FA3A3" track="var(--line)" />
+            <SettleRing value={groupSettleScore(g)} size={44} stroke={5} color="#0FA3A3" track={cover ? "rgba(255,255,255,.25)" : "var(--line)"} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-display text-lg font-bold truncate leading-relaxed">{g.name}</div>
-            <div className="text-xs text-muted mt-0.5">
+            <div className={`text-xs mt-0.5 ${cover ? "text-white/75" : "text-muted"}`}>
               {t("home.meta", { p: g.members.length, amt: money(total, g.currency), e: g.expenses.length })}
             </div>
             <div className="flex flex-wrap gap-1 mt-2">
@@ -512,10 +518,10 @@ function GroupCard({
             </div>
           </div>
           <div className="text-right shrink-0">
-            <div className="text-[11px] uppercase tracking-wide font-mono text-muted">{t("home.yourBalance")}</div>
+            <div className={`text-[11px] uppercase tracking-wide font-mono ${cover ? "text-white/75" : "text-muted"}`}>{t("home.yourBalance")}</div>
             <div
               className="font-mono font-bold"
-              style={{ color: ok ? "var(--muted)" : mine > 0 ? "#0A8B5E" : "#D14444" }}
+              style={{ color: cover ? (ok ? "rgba(255,255,255,.75)" : mine > 0 ? "#7CE3B5" : "#FFC2BB") : ok ? "var(--muted)" : mine > 0 ? "#0A8B5E" : "#D14444" }}
             >
               {ok ? t("bal.uptodate") : mine > 0 ? `+${money(mine, g.currency)}` : `−${money(-mine, g.currency)}`}
             </div>
