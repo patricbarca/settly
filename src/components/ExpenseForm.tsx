@@ -299,8 +299,27 @@ export function ExpenseForm({
     paymentValid &&
     splitValid;
 
+  // Qué falta, para avisar y marcar el campo en vez de dejar el botón apagado.
+  const [tried, setTried] = useState(false);
+  const missLabel = !String(f.label).trim();
+  const missAmount = !(amt > 0);
+  const missPay = !paymentValid;
+  const missSplit = f.participantIds.length === 0 || !splitValid;
+  const missing = [
+    missLabel && t("form.missLabel"),
+    missAmount && t("form.missAmount"),
+    missPay && t("form.missPay"),
+    missSplit && t("form.missSplit"),
+  ].filter(Boolean) as string[];
+  const bad = (on: boolean) => (tried && on ? { outline: "2px solid var(--coral)", outlineOffset: 2 } : undefined);
+
   async function save() {
-    if (!valid || savingReceipt) return;
+    if (savingReceipt) return;
+    if (!valid) {
+      setTried(true);
+      document.querySelector("[data-miss='1']")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     let receiptPath = f.receiptPath;
     if (receiptFile) {
       setSavingReceipt(true);
@@ -327,9 +346,11 @@ export function ExpenseForm({
           value={f.label}
           onChange={(e) => up("label", e.target.value)}
           placeholder={t("form.concept")}
+          data-miss={missLabel ? "1" : undefined}
+          style={bad(missLabel)}
           className="glass rounded-xl px-3 py-2.5 text-sm flex-1 min-w-0"
         />
-        <div className="glass rounded-xl px-3 py-2.5 flex items-center gap-1 w-28 shrink-0">
+        <div data-miss={!missLabel && missAmount ? "1" : undefined} style={bad(missAmount)} className="glass rounded-xl px-3 py-2.5 flex items-center gap-1 w-28 shrink-0">
           <input
             value={f.amount}
             onChange={(e) => changeAmount(decimalInput(e.target.value))}
@@ -396,7 +417,7 @@ export function ExpenseForm({
       </div>
 
       {/* Who paid */}
-      <div>
+      <div data-miss={!missLabel && !missAmount && missPay ? "1" : undefined} style={bad(missPay)} className="rounded-xl">
         <div className="flex items-center justify-between">
           <label className="text-xs font-semibold text-muted">{t("form.paid")}</label>
           <button
@@ -456,7 +477,7 @@ export function ExpenseForm({
       </div>
 
       {/* Split between */}
-      <div>
+      <div data-miss={!missLabel && !missAmount && !missPay && missSplit ? "1" : undefined} style={bad(missSplit)} className="rounded-xl">
         <div className="flex items-center justify-between">
           <label className="text-xs font-semibold text-muted">
             {t("form.between")}{" "}
@@ -610,10 +631,15 @@ export function ExpenseForm({
 
       {children}
 
+      {tried && missing.length > 0 && (
+        <div className="rounded-xl px-3 py-2 text-xs" style={{ background: "rgba(255,90,77,0.12)", color: "var(--coral)" }}>
+          ⚠️ {t("form.missTitle")} {missing.join(" · ")}
+        </div>
+      )}
       <div className="flex gap-2 pt-1">
         <button
           onClick={save}
-          disabled={!valid || savingReceipt}
+          disabled={savingReceipt}
           className="glass-strong rounded-full px-5 py-2.5 font-medium hover-lift disabled:opacity-50"
         >
           {savingReceipt ? t("scan.saving") : submitLabel ?? t("common.save")}
