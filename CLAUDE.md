@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### "Marcar pagado": el descuento solo entra cuando lo elegido lo cubre (2026-10-15)
+- Antes `min(descuento, elegido)` → elegir pocos gastos dejaba el total en $0. Ahora: si lo elegido < lo que te deben, se paga lo elegido tal cual y sale el aviso `pay.offsetPending` ("se descuenta cuando los gastos elegidos lleguen a X"); al llegar o superar, se resta **entero** (dos pagos, como antes). `tsc` limpio; no probado en pantalla.
+
 ### iOS 1.5 (2026-10-15)
 - La 1.4 fue **aprobada** → su train se cierra. `MARKETING_VERSION` 1.4 → **1.5** en los 4 `buildSettings` (App + ShareExtension), para que el próximo build de Codemagic no falle con 90062/90186.
 
