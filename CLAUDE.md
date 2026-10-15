@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### "Marcar pagado": el descuento es solo referencia (2026-10-15)
+- El bloque "Restar lo que X le debe a Y" tenía un check: desmarcarlo dejaba un total confuso. Ahora se aplica **siempre** y se muestra solo como **desglose**: "Gastos elegidos $X", "Menos lo que debe {acreedor} −$Y" y el total. Sin cambios en lo que se guarda (siguen siendo dos pagos). Strings `pay.expensesSubtotal/offsetLine`. `tsc` limpio.
+
 ### Compartir grupo: siempre la ventana propia (2026-10-15)
 - Antes el botón de compartir abría directamente el menú nativo de iOS (`navigator.share`) y la ventana `ShareLinkModal` solo salía como respaldo. Ahora `GroupView.share()` crea el link y **siempre** abre `ShareLinkModal` (link visible + **Copiar** + **Compartir**, que abre el menú del sistema desde su propio toque). `tsc` limpio.
 

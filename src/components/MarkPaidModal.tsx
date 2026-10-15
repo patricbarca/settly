@@ -102,7 +102,6 @@ export function MarkPaidModal({
     [direct, group.members, group.expenses, group.settlements, from, to]
   );
   const offsetTotal = Math.round(offsets.reduce((s, d) => s + d.amount, 0) * 100) / 100;
-  const [useOffsets, setUseOffsets] = useState(true);
   const debts = useMemo(() => {
     if (!direct) return [];
     const raw = expenseDebtsBetween(group.members, group.expenses, group.settlements ?? [], from, to);
@@ -166,7 +165,7 @@ export function MarkPaidModal({
   }
 
   const pickedGross = Math.round(debts.filter((d) => selected.has(d.expenseId)).reduce((s, d) => s + amtFor(d.expenseId), 0) * 100) / 100;
-  const offsetApplied = useOffsets && offsets.length > 0 ? Math.min(offsetTotal, pickedGross) : 0;
+  const offsetApplied = offsets.length > 0 ? Math.min(offsetTotal, pickedGross) : 0;
   const pickedTotal = Math.round((pickedGross - offsetApplied) * 100) / 100;
 
   // Si el usuario cubre TODOS los gastos al 100%, es un pago total: registramos
@@ -176,8 +175,7 @@ export function MarkPaidModal({
   const allFull =
     usingPicker &&
     debts.length > 0 &&
-    debts.every((d) => selected.has(d.expenseId) && amtFor(d.expenseId) >= d.amount - 0.005) &&
-    (useOffsets || offsets.length === 0);
+    debts.every((d) => selected.has(d.expenseId) && amtFor(d.expenseId) >= d.amount - 0.005);
 
   // Monto a registrar: la suma de los gastos elegidos, PERO nunca más de lo que
   // realmente le debes a esta persona (`max`). En modo Simplificado la deuda
@@ -436,27 +434,30 @@ export function MarkPaidModal({
             </div>
             {offsets.length > 0 && (
               <div className="glass rounded-2xl p-1.5 mt-2 max-h-56 overflow-y-auto">
-                <button
-                  onClick={() => setUseOffsets((v) => !v)}
-                  className="w-full flex items-center gap-2 px-2 pt-1.5 pb-1 text-left"
-                >
-                  <span
-                    className="h-5 w-5 rounded-full flex items-center justify-center shrink-0"
-                    style={useOffsets ? { background: "var(--teal)", color: "#fff" } : { border: "1.5px solid var(--line)" }}
-                  >
-                    {useOffsets && <Icon name="check" size={12} />}
-                  </span>
-                  <span className="text-xs font-semibold text-muted flex-1">{t("pay.offsetTitle", { to: name(to), from: name(from) })}</span>
-                </button>
+                <div className="px-2 pt-1.5 pb-1 text-xs font-semibold text-muted">
+                  {t("pay.offsetTitle", { to: name(to), from: name(from) })}
+                </div>
                 {offsets.map((o) => (
-                  <div key={o.expenseId} className="flex items-center justify-between px-2 py-1.5 text-sm" style={{ opacity: useOffsets ? 1 : 0.45 }}>
-                    <span className="truncate min-w-0 pl-7">{o.label}</span>
+                  <div key={o.expenseId} className="flex items-center justify-between px-2 py-1.5 text-sm">
+                    <span className="truncate min-w-0">{o.label}</span>
                     <span className="font-mono font-semibold shrink-0" style={{ color: "var(--coral)" }}>
                       −{money(o.amount, group.currency)}
                     </span>
                   </div>
                 ))}
               </div>
+            )}
+            {offsetApplied > 0 && (
+              <>
+                <div className="flex items-center justify-between mt-2 text-xs text-muted">
+                  <span>{t("pay.expensesSubtotal")}</span>
+                  <span className="font-mono">{money(pickedGross, group.currency)}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted">
+                  <span>{t("pay.offsetLine", { to: name(to) })}</span>
+                  <span className="font-mono" style={{ color: "var(--coral)" }}>−{money(offsetApplied, group.currency)}</span>
+                </div>
+              </>
             )}
             <div className="flex items-center justify-between mt-2 text-sm">
               <span className="text-muted">{t("pay.selectedTotal")}</span>
