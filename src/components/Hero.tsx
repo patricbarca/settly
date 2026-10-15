@@ -8,7 +8,7 @@ import { useGroupMoney } from "../lib/displayCurrency";
 import { SettleRing } from "./SettleRing";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
-import { heroBackground } from "../lib/heroStyle";
+import { heroBackground, HeroCover } from "../lib/heroStyle";
 
 export function Hero({ group, onShare, shareState }: { group: Group; onShare?: () => void; shareState?: "copied" | "error" }) {
   const t = useT();
@@ -28,6 +28,7 @@ export function Hero({ group, onShare, shareState }: { group: Group; onShare?: (
   const total = mainView(group).expenses.reduce((sum, exp) => sum + exp.amount, 0);
   return (
     <div className="hero anim-up" style={heroBackground(group)}>
+      <HeroCover g={group} />
       {!heroBackground(group) && (
         <>
           <span className="blob b1" />

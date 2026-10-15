@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { createElement, type CSSProperties } from "react";
 import type { Group } from "./types";
 
 /** Colores para la tarjeta del grupo. `default` = el degradado violeta de siempre. */
@@ -18,16 +18,33 @@ export function heroColor(id?: string) {
 }
 
 /** Estilo de fondo de la tarjeta; `undefined` = usar el CSS `.hero` por defecto. */
-export function heroBackground(g: Pick<Group, "heroColor" | "heroImage">): CSSProperties | undefined {
-  if (g.heroImage)
-    return {
-      backgroundImage: `linear-gradient(180deg, rgba(10,14,30,.55), rgba(10,14,30,.35) 45%, rgba(10,14,30,.7)), url(${g.heroImage})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    };
+export function heroBackground(g: Pick<Group, "heroColor" | "heroImage" | "heroImagePos">): CSSProperties | undefined {
+  if (g.heroImage) return { background: "#0D1B2A" };
   const c = heroColor(g.heroColor);
   if (!c || c.id === "default") return undefined;
   return {
     backgroundImage: `radial-gradient(120% 90% at 0% 0%, ${c.a}cc, transparent 60%), linear-gradient(150deg, ${c.a}, ${c.b})`,
   };
+}
+
+export const DEFAULT_POS = { x: 50, y: 50, z: 1 };
+
+/** Foto de portada encuadrada (va dentro de un `.hero`, detrás del contenido). */
+export function HeroCover({ g }: { g: Pick<Group, "heroImage" | "heroImagePos"> }) {
+  if (!g.heroImage) return null;
+  const p = g.heroImagePos ?? DEFAULT_POS;
+  const layer: CSSProperties = { position: "absolute", inset: 0, width: "100%", height: "100%", zIndex: -1, pointerEvents: "none" };
+  return createElement(
+    "span",
+    { "aria-hidden": true },
+    createElement("img", {
+      src: g.heroImage,
+      alt: "",
+      draggable: false,
+      style: { ...layer, objectFit: "cover", objectPosition: `${p.x}% ${p.y}%`, transform: `scale(${p.z})`, transformOrigin: `${p.x}% ${p.y}%` },
+    }),
+    createElement("span", {
+      style: { ...layer, background: "linear-gradient(180deg, rgba(10,14,30,.55), rgba(10,14,30,.3) 45%, rgba(10,14,30,.7))" },
+    })
+  );
 }

@@ -288,6 +288,8 @@ export interface Group {
   heroColor?: string;
   /** Foto de portada de la tarjeta del grupo (JPEG pequeño en data URL). Manda sobre `heroColor`. */
   heroImage?: string;
+  /** Encuadre de la foto: punto de enfoque x/y en % (0-100) y zoom (1-3). */
+  heroImagePos?: { x: number; y: number; z: number };
 }
 
 import type { IconName } from "../components/Icon";
