@@ -221,8 +221,14 @@ export function MarkPaidModal({
     // quita la diferencia de las partes MÁS ANTIGUAS, así el desglose guardado
     // cuadra con el dinero real. "Cubierto entero" se decide antes del ajuste
     // (lo descontado también lo salda).
+    // Con descuento: se registran DOS pagos que se compensan — el deudor salda
+    // sus gastos por el importe bruto y el acreedor salda los suyos (el
+    // descuento). Así ambos lados quedan "pagados" y el dinero neto que cambia
+    // de manos sigue siendo `paidAmt`.
+    const offsetAmt = usingPicker ? Math.round(offsetApplied * 100) / 100 : 0;
+    const grossAmt = Math.round((paidAmt + offsetAmt) * 100) / 100;
     const fullIds = picks.filter((p) => p.amount >= (debtById[p.expenseId]?.amount ?? 0) - 0.005).map((p) => p.expenseId);
-    let over = Math.round((picks.reduce((s0, p) => s0 + p.amount, 0) - paidAmt) * 100) / 100;
+    let over = Math.round((picks.reduce((s0, p) => s0 + p.amount, 0) - grossAmt) * 100) / 100;
     if (over > 0.005) {
       const dateOf = (id: string) => group.expenses.find((e) => e.id === id)?.date ?? "";
       for (const p of [...picks].sort((a, b) => dateOf(a.expenseId).localeCompare(dateOf(b.expenseId)))) {
@@ -240,12 +246,39 @@ export function MarkPaidModal({
     // El saldo que se limpia sigue siendo el del deudor real (`from` de cada
     // settlement); `settledBy` deja constancia de quién puso el dinero.
     const coveredList = coverable.filter((c) => covered.has(c.from));
+    const offsetPicks: { expenseId: string; amount: number }[] = [];
+    if (offsetAmt > 0.005) {
+      let left = offsetAmt;
+      const dateOf = (id: string) => group.expenses.find((e) => e.id === id)?.date ?? "";
+      for (const o of [...offsets].sort((a, b) => dateOf(a.expenseId).localeCompare(dateOf(b.expenseId)))) {
+        if (left <= 0.005) break;
+        const a = Math.round(Math.min(o.amount, left) * 100) / 100;
+        offsetPicks.push({ expenseId: o.expenseId, amount: a });
+        left = Math.round((left - a) * 100) / 100;
+      }
+    }
+    const offsetFull = offsetPicks
+      .filter((p) => p.amount >= (offsets.find((o) => o.expenseId === p.expenseId)?.amount ?? 0) - 0.005)
+      .map((p) => p.expenseId);
     const newSettlements: Settlement[] = [
+      ...(offsetAmt > 0.005
+        ? [{
+            id: uid(),
+            from: to,
+            to: from,
+            amount: offsetAmt,
+            date: today,
+            status,
+            ...(offsetFull.length ? { expenseIds: offsetFull } : {}),
+            expensePayments: offsetPicks,
+            currency: resolveToCode(group.currency),
+          } as Settlement]
+        : []),
       {
         id: uid(),
         from,
         to,
-        amount: paidAmt,
+        amount: grossAmt,
         date: today,
         // Deudor: queda PENDIENTE hasta que el acreedor confirme. Acreedor
         // (confirmReceipt): ya CONFIRMADO. Puede ser un pago PARCIAL.
@@ -271,7 +304,7 @@ export function MarkPaidModal({
       })),
     ];
     // Una notificación por cada deudor saldado (el mío + los cubiertos).
-    const notifs = newSettlements.map((s) =>
+    const notifs = newSettlements.filter((s) => s.to === to).map((s) =>
       makeNotif({
         type: "payment_made",
         actorId: s.from,
