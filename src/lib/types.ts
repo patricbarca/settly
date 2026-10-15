@@ -284,6 +284,10 @@ export interface Group {
   /** Saldos separados por moneda: los gastos en otra moneda se guardan tal
    *  cual (sin convertir) y en Saldos sale un bloque por moneda. */
   multiCurrency?: boolean;
+  /** Color de la tarjeta del grupo (id de `HERO_COLORS`). Ausente = el degradado de siempre. */
+  heroColor?: string;
+  /** Foto de portada de la tarjeta del grupo (JPEG pequeño en data URL). Manda sobre `heroColor`. */
+  heroImage?: string;
 }
 
 import type { IconName } from "../components/Icon";

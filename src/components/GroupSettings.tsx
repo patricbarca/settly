@@ -1,3 +1,5 @@
+import { HERO_COLORS, heroBackground } from "../lib/heroStyle";
+import { fileToCoverDataUrl } from "../lib/image";
 import { useState } from "react";
 import type { Group, GroupKind } from "../lib/types";
 import { updateGroup, deleteGroup, leaveGroup } from "../lib/store";
@@ -39,6 +41,9 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
   }
   const [secondaryCurrency, setSecondaryCurrency] = useState(group.secondaryCurrency ?? "");
   const [multi, setMulti] = useState(!!group.multiCurrency);
+  const [heroCol, setHeroCol] = useState(group.heroColor ?? "default");
+  const [heroImg, setHeroImg] = useState(group.heroImage ?? "");
+  const [imgErr, setImgErr] = useState(false);
   const [displayCurrency, setDisplayCurrency] = useState(group.displayCurrency ?? group.currency);
   const [saved, setSaved] = useState(false);
   const [confirmDanger, setConfirmDanger] = useState(false);
@@ -75,7 +80,9 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
     simplify !== (group.simplifyDebts !== false) ||
     secondaryCurrency !== (group.secondaryCurrency ?? "") ||
     displayCurrency !== (group.displayCurrency ?? group.currency) ||
-    multi !== !!group.multiCurrency;
+    multi !== !!group.multiCurrency ||
+    heroCol !== (group.heroColor ?? "default") ||
+    heroImg !== (group.heroImage ?? "");
 
   function save() {
     const n = name.trim();
@@ -92,6 +99,8 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
       secondaryCurrency: sc,
       displayCurrency: dc,
       multiCurrency: multi || undefined,
+      heroColor: heroCol === "default" ? undefined : heroCol,
+      heroImage: heroImg || undefined,
     }));
     setSaved(true);
     setTimeout(() => { setSaved(false); onClose(); }, 800);
@@ -136,6 +145,55 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
             onChange={(e) => setName(e.target.value)}
             className="glass rounded-xl px-3 py-2.5 text-sm w-full mt-1"
           />
+        </div>
+
+        {/* Apariencia: color o foto de la tarjeta del grupo */}
+        <div className="mb-4">
+          <label className="text-xs font-semibold text-muted">{t("settings.look")}</label>
+          <div
+            className="hero mt-1 !p-0 h-20 flex items-end"
+            style={heroBackground({ heroColor: heroCol, heroImage: heroImg || undefined })}
+          >
+            <span className="relative z-10 text-white font-display font-extrabold text-lg truncate px-4 pb-2">{name || group.name}</span>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-2">
+            {HERO_COLORS.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => { setHeroCol(c.id); setHeroImg(""); }}
+                aria-label={c.id}
+                className="h-8 w-8 rounded-full"
+                style={{
+                  background: `linear-gradient(150deg, ${c.a}, ${c.b})`,
+                  outline: !heroImg && heroCol === c.id ? "2px solid var(--ink)" : "none",
+                  outlineOffset: 2,
+                }}
+              />
+            ))}
+          </div>
+          <div className="flex gap-2 mt-2">
+            <label className="glass rounded-xl px-3 py-2 text-xs font-semibold cursor-pointer">
+              {heroImg ? t("settings.lookChange") : t("settings.lookPhoto")}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!f) return;
+                  try { setHeroImg(await fileToCoverDataUrl(f)); setImgErr(false); } catch { setImgErr(true); }
+                }}
+              />
+            </label>
+            {heroImg && (
+              <button type="button" onClick={() => setHeroImg("")} className="glass rounded-xl px-3 py-2 text-xs font-semibold text-muted">
+                {t("settings.lookRemove")}
+              </button>
+            )}
+          </div>
+          {imgErr && <div className="text-xs mt-1" style={{ color: "var(--coral)" }}>{t("settings.lookErr")}</div>}
         </div>
 
         {/* Currency */}
