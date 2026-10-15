@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Formulario de gasto: aviso de lo que falta (2026-10-15)
+- `ExpenseForm`: el botón Guardar ya no queda apagado sin explicación. Al pulsarlo con datos incompletos sale un aviso coral "Falta completar: concepto · importe · …", se marca con borde coral cada campo que falta (concepto, importe, quién pagó si los pagos no suman, reparto) y se hace scroll al primero. Strings `form.miss*`. Aplica a crear y editar (no al editor por ítems del escaneo). `tsc` limpio; no probado en pantalla.
+
 ### "Marcar pagado": vuelve el NETO automático (2026-10-15)
 - Tras probar "solo informativo" (#273, revertido), el usuario prefirió: en modo Directo el total es el **neto**, el descuento de lo que el acreedor te debe se aplica **solo al elegir gastos** (`min(descuento, elegido)`) y se ve el desglose "Gastos elegidos / Menos lo que debe X / Total". Se guardan dos pagos (bruto + inverso), como en #269/#272.
 
