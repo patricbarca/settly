@@ -102,9 +102,10 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
       secondaryCurrency: sc,
       displayCurrency: dc,
       multiCurrency: multi || undefined,
-      heroColor: heroCol === "default" ? undefined : heroCol,
-      heroImage: heroImg || undefined,
-      heroImagePos: heroImg ? heroPos : undefined,
+      // null (no undefined) para que el servidor sepa que se quitó a propósito.
+      heroColor: heroCol === "default" ? null : heroCol,
+      heroImage: heroImg || null,
+      heroImagePos: heroImg ? heroPos : null,
     }));
     setSaved(true);
     setTimeout(() => { setSaved(false); onClose(); }, 800);
