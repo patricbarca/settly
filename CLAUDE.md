@@ -51,6 +51,11 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Descuento al pagar = dos pagos que se compensan (Gummies queda pagado) (2026-10-15)
+- **Antes:** con el descuento ("Restar lo que X le debe a Y") se guardaba UN pago por el neto ($1507,66) y Gummies seguía apareciendo como deuda pendiente en sentido contrario.
+- **Ahora (`MarkPaidModal.confirm`):** si hay descuento se registran **dos pagos**: deudor→acreedor por el **bruto** (Rent $1600 + Bin bags $2,66 = $1602,66, cubriéndolos enteros) y acreedor→deudor por el **descuento** (Gummies $95, `expenseIds`/`expensePayments`). El neto sigue siendo $1507,66; los dos lados quedan marcados como pagados. Solo el pago principal genera notificación.
+- **Datos corregidos (`BrisHome 🏙️`):** el pago `8d91sae` (Alex→Patric) pasa de $1507,66 a $1602,66 cubriendo Rent $1600 + Bin bags $2,66, y se añade `offgum1` (Patric→Alex, $95, Gummies `8vc8w5x`, confirmado). Saldo neto sin cambios. `tsc` limpio; **no probado en pantalla**.
+
 ### Fecha al añadir un gasto + editar fecha y moneda (2026-10-15)
 - **`ExpenseForm`:** campo **Fecha** (`type=date`, por defecto hoy en hora LOCAL vía `todayLocal()`, sin fechas futuras) al añadir (no en recurrentes: `showDate={false}`, tienen su fecha de inicio) y al editar. Al **editar** sale también **Moneda** (`currencyEditable`): cambia solo la etiqueta, el importe NO se convierte (para convertir sigue el botón "Convertir a X" del detalle). Elegir la moneda del grupo guarda `currency: null` (el servidor fusiona el patch); elegir otra activa `multiCurrency` en el grupo.
 - `ExpenseDraft` gana `date`/`currency`; `AddExpense` guarda `d.date`; `ExpenseList.saveEdit` parchea `date` y `currency`. Strings `form.date`/`form.currency`.
