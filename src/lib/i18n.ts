@@ -85,7 +85,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "group.copied": { es: "¡Copiado!", en: "Copied!" },
   "group.inviteError": { es: "Error al crear link", en: "Error creating link" },
   "import.cardTitle": { es: "Importar gastos", en: "Import expenses" },
-  "import.cardHint": { es: "Trae tus gastos de Splitwise (archivo CSV).", en: "Bring your expenses from Splitwise (CSV file)." },
+  "import.cardHint": { es: "Desde Splitwise (CSV): gastos, pagos y personas, cada gasto en su moneda.", en: "From Splitwise (CSV): expenses, payments and people, each expense in its own currency." },
   "import.cardBtn": { es: "Importar", en: "Import" },
   "import.title": { es: "Importar gastos de Splitwise", en: "Import from Splitwise" },
   "import.intro": { es: "Sube el CSV que exporta Splitwise. Se importan los gastos, quién pagó, cómo se repartieron y los pagos entre vosotros, cada uno en su moneda.", en: "Upload the CSV that Splitwise exports. Expenses, who paid, how they were split and the payments between you are imported, each in its own currency." },
