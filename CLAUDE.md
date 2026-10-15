@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Compartir grupo: siempre la ventana propia (2026-10-15)
+- Antes el botón de compartir abría directamente el menú nativo de iOS (`navigator.share`) y la ventana `ShareLinkModal` solo salía como respaldo. Ahora `GroupView.share()` crea el link y **siempre** abre `ShareLinkModal` (link visible + **Copiar** + **Compartir**, que abre el menú del sistema desde su propio toque). `tsc` limpio.
+
 ### Fix: hojas inferiores cortadas sin poder hacer scroll (2026-10-15)
 - **Reporte:** en "Marcar pagado" con muchos gastos y descuentos (grupo AlePat) la hoja quedaba cortada y no se podía bajar. `.sheet-overlay > *` (móvil) tenía `max-height` pero **no** `overflow-y`. **Fix (`index.css`):** `overflow-y: auto` + `overscroll-behavior: contain` en todas las hojas (el arrastre para cerrar ya contaba con `scrollTop`). En `MarkPaidModal` además `max-h-[90dvh] overflow-y-auto` (escritorio) y el bloque de descuentos con `max-h-56` y scroll propio, como la lista de gastos. `tsc` limpio; **no probado en iPhone**.
 

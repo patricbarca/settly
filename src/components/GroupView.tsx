@@ -74,31 +74,9 @@ export function GroupView({ group }: { group: Group }) {
       setTimeout(() => setInviteError(false), 2500);
       return;
     }
-    // Preferimos el share sheet nativo con el NOMBRE del grupo en el mensaje
-    // (muchos destinos ignoran `title`, por eso va en `text`). En móvil abre el
-    // selector de apps; el usuario ve "Únete a mi grupo «X»…".
-    const shareText = t("share.inviteText", { name: group.name });
-    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title: group.name, text: shareText, url: link });
-        return;
-      } catch (e) {
-        // Cancelado por el usuario → no hacemos nada.
-        if ((e as Error)?.name === "AbortError") return;
-        // iOS pierde el "user gesture" tras el await de crear el link →
-        // NotAllowedError. Caemos al modal, cuyo botón corre en su propio gesto.
-        setShareLink(link);
-        return;
-      }
-    }
-    // Sin Web Share (escritorio): copia el enlace; si falla, abre el modal.
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch {
-      setShareLink(link);
-    }
+    // Siempre la ventana propia (link visible + Copiar + Compartir): el menú
+    // de iOS solo se abre si la persona toca "Compartir" dentro de ella.
+    setShareLink(link);
   }
 
   const TABS: { id: Tab; label: string }[] = [
