@@ -810,6 +810,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "settings.lookPhoto": { es: "Subir foto", en: "Upload photo" },
   "settings.lookChange": { es: "Cambiar foto", en: "Change photo" },
   "settings.lookRemove": { es: "Quitar foto", en: "Remove photo" },
+  "settings.lookZoom": { es: "Zoom", en: "Zoom" },
+  "settings.lookDragHint": { es: "Arrastra la foto para encuadrarla.", en: "Drag the photo to frame it." },
   "settings.lookErr": { es: "No se pudo leer la imagen", en: "Couldn't read the image" },
   "settings.mainCurrency": { es: "Moneda del grupo", en: "Group currency" },
   "settings.mainCurrencyHint": { es: "En la que se llevan las cuentas y se paga.", en: "The one the accounts are kept and paid in." },

@@ -1,6 +1,6 @@
-import { HERO_COLORS, heroBackground } from "../lib/heroStyle";
+import { HERO_COLORS, heroBackground, HeroCover, DEFAULT_POS } from "../lib/heroStyle";
 import { fileToCoverDataUrl } from "../lib/image";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Group, GroupKind } from "../lib/types";
 import { updateGroup, deleteGroup, leaveGroup } from "../lib/store";
 import { useUser } from "../lib/auth";
@@ -43,6 +43,8 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
   const [multi, setMulti] = useState(!!group.multiCurrency);
   const [heroCol, setHeroCol] = useState(group.heroColor ?? "default");
   const [heroImg, setHeroImg] = useState(group.heroImage ?? "");
+  const [heroPos, setHeroPos] = useState(group.heroImagePos ?? DEFAULT_POS);
+  const drag = useRef<{ x: number; y: number; px: number; py: number; w: number; h: number } | null>(null);
   const [imgErr, setImgErr] = useState(false);
   const [displayCurrency, setDisplayCurrency] = useState(group.displayCurrency ?? group.currency);
   const [saved, setSaved] = useState(false);
@@ -82,7 +84,8 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
     displayCurrency !== (group.displayCurrency ?? group.currency) ||
     multi !== !!group.multiCurrency ||
     heroCol !== (group.heroColor ?? "default") ||
-    heroImg !== (group.heroImage ?? "");
+    heroImg !== (group.heroImage ?? "") ||
+    JSON.stringify(heroPos) !== JSON.stringify(group.heroImagePos ?? DEFAULT_POS);
 
   function save() {
     const n = name.trim();
@@ -101,6 +104,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
       multiCurrency: multi || undefined,
       heroColor: heroCol === "default" ? undefined : heroCol,
       heroImage: heroImg || undefined,
+      heroImagePos: heroImg ? heroPos : undefined,
     }));
     setSaved(true);
     setTimeout(() => { setSaved(false); onClose(); }, 800);
@@ -151,11 +155,43 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
         <div className="mb-4">
           <label className="text-xs font-semibold text-muted">{t("settings.look")}</label>
           <div
-            className="hero mt-1 !p-0 h-20 flex items-end"
-            style={heroBackground({ heroColor: heroCol, heroImage: heroImg || undefined })}
+            className="hero mt-1 !p-0 h-28 flex items-end"
+            style={{ ...heroBackground({ heroColor: heroCol, heroImage: heroImg || undefined }), touchAction: heroImg ? "none" : undefined, cursor: heroImg ? "grab" : undefined }}
+            onPointerDown={(e) => {
+              if (!heroImg) return;
+              const r = e.currentTarget.getBoundingClientRect();
+              drag.current = { x: e.clientX, y: e.clientY, px: heroPos.x, py: heroPos.y, w: r.width, h: r.height };
+              e.currentTarget.setPointerCapture(e.pointerId);
+            }}
+            onPointerMove={(e) => {
+              const d = drag.current;
+              if (!d) return;
+              // Arrastrar a la derecha muestra más de la izquierda → el foco baja.
+              const k = 100 / heroPos.z;
+              const clamp = (v: number) => Math.max(0, Math.min(100, v));
+              setHeroPos((p) => ({ ...p, x: clamp(d.px - ((e.clientX - d.x) / d.w) * k), y: clamp(d.py - ((e.clientY - d.y) / d.h) * k) }));
+            }}
+            onPointerUp={() => { drag.current = null; }}
+            onPointerCancel={() => { drag.current = null; }}
           >
+            <HeroCover g={{ heroImage: heroImg || undefined, heroImagePos: heroPos }} />
             <span className="relative z-10 text-white font-display font-extrabold text-lg truncate px-4 pb-2">{name || group.name}</span>
           </div>
+          {heroImg && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-[11px] text-muted shrink-0">{t("settings.lookZoom")}</span>
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.05}
+                value={heroPos.z}
+                onChange={(e) => setHeroPos((p) => ({ ...p, z: Number(e.target.value) }))}
+                className="flex-1 min-w-0"
+              />
+            </div>
+          )}
+          {heroImg && <div className="text-[11px] text-muted mt-1">{t("settings.lookDragHint")}</div>}
           <div className="flex flex-wrap gap-2 mt-2">
             {HERO_COLORS.map((c) => (
               <button
@@ -183,7 +219,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
                   const f = e.target.files?.[0];
                   e.target.value = "";
                   if (!f) return;
-                  try { setHeroImg(await fileToCoverDataUrl(f)); setImgErr(false); } catch { setImgErr(true); }
+                  try { setHeroImg(await fileToCoverDataUrl(f)); setHeroPos(DEFAULT_POS); setImgErr(false); } catch { setImgErr(true); }
                 }}
               />
             </label>
