@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Fix: hojas inferiores cortadas sin poder hacer scroll (2026-10-15)
+- **Reporte:** en "Marcar pagado" con muchos gastos y descuentos (grupo AlePat) la hoja quedaba cortada y no se podía bajar. `.sheet-overlay > *` (móvil) tenía `max-height` pero **no** `overflow-y`. **Fix (`index.css`):** `overflow-y: auto` + `overscroll-behavior: contain` en todas las hojas (el arrastre para cerrar ya contaba con `scrollTop`). En `MarkPaidModal` además `max-h-[90dvh] overflow-y-auto` (escritorio) y el bloque de descuentos con `max-h-56` y scroll propio, como la lista de gastos. `tsc` limpio; **no probado en iPhone**.
+
 ### Descuento al pagar = dos pagos que se compensan (Gummies queda pagado) (2026-10-15)
 - **Antes:** con el descuento ("Restar lo que X le debe a Y") se guardaba UN pago por el neto ($1507,66) y Gummies seguía apareciendo como deuda pendiente en sentido contrario.
 - **Ahora (`MarkPaidModal.confirm`):** si hay descuento se registran **dos pagos**: deudor→acreedor por el **bruto** (Rent $1600 + Bin bags $2,66 = $1602,66, cubriéndolos enteros) y acreedor→deudor por el **descuento** (Gummies $95, `expenseIds`/`expensePayments`). El neto sigue siendo $1507,66; los dos lados quedan marcados como pagados. Solo el pago principal genera notificación.

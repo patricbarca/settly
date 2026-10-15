@@ -336,7 +336,7 @@ export function MarkPaidModal({
 
   return (
     <Overlay onClose={onClose}>
-      <div className="glass-strong rounded-3xl w-full max-w-sm p-6 anim-pop" onClick={(e) => e.stopPropagation()}>
+      <div className="glass-strong rounded-3xl w-full max-w-sm p-6 anim-pop max-h-[90dvh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <h3 className="font-display text-xl font-bold mb-1">{t("pay.markTitle")}</h3>
         <p className="text-sm text-muted mb-4">
           {confirmReceipt
@@ -435,7 +435,7 @@ export function MarkPaidModal({
               })}
             </div>
             {offsets.length > 0 && (
-              <div className="glass rounded-2xl p-1.5 mt-2">
+              <div className="glass rounded-2xl p-1.5 mt-2 max-h-56 overflow-y-auto">
                 <button
                   onClick={() => setUseOffsets((v) => !v)}
                   className="w-full flex items-center gap-2 px-2 pt-1.5 pb-1 text-left"
