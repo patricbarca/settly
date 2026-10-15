@@ -165,7 +165,10 @@ export function MarkPaidModal({
   }
 
   const pickedGross = Math.round(debts.filter((d) => selected.has(d.expenseId)).reduce((s, d) => s + amtFor(d.expenseId), 0) * 100) / 100;
-  const offsetApplied = offsets.length > 0 ? Math.min(offsetTotal, pickedGross) : 0;
+  // Lo que se debe en sentido contrario es solo informativo: no se resta.
+  const offsetApplied = 0;
+  // Tope al elegir gastos: lo que debes por gastos (bruto), sin restar lo que te deben.
+  const payCap = Math.round((max + offsetTotal) * 100) / 100;
   const pickedTotal = Math.round((pickedGross - offsetApplied) * 100) / 100;
 
   // Si el usuario cubre TODOS los gastos al 100%, es un pago total: registramos
@@ -184,13 +187,13 @@ export function MarkPaidModal({
   // registraría un pago de más. Si no hay gastos (caso borde) se usa el monto
   // escrito a mano.
   const value = usingPicker
-    ? (allFull ? max : Math.min(pickedTotal, max))
+    ? (allFull ? payCap : Math.min(pickedTotal, payCap))
     : Math.min(Math.max(0, Number(amt) || 0), max);
   const valid = value > 0.005;
   const remaining = Math.round((max - value) * 100) / 100;
   // La selección supera lo adeudado (típico en Simplificado): se registrará
   // solo `max`, y lo avisamos para que el usuario no se confunda.
-  const capped = usingPicker && pickedTotal > max + 0.005;
+  const capped = usingPicker && pickedTotal > payCap + 0.005;
 
   function onFile(e: ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -440,24 +443,12 @@ export function MarkPaidModal({
                 {offsets.map((o) => (
                   <div key={o.expenseId} className="flex items-center justify-between px-2 py-1.5 text-sm">
                     <span className="truncate min-w-0">{o.label}</span>
-                    <span className="font-mono font-semibold shrink-0" style={{ color: "var(--coral)" }}>
-                      −{money(o.amount, group.currency)}
+                    <span className="font-mono font-semibold shrink-0 text-muted">
+                      {money(o.amount, group.currency)}
                     </span>
                   </div>
                 ))}
               </div>
-            )}
-            {offsetApplied > 0 && (
-              <>
-                <div className="flex items-center justify-between mt-2 text-xs text-muted">
-                  <span>{t("pay.expensesSubtotal")}</span>
-                  <span className="font-mono">{money(pickedGross, group.currency)}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs text-muted">
-                  <span>{t("pay.offsetLine", { to: name(to) })}</span>
-                  <span className="font-mono" style={{ color: "var(--coral)" }}>−{money(offsetApplied, group.currency)}</span>
-                </div>
-              </>
             )}
             <div className="flex items-center justify-between mt-2 text-sm">
               <span className="text-muted">{t("pay.selectedTotal")}</span>
