@@ -33,6 +33,30 @@ export function fileToAvatarDataUrl(file: File, size = 256): Promise<string> {
   });
 }
 
+// Portada del grupo: recorte centrado 2:1, 720x360, JPEG ~0.7 (~30-50 KB).
+// Va dentro del JSON del grupo (se sincroniza a todos), así que debe ser pequeña.
+export function fileToCoverDataUrl(file: File, w = 720, h = 360): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const ratio = w / h;
+      let sw = img.width, sh = img.width / ratio;
+      if (sh > img.height) { sh = img.height; sw = img.height * ratio; }
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("no_ctx"));
+      ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, 0, 0, w, h);
+      resolve(canvas.toDataURL("image/jpeg", 0.7));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("img_error")); };
+    img.src = url;
+  });
+}
+
 // Redimensiona y comprime una foto de ticket a un JPEG razonable para enviar a
 // la IA de visión (lado máximo ~1600px). Evita subir fotos de varios MB que
 // revientan el límite de la Edge Function, y reduce el coste en tokens.

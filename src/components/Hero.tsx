@@ -8,6 +8,7 @@ import { useGroupMoney } from "../lib/displayCurrency";
 import { SettleRing } from "./SettleRing";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
+import { heroBackground } from "../lib/heroStyle";
 
 export function Hero({ group, onShare, shareState }: { group: Group; onShare?: () => void; shareState?: "copied" | "error" }) {
   const t = useT();
@@ -26,10 +27,14 @@ export function Hero({ group, onShare, shareState }: { group: Group; onShare?: (
     .map((v) => ({ code: v.currency, mine: settleOf(v).net[group.meId] || 0 }));
   const total = mainView(group).expenses.reduce((sum, exp) => sum + exp.amount, 0);
   return (
-    <div className="hero anim-up">
-      <span className="blob b1" />
-      <span className="blob b2" />
-      <span className="blob b3" />
+    <div className="hero anim-up" style={heroBackground(group)}>
+      {!heroBackground(group) && (
+        <>
+          <span className="blob b1" />
+          <span className="blob b2" />
+          <span className="blob b3" />
+        </>
+      )}
       <div className="relative z-10 flex items-center justify-between gap-3">
         <div className="min-w-0">
           <div className="text-white/70 text-[11px] uppercase tracking-widest font-mono mb-1">{t("hero.groupLabel")}</div>
