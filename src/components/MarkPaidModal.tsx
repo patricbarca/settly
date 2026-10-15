@@ -94,10 +94,21 @@ export function MarkPaidModal({
   // no se descuenta de ningún gasto vivo. Se recorta el exceso empezando por los
   // gastos MÁS ANTIGUOS (lo ya pagado suele ser lo viejo). Sin esto, elegir un
   // solo gasto llenaba el total entero (Rent $1600 con una deuda real de $1202).
+  // Gastos en sentido contrario (lo que `to` le debe a `from`): se muestran como
+  // líneas a RESTAR, así cada gasto conserva su importe completo (Rent $1600 −
+  // lo que yo le debía a Alex) en vez de verse ya descontado ($1505).
+  const offsets = useMemo(
+    () => (direct ? expenseDebtsBetween(group.members, group.expenses, group.settlements ?? [], to, from) : []),
+    [direct, group.members, group.expenses, group.settlements, from, to]
+  );
+  const offsetTotal = Math.round(offsets.reduce((s, d) => s + d.amount, 0) * 100) / 100;
+  const [useOffsets, setUseOffsets] = useState(true);
   const debts = useMemo(() => {
     if (!direct) return [];
     const raw = expenseDebtsBetween(group.members, group.expenses, group.settlements ?? [], from, to);
-    let excess = Math.round((raw.reduce((s, d) => s + d.amount, 0) - max) * 100) / 100;
+    // Lo que `to` le debe a `from` por otros gastos se muestra aparte como
+    // descuento (`offsets`); solo se recorta lo que quede sin explicar.
+    let excess = Math.round((raw.reduce((s, d) => s + d.amount, 0) - offsetTotal - max) * 100) / 100;
     if (excess <= 0.005) return raw;
     const dateOf = (id: string) => group.expenses.find((e) => e.id === id)?.date ?? "";
     const oldestFirst = [...raw].sort((a, b) => dateOf(a.expenseId).localeCompare(dateOf(b.expenseId)));
@@ -111,7 +122,7 @@ export function MarkPaidModal({
     return raw
       .map((d) => ({ ...d, amount: Math.round((d.amount - (cut[d.expenseId] ?? 0)) * 100) / 100 }))
       .filter((d) => d.amount > 0.005);
-  }, [direct, group.members, group.expenses, group.settlements, from, to, max]);
+  }, [direct, group.members, group.expenses, group.settlements, from, to, max, offsetTotal]);
   // Preselección (solo Directo): todo lo que compone la deuda con esta persona.
   const [selected, setSelected] = useState<Set<string>>(() => new Set(debts.map((d) => d.expenseId)));
   const usingPicker = direct && debts.length > 0;
@@ -154,7 +165,9 @@ export function MarkPaidModal({
     });
   }
 
-  const pickedTotal = Math.round(debts.filter((d) => selected.has(d.expenseId)).reduce((s, d) => s + amtFor(d.expenseId), 0) * 100) / 100;
+  const pickedGross = Math.round(debts.filter((d) => selected.has(d.expenseId)).reduce((s, d) => s + amtFor(d.expenseId), 0) * 100) / 100;
+  const offsetApplied = useOffsets && offsets.length > 0 ? Math.min(offsetTotal, pickedGross) : 0;
+  const pickedTotal = Math.round((pickedGross - offsetApplied) * 100) / 100;
 
   // Si el usuario cubre TODOS los gastos al 100%, es un pago total: registramos
   // exactamente lo adeudado (`max`), no la suma de las partes por gasto. Cada
@@ -163,7 +176,8 @@ export function MarkPaidModal({
   const allFull =
     usingPicker &&
     debts.length > 0 &&
-    debts.every((d) => selected.has(d.expenseId) && amtFor(d.expenseId) >= d.amount - 0.005);
+    debts.every((d) => selected.has(d.expenseId) && amtFor(d.expenseId) >= d.amount - 0.005) &&
+    (useOffsets || offsets.length === 0);
 
   // Monto a registrar: la suma de los gastos elegidos, PERO nunca más de lo que
   // realmente le debes a esta persona (`max`). En modo Simplificado la deuda
@@ -203,10 +217,23 @@ export function MarkPaidModal({
     // hay selección de gastos, así que se asignan automáticamente los gastos
     // pendientes del deudor del más antiguo al más nuevo hasta cubrir el monto
     // pagado (FIFO) — solo para el indicador "pagado" del listado de gastos.
+    // Con descuento o tope, la suma de las partes supera lo que se paga: se
+    // quita la diferencia de las partes MÁS ANTIGUAS, así el desglose guardado
+    // cuadra con el dinero real. "Cubierto entero" se decide antes del ajuste
+    // (lo descontado también lo salda).
+    const fullIds = picks.filter((p) => p.amount >= (debtById[p.expenseId]?.amount ?? 0) - 0.005).map((p) => p.expenseId);
+    let over = Math.round((picks.reduce((s0, p) => s0 + p.amount, 0) - paidAmt) * 100) / 100;
+    if (over > 0.005) {
+      const dateOf = (id: string) => group.expenses.find((e) => e.id === id)?.date ?? "";
+      for (const p of [...picks].sort((a, b) => dateOf(a.expenseId).localeCompare(dateOf(b.expenseId)))) {
+        if (over <= 0.005) break;
+        const c = Math.min(p.amount, over);
+        p.amount = Math.round((p.amount - c) * 100) / 100;
+        over = Math.round((over - c) * 100) / 100;
+      }
+    }
     const fullyCovered = usingPicker
-      ? picks
-          .filter((p) => p.amount >= (debtById[p.expenseId]?.amount ?? 0) - 0.005)
-          .map((p) => p.expenseId)
+      ? fullIds
       : fifoExpenseIdsForAmount(group.members, group.expenses, group.settlements ?? [], from, paidAmt);
     const today = new Date().toISOString().slice(0, 10);
     // Deudas de OTROS que este pagador cubre en el mismo movimiento (enteras).
@@ -374,6 +401,30 @@ export function MarkPaidModal({
                 );
               })}
             </div>
+            {offsets.length > 0 && (
+              <div className="glass rounded-2xl p-1.5 mt-2">
+                <button
+                  onClick={() => setUseOffsets((v) => !v)}
+                  className="w-full flex items-center gap-2 px-2 pt-1.5 pb-1 text-left"
+                >
+                  <span
+                    className="h-5 w-5 rounded-full flex items-center justify-center shrink-0"
+                    style={useOffsets ? { background: "var(--teal)", color: "#fff" } : { border: "1.5px solid var(--line)" }}
+                  >
+                    {useOffsets && <Icon name="check" size={12} />}
+                  </span>
+                  <span className="text-xs font-semibold text-muted flex-1">{t("pay.offsetTitle", { to: name(to), from: name(from) })}</span>
+                </button>
+                {offsets.map((o) => (
+                  <div key={o.expenseId} className="flex items-center justify-between px-2 py-1.5 text-sm" style={{ opacity: useOffsets ? 1 : 0.45 }}>
+                    <span className="truncate min-w-0 pl-7">{o.label}</span>
+                    <span className="font-mono font-semibold shrink-0" style={{ color: "var(--coral)" }}>
+                      −{money(o.amount, group.currency)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
             <div className="flex items-center justify-between mt-2 text-sm">
               <span className="text-muted">{t("pay.selectedTotal")}</span>
               <span className="font-mono font-bold">{money(value, group.currency)}</span>
