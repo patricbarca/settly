@@ -590,7 +590,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "pay.whichExpensesSimplified": { es: "Elige tus gastos pendientes a saldar", en: "Choose your pending expenses to settle" },
   "pay.selectAll": { es: "Seleccionar todos", en: "Select all" },
   "pay.deselectAll": { es: "Quitar todos", en: "Deselect all" },
-  "pay.offsetTitle": { es: "Se descuenta lo que {to} le debe a {from}", en: "Deducted: what {to} owes {from}" },
+  "pay.offsetTitle": { es: "Para tu información: {to} te debe esto a ti (no se resta)", en: "For reference: {to} owes you this (not deducted)" },
   "pay.expensesSubtotal": { es: "Gastos elegidos", en: "Selected expenses" },
   "pay.offsetLine": { es: "Menos lo que debe {to}", en: "Less what {to} owes" },
   "pay.selectedTotal": { es: "Total seleccionado", en: "Selected total" },
