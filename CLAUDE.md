@@ -51,8 +51,8 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
-### "Marcar pagado": lo que te deben es SOLO informativo (2026-10-15)
-- A petición del usuario: el total = exactamente los gastos que eliges; lo que el acreedor te debe se lista aparte "para tu información" y **no se resta** ni crea pago inverso (`offsetApplied = 0`). Sustituye el descuento de las dos entradas anteriores.
+### "Marcar pagado": vuelve el NETO automático (2026-10-15)
+- Tras probar "solo informativo" (#273, revertido), el usuario prefirió: en modo Directo el total es el **neto**, el descuento de lo que el acreedor te debe se aplica **solo al elegir gastos** (`min(descuento, elegido)`) y se ve el desglose "Gastos elegidos / Menos lo que debe X / Total". Se guardan dos pagos (bruto + inverso), como en #269/#272.
 
 ### "Marcar pagado": el descuento es solo referencia (2026-10-15)
 - El bloque "Restar lo que X le debe a Y" tenía un check: desmarcarlo dejaba un total confuso. Ahora se aplica **siempre** y se muestra solo como **desglose**: "Gastos elegidos $X", "Menos lo que debe {acreedor} −$Y" y el total. Sin cambios en lo que se guarda (siguen siendo dos pagos). Strings `pay.expensesSubtotal/offsetLine`. `tsc` limpio.
