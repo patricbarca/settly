@@ -38,7 +38,8 @@ export function Home({ tab }: { tab: HomeTab }) {
   useEffect(() => {
     // Histéresis: al encogerse la cabecera el contenido sube; sin margen
     // entre umbrales parpadearía justo en el borde.
-    const onScroll = () => setHeroCompact((c) => (c ? window.scrollY > 8 : window.scrollY > 60));
+    // Una vez compacta se queda así (no vuelve a crecer al subir).
+    const onScroll = () => { if (window.scrollY > 40) setHeroCompact(true); };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -157,7 +158,7 @@ export function Home({ tab }: { tab: HomeTab }) {
         <>
           {/* Cabecera: entra animada al abrir (una vez por sesión) y se encoge a
               una franja fina al hacer scroll (como los títulos grandes de iOS). */}
-          <div className="sticky z-20 pt-4 -mx-4 px-4" style={{ top: "env(safe-area-inset-top)" }}>
+          <div className="sticky z-20 pt-2 pb-3 -mx-4 px-4 home-sticky-bg" style={{ top: "calc(env(safe-area-inset-top) + var(--home-top))" }}>
             <div
               className={`hero ${intro ? "home-hero-intro" : "anim-up"}`}
               style={{ padding: heroCompact ? "8px 16px" : undefined, transition: "padding .3s ease" }}
@@ -165,7 +166,7 @@ export function Home({ tab }: { tab: HomeTab }) {
               <span className="blob b1" />
               <span className="blob b2" />
               <span className="blob b3" />
-              <div className={`relative z-10 flex items-center text-center ${heroCompact ? "flex-row justify-center gap-2" : "flex-col py-3"}`}>
+              <div className={`relative z-10 flex items-center text-center ${heroCompact ? "flex-row justify-start gap-2" : "flex-col py-3"}`}>
                 <div
                   className="home-hero-logo"
                   style={{ transform: heroCompact ? "scale(.5)" : "none", margin: heroCompact ? "-14px" : "0 0 16px", transition: "transform .3s ease, margin .3s ease" }}
@@ -173,7 +174,7 @@ export function Home({ tab }: { tab: HomeTab }) {
                   <Logo size={54} />
                 </div>
                 <h1
-                  className="text-white font-brand font-extrabold tracking-tight"
+                  className="text-white font-brand font-extrabold tracking-tight whitespace-nowrap"
                   style={{ fontSize: heroCompact ? 26 : 48, lineHeight: 1, transition: "font-size .3s ease" }}
                   aria-label="Settlia"
                 >
@@ -188,6 +189,22 @@ export function Home({ tab }: { tab: HomeTab }) {
                   <p className="text-white/85 text-base mt-2.5 max-w-md leading-relaxed">{t("login.tagline")}</p>
                   <div className="text-[11px] font-mono uppercase tracking-[0.2em] text-white/60 mt-1.5">{t("app.poweredAI")}</div>
                 </div>
+                {plan === "free" ? (
+                  <button
+                    onClick={openUpgrade}
+                    className={`rounded-full font-bold hover-lift inline-flex items-center text-white shrink-0 ${heroCompact ? "ml-auto px-3 py-1 text-xs gap-1" : "mt-4 px-6 py-3 text-base gap-2"}`}
+                    style={{ background: "linear-gradient(135deg,#6e6cf5,#5b5bf0 55%,#0fa3a3)", boxShadow: "0 10px 24px -10px rgba(0,0,0,.6)", border: "1px solid rgba(255,255,255,.25)" }}
+                  >
+                    <Icon name="sparkles" size={heroCompact ? 13 : 18} /> {heroCompact ? t("pro.badge") : t("pro.get")}
+                  </button>
+                ) : (
+                  <span
+                    className={`rounded-full font-semibold inline-flex items-center gap-1 text-white shrink-0 ${heroCompact ? "ml-auto px-2.5 py-1 text-xs" : "mt-3 px-3 py-1 text-sm"}`}
+                    style={{ background: "rgba(255,255,255,0.18)" }}
+                  >
+                    <Icon name="sparkles" size={13} /> {t("pro.badge")}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -195,26 +212,6 @@ export function Home({ tab }: { tab: HomeTab }) {
           {/* Install + upgrade row (each hides itself when not applicable) */}
           <div className="flex items-center justify-center gap-2 mt-4 flex-wrap">
             <InstallButton />
-            {/* En nativo no se muestra el CTA de "Upgrade" (guideline 3.1.1):
-                Pro se gestiona desde la web; la app solo refleja el plan. */}
-            {plan === "free" ? (
-              // Con IAP (RevenueCat) el CTA "Upgrade" también se muestra en
-              // nativo; abre el paywall que vende Pro por In-App Purchase.
-              <button
-                onClick={openUpgrade}
-                className="rounded-full px-6 py-3 text-base font-bold hover-lift inline-flex items-center gap-2 text-white"
-                style={{ background: "linear-gradient(135deg,#6e6cf5,#5b5bf0 55%,#0fa3a3)", boxShadow: "0 10px 24px -10px rgba(91,91,240,.7)" }}
-              >
-                <Icon name="sparkles" size={18} /> {t("pro.get")}
-              </button>
-            ) : (
-              <span
-                className="rounded-full px-3 py-1.5 text-sm font-semibold inline-flex items-center gap-1.5"
-                style={{ background: "rgba(91,91,240,0.12)", color: "var(--indigo)" }}
-              >
-                <Icon name="sparkles" size={15} /> {t("pro.badge")}
-              </span>
-            )}
           </div>
         </>
       )}
