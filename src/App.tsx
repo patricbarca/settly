@@ -318,7 +318,12 @@ export default function App() {
     <div style={{ minHeight: "calc(var(--app-height, 100dvh) + 1px)", paddingBottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 12px)" }}>
       <OfflineBanner />
       {!group && homeTab === "groups" && (
-        <div className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2">
+        // Fija arriba (con el fondo de la página) para que no se vaya al hacer
+        // scroll; la cabecera de Home se pega justo debajo (--home-top).
+        <div
+          className="max-w-2xl mx-auto px-4 pt-4 flex items-center justify-end gap-2 sticky z-30 home-sticky-bg"
+          style={{ top: "env(safe-area-inset-top)", height: "var(--home-top)" }}
+        >
           {user.email === ADMIN_EMAIL && (
             <button
               onClick={() => setShowAdmin(true)}

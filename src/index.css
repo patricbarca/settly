@@ -278,6 +278,10 @@ button { cursor: pointer; font-family: inherit; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes pop { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
 .anim-up { animation: fadeUp 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+/* Barra de botones + cabecera de Home pegadas arriba: fondo de la página
+   (fijo, para que el degradado cuadre) → lo que sube por detrás queda tapado. */
+:root { --home-top: 48px; }
+.home-sticky-bg { background: var(--bg); background-attachment: fixed; }
 /* Cabecera de Home: entrada (pop + giro del logo + letras una a una). */
 .home-hero-letter { display: inline-block; }
 .home-hero-intro { animation: heroPop .7s cubic-bezier(.2,1.4,.4,1) both; }
