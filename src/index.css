@@ -278,6 +278,18 @@ button { cursor: pointer; font-family: inherit; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes pop { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
 .anim-up { animation: fadeUp 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+/* Cabecera de Home: entrada (pop + giro del logo + letras una a una). */
+.home-hero-letter { display: inline-block; }
+.home-hero-intro { animation: heroPop .7s cubic-bezier(.2,1.4,.4,1) both; }
+.home-hero-intro .home-hero-logo > * { animation: heroSpin .9s .25s cubic-bezier(.2,1.2,.3,1) both; }
+.home-hero-intro .home-hero-letter { animation: heroLetter .45s cubic-bezier(.2,1.5,.4,1) both; }
+.home-hero-intro .home-hero-sub > * { animation: fadeUp .5s 1s both; }
+@keyframes heroPop { from { transform: scale(.85); opacity: 0; } }
+@keyframes heroSpin { from { transform: rotate(-180deg) scale(.3); opacity: 0; } }
+@keyframes heroLetter { from { transform: translateY(14px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .home-hero-intro, .home-hero-intro * { animation: none !important; }
+}
 .anim-pop { animation: pop 0.22s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
 
 @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(209, 68, 68, 0.45); } 50% { box-shadow: 0 0 0 9px rgba(209, 68, 68, 0); } }

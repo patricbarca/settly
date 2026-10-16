@@ -1048,6 +1048,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "account.timezoneAuto": { es: "Automática (dispositivo)", en: "Automatic (device)" },
   "account.timezoneHint": { es: "Las fechas de notificaciones y actividad se muestran en esta zona.", en: "Notification and activity dates are shown in this zone." },
 
+  "pro.get": { es: "Obtener Settlia Pro", en: "Get Settlia Pro" },
   "pro.upgrade":  { es: "Mejorar a Pro", en: "Upgrade to Pro" },
   "pro.badge":    { es: "Pro", en: "Pro" },
   "pro.section":  { es: "Suscripción", en: "Subscription" },
