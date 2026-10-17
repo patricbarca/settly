@@ -112,7 +112,12 @@ export default function App() {
   useEffect(() => {
     const open = () => { setShowActivity(false); setShowAccount(true); };
     window.addEventListener("settlia:open-profile", open);
-    return () => window.removeEventListener("settlia:open-profile", open);
+    const openMine = () => { setShowActivity(false); setShowAccount(false); setActiveGroup(null); setHomeTab("mine"); };
+    window.addEventListener("settlia:open-mine", openMine);
+    return () => {
+      window.removeEventListener("settlia:open-profile", open);
+      window.removeEventListener("settlia:open-mine", openMine);
+    };
   }, []);
   const showLoading = phase === "loading" || !minLoadDone;
 

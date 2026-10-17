@@ -233,6 +233,8 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
           {imgErr && <div className="text-xs mt-1" style={{ color: "var(--coral)" }}>{t("settings.lookErr")}</div>}
         </div>
 
+        {/* "Mis gastos" (grupo personal): solo nombre y apariencia. */}
+        {!group.personal && (<>
         {/* Currency */}
         {/* ── Monedas: todo en una tarjeta, de lo básico a lo opcional ── */}
         <div className="mb-5 glass rounded-3xl p-4 space-y-4">
@@ -453,6 +455,8 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
           </div>
         </div>
 
+        </>)}
+
         <button
           onClick={save}
           disabled={!dirty || !name.trim()}
@@ -462,6 +466,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
           {saved ? `✓ ${t("settings.saved")}` : t("common.save")}
         </button>
 
+        {!group.personal && (<>
         {/* Importar gastos (CSV de Splitwise): añade gastos, pagos y personas,
             cada gasto en la moneda que trae el archivo. */}
         <div className="glass rounded-2xl px-4 py-3 mt-4 flex items-center justify-between gap-3">
@@ -513,6 +518,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
             </div>
           )}
         </div>
+        </>)}
       </div>
       {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
       {showImport && <ImportExpensesModal group={group} onClose={() => setShowImport(false)} />}

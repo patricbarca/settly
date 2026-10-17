@@ -58,6 +58,7 @@ export interface MyItem {
   groupId: string;
   groupName: string;
   personal: boolean;
+  archived: boolean;
   label: string;
   date: string;
   category: string;
@@ -69,7 +70,7 @@ export interface MyItem {
 /** Mi parte de cada gasto de todos mis grupos (incl. archivados) + los
  *  personales, del más reciente al más antiguo. Lo que adelanté por otros no
  *  cuenta: un gasto de 120 entre 4 me cuenta 30. */
-export function myItems(groups: Group[]): MyItem[] {
+export function myItems(groups: Group[], localArchived: Set<string> = new Set()): MyItem[] {
   const out: MyItem[] = [];
   for (const g of groups) {
     if (g.deletedAt) continue;
@@ -83,6 +84,7 @@ export function myItems(groups: Group[]): MyItem[] {
         groupId: g.id,
         groupName: g.name,
         personal: !!g.personal,
+        archived: !g.personal && (!!g.archived || localArchived.has(g.id)),
         label: e.label,
         date: e.date,
         category: e.category,
