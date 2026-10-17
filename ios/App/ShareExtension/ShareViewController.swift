@@ -15,7 +15,7 @@ import UniformTypeIdentifiers
 //    `app.settlia.pwa://add?text=…` y la IA lo interpreta como cualquier nota.
 final class ShareViewController: UIViewController {
     static let pasteboardName = UIPasteboard.Name("app.settlia.pwa.share")
-    static let appGroup = "group.app.settlia.shared"
+    static let appGroup = "group.app.settlia.pwa"
 
     override func viewDidLoad() {
         super.viewDidLoad()
