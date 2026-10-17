@@ -16,6 +16,7 @@ import { useArchivedGroups } from "../lib/archivedGroups";
 import { heroBackground, HeroCover } from "../lib/heroStyle";
 import { GroupSettings } from "./GroupSettings";
 import { ProjectionView } from "./ProjectionView";
+import { SavingTips } from "./SavingTips";
 import { ReclassifyModal } from "./ReclassifyModal";
 import { VaultNewsModal, vaultNewsHidden } from "./VaultNewsModal";
 import { fixedItems } from "../lib/projection";
@@ -262,6 +263,16 @@ export function MySpending() {
 
           </>)}
 
+          {mode !== "projection" && personal && (
+            <SavingTips
+              personal={personal}
+              items={all.filter((i) => !i.archived)}
+              fixed={fixed}
+              mainCur={mainCur}
+              rate={(c) => (c === mainCur ? 1 : rates[c] ?? null)}
+              pro={pro}
+            />
+          )}
           {mode === "projection" ? (
             personal && (
               <ProjectionView

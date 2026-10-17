@@ -333,6 +333,7 @@ export interface Budget {
   insights?: string[] | null;
   /** Consejos de ahorro de la IA según tus gastos. */
   tips?: string[] | null;
+  tipsAt?: string | null;
   /** ¿Usar la estimación mensual (goals) como gasto variable en la proyección? undefined = aún no decidido. */
   useEstimate?: boolean | null;
   /** Ahorros que tengo hoy (punto de partida de la proyección). */

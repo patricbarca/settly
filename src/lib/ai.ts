@@ -133,6 +133,7 @@ export async function forecastSpendingAI(payload: {
   income: number;
   fixed: number;
   today: string;
+  mode?: "tips";
 }): Promise<ForecastAI> {
   if (!(await requestAIConsent())) throw new AIConsentDeclined();
   const { data, error } = await supabase.functions.invoke("forecast-spending", { body: payload });
