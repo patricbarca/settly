@@ -306,8 +306,13 @@ button { cursor: pointer; font-family: inherit; }
 .home-sticky-bg::before, .floating-header::before { transition: opacity .2s ease; }
 [data-stuck="false"]::before { opacity: 0; }
 .home-sticky-bg > *, .floating-header > * { position: relative; z-index: 1; }
+/* Barra de botones de arriba: SIN capa difuminada (en iOS se pintaba encima
+   de los botones). Los botones flotan opacos con sombra, siempre visibles. */
+.home-sticky-bar { background: transparent; }
+.home-sticky-bar > * { position: relative; z-index: 1; }
+.home-sticky-bar .glass { background-color: var(--glass-strong-solid, var(--bg)); }
 /* Botones de arriba: flotan con sombra, siempre visibles. */
-.home-sticky-bg .glass { box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.35); }
+.home-sticky-bar .glass, .home-sticky-bg .glass { box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.35); }
 .home-sticky-bg .hero, .floating-header .hero { box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12); }
 /* Cabecera de Home: entrada (pop + giro del logo + letras una a una). */
 .home-hero-letter { display: inline-block; }

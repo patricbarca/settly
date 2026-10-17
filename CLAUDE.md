@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Fix: botones de arriba se veían detrás del difuminado (2026-10-17)
+- Captura iPhone (grupo): la barra de botones (logo, atrás, miembros, reporte, ajustes, archivar) se veía lavada bajo su propia capa difuminada. La barra ya no lleva capa: clase nueva **`.home-sticky-bar`** (sin `::before`) en `GroupView` y `App.tsx`; sus botones `.glass` usan fondo opaco `--glass-strong-solid` + sombra. La capa difuminada queda solo en las tarjetas (`.home-sticky-bg`/`.floating-header`). `tsc` + build; no probado en iPhone.
+
 ### Fix: el difuminado tapaba las pestañas bajo la cabecera (2026-10-17)
 - Captura de iPhone (Mis gastos): la franja difuminada de 36 px bajo la cabecera "Personal" tapaba "All in AUD / By currency / Forecast" aunque no hubiera scroll. Ahora la capa solo aparece cuando la cabecera está plegada (`data-stuck={compact}` + `[data-stuck="false"]::before { opacity: 0 }` en `index.css`). Aplicado a Mis gastos y a la tarjeta de los grupos. `tsc` + build limpios; no probado en iPhone.
 
