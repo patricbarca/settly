@@ -51,6 +51,11 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### "Objetivo de gasto" → "Gasto estimado al mes" + preguntar si usarlo (2026-10-17)
+- El usuario vio que la IA ponía "límites" ≈ el doble de lo gastado (extrapolaba el mes) y categorías sin gasto, con observaciones en idiomas mezclados. Pidió: **estimar el gasto mensual típico** y **preguntar** si usarlo en la proyección.
+- **`forecast-spending` v5:** el prompt pide una ESTIMACIÓN realista de un mes típico (media de meses anteriores + mes actual extrapolado, sin recortar ni inflar), omite categorías sin gasto en 3 meses, y escribe las observaciones solo en el idioma de la app usando los **nombres visibles** de las categorías (el cliente manda `labels`). Descarta importes 0.
+- **Cliente (`ProjectionView`):** tarjeta "Gasto estimado al mes" ("llevas X / estimado Y"). Tras estimar, bloque **"¿Usar esta estimación en tu proyección?"** con **Usar / Ajustar / No usar** (`Budget.useEstimate`: `null` = sin decidir; "Ajustar" abre el editor y al guardar queda en uso). Si se usa, la suma estimada (sin las categorías ya cubiertas por recurrentes planificados) **sustituye a la media de 3 meses** como gasto variable en "Tu próximo año" y en el ahorro. Línea "✓ Se usa / No se usa · Cambiar". `tsc` + build; **no probado en pantalla**.
+
 ### ⚠️ Groq retiró los modelos que usábamos → IA de texto y escaneo arreglados (2026-10-17)
 - **Síntoma:** "Sugerir con IA" fallaba siempre. Logs: Groq devolvía `404 model_not_found` para `llama-3.3-70b-versatile` **y** `llama-3.1-8b-instant`. Eso significa que **`parse-expense` también llevaba un tiempo fallando** (la app caía en silencio al parser local de regex) y que el modelo de visión `qwen/qwen3.6-27b` (secreto `AI_VISION_MODEL`) tampoco existe (el escaneo lo servía solo el backup de OpenRouter).
 - **Catálogo de Groq hoy** (listado vía función temporal + `pg_net`): `openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.8-27b` (multimodal), `whisper-large-v3(-turbo)`, `allam-2-7b`, guardias.

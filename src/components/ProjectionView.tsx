@@ -93,7 +93,12 @@ export function ProjectionView({
     for (const i of list) by[i.category] = (by[i.category] || 0) + conv(i.amount, i.currency);
     history.unshift({ month: key, byCategory: by });
   }
-  const avgVar = prev.length ? prev.reduce((a, b) => a + b, 0) / prev.length : projVar;
+  const histVar = prev.length ? prev.reduce((a, b) => a + b, 0) / prev.length : projVar;
+  // Estimación de la IA (o ajustada a mano): si el usuario la aceptó, sustituye
+  // a la media histórica como gasto variable mensual en la proyección.
+  const estVar = budget.goals ? Object.entries(budget.goals).filter(([c]) => !plannedCats.has(c)).reduce((a, [, v]) => a + v, 0) : 0;
+  const useEst = budget.useEstimate === true && estVar > 0;
+  const avgVar = useEst ? estVar : histVar;
   const net = income - fixedAvg - avgVar;
 
   const monthByCat: Record<string, number> = {};
@@ -115,13 +120,14 @@ export function ProjectionView({
         currency: mainCur,
         lang,
         categories: CATEGORIES.map((c) => c.id),
+        labels: Object.fromEntries(CATEGORIES.map((c) => [c.id, catName(c.id)])),
         months: history,
         thisMonth: { day, daysInMonth: daysIn, byCategory: monthByCat },
         income,
         fixed: fixedMonth,
         today: now.toLocaleDateString("en-CA"),
       });
-      saveBudget({ goals: res.goals, insights: res.insights });
+      saveBudget({ goals: res.goals, insights: res.insights, useEstimate: null });
     } catch (e) {
       if ((e as Error)?.name !== "AIConsentDeclined") setAiErr(t("proj.aiError"));
     } finally {
@@ -257,7 +263,7 @@ export function ProjectionView({
               <>
                 <div className="font-mono text-sm mt-2">
                   <span className="font-bold">{money(Object.keys(goals).reduce((s, c) => s + (monthByCat[c] || 0), 0), mainCur)}</span>
-                  <span className="text-muted"> / {money(goalTotal, mainCur)}</span>
+                  <span className="text-muted"> {t("proj.soFar")} / {money(goalTotal, mainCur)}</span>
                 </div>
                 <div className="space-y-2.5 mt-3">
                   {Object.entries(goals).sort((a, b) => b[1] - a[1]).map(([c, g]) => {
@@ -287,6 +293,22 @@ export function ProjectionView({
                 ))}
               </ul>
             )}
+            {goals && Object.keys(goals).length > 0 && (budget.useEstimate == null ? (
+              <div className="mt-4 rounded-2xl p-3" style={{ background: "color-mix(in srgb, var(--teal) 12%, transparent)" }}>
+                <div className="text-sm font-semibold">{t("proj.useAsk")}</div>
+                <div className="text-xs text-muted mt-0.5">{t("proj.useAskHint", { avg: money(histVar, mainCur) })}</div>
+                <div className="flex gap-2 mt-3">
+                  <button onClick={() => saveBudget({ useEstimate: true })} className="flex-1 rounded-full py-2 text-sm font-semibold text-white" style={{ background: "var(--teal)" }}>{t("proj.useYes")}</button>
+                  <button onClick={() => setEditGoals(true)} className="flex-1 glass rounded-full py-2 text-sm font-semibold">{t("proj.useAdjust")}</button>
+                  <button onClick={() => saveBudget({ useEstimate: false })} className="flex-1 glass rounded-full py-2 text-sm font-semibold">{t("proj.useNo")}</button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-3 flex items-center justify-between gap-2 text-xs">
+                <span style={{ color: budget.useEstimate ? "var(--teal)" : undefined }} className={budget.useEstimate ? "font-semibold" : "text-muted"}>{t(budget.useEstimate ? "proj.usingEstimate" : "proj.notUsingEstimate")}</span>
+                <button onClick={() => saveBudget({ useEstimate: !budget.useEstimate })} className={linkBtn} style={{ color: "var(--teal)" }}>{t("proj.toggleUse")}</button>
+              </div>
+            ))}
             <div className="flex gap-2 mt-4">
               <button
                 onClick={suggest}
@@ -337,7 +359,7 @@ export function ProjectionView({
         <GoalsModal
           initial={goals ?? Object.fromEntries(Object.entries(monthByCat).map(([c, v]) => [c, Math.round(v)]))}
           cur={mainCur}
-          onSave={(g) => { saveBudget({ goals: g }); setEditGoals(false); }}
+          onSave={(g) => { saveBudget({ goals: g, useEstimate: true }); setEditGoals(false); }}
           onClose={() => setEditGoals(false)}
         />
       )}
