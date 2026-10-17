@@ -127,6 +127,7 @@ export async function forecastSpendingAI(payload: {
   currency: string;
   lang: "es" | "en";
   categories: string[];
+  labels?: Record<string, string>;
   months: { month: string; byCategory: Record<string, number> }[];
   thisMonth: { day: number; daysInMonth: number; byCategory: Record<string, number> };
   income: number;

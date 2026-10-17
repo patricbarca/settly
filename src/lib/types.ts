@@ -326,6 +326,8 @@ export interface Budget {
   /** Objetivo de gasto mensual por categoría (sugerido por la IA o a mano). */
   goals?: Record<string, number> | null;
   insights?: string[] | null;
+  /** ¿Usar la estimación mensual (goals) como gasto variable en la proyección? undefined = aún no decidido. */
+  useEstimate?: boolean | null;
   /** Ahorros que tengo hoy (punto de partida de la proyección). */
   savings?: { amount: number; currency: string } | null;
 }
