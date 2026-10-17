@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Cabeceras con fondo SÓLIDO, sin difuminado (2026-10-17)
+- Seguía viéndose raro en iPhone (botones lavados y contenido visible detrás). **Causa raíz:** `--bg` es un `linear-gradient`, así que `color-mix(in srgb, var(--bg) 72%, transparent)` era CSS inválido → la capa no tenía color, solo blur. **Ahora:** token nuevo `--bg-solid` (claro `#e8ecf1`, oscuro `#111319`); la barra de botones (`.home-sticky-bar`), la capa bajo las tarjetas (`::before`, se desvanece en los últimos 28 px) y la franja de la barra de estado (`body::before`) usan ese color sólido, **sin `backdrop-filter`**. El contenido ya no se ve detrás. `tsc` + build; no probado en iPhone.
+
 ### Fix: "Sugerir con IA" del objetivo de gasto daba error (2026-10-17)
 - `forecast-spending` devolvía 502 (Groq rechazaba la llamada a `llama-3.3-70b-versatile`; el motivo exacto no se registraba). **v3 desplegada:** si el modelo grande falla, reintenta con `AI_TEXT_MODEL`/`llama-3.1-8b-instant` y registra estado + cuerpo del error en los logs. Pendiente: confirmar con el usuario que ya responde y mirar el log si sigue fallando.
 
