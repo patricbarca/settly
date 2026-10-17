@@ -3,16 +3,29 @@ import { CATEGORIES } from "../lib/types";
 import { money, categoryColor } from "../lib/format";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
+import { useState } from "react";
+
+type Period = "month" | "3m" | "year" | "all";
+function since(p: Period): string {
+  if (p === "all") return "";
+  const d = new Date();
+  if (p === "month") d.setDate(1);
+  else if (p === "3m") { d.setDate(1); d.setMonth(d.getMonth() - 2); }
+  else { d.setMonth(0, 1); }
+  return d.toLocaleDateString("en-CA");
+}
 
 export function CategoryChart({ group }: { group: Group }) {
   const t = useT();
+  const [period, setPeriod] = useState<Period>("all");
+  const from = since(period);
   const totals: Record<string, number> = {};
-  group.expenses.forEach((e) => {
+  group.expenses.filter((e) => !from || (e.date || "") >= from).forEach((e) => {
     totals[e.category] = (totals[e.category] || 0) + e.amount;
   });
   const entries = CATEGORIES.filter((c) => totals[c.id]).map((c) => ({ ...c, value: totals[c.id] }));
   const total = entries.reduce((s, e) => s + e.value, 0);
-  if (total <= 0) return null;
+  if (!group.expenses.length) return null;
 
   const R = 42;
   const C = 2 * Math.PI * R;
@@ -21,8 +34,14 @@ export function CategoryChart({ group }: { group: Group }) {
   return (
     <section className="glass rounded-3xl p-5">
       <div className="text-xs uppercase tracking-widest font-mono text-muted mb-3">{t("chart.byCategory")}</div>
-      <div className="flex items-center gap-5 flex-wrap">
-        <svg width="120" height="120" viewBox="0 0 120 120" className="shrink-0">
+      <div className="seg !p-0.5 text-xs mb-4" role="tablist">
+        {(["month", "3m", "year", "all"] as Period[]).map((p) => (
+          <button key={p} role="tab" aria-selected={period === p} onClick={() => setPeriod(p)}>{t(`chart.p.${p}`)}</button>
+        ))}
+      </div>
+      {total <= 0 ? <p className="text-sm text-muted text-center py-6">{t("chart.empty")}</p> : (
+      <div className="flex flex-col items-center gap-5">
+        <svg width="170" height="170" viewBox="0 0 120 120" className="shrink-0">
           <g transform="translate(60,60) rotate(-90)">
             <circle r={R} fill="none" stroke="var(--line)" strokeWidth="14" />
             {entries.map((e) => {
@@ -47,7 +66,7 @@ export function CategoryChart({ group }: { group: Group }) {
           </text>
         </svg>
 
-        <div className="flex-1 min-w-[180px] space-y-1.5">
+        <div className="w-full space-y-2">
           {entries
             .slice()
             .sort((a, b) => b.value - a.value)
@@ -65,6 +84,7 @@ export function CategoryChart({ group }: { group: Group }) {
             })}
         </div>
       </div>
+      )}
     </section>
   );
 }
