@@ -51,6 +51,11 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### "Bebidas" → "Salidas / Going out" + categoría "Deporte y bienestar" (2026-10-17)
+- **Salidas:** solo cambia el nombre visible de `bebidas` (ES "Salidas", EN "Going out"); el id no cambia, así que los datos y los builds viejos siguen funcionando (muestran "Bebidas"). Ahora es bares, copas, discotecas, fiesta; el **café** va a `comida` (parser local, prompts de `scan-receipt` y `classify-expenses`).
+- **`fitness` nueva** ("Deporte y bienestar" / "Fitness & wellness", icono `dumbbell`, verde esmeralda): gimnasio, clases (yoga, pilates, crossfit), entrenador, proteína, suplementos, material deportivo. El gym sale de `salud` en el parser local. ✅ `scan-receipt` v58 y `classify-expenses` v2 desplegadas con las reglas nuevas; `parse-expense` recibe la lista de categorías del cliente.
+- Probado el parser local: gym/protein/yoga → fitness, coffee → comida, beers → bebidas, rent → alquiler, bin bags → hogar. Novedades de la bóveda → versión 2 (vuelve a mostrarse una vez). ⚠️ Gastos ya marcados `aiReviewed` no se reanalizan: si un gasto de gym ya se revisó, hay que cambiarlo a mano.
+
 ### Novedades de la bóveda + escáner con Alquiler/Hogar (2026-10-17)
 - **`scan-receipt` v57 (✅ desplegada):** acepta y propone `alquiler` y `hogar` (prompt + `VALID_CATEGORIES`), con guía de cuándo usar cada una frente a `alojamiento`. El resto de la función igual que v56.
 - **Ventana "Novedades de tu bóveda"** (`VaultNewsModal.tsx`): se abre sola al entrar en Mis gastos, con 7 novedades (tu parte de los grupos, gastos personales, proyección, recurrentes, gasto estimado, reclasificar con IA, categorías nuevas) y la casilla **"No volver a mostrar"** (localStorage `settlia.vaultNews.hide` = versión). Botón **"✨ Novedades"** en la cabecera de la bóveda (solo icono cuando está plegada) para reabrirla. Para anunciar novedades futuras: subir `VAULT_NEWS_VERSION` y añadir ítems/strings `vnews.*` → vuelve a mostrarse aunque la hubieran ocultado. `tsc` + build; no probado en pantalla.

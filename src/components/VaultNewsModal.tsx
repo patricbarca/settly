@@ -5,7 +5,7 @@ import { Icon, type IconName } from "./Icon";
 
 /** Cambia este número cuando haya novedades nuevas: vuelve a mostrarse
  *  aunque el usuario marcara "no volver a mostrar" en una versión anterior. */
-export const VAULT_NEWS_VERSION = 1;
+export const VAULT_NEWS_VERSION = 2;
 const KEY = "settlia.vaultNews.hide";
 
 export function vaultNewsHidden(): boolean {

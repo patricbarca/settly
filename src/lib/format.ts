@@ -22,6 +22,7 @@ export const CATEGORY_COLORS: Record<Category, string> = {
   ocio: "#0EA5E9",          // sky blue
   compras: "#A855F7",       // purple
   salud: "#B91C1C",         // dark red
+  fitness: "#10B981",       // emerald
   servicios: "#A16207",     // brown/gold
   suscripciones: "#7C3AED", // violet
   seguros: "#1E40AF",       // dark blue
