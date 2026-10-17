@@ -1,0 +1,273 @@
+import { useEffect, useMemo, useState } from "react";
+import { useT, useLang } from "../lib/i18n";
+import { useGroups, setActiveGroup, deleteExpense } from "../lib/store";
+import { useUser } from "../lib/auth";
+import { money, fmtDate, categoryColor } from "../lib/format";
+import { resolveToCode } from "../lib/currencies";
+import { getDailyRate } from "../lib/fxCache";
+import { monthKey, monthLabel } from "../lib/report";
+import { CATEGORIES } from "../lib/types";
+import { myItems, useEnsurePersonalGroup, type MyItem } from "../lib/personal";
+import { Icon } from "./Icon";
+import { AddExpense } from "./AddExpense";
+import { ConfirmModal } from "./ConfirmModal";
+import { haptic } from "../lib/haptics";
+
+type Mode = "converted" | "byCurrency";
+
+const catIcon = (c: string) => CATEGORIES.find((x) => x.id === c)?.icon ?? "other";
+
+/** "Mis gastos": mi parte de cada gasto de mis grupos + mis gastos personales.
+ *  Dos vistas: todo convertido a mi moneda principal (tasa de hoy) o un
+ *  bloque por moneda, sin convertir. Lo personal se añade con el mismo + de
+ *  siempre (IA, voz, escaneo y su cupo gratis incluidos) sobre un grupo
+ *  privado de una sola persona. */
+export function MySpending() {
+  const t = useT();
+  const lang = useLang();
+  const user = useUser();
+  const groups = useGroups();
+  const personal = useEnsurePersonalGroup();
+  const all = useMemo(() => myItems(groups), [groups]);
+
+  const nowKey = new Date().toLocaleDateString("en-CA").slice(0, 7);
+  const months = useMemo(() => {
+    const s = new Set(all.map((i) => monthKey(i.date)).filter(Boolean));
+    s.add(nowKey);
+    return [...s].sort().reverse();
+  }, [all, nowKey]);
+  const [month, setMonth] = useState<string>(nowKey);
+  const [mode, setMode] = useState<Mode>("converted");
+  const [source, setSource] = useState<string>("all"); // all | personal | groupId
+  const [open, setOpen] = useState<string | null>(null);
+  const [confirmDel, setConfirmDel] = useState<MyItem | null>(null);
+
+  // Grupos con gastos míos, para el filtro de origen (lo personal va aparte).
+  const sources = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const i of all) if (!i.personal && !seen.has(i.groupId)) seen.set(i.groupId, i.groupName);
+    return [...seen.entries()];
+  }, [all]);
+
+  const items = all.filter(
+    (i) =>
+      (month === "all" || monthKey(i.date) === month) &&
+      (source === "all" || (source === "personal" ? i.personal : i.groupId === source))
+  );
+
+  // Moneda principal: la del perfil; si no, la más usada en mis gastos.
+  const mainCur = useMemo(() => {
+    if (user?.mainCurrency) return resolveToCode(user.mainCurrency);
+    const c: Record<string, number> = {};
+    for (const i of all) c[i.currency] = (c[i.currency] || 0) + 1;
+    return Object.entries(c).sort((a, b) => b[1] - a[1])[0]?.[0] || "EUR";
+  }, [user?.mainCurrency, all]);
+
+  const currencies = useMemo(() => {
+    const set = new Set(items.map((i) => i.currency));
+    return [...set].sort((a, b) => (a === mainCur ? -1 : b === mainCur ? 1 : a.localeCompare(b)));
+  }, [items, mainCur]);
+
+  // Tasas de hoy hacia la moneda principal (cacheadas por día en fxCache).
+  const [rates, setRates] = useState<Record<string, number | null>>({});
+  const curKey = [...new Set(all.map((i) => i.currency))].sort().join(",") + "|" + mainCur;
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const next: Record<string, number | null> = {};
+      for (const c of new Set(all.map((i) => i.currency))) next[c] = c === mainCur ? 1 : await getDailyRate(c, mainCur);
+      if (alive) setRates(next);
+    })();
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [curKey]);
+  const conv = (i: MyItem) => {
+    const r = i.currency === mainCur ? 1 : rates[i.currency];
+    return r == null ? null : i.amount * r;
+  };
+  const missingRate = currencies.some((c) => c !== mainCur && rates[c] == null);
+
+  const totalConv = items.reduce((s, i) => s + (conv(i) ?? 0), 0);
+  const byCat = (list: MyItem[], value: (i: MyItem) => number) => {
+    const m: Record<string, number> = {};
+    for (const i of list) m[i.category] = (m[i.category] || 0) + value(i);
+    return Object.entries(m).filter(([, v]) => v > 0.004).sort((a, b) => b[1] - a[1]);
+  };
+
+  const chip = (on: boolean) =>
+    `shrink-0 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap ${on ? "" : "glass text-muted"}`;
+  const chipStyle = (on: boolean) => (on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined);
+
+  const CatBars = ({ rows, cur }: { rows: [string, number][]; cur: string }) => {
+    const max = rows[0]?.[1] || 1;
+    return (
+      <div className="space-y-2 mt-3">
+        {rows.map(([c, v]) => (
+          <div key={c} className="flex items-center gap-2 text-sm">
+            <span className="w-6 h-6 rounded-full flex items-center justify-center shrink-0" style={{ background: categoryColor(c) + "33", color: categoryColor(c) }}>
+              <Icon name={catIcon(c)} size={13} />
+            </span>
+            <span className="w-24 truncate shrink-0">{t(`cat.${c}`)}</span>
+            <span className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: "var(--seg-track)" }}>
+              <span className="block h-full rounded-full" style={{ width: `${(v / max) * 100}%`, background: categoryColor(c) }} />
+            </span>
+            <span className="font-mono text-xs w-20 text-right shrink-0">{money(v, cur)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 z-30 flex flex-col anim-up" style={{ background: "var(--bg)", paddingTop: "env(safe-area-inset-top)" }}>
+      <div className="max-w-2xl mx-auto w-full px-4 pt-5 flex-1 flex flex-col min-h-0">
+        <h2 className="font-display text-2xl font-bold shrink-0">{t("mine.title")}</h2>
+        <p className="text-xs text-muted mt-1 mb-3 shrink-0">{t("mine.subtitle")}</p>
+
+        <div className="flex-1 overflow-y-auto -mx-4 px-4" style={{ paddingBottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 96px)" }}>
+          {/* Mes */}
+          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
+            <button className={chip(month === "all")} style={chipStyle(month === "all")} onClick={() => setMonth("all")}>
+              {t("mine.allTime")}
+            </button>
+            {months.map((m) => (
+              <button key={m} className={chip(month === m)} style={chipStyle(month === m)} onClick={() => setMonth(m)}>
+                {m === nowKey ? t("mine.thisMonth") : monthLabel(m, lang)}
+              </button>
+            ))}
+          </div>
+
+          {/* Origen */}
+          {(sources.length > 0 || all.some((i) => i.personal)) && (
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
+              <button className={chip(source === "all")} style={chipStyle(source === "all")} onClick={() => setSource("all")}>
+                {t("mine.allSources")}
+              </button>
+              <button className={chip(source === "personal")} style={chipStyle(source === "personal")} onClick={() => setSource("personal")}>
+                <Icon name="lock" size={11} /> {t("mine.personal")}
+              </button>
+              {sources.map(([id, name]) => (
+                <button key={id} className={chip(source === id)} style={chipStyle(source === id)} onClick={() => setSource(id)}>
+                  {name}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Vista */}
+          <div className="seg my-3" role="tablist">
+            <button role="tab" aria-selected={mode === "converted"} onClick={() => { haptic("selection"); setMode("converted"); }}>
+              {t("mine.allIn", { cur: mainCur })}
+            </button>
+            <button role="tab" aria-selected={mode === "byCurrency"} onClick={() => { haptic("selection"); setMode("byCurrency"); }}>
+              {t("mine.byCurrency")}
+            </button>
+          </div>
+
+          {items.length === 0 ? (
+            <div className="glass rounded-3xl p-6 text-center">
+              <div className="text-3xl mb-2">🧾</div>
+              <div className="font-semibold">{t("mine.empty")}</div>
+              <p className="text-sm text-muted mt-1">{t("mine.emptyHint")}</p>
+            </div>
+          ) : mode === "converted" ? (
+            <div className="glass-strong rounded-3xl p-5">
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted">{t("mine.spent")}</div>
+              <div className="font-display text-4xl font-bold mt-1 font-mono">{money(totalConv, mainCur)}</div>
+              <div className="text-xs text-muted mt-1">
+                {t(items.length === 1 ? "mine.count1" : "mine.count", { n: String(items.length) })}
+                {currencies.length > 1 && <> · {t("mine.convertedNote", { list: currencies.filter((c) => c !== mainCur).join(", ") })}</>}
+              </div>
+              {missingRate && <div className="text-xs mt-2" style={{ color: "var(--amber)" }}>{t("mine.rateMissing")}</div>}
+              <CatBars rows={byCat(items, (i) => conv(i) ?? 0)} cur={mainCur} />
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {currencies.map((c) => {
+                const list = items.filter((i) => i.currency === c);
+                const sum = list.reduce((s, i) => s + i.amount, 0);
+                return (
+                  <div key={c} className="glass-strong rounded-3xl p-5">
+                    <div className="flex items-baseline justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted">{t("mine.spentIn", { cur: c })}</span>
+                      <span className="text-xs text-muted">{t(list.length === 1 ? "mine.count1" : "mine.count", { n: String(list.length) })}</span>
+                    </div>
+                    <div className="font-display text-3xl font-bold mt-1 font-mono">{money(sum, c)}</div>
+                    <CatBars rows={byCat(list, (i) => i.amount)} cur={c} />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Movimientos */}
+          {items.length > 0 && (
+            <>
+              <h3 className="font-display text-lg font-bold mt-6 mb-2">{t("mine.movements")}</h3>
+              <div className="glass rounded-3xl divide-y divide-[var(--line)]">
+                {items.map((i) => {
+                  const cv = conv(i);
+                  const isOpen = open === i.key;
+                  return (
+                    <div key={i.key}>
+                      <button
+                        className="w-full flex items-center gap-3 px-4 py-3 text-left"
+                        onClick={() => (i.personal ? setOpen(isOpen ? null : i.key) : setActiveGroup(i.groupId))}
+                      >
+                        <span className="w-9 h-9 rounded-full flex items-center justify-center shrink-0" style={{ background: categoryColor(i.category) + "26", color: categoryColor(i.category) }}>
+                          <Icon name={catIcon(i.category)} size={16} />
+                        </span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block font-semibold truncate">{i.label}</span>
+                          <span className="block text-xs text-muted truncate">
+                            {fmtDate(i.date)} · {i.personal ? t("mine.personal") : i.groupName}
+                            {!i.personal && Math.abs(i.total - i.amount) > 0.004 && <> · {t("mine.ofTotal", { total: money(i.total, i.currency) })}</>}
+                          </span>
+                        </span>
+                        <span className="text-right shrink-0">
+                          <span className="block font-mono font-semibold">{money(i.amount, i.currency)}</span>
+                          {mode === "converted" && i.currency !== mainCur && cv != null && (
+                            <span className="block text-[11px] text-muted font-mono">≈ {money(cv, mainCur)}</span>
+                          )}
+                        </span>
+                      </button>
+                      {isOpen && (
+                        <div className="px-4 pb-3 -mt-1 flex justify-end">
+                          <button
+                            className="rounded-full px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1"
+                            style={{ color: "var(--coral)", background: "color-mix(in srgb, var(--coral) 12%, transparent)" }}
+                            onClick={() => setConfirmDel(i)}
+                          >
+                            <Icon name="trash" size={13} /> {t("mine.delete")}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* + flotante: añade un gasto SOLO mío (grupo personal). */}
+      {personal && <AddExpense group={personal} />}
+
+      {confirmDel && (
+        <ConfirmModal
+          title={t("mine.deleteTitle")}
+          message={confirmDel.label}
+          confirmLabel={t("mine.delete")}
+          onConfirm={() => {
+            deleteExpense(confirmDel.groupId, confirmDel.expenseId);
+            setConfirmDel(null);
+            setOpen(null);
+          }}
+          onClose={() => setConfirmDel(null)}
+        />
+      )}
+    </div>
+  );
+}
+

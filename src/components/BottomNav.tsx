@@ -4,7 +4,7 @@ import { Icon, type IconName } from "./Icon";
 import { Avatar } from "./Avatar";
 import { haptic } from "../lib/haptics";
 
-export type NavKey = "groups" | "friends" | "activity" | "profile";
+export type NavKey = "groups" | "mine" | "friends" | "activity" | "profile";
 
 /** Barra de navegación inferior flotante (cristal), siempre visible tras el login — sustituye el
  *  antiguo toggle Grupos|Contactos y el bloque de perfil de la cabecera, y
@@ -15,6 +15,7 @@ export function BottomNav({
   userName,
   userAvatar,
   onGroups,
+  onMine,
   onFriends,
   onActivity,
   onProfile,
@@ -24,6 +25,7 @@ export function BottomNav({
   userName: string;
   userAvatar?: string;
   onGroups: () => void;
+  onMine: () => void;
   onFriends: () => void;
   onActivity: () => void;
   onProfile: () => void;
@@ -32,6 +34,7 @@ export function BottomNav({
 
   const items: { key: NavKey; label: string; icon: IconName; onClick: () => void }[] = [
     { key: "groups", label: t("nav.groups"), icon: "home", onClick: onGroups },
+    { key: "mine", label: t("nav.mine"), icon: "card", onClick: onMine },
     { key: "friends", label: t("nav.friends"), icon: "users", onClick: onFriends },
     { key: "activity", label: t("nav.activity"), icon: "bell", onClick: onActivity },
   ];

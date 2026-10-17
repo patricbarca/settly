@@ -12,6 +12,7 @@ import { Icon } from "./components/Icon";
 import { Overlay } from "./components/Overlay";
 import { Login } from "./components/Login";
 import { Home, type HomeTab } from "./components/Home";
+import { MySpending } from "./components/MySpending";
 import { GroupView } from "./components/GroupView";
 import { Logo } from "./components/Logo";
 import { OnboardingModal } from "./components/OnboardingModal";
@@ -68,7 +69,7 @@ export default function App() {
   const quick = useQuickAdd();
   const groupsLoading = useGroupsLoading();
   const { archived: localArchived } = useArchivedGroups();
-  const pickable = allGroups.filter((g) => !localArchived.has(g.id) && !g.archived);
+  const pickable = allGroups.filter((g) => !localArchived.has(g.id) && !g.archived && !g.personal);
   // El grupo abierto primero: es la opción más probable.
   const pickOrder = group ? [...pickable].sort((a, b) => (a.id === group.id ? -1 : b.id === group.id ? 1 : 0)) : pickable;
   const quickReady = !!quick && !quick.groupId && !!user && (phase === "authenticated" || phase === "guest") && !groupsLoading;
@@ -89,6 +90,8 @@ export default function App() {
     ? "profile"
     : homeTab === "contacts" && !group
     ? "friends"
+    : homeTab === "mine" && !group
+    ? "mine"
     : "groups";
   // La pantalla de carga se ve al menos 3s (evita un parpadeo si la sesión
   // resuelve casi al instante, p. ej. con Supabase cacheado).
@@ -369,7 +372,7 @@ export default function App() {
         </div>
       )}
 
-      {group ? <GroupView group={group} /> : <Home tab={homeTab} />}
+      {group ? <GroupView group={group} /> : homeTab === "mine" ? <MySpending /> : <Home tab={homeTab} />}
 
       <BottomNav
         active={navActive}
@@ -379,6 +382,12 @@ export default function App() {
         onGroups={() => {
           setActiveGroup(null);
           setHomeTab("groups");
+          setShowActivity(false);
+          setShowAccount(false);
+        }}
+        onMine={() => {
+          setActiveGroup(null);
+          setHomeTab("mine");
           setShowActivity(false);
           setShowAccount(false);
         }}
