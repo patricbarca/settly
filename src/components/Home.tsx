@@ -50,6 +50,7 @@ export function Home({ tab }: { tab: HomeTab }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
   const [showArch, setShowArch] = useState(false);
+  const [showOverallInfo, setShowOverallInfo] = useState(false);
   const [showTrash, setShowTrash] = useState(false);
   const trashed = useTrashedGroups();
   const { archived: localArchived, archive: localArchiveGroup, unarchive: localUnarchive } = useArchivedGroups();
@@ -252,12 +253,23 @@ export function Home({ tab }: { tab: HomeTab }) {
         </div>
       )}
 
-      {/* Balance global (todos los grupos): gastado (T), debo (↓), me deben (↑) — cada uno en su propia pill */}
+      {/* Balance global (todos los grupos) en una tarjeta, con (i) que explica cada importe */}
       {showOverall && (
-        <div className="mt-6 flex flex-col items-center">
-          <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">{t("home.overall")}</p>
+        <div className="mt-6 glass rounded-3xl px-4 py-3">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold text-muted uppercase tracking-wide">{t("home.overall")}</p>
+            <button
+              onClick={() => setShowOverallInfo((v) => !v)}
+              className="h-6 w-6 rounded-full flex items-center justify-center text-muted"
+              style={{ background: "var(--seg-track)" }}
+              aria-label={t("common.info")}
+              aria-expanded={showOverallInfo}
+            >
+              <Icon name="info" size={13} />
+            </button>
+          </div>
           <div className="flex items-center gap-1.5 flex-wrap justify-center">
-            <div className="glass rounded-full px-3 py-1.5">
+            <div className="rounded-full px-3 py-1.5" style={{ background: "var(--seg-track)" }}>
               <span className="text-sm font-mono font-bold">T: {money(spent, overallCur)}</span>
             </div>
             <div className="rounded-full px-3 py-1.5" style={{ background: "rgba(209,68,68,0.12)", color: "#D14444" }}>
@@ -267,6 +279,14 @@ export function Home({ tab }: { tab: HomeTab }) {
               <span className="text-sm font-mono font-bold">↑ {money(owed, overallCur)}</span>
             </div>
           </div>
+          {showOverallInfo && (
+            <div className="mt-3 space-y-1.5 text-xs anim-up">
+              <p><b>T</b> · {t("home.overallInfoT")}</p>
+              <p><b style={{ color: "#D14444" }}>↓</b> · {t("home.overallInfoOwe")}</p>
+              <p><b style={{ color: "#0A8B5E" }}>↑</b> · {t("home.overallInfoOwed")}</p>
+              <p className="text-muted">{t("home.overallInfoCur", { cur: overallCur })}</p>
+            </div>
+          )}
         </div>
       )}
 

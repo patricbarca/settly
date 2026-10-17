@@ -117,3 +117,26 @@ export async function transcribeAudio(blob: Blob, lang = "es"): Promise<string> 
   return (res.text || "").trim();
 }
 
+
+export type ForecastAI = { goals: Record<string, number>; insights: string[] };
+
+/** Pide a la IA (función `forecast-spending`) un objetivo de gasto mensual por
+ *  categoría + observaciones, a partir del historial ya convertido a la moneda
+ *  principal. Consume 1 del cupo de IA de texto. */
+export async function forecastSpendingAI(payload: {
+  currency: string;
+  lang: "es" | "en";
+  categories: string[];
+  months: { month: string; byCategory: Record<string, number> }[];
+  thisMonth: { day: number; daysInMonth: number; byCategory: Record<string, number> };
+  income: number;
+  fixed: number;
+  today: string;
+}): Promise<ForecastAI> {
+  if (!(await requestAIConsent())) throw new AIConsentDeclined();
+  const { data, error } = await supabase.functions.invoke("forecast-spending", { body: payload });
+  if (error) throw error;
+  const res = data as ForecastAI & { error?: string };
+  if (!res || res.error) throw new Error(res?.error || "forecast_failed");
+  return { goals: res.goals || {}, insights: res.insights || [] };
+}
