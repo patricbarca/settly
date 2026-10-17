@@ -164,7 +164,7 @@ export function MySpending() {
           }}
           style={{ paddingBottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 96px)" }}>
           {/* Cabecera flotante: se queda arriba y el contenido pasa por debajo. */}
-          <div className="sticky top-0 z-10 -mx-4 px-4 pb-3 pt-1 floating-header">
+          <div className="sticky top-0 z-10 -mx-4 px-4 pb-3 pt-1 floating-header" data-stuck={compact}>
           {/* Cabecera editable como la de cualquier grupo (nombre, color o foto). */}
           <div
             className="hero relative"
