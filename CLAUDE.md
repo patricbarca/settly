@@ -52,6 +52,7 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 
 ## Recent work completed
 ### Cabeceras: botones y tarjeta compacta POR DELANTE del difuminado (2026-10-17)
+- **Ajuste:** la franja difuminada baja ahora 36 px bajo la cabecera (antes 18) y es opaca hasta 24 px antes del final; se seguía leyendo "Expenses" justo debajo de la tarjeta compacta.
 - Reporte iPhone: los botones de arriba y la tarjeta compacta se veían detrás de la capa difuminada. Dos causas: (1) el `::before` con `z-index:-1` + `backdrop-filter` + máscara, en WebKit se pintaba encima del contenido → ahora `z-index:0` y los hijos directos `position:relative; z-index:1`; (2) la franja difuminada de la fila de botones se extiende 18 px hacia abajo y estaba en una capa superior a la tarjeta → se invirtió el orden (barra `z-20`, tarjeta `z-30`) en Home y grupos. Botones `.glass` de la barra con sombra para que floten.
 
 ### Cabeceras flotantes con fondo difuminado + hueco bajo filtros (2026-10-17)
