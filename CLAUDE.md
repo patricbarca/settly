@@ -51,6 +51,11 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Cabecera de grupo y de "Personal" se pliega al bajar (2026-10-17)
+- **Grupos (`GroupView` + `Hero compact`):** la barra de botones queda fija arriba con el fondo de la página (`home-sticky-bg`, alto `--home-top`; ya no muestra el nombre en el centro) y la **tarjeta del grupo es sticky justo debajo**. Al bajar 60 px se pliega a una franja con **solo el nombre** (se ocultan etiqueta, totales, monedas, modo, compartir y Settle Score) y **vuelve a abrirse al volver arriba** (bajo 8 px; histéresis para que no parpadee). A diferencia de Home, aquí sí se re-expande.
+- **"Mis gastos":** la cabecera "Personal" hace lo mismo con el scroll de su lista interna (`onScroll` del contenedor).
+- ✅ Verificado en navegador (invitado, 390×700): abierta → plegada al bajar en Saldos → abierta al volver arriba; Personal plegada al bajar. `tsc` limpio.
+
 ### "Mis gastos" v2: desplegables, sin archivados, tarjeta en Home, cabecera editable + Amigos con archivados (2026-10-17)
 - **"Gastos eliminados":** comprobado en la DB que no hay gastos borrados vivos en ningún grupo (0 ids de `deletedExpenseIds` dentro de `expenses`). Lo que se veía eran gastos de grupos **archivados**. Ahora **"Todos los grupos" excluye los archivados** (compartidos `g.archived` y locales `useArchivedGroups`); se ven eligiéndolos uno a uno o con "Todos (con archivados)" (`MyItem.archived`).
 - **Filtros como desplegables:** periodo (Este mes · Mes pasado · Últimos 3 meses · Este año · Todo el tiempo · cada mes) y grupo (Todos · Personal · cada grupo · Archivados).

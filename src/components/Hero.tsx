@@ -10,7 +10,7 @@ import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
 import { heroBackground, HeroCover } from "../lib/heroStyle";
 
-export function Hero({ group, onShare, shareState }: { group: Group; onShare?: () => void; shareState?: "copied" | "error" }) {
+export function Hero({ group, onShare, shareState, compact = false }: { group: Group; onShare?: () => void; shareState?: "copied" | "error"; compact?: boolean }) {
   const t = useT();
   const money = useGroupMoney(group);
   const score = groupSettleScore(group);
@@ -27,7 +27,10 @@ export function Hero({ group, onShare, shareState }: { group: Group; onShare?: (
     .map((v) => ({ code: v.currency, mine: settleOf(v).net[group.meId] || 0 }));
   const total = mainView(group).expenses.reduce((sum, exp) => sum + exp.amount, 0);
   return (
-    <div className="hero anim-up" style={heroBackground(group)}>
+    <div
+      className="hero anim-up"
+      style={{ ...heroBackground(group), padding: compact ? "10px 18px" : undefined, transition: "padding .3s ease" }}
+    >
       <HeroCover g={group} />
       {!heroBackground(group) && (
         <>
@@ -38,10 +41,15 @@ export function Hero({ group, onShare, shareState }: { group: Group; onShare?: (
       )}
       <div className="relative z-10 flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-white/70 text-[11px] uppercase tracking-widest font-mono mb-1">{t("hero.groupLabel")}</div>
+          <div className="text-white/70 text-[11px] uppercase tracking-widest font-mono mb-1" style={{ maxHeight: compact ? 0 : 400, opacity: compact ? 0 : 1, overflow: "hidden", transition: "max-height .3s ease, opacity .2s ease" }}>{t("hero.groupLabel")}</div>
           <div className="flex items-center gap-2 min-w-0">
-            <div className="text-white font-display text-2xl font-extrabold truncate leading-relaxed min-w-0">{group.name}</div>
-            {onShare && (
+            <div
+              className="text-white font-display font-extrabold truncate leading-relaxed min-w-0"
+              style={{ fontSize: compact ? 18 : 24, transition: "font-size .3s ease" }}
+            >
+              {group.name}
+            </div>
+            {onShare && !compact && (
               <button
                 onClick={onShare}
                 className="shrink-0 h-6 min-w-6 rounded-full px-1.5 inline-flex items-center justify-center gap-1 text-[10px] font-semibold hover-lift"
@@ -54,6 +62,8 @@ export function Hero({ group, onShare, shareState }: { group: Group; onShare?: (
               </button>
             )}
           </div>
+          {/* Totales, monedas y modo: se pliegan en la cabecera compacta. */}
+          <div style={{ maxHeight: compact ? 0 : 400, opacity: compact ? 0 : 1, overflow: "hidden", transition: "max-height .3s ease, opacity .2s ease" }}>
           <div className="flex items-center gap-1.5 mt-2">
             <span
               className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold"
@@ -98,8 +108,12 @@ export function Hero({ group, onShare, shareState }: { group: Group; onShare?: (
             {direct ? t("hero.modeDirect") : t("hero.modeSimplified")}
             <Icon name="info" size={12} />
           </button>
+          </div>
         </div>
-        <div className="text-center shrink-0 text-white">
+        <div
+          className="text-center shrink-0 text-white"
+          style={{ maxWidth: compact ? 0 : 120, maxHeight: compact ? 0 : 120, opacity: compact ? 0 : 1, overflow: "hidden", transition: "max-width .3s ease, max-height .3s ease, opacity .2s ease" }}
+        >
           <SettleRing value={score} size={56} stroke={6} color="#7CF5EE" track="rgba(255,255,255,0.25)" />
           <div className="text-[9px] uppercase tracking-wide font-mono text-white/70 mt-1">{t("game.settleScore")}</div>
         </div>
