@@ -17,8 +17,8 @@ const corsHeaders = {
 
 const API_KEY = Deno.env.get("AI_TEXT_API_KEY") ?? Deno.env.get("STT_API_KEY") ?? "";
 const API_URL = Deno.env.get("AI_TEXT_API_URL") ?? "https://api.groq.com/openai/v1/chat/completions";
-const MODEL = Deno.env.get("AI_FORECAST_MODEL") ?? "llama-3.3-70b-versatile";
-const FALLBACK_MODEL = Deno.env.get("AI_TEXT_MODEL") ?? "llama-3.1-8b-instant";
+const MODEL = Deno.env.get("AI_FORECAST_MODEL") ?? "openai/gpt-oss-120b";
+const FALLBACK_MODEL = Deno.env.get("AI_TEXT_MODEL") ?? "openai/gpt-oss-20b";
 
 const json = (b: unknown, status = 200) =>
   new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -72,6 +72,7 @@ Deno.serve(async (req) => {
         body: JSON.stringify({
           model,
           temperature: 0.2,
+          ...(model.startsWith("openai/gpt-oss") ? { reasoning_effort: "low" } : {}),
           response_format: { type: "json_object" },
           messages: [
             { role: "system", content: system },

@@ -27,7 +27,7 @@ const API_KEY =
 const API_URL =
   Deno.env.get("AI_TEXT_API_URL") ??
   "https://api.groq.com/openai/v1/chat/completions";
-const MODEL = Deno.env.get("AI_TEXT_MODEL") ?? "llama-3.1-8b-instant";
+const MODEL = Deno.env.get("AI_TEXT_MODEL") ?? "openai/gpt-oss-20b";
 
 const INTERVALS = ["daily", "weekly", "monthly", "yearly"];
 
@@ -98,7 +98,8 @@ Examples (sample roster — a: Ana, b: Luis, c: Me; "me"=c; assume the group's c
       body: JSON.stringify({
         model: MODEL,
         temperature: 0,
-        max_tokens: 512,
+        max_tokens: 2000,
+        ...(MODEL.startsWith("openai/gpt-oss") ? { reasoning_effort: "low" } : {}),
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: system },

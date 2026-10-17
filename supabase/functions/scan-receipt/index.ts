@@ -45,7 +45,9 @@ const corsHeaders = {
 //               OpenRouter o Gemini). URL/modelo por AI_VISION_BACKUP_API_URL/
 //               AI_VISION_BACKUP_MODEL (defaults: OpenRouter + Gemini Flash).
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = "qwen/qwen3.6-27b"; // reemplazo multimodal de Llama 4 Scout (deprecado)
+const GROQ_MODEL = "qwen/qwen3.8-27b"; // multimodal en Groq (3.6 retirado en 2026-10)
+// Modelos que Groq ya retiró: si el secreto AI_VISION_MODEL apunta a uno, se usa el actual.
+const RETIRED = new Set(["qwen/qwen3.6-27b", "meta-llama/llama-4-scout-17b-16e-instruct", "meta-llama/llama-4-maverick-17b-128e-instruct"]);
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 
 type Provider = { name: string; url: string; model: string; key: string };
@@ -61,7 +63,7 @@ function buildProviders(): Provider[] {
       name: "primary",
       key: primaryKey,
       url: Deno.env.get("AI_VISION_API_URL") || GROQ_URL,
-      model: Deno.env.get("AI_VISION_MODEL") || GROQ_MODEL,
+      model: (() => { const m = Deno.env.get("AI_VISION_MODEL") || GROQ_MODEL; return RETIRED.has(m) ? GROQ_MODEL : m; })(),
     });
   }
 
