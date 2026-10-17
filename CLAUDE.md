@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Fix: "Sugerir con IA" del objetivo de gasto daba error (2026-10-17)
+- `forecast-spending` devolvía 502 (Groq rechazaba la llamada a `llama-3.3-70b-versatile`; el motivo exacto no se registraba). **v3 desplegada:** si el modelo grande falla, reintenta con `AI_TEXT_MODEL`/`llama-3.1-8b-instant` y registra estado + cuerpo del error en los logs. Pendiente: confirmar con el usuario que ya responde y mirar el log si sigue fallando.
+
 ### Fix: botones de arriba se veían detrás del difuminado (2026-10-17)
 - Captura iPhone (grupo): la barra de botones (logo, atrás, miembros, reporte, ajustes, archivar) se veía lavada bajo su propia capa difuminada. La barra ya no lleva capa: clase nueva **`.home-sticky-bar`** (sin `::before`) en `GroupView` y `App.tsx`; sus botones `.glass` usan fondo opaco `--glass-strong-solid` + sombra. La capa difuminada queda solo en las tarjetas (`.home-sticky-bg`/`.floating-header`). `tsc` + build; no probado en iPhone.
 
