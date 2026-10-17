@@ -15,7 +15,7 @@ public class SharedImagePlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func take(_ call: CAPPluginCall) {
         DispatchQueue.main.async {
             // 1) Archivo en el contenedor del App Group.
-            if let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.app.settlia.pwa") {
+            if let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.app.settlia.shared") {
                 let f = dir.appendingPathComponent("shared.jpg")
                 if let data = try? Data(contentsOf: f) {
                     try? FileManager.default.removeItem(at: f)
