@@ -27,6 +27,7 @@ export interface FixedItem {
   monthly: number; // mi parte al mes (media)
   thisMonth: number; // mi parte en los cobros que caen ESTE mes
   times: number; // cuántos cobros caen este mes
+  nextDate: string; // próximo cobro (para proyectar semanas/meses futuros)
 }
 
 const DAY = 86400000;
@@ -105,6 +106,7 @@ export function fixedItems(groups: Group[], localArchived: Set<string> = new Set
         monthly: perMonth(mine, r.interval),
         thisMonth: mine * occurrencesInMonth(r.nextDate, r.interval),
         times: occurrencesInMonth(r.nextDate, r.interval),
+        nextDate: r.nextDate,
       });
     }
   }
@@ -113,3 +115,71 @@ export function fixedItems(groups: Group[], localArchived: Set<string> = new Set
 
 /** Gastos que generó una regla recurrente (id determinista `recur_…`). */
 export const isRecurringOccurrence = (expenseId: string) => expenseId.startsWith("recur_");
+
+/** Importe semanal equivalente (para la vista por semanas). */
+export function perWeek(amount: number, freq: IncomeFreq | RecurrenceInterval): number {
+  switch (freq) {
+    case "daily": return amount * 7;
+    case "weekly": return amount;
+    case "biweekly": return amount / 2;
+    case "yearly": return amount / 52;
+    default: return (amount * 12) / 52;
+  }
+}
+
+/** Cobros REALES de una regla con fecha entre [start, end) (ms UTC). Un mensual
+ *  cae el mismo día de cada mes; un semanal cada 7 días desde nextDate. */
+export function occurrencesBetween(nextDate: string, interval: RecurrenceInterval, start: number, end: number): number {
+  if (interval === "daily") return Math.round((end - start) / DAY);
+  if (!/^\d{4}-\d{2}-\d{2}/.test(nextDate || "")) return Math.round(perWeek(1, interval) * ((end - start) / (7 * DAY)));
+  const base = parseDay(nextDate);
+  if (interval === "weekly") {
+    const step = 7 * DAY;
+    let n = 0;
+    for (let t = base + Math.ceil((start - base) / step) * step; t < end; t += step) n++;
+    return n;
+  }
+  const bd = new Date(base);
+  const months = interval === "monthly" ? 1 : 12;
+  let n = 0;
+  const s = new Date(start), e = new Date(end);
+  for (let y = s.getUTCFullYear() - 1; y <= e.getUTCFullYear(); y++) {
+    for (let m = 0; m < 12; m++) {
+      const diff = (y - bd.getUTCFullYear()) * 12 + (m - bd.getUTCMonth());
+      if (diff % months !== 0) continue;
+      const last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+      const t = Date.UTC(y, m, Math.min(bd.getUTCDate(), last));
+      if (t >= start && t < end) n++;
+    }
+  }
+  return n;
+}
+
+export interface YearPeriod {
+  label: string;
+  start: number; // ms UTC
+  end: number;
+  current: boolean;
+}
+
+/** Próximos 12 meses (desde el actual) o próximas 52 semanas (lunes a domingo). */
+export function yearPeriods(by: "month" | "week", lang: string, now = new Date()): YearPeriod[] {
+  const out: YearPeriod[] = [];
+  const loc = lang === "en" ? "en-US" : "es-ES";
+  if (by === "month") {
+    for (let k = 0; k < 12; k++) {
+      const s = Date.UTC(now.getFullYear(), now.getMonth() + k, 1);
+      const e = Date.UTC(now.getFullYear(), now.getMonth() + k + 1, 1);
+      out.push({ label: new Date(s).toLocaleDateString(loc, { month: "short", timeZone: "UTC" }).replace(".", ""), start: s, end: e, current: k === 0 });
+    }
+  } else {
+    const dow = (now.getDay() + 6) % 7;
+    const mon = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() - dow);
+    for (let k = 0; k < 52; k++) {
+      const s = mon + k * 7 * DAY;
+      const d = new Date(s);
+      out.push({ label: `${d.getUTCDate()}/${d.getUTCMonth() + 1}`, start: s, end: s + 7 * DAY, current: k === 0 });
+    }
+  }
+  return out;
+}
