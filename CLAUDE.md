@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### iOS 1.6 (2026-10-17)
+- La 1.5 fue **aprobada** → `MARKETING_VERSION` 1.5 → **1.6** en los 4 `buildSettings` (App + ShareExtension) antes del build de Codemagic.
+
 ### Estadísticas del grupo: gasto por categoría con periodo (2026-10-17)
 - `CategoryChart`: control segmentado **Este mes / 3 meses / Este año / Todo** (por `Expense.date`; 3 meses = desde el día 1 de hace 2 meses). Gráfico de dona más grande arriba y debajo la lista de categorías con **%** e importe. Sin gastos en el periodo → "Sin gastos en este periodo". Strings `chart.p.*`, `chart.empty`. `tsc` + build; no probado en pantalla.
 
