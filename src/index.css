@@ -28,6 +28,7 @@
   --pink: #e84393;
   --sky: #0ea5e9;
   --bg: linear-gradient(160deg, #edf0eb 0%, #e6eaf3 52%, #f1e9f1 100%);
+  --bg-solid: #e8ecf1;
   --glass-bg: rgba(255, 255, 255, 0.6);
   --glass-strong-bg: rgba(255, 255, 255, 0.82);
   /* iOS fallback (no backdrop-filter) — higher opacity to compensate for missing blur */
@@ -46,6 +47,7 @@
   --ink: #e9eaee;
   --muted: #9aa0ac;
   --bg: linear-gradient(160deg, #0d0f14 0%, #12141b 52%, #17131d 100%);
+  --bg-solid: #111319;
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-strong-bg: rgba(32, 35, 43, 0.82);
   --glass-solid: rgba(40, 44, 54, 0.92);
@@ -106,9 +108,7 @@ body::before {
   left: 0;
   right: 0;
   height: env(safe-area-inset-top);
-  background: var(--chrome-bg);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  background: var(--bg-solid);
   z-index: 2000;
   pointer-events: none;
 }
@@ -289,15 +289,15 @@ button { cursor: pointer; font-family: inherit; }
 .home-sticky-bg::before, .floating-header::before {
   content: "";
   position: absolute;
-  inset: 0 0 -36px 0;
+  inset: 0 0 -28px 0;
   z-index: 0;
   pointer-events: none;
-  background: color-mix(in srgb, var(--bg) 72%, transparent);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  backdrop-filter: blur(16px) saturate(140%);
-  /* Opaco hasta 12 px bajo la tarjeta y luego se desvanece en 24 px. */
-  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
-  mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
+  /* Fondo SÓLIDO del color de la página (sin blur: en iOS el blur con
+     máscara dejaba ver el contenido y lavaba los botones). Se desvanece
+     solo en los últimos 28 px para no cortar en seco. */
+  background: var(--bg-solid);
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
 }
 /* Lo de dentro SIEMPRE por delante del difuminado: con z-index:-1 en el
    pseudo, Safari/WKWebView (capa compuesta por backdrop-filter + máscara) lo
@@ -308,7 +308,7 @@ button { cursor: pointer; font-family: inherit; }
 .home-sticky-bg > *, .floating-header > * { position: relative; z-index: 1; }
 /* Barra de botones de arriba: SIN capa difuminada (en iOS se pintaba encima
    de los botones). Los botones flotan opacos con sombra, siempre visibles. */
-.home-sticky-bar { background: transparent; }
+.home-sticky-bar { background: var(--bg-solid); }
 .home-sticky-bar > * { position: relative; z-index: 1; }
 .home-sticky-bar .glass { background-color: var(--glass-strong-solid, var(--bg)); }
 /* Botones de arriba: flotan con sombra, siempre visibles. */
