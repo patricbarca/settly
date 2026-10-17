@@ -59,6 +59,7 @@ export function MySpending() {
   const [mode, setMode] = useState<Mode>("converted");
   // all = grupos activos + personal · allArch = también archivados · personal · id de grupo
   const [source, setSource] = useState<string>("all");
+  const [cat, setCat] = useState<string>("all");
   const [open, setOpen] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState<MyItem | null>(null);
 
@@ -313,12 +314,18 @@ export function MySpending() {
             <>
               <div className="flex items-center justify-between gap-2 mt-6 mb-2">
                 <h3 className="font-display text-lg font-bold">{t("mine.movements")}</h3>
+                <select value={cat} onChange={(e) => setCat(e.target.value)} className="glass rounded-full px-3 py-1 text-xs font-semibold min-w-0 max-w-[45%] ml-auto" aria-label={t("mine.category")}>
+                  <option value="all">{t("mine.allCategories")}</option>
+                  {[...new Set(items.map((i) => i.category))].map((c) => (
+                    <option key={c} value={c}>{CATEGORIES.some((x) => x.id === c) ? t(`cat.${c}`) : c}</option>
+                  ))}
+                </select>
                 <button onClick={() => (pro ? setReclass(true) : setShowPaywall(true))} className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: "var(--teal)" }}>
                   <Icon name="sparkles" size={13} /> {t("reclass.button")}{!pro && <span className="text-[9px] font-bold ml-0.5">PRO</span>}
                 </button>
               </div>
               <div className="glass rounded-3xl divide-y divide-[var(--line)]">
-                {items.map((i) => {
+                {items.filter((i) => cat === "all" || i.category === cat).map((i) => {
                   const cv = conv(i);
                   const isOpen = open === i.key;
                   return (

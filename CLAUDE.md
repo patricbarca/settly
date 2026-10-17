@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Mis gastos: filtro por categoría en Movimientos (2026-10-17)
+- Desplegable "Todas las categorías" junto al título **Movimientos** (`MySpending`, estado `cat`); solo lista las categorías presentes con el periodo/grupo elegidos y filtra la lista de movimientos (los totales y barras de arriba no cambian). Strings `mine.category/allCategories`. `tsc` + build; no probado en pantalla.
+
 ### 🐛 Fix: al reclasificar la app "perdía" los grupos y creaba "Personal" duplicados (2026-10-17)
 - **Síntoma (captura iPhone):** al pulsar Analizar/Aplicar en Reclasificar, la app volvía a Home sin grupos ("Create your first group") y solo con "Personal".
 - **Causa:** cada `patch_expense` dispara un evento realtime → `loadGroups` completo (todos los blobs, ~100-370 KB cada uno). 60 recargas a la vez → alguna consulta fallaba y `loadGroups` trataba el error como "sin grupos" (`rows ?? []`) → `groups=[]`. Con eso `useEnsurePersonalGroup` creaba OTRO "Personal": **15 duplicados vacíos** en la cuenta de Patric (borrados; se conserva `uy40xao`, el que tiene `budget`).
