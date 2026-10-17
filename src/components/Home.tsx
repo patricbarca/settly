@@ -163,7 +163,7 @@ export function Home({ tab }: { tab: HomeTab }) {
         <>
           {/* Cabecera: entra animada al abrir (una vez por sesión) y se encoge a
               una franja fina al hacer scroll (como los títulos grandes de iOS). */}
-          <div className="sticky z-20 pt-2 pb-3 -mx-4 px-4 home-sticky-bg" style={{ top: "calc(env(safe-area-inset-top) + var(--home-top))" }}>
+          <div className="sticky z-30 pt-2 pb-3 -mx-4 px-4 home-sticky-bg" style={{ top: "calc(env(safe-area-inset-top) + var(--home-top))" }}>
             <div
               className={`hero ${intro ? "home-hero-intro" : "anim-up"}`}
               style={{ padding: heroCompact ? "8px 16px" : undefined, transition: "padding .3s ease" }}
