@@ -5,6 +5,8 @@ export type Category =
   | "transporte"
   | "viajes"
   | "alojamiento"
+  | "alquiler"
+  | "hogar"
   | "ocio"
   | "compras"
   | "salud"
@@ -72,6 +74,8 @@ export interface Expense {
   payerId: string;
   participantIds: string[];
   category: Category;
+  /** Ya revisado por "Reclasificar con IA": no se vuelve a analizar. */
+  aiReviewed?: boolean;
   date: string; // ISO YYYY-MM-DD
   note?: string;
   /** custom split memberId -> amount; null/undefined = partes iguales */
@@ -340,6 +344,8 @@ export const CATEGORIES: { id: Category; icon: IconName }[] = [
   { id: "bebidas", icon: "drink" },
   { id: "transporte", icon: "transport" },
   { id: "viajes", icon: "plane" },
+  { id: "alquiler", icon: "key" },
+  { id: "hogar", icon: "wrench" },
   { id: "alojamiento", icon: "home" },
   { id: "ocio", icon: "leisure" },
   { id: "compras", icon: "shopping" },

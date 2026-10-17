@@ -17,6 +17,8 @@ export const CATEGORY_COLORS: Record<Category, string> = {
   transporte: "#E8920C",    // amber
   viajes: "#22C55E",        // green
   alojamiento: "#EC4899",   // pink
+  alquiler: "#0D9488",      // dark teal
+  hogar: "#84CC16",         // lime
   ocio: "#0EA5E9",          // sky blue
   compras: "#A855F7",       // purple
   salud: "#B91C1C",         // dark red

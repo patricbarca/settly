@@ -16,6 +16,7 @@ import { useArchivedGroups } from "../lib/archivedGroups";
 import { heroBackground, HeroCover } from "../lib/heroStyle";
 import { GroupSettings } from "./GroupSettings";
 import { ProjectionView } from "./ProjectionView";
+import { ReclassifyModal } from "./ReclassifyModal";
 import { fixedItems } from "../lib/projection";
 import { usePlan } from "../lib/plan";
 
@@ -35,6 +36,7 @@ export function MySpending() {
   const groups = useGroups();
   const personal = useEnsurePersonalGroup();
   const { archived: localArchived } = useArchivedGroups();
+  const [reclass, setReclass] = useState(false);
   const all = useMemo(() => myItems(groups, localArchived), [groups, localArchived]);
   const [editing, setEditing] = useState(false);
   const pro = usePlan() === "pro";
@@ -296,7 +298,12 @@ export function MySpending() {
           {/* Movimientos */}
           {mode !== "projection" && items.length > 0 && (
             <>
-              <h3 className="font-display text-lg font-bold mt-6 mb-2">{t("mine.movements")}</h3>
+              <div className="flex items-center justify-between gap-2 mt-6 mb-2">
+                <h3 className="font-display text-lg font-bold">{t("mine.movements")}</h3>
+                <button onClick={() => setReclass(true)} className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: "var(--teal)" }}>
+                  <Icon name="sparkles" size={13} /> {t("reclass.button")}
+                </button>
+              </div>
               <div className="glass rounded-3xl divide-y divide-[var(--line)]">
                 {items.map((i) => {
                   const cv = conv(i);
@@ -348,6 +355,7 @@ export function MySpending() {
       {personal && <AddExpense group={personal} />}
 
       {editing && personal && <GroupSettings group={personal} onClose={() => setEditing(false)} />}
+      {reclass && <ReclassifyModal items={all} onClose={() => setReclass(false)} />}
 
       {confirmDel && (
         <ConfirmModal
