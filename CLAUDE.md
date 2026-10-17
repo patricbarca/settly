@@ -225,7 +225,7 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 
 ### Fix: los recurrentes perdían un día en cada repetición (2026-10-14)
 - **Bug:** `advanceDate` (`store.ts`) parseaba la fecha a medianoche LOCAL y la devolvía con `toISOString()` (UTC). En zonas por delante de UTC (Australia) cada paso restaba un día → **semanales cada 6 días** (Rent: 21-sep, 27-sep, 3-oct, 9-oct) y **mensuales un día antes cada mes** (21-sep → 20-oct). **Fix:** todo en UTC (`T00:00:00Z` + `setUTC*`); `today` de `processRecurring` pasa a la fecha LOCAL (`toLocaleDateString("en-CA")`). Probado con `TZ=Australia/Brisbane`: 21-sep → 28-sep → 5-oct → 12-oct. `tsc` limpio.
-- **Datos afectados (NO corregidos aún, pendiente de OK del usuario):** semanales en `BrisHome 🏙️` (`aa6soih`) y `AlePat ♥️` (`8wpau8c`), `nextDate` 15-oct; y los mensuales de ambos grupos con un día de deriva (`nextDate` 20-oct, 28-oct, 18-oct). Las ocurrencias ya generadas siguen con fechas corridas.
+- **Datos (✅ revisados 2026-10-17):** todos los recurrentes de `BrisHome 🏙️` y `AlePat ♥️` ya tenían fechas correctas salvo el **Rent de BrisHome** (`n6n9krh`, mensual, cobrado el 28-sep) con `nextDate` 27-oct → corregido a **28-oct** en la DB.
 
 ### Logo original recreado en alta definición (2026-10-13)
 - **Por qué:** el logo era un raster pequeño y algo borroso. Se exploraron rediseños (lienzo privado "Settlia logo S": 4 direcciones + 5 variantes de cinta) pero el usuario prefirió **su logo actual, exacto, en HD**.
