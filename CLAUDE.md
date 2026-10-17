@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Cabeceras: botones y tarjeta compacta POR DELANTE del difuminado (2026-10-17)
+- Reporte iPhone: los botones de arriba y la tarjeta compacta se veían detrás de la capa difuminada. Dos causas: (1) el `::before` con `z-index:-1` + `backdrop-filter` + máscara, en WebKit se pintaba encima del contenido → ahora `z-index:0` y los hijos directos `position:relative; z-index:1`; (2) la franja difuminada de la fila de botones se extiende 18 px hacia abajo y estaba en una capa superior a la tarjeta → se invirtió el orden (barra `z-20`, tarjeta `z-30`) en Home y grupos. Botones `.glass` de la barra con sombra para que floten.
+
 ### Cabeceras flotantes con fondo difuminado + hueco bajo filtros (2026-10-17)
 - Reporte con capturas del iPhone: la tarjeta "Personal" compacta se superponía nítida sobre los datos y el resumen quedaba pegado a los filtros. **Fix (`index.css`):** `.home-sticky-bg` y `.floating-header` llevan un `::before` de cristal (`backdrop-filter: blur(16px)`, fondo `--bg` al 72%) que se **desvanece hacia abajo** con `mask-image` (se usa pseudo-elemento para no recortar la tarjeta). Aplica a Home, grupos y Mis gastos. `MySpending`: `mb-3` bajo los desplegables y el wrapper sticky a todo el ancho (`-mx-4 px-4`).
 - ✅ Capturas en navegador (claro): gap correcto y datos difuminados detrás. El blur real hay que juzgarlo en iPhone (Chromium headless lo pinta débil).

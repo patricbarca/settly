@@ -92,7 +92,7 @@ export function GroupView({ group }: { group: Group }) {
     <div className="max-w-2xl mx-auto px-4 pb-10">
       {/* Barra de botones: fija arriba con el fondo de la página (como en Home). */}
       <div
-        className="sticky z-30 -mx-4 px-4 flex items-center justify-between gap-2 home-sticky-bg"
+        className="sticky z-20 -mx-4 px-4 flex items-center justify-between gap-2 home-sticky-bg"
         style={{ top: "env(safe-area-inset-top)", height: "var(--home-top)" }}
       >
         <div className="flex items-center gap-2 shrink-0">
@@ -123,7 +123,7 @@ export function GroupView({ group }: { group: Group }) {
 
       {/* La tarjeta del grupo se queda pegada bajo la barra y, al bajar, se
           pliega a una franja con solo el nombre (vuelve a abrirse arriba). */}
-      <div className="sticky z-20 -mx-4 px-4 pb-2 home-sticky-bg" style={{ top: "calc(env(safe-area-inset-top) + var(--home-top))" }}>
+      <div className="sticky z-30 -mx-4 px-4 pb-2 home-sticky-bg" style={{ top: "calc(env(safe-area-inset-top) + var(--home-top))" }}>
         <Hero group={group} compact={compact} onShare={share} shareState={inviteError ? "error" : copied ? "copied" : undefined} />
       </div>
 

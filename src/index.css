@@ -290,7 +290,7 @@ button { cursor: pointer; font-family: inherit; }
   content: "";
   position: absolute;
   inset: 0 0 -18px 0;
-  z-index: -1;
+  z-index: 0;
   pointer-events: none;
   background: color-mix(in srgb, var(--bg) 72%, transparent);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
@@ -298,6 +298,12 @@ button { cursor: pointer; font-family: inherit; }
   -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent);
   mask-image: linear-gradient(to bottom, #000 70%, transparent);
 }
+/* Lo de dentro SIEMPRE por delante del difuminado: con z-index:-1 en el
+   pseudo, Safari/WKWebView (capa compuesta por backdrop-filter + máscara) lo
+   pintaba ENCIMA de los botones y de la tarjeta compacta. */
+.home-sticky-bg > *, .floating-header > * { position: relative; z-index: 1; }
+/* Botones de arriba: flotan con sombra, siempre visibles. */
+.home-sticky-bg .glass { box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.35); }
 .home-sticky-bg .hero, .floating-header .hero { box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12); }
 /* Cabecera de Home: entrada (pop + giro del logo + letras una a una). */
 .home-hero-letter { display: inline-block; }
