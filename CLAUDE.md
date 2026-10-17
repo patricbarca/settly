@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Proyección: "Tu presupuesto mensual" + (i) en "Tu próximo año" (2026-10-17)
+- Tarjeta nueva `BudgetTotal` (Pro, arriba de Recurrentes): total mensual = tus recurrentes (media mensual) + recurrentes de grupos + gasto estimado (o media de 3 meses si no hay estimado); con ingresos muestra "Te queda/Te falta al mes". Botón (i) en `YearForecast` que explica cada cifra, las barras, la línea y el cálculo (`proj.yi.*`). `tsc` + build; no probado en pantalla.
+
 ### iOS 1.6 (2026-10-17)
 - La 1.5 fue **aprobada** → `MARKETING_VERSION` 1.5 → **1.6** en los 4 `buildSettings` (App + ShareExtension) antes del build de Codemagic.
 

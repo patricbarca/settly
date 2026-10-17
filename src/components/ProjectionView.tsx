@@ -220,6 +220,16 @@ export function ProjectionView({
         </div>
       ) : (
         <>
+          {/* Presupuesto mensual: suma de lo que el usuario puso */}
+          <BudgetTotal
+            cur={mainCur}
+            rows={[
+              { label: t("proj.bPlanned"), v: planned.reduce((s2, r) => s2 + conv(perMonth(r.amount, r.freq), r.currency), 0) },
+              { label: t("proj.bGroups"), v: fixed.reduce((s2, f) => s2 + conv(f.monthly, f.currency), 0) },
+              { label: t(goals && estVar > 0 ? "proj.bEstimate" : "proj.bAvg3"), v: goals && estVar > 0 ? estVar : histVar },
+            ]}
+            income={income}
+          />
           {/* Recurrentes */}
           <div className="glass-strong rounded-3xl p-5">
             <H right={<div className="font-mono font-bold">{money(fixedMonth, mainCur)}<span className="text-xs text-muted font-normal"> {t("proj.thisMonthShort")}</span></div>}>
@@ -610,6 +620,30 @@ function GoalsModal({ initial, cur, onSave, onClose }: { initial: Record<string,
 /** Proyección a un año: por cada mes (12) o semana (52) el gasto previsto
  *  (fijos con sus cobros reales + variable medio), el ahorro y los ahorros
  *  acumulados. Barras = gasto; línea = ahorros acumulados. */
+function BudgetTotal({ cur, rows, income }: { cur: string; rows: { label: string; v: number }[]; income: number }) {
+  const t = useT();
+  const total = rows.reduce((s, r) => s + r.v, 0);
+  const left = income - total;
+  return (
+    <div className="glass-strong rounded-3xl p-5">
+      <div className="text-xs font-semibold uppercase tracking-wider text-muted">{t("proj.bTitle")}</div>
+      <div className="font-mono text-3xl font-bold mt-1">{money(total, cur)}<span className="text-sm text-muted font-normal">{t("proj.per.monthly")}</span></div>
+      <div className="mt-3 space-y-1 text-sm">
+        {rows.map((r) => (
+          <div key={r.label} className="flex justify-between gap-2"><span className="text-muted">{r.label}</span><span className="font-mono">{money(r.v, cur)}</span></div>
+        ))}
+        {income > 0 && (
+          <>
+            <div className="flex justify-between gap-2 pt-1.5 border-t border-[var(--line)]"><span className="text-muted">{t("proj.income")}</span><span className="font-mono">{money(income, cur)}</span></div>
+            <div className="flex justify-between gap-2 font-semibold"><span>{t(left >= 0 ? "proj.bLeft" : "proj.bShort")}</span><span className="font-mono" style={{ color: left >= 0 ? "#2ED573" : "var(--coral)" }}>{money(Math.abs(left), cur)}</span></div>
+          </>
+        )}
+      </div>
+      <p className="text-[11px] text-muted mt-2">{t("proj.bHint")}</p>
+    </div>
+  );
+}
+
 function YearForecast({
   cur, savings, projVar, avgVar, income, fixedIn, hint,
 }: {
@@ -625,6 +659,7 @@ function YearForecast({
   const lang = useLang();
   const [by, setBy] = useState<"month" | "week">("month");
   const [open, setOpen] = useState(false);
+  const [info, setInfo] = useState(false);
   const inc = income(by);
   const varPer = by === "month" ? avgVar : (avgVar * 12) / 52;
   let cum = savings;
@@ -653,12 +688,22 @@ function YearForecast({
   return (
     <div className="glass-strong rounded-3xl p-5">
       <div className="flex items-center justify-between gap-2">
-        <div className="text-xs font-semibold uppercase tracking-wider text-muted">{t("proj.year")}</div>
+        <div className="flex items-center gap-1.5">
+          <div className="text-xs font-semibold uppercase tracking-wider text-muted">{t("proj.year")}</div>
+          <button onClick={() => setInfo(!info)} aria-label={t("common.info")} className="w-5 h-5 rounded-full glass inline-flex items-center justify-center text-[11px] font-bold" style={{ color: info ? "var(--teal)" : undefined }}>i</button>
+        </div>
         <div className="seg !p-0.5 text-xs" role="tablist">
           <button role="tab" aria-selected={by === "month"} onClick={() => setBy("month")}>{t("proj.byMonth")}</button>
           <button role="tab" aria-selected={by === "week"} onClick={() => setBy("week")}>{t("proj.byWeek")}</button>
         </div>
       </div>
+      {info && (
+        <div className="glass rounded-2xl p-3 mt-3 text-xs space-y-1.5">
+          {(["Spend", "Save", "End", "Bars", "Line", "Calc"] as const).map((k) => (
+            <p key={k}><b>{t(`proj.yi.${k}.t`)}</b> {t(`proj.yi.${k}`)}</p>
+          ))}
+        </div>
+      )}
       <div className="grid grid-cols-3 gap-2 mt-3">
         <div className="glass rounded-2xl p-2.5 min-w-0">
           <div className="text-[11px] text-muted">{t("proj.yearSpend")}</div>
