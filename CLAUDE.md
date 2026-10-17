@@ -51,6 +51,11 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### "Compartir con Settlia": la imagen no llegaba al escáner → App Group (2026-10-17, PR abierto, NO fusionar hasta el paso de Apple)
+- **Síntoma (iPhone):** al compartir una foto la app se abría, pero el escáner pedía elegir foto/cámara: `SharedImage.take()` devolvía vacío → el portapapeles con nombre no llegaba de la extensión a la app.
+- **Fix:** App Group **`group.app.settlia.pwa`** en `App.entitlements` + `ShareExtension/ShareExtension.entitlements` nuevo (`CODE_SIGN_ENTITLEMENTS` del target). La extensión escribe `shared.jpg` en el contenedor del grupo (y sigue poniendo el portapapeles como respaldo); `SharedImagePlugin` lee primero el archivo y lo borra.
+- **⚠️ Requiere paso de Apple ANTES del build** (si no, el archive falla): crear el App Group en Apple Developer, activarlo en los App IDs `app.settlia.pwa` y `app.settlia.pwa.share`, regenerar los DOS perfiles App Store y reemplazarlos en Codemagic.
+
 ### Proyección más minimal + consejos plegados (2026-10-17)
 - `ProjectionView`: "A fin de mes" ya no es una tarjeta aparte, va como línea dentro de "Este mes". Orden Pro: Este mes → Tu presupuesto mensual → Tu próximo año → **Recurrentes** y **Gasto estimado al mes** como secciones plegables (`Fold`, cerradas por defecto, con el total a la derecha) → gráfico "Tu gasto" también plegable al final (`SpendingChart bare`). `SavingTips` (Mis gastos) plegado por defecto con el nº de consejos en la cabecera. `tsc` + build; no revisado en pantalla.
 

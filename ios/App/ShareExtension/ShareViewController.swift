@@ -15,6 +15,7 @@ import UniformTypeIdentifiers
 //    `app.settlia.pwa://add?text=…` y la IA lo interpreta como cualquier nota.
 final class ShareViewController: UIViewController {
     static let pasteboardName = UIPasteboard.Name("app.settlia.pwa.share")
+    static let appGroup = "group.app.settlia.pwa"
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -33,6 +34,11 @@ final class ShareViewController: UIViewController {
         if let p = providers.first(where: { $0.hasItemConformingToTypeIdentifier(UTType.image.identifier) }),
            let image = await loadImage(p),
            let jpeg = Self.scaled(image).jpegData(compressionQuality: 0.85) {
+            // Vía principal: archivo en el contenedor del App Group (lo comparten
+            // la app y la extensión). El portapapeles con nombre queda de respaldo.
+            if let dir = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: Self.appGroup) {
+                try? jpeg.write(to: dir.appendingPathComponent("shared.jpg"), options: .atomic)
+            }
             let pb = UIPasteboard(name: Self.pasteboardName, create: true)
             pb?.setData(jpeg, forPasteboardType: UTType.jpeg.identifier)
             open("app.settlia.pwa://scan?shared=1&id=\(UUID().uuidString)")
