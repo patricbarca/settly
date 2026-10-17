@@ -5,7 +5,7 @@ import { CURRENCIES, resolveToCode } from "../lib/currencies";
 import { updateGroup } from "../lib/store";
 import { CATEGORIES, type Budget, type Group, type Income, type IncomeFreq, type PlannedRecurrent } from "../lib/types";
 import type { MyItem } from "../lib/personal";
-import { perMonth, plannedThisMonth, isRecurringOccurrence, RECURRENT_TEMPLATES, type FixedItem } from "../lib/projection";
+import { perMonth, perWeek, plannedThisMonth, isRecurringOccurrence, occurrencesBetween, yearPeriods, RECURRENT_TEMPLATES, type FixedItem } from "../lib/projection";
 import { monthKey, monthLabel } from "../lib/report";
 import { consumeAI } from "../lib/plan";
 import { forecastSpendingAI } from "../lib/ai";
@@ -95,7 +95,6 @@ export function ProjectionView({
   }
   const avgVar = prev.length ? prev.reduce((a, b) => a + b, 0) / prev.length : projVar;
   const net = income - fixedAvg - avgVar;
-  const horizon = [0, 3, 6, 12].map((n) => ({ n, v: savings + net * n }));
 
   const monthByCat: Record<string, number> = {};
   for (const i of month) monthByCat[i.category] = (monthByCat[i.category] || 0) + conv(i.amount, i.currency);
@@ -314,21 +313,20 @@ export function ProjectionView({
             </div>
           )}
 
-          {/* Ahorros */}
+          {/* Año completo: gasto y ahorro proyectados por mes o semana */}
           {budget.incomes.length > 0 && (
-            <div className="glass-strong rounded-3xl p-5">
-              <H>{t("proj.savings")}</H>
-              <SavingsChart points={horizon} cur={mainCur} />
-              <div className="grid grid-cols-4 gap-1 mt-2 text-center">
-                {horizon.map((h) => (
-                  <div key={h.n}>
-                    <div className="text-[11px] text-muted">{h.n === 0 ? t("proj.today") : t("proj.inMonths", { n: String(h.n) })}</div>
-                    <div className="font-mono text-xs font-semibold" style={{ color: h.v < 0 ? "var(--coral)" : undefined }}>{money(h.v, mainCur)}</div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-[11px] text-muted mt-2">{t("proj.savingsHint", { net: money(net, mainCur), avg: money(avgVar, mainCur) })}</p>
-            </div>
+            <YearForecast
+              cur={mainCur}
+              savings={savings}
+              projVar={projVar}
+              avgVar={avgVar}
+              income={(by) => budget.incomes.reduce((s, i) => s + conv((by === "month" ? perMonth : perWeek)(i.amount, i.freq), i.currency), 0)}
+              fixedIn={(by, a, b) =>
+                fixed.reduce((s, f) => s + conv(f.amount * occurrencesBetween(f.nextDate, f.interval, a, b), f.currency), 0) +
+                planned.reduce((s, r) => s + conv(by === "month" ? plannedThisMonth(r.amount, r.freq) : perWeek(r.amount, r.freq), r.currency), 0)
+              }
+              hint={t("proj.savingsHint", { net: money(net, mainCur), avg: money(avgVar, mainCur) })}
+            />
           )}
         </>
       )}
@@ -543,22 +541,126 @@ function GoalsModal({ initial, cur, onSave, onClose }: { initial: Record<string,
   );
 }
 
-function SavingsChart({ points, cur }: { points: { n: number; v: number }[]; cur: string }) {
-  const W = 300, H = 90, P = 8;
-  const vals = points.map((p) => p.v);
-  const min = Math.min(0, ...vals), max = Math.max(...vals, 1);
-  const x = (n: number) => P + (n / 12) * (W - 2 * P);
-  const y = (v: number) => H - P - ((v - min) / (max - min || 1)) * (H - 2 * P);
-  const d = points.map((p, i) => `${i ? "L" : "M"}${x(p.n)},${y(p.v)}`).join(" ");
+/** Proyección a un año: por cada mes (12) o semana (52) el gasto previsto
+ *  (fijos con sus cobros reales + variable medio), el ahorro y los ahorros
+ *  acumulados. Barras = gasto; línea = ahorros acumulados. */
+function YearForecast({
+  cur, savings, projVar, avgVar, income, fixedIn, hint,
+}: {
+  cur: string;
+  savings: number;
+  projVar: number;
+  avgVar: number;
+  income: (by: "month" | "week") => number;
+  fixedIn: (by: "month" | "week", start: number, end: number) => number;
+  hint: string;
+}) {
+  const t = useT();
+  const lang = useLang();
+  const [by, setBy] = useState<"month" | "week">("month");
+  const [open, setOpen] = useState(false);
+  const inc = income(by);
+  const varPer = by === "month" ? avgVar : (avgVar * 12) / 52;
+  let cum = savings;
+  const rows = yearPeriods(by, lang).map((p) => {
+    const fixed = fixedIn(by, p.start, p.end);
+    const variable = by === "month" && p.current ? projVar : varPer;
+    const spend = fixed + variable;
+    const save = inc - spend;
+    cum += save;
+    return { ...p, spend, save, cum };
+  });
+  const totSpend = rows.reduce((s, r) => s + r.spend, 0);
+  const totSave = rows.reduce((s, r) => s + r.save, 0);
+  const end = rows[rows.length - 1].cum;
+  const max = Math.max(1, ...rows.map((r) => r.spend));
+  const cMin = Math.min(0, savings, ...rows.map((r) => r.cum));
+  const cMax = Math.max(1, savings, ...rows.map((r) => r.cum));
+  const W = 300, Hh = 120;
+  const x = (k: number) => ((k + 0.5) / rows.length) * W;
+  const y = (v: number) => Hh - 6 - ((v - cMin) / (cMax - cMin || 1)) * (Hh - 12);
+  const line = rows.map((r, k) => `${k ? "L" : "M"}${x(k)},${y(r.cum)}`).join(" ");
+  const short = (v: number) => money(v, cur).replace(/[.,]\d+$/, "");
+  const red = (v: number) => (v < 0 ? { color: "var(--coral)" } : undefined);
+  const every = by === "month" ? 1 : 8;
+  const per = t(by === "month" ? "proj.per.monthly" : "proj.per.weekly");
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full mt-2" role="img" aria-label={money(points[points.length - 1].v, cur)}>
-      {min < 0 && <line x1={P} x2={W - P} y1={y(0)} y2={y(0)} stroke="var(--line)" strokeDasharray="4 4" />}
-      <path d={`${d} L${x(12)},${H - P} L${x(0)},${H - P} Z`} fill="var(--teal)" opacity={0.12} />
-      <path d={d} fill="none" stroke="var(--teal)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-      {points.map((p) => (
-        <circle key={p.n} cx={x(p.n)} cy={y(p.v)} r={3.5} fill="var(--teal)" />
-      ))}
-    </svg>
+    <div className="glass-strong rounded-3xl p-5">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted">{t("proj.year")}</div>
+        <div className="seg !p-0.5 text-xs" role="tablist">
+          <button role="tab" aria-selected={by === "month"} onClick={() => setBy("month")}>{t("proj.byMonth")}</button>
+          <button role="tab" aria-selected={by === "week"} onClick={() => setBy("week")}>{t("proj.byWeek")}</button>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2 mt-3">
+        <div className="glass rounded-2xl p-2.5 min-w-0">
+          <div className="text-[11px] text-muted">{t("proj.yearSpend")}</div>
+          <div className="font-mono text-sm font-bold truncate">{short(totSpend)}</div>
+          <div className="text-[10px] text-muted font-mono truncate">{short(totSpend / rows.length)}{per}</div>
+        </div>
+        <div className="glass rounded-2xl p-2.5 min-w-0">
+          <div className="text-[11px] text-muted">{t("proj.yearSave")}</div>
+          <div className="font-mono text-sm font-bold truncate" style={{ color: totSave >= 0 ? "#2ED573" : "var(--coral)" }}>{short(totSave)}</div>
+          <div className="text-[10px] text-muted font-mono truncate">{short(totSave / rows.length)}{per}</div>
+        </div>
+        <div className="glass rounded-2xl p-2.5 min-w-0">
+          <div className="text-[11px] text-muted">{t("proj.yearEnd")}</div>
+          <div className="font-mono text-sm font-bold truncate" style={red(end)}>{short(end)}</div>
+          <div className="text-[10px] text-muted font-mono truncate">{t("proj.today")}: {short(savings)}</div>
+        </div>
+      </div>
+      <div className="relative mt-4">
+        <div className="h-[120px] flex items-end" style={{ gap: by === "month" ? 6 : 1 }}>
+          {rows.map((r, k) => (
+            <div key={k} className="flex-1 rounded-t-sm" title={`${r.label} · ${money(r.spend, cur)}`}
+              style={{ height: `${(r.spend / max) * 70}%`, minHeight: 2, background: r.current ? "var(--indigo)" : "color-mix(in srgb, var(--indigo) 40%, transparent)" }} />
+          ))}
+        </div>
+        <svg viewBox={`0 0 ${W} ${Hh}`} preserveAspectRatio="none" className="absolute inset-0 w-full h-[120px] pointer-events-none">
+          {cMin < 0 && <line x1={0} x2={W} y1={y(0)} y2={y(0)} stroke="var(--line)" strokeDasharray="4 4" vectorEffect="non-scaling-stroke" />}
+          <path d={line} fill="none" stroke="var(--teal)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+        </svg>
+      </div>
+      <div className="flex mt-1" style={{ gap: by === "month" ? 6 : 1 }}>
+        {rows.map((r, k) => (
+          <div key={k} className="flex-1 text-center text-[10px] text-muted whitespace-nowrap" style={{ overflow: "visible" }}>{k % every === 0 ? r.label : ""}</div>
+        ))}
+      </div>
+      <div className="flex gap-3 text-[11px] text-muted mt-2">
+        <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm" style={{ background: "var(--indigo)" }} /> {t("proj.legendSpend")}</span>
+        <span className="inline-flex items-center gap-1"><span className="w-3 h-0.5 rounded" style={{ background: "var(--teal)" }} /> {t("proj.legendSavings")}</span>
+      </div>
+      <button onClick={() => setOpen(!open)} className="text-xs font-semibold mt-3" style={{ color: "var(--teal)" }}>
+        {t(open ? "proj.hideDetail" : "proj.showDetail")}
+      </button>
+      {open && (
+        <div className="mt-2 max-h-72 overflow-y-auto text-xs">
+          <div className="grid grid-cols-4 gap-1 text-muted font-semibold py-1">
+            <span>{t(by === "month" ? "proj.colMonth" : "proj.colWeek")}</span>
+            <span className="text-right">{t("proj.legendSpend")}</span>
+            <span className="text-right">{t("proj.colSave")}</span>
+            <span className="text-right">{t("proj.legendSavings")}</span>
+          </div>
+          {rows.map((r, k) => (
+            <div key={k} className="grid grid-cols-4 gap-1 py-1 border-t border-[var(--line)] font-mono" style={r.current ? { fontWeight: 700 } : undefined}>
+              <span className="font-sans">{r.label}</span>
+              <span className="text-right">{short(r.spend)}</span>
+              <span className="text-right" style={red(r.save)}>{short(r.save)}</span>
+              <span className="text-right" style={red(r.cum)}>{short(r.cum)}</span>
+            </div>
+          ))}
+          <div className="grid grid-cols-4 gap-1 py-1.5 border-t-2 border-[var(--line)] font-mono font-bold">
+            <span className="font-sans">{t("proj.total")}</span>
+            <span className="text-right">{short(totSpend)}</span>
+            <span className="text-right" style={red(totSave)}>{short(totSave)}</span>
+            <span className="text-right" style={red(end)}>{short(end)}</span>
+          </div>
+          <div className="text-[11px] text-muted mt-1">{t("proj.income")}: {short(inc)}{per}</div>
+        </div>
+      )}
+      <p className="text-[11px] text-muted mt-2">{hint}</p>
+    </div>
   );
 }
 

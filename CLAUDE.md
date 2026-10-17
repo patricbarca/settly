@@ -51,6 +51,11 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Proyección: vista de un año por mes o semana (2026-10-17)
+- **Pro.** La tarjeta "Tus ahorros" (3/6/12 meses) se sustituye por **"Tu próximo año"** (`YearForecast` en `ProjectionView.tsx`): selector **Mes / Semana** (12 meses desde el actual o 52 semanas lunes-domingo), resumen con **gasto previsto del año** (y media por mes/semana), **ahorro previsto** y **ahorros en 1 año**; gráfico de barras (gasto) + línea (ahorros acumulados); "Ver detalle" con tabla por periodo y fila **Total**.
+- **Cálculo:** fijos de grupos con sus cobros REALES en cada periodo (`occurrencesBetween` con `FixedItem.nextDate`, nuevo); recurrentes planificados: `plannedThisMonth` por mes y `perWeek` por semana; ingresos `perMonth`/`perWeek`; variable = media de los 3 últimos meses (el mes actual usa el ritmo del mes). Helpers en `projection.ts`: `perWeek`, `occurrencesBetween`, `yearPeriods`.
+- ✅ `tsc` + build; probado `occurrencesBetween` (semanal oct 4 / dic 5, mensual 1, anual solo en su mes). **No revisado en pantalla.**
+
 ### Seguridad: límite de IA en servidor, cache-avatar cerrado, RPCs sin anon (2026-10-17)
 - **`migrate_v21_security_hardening.sql` (✅ producción):** tabla `ai_calls` + RPC `ai_guard(kind)` → tope DIARIO por usuario en el servidor (Pro 300, free 30), así nadie puede quemar la IA llamando a las Edge Functions saltándose la app. Revocado `execute` a `anon`/`public` en todas las RPC SECURITY DEFINER (ya validaban membresía; ahora ni se pueden invocar sin sesión) y `search_path` fijado en los helpers.
 - **Edge Functions:** `parse-expense` v44, `scan-receipt` v55, `transcribe` v38, `forecast-spending` v2 llaman a `ai_guard` (429 `rate_limited`; si el control falla, NO bloquea) + topes de tamaño (texto 1500, audio 8 MB, imagen 8 MB, body 60 KB) + salida saneada. **Prompt injection:** las notas/tickets/datos se tratan como DATOS en el prompt; los nombres de miembros (que elige cada uno) se recortan a 40 chars sin saltos/comillas; toda salida pasa por sanitize (ids/categorías/monedas válidas, longitudes) y solo rellena un borrador que el usuario revisa.
