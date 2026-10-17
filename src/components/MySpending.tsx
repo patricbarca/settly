@@ -17,6 +17,7 @@ import { heroBackground, HeroCover } from "../lib/heroStyle";
 import { GroupSettings } from "./GroupSettings";
 import { ProjectionView } from "./ProjectionView";
 import { ReclassifyModal } from "./ReclassifyModal";
+import { VaultNewsModal, vaultNewsHidden } from "./VaultNewsModal";
 import { fixedItems } from "../lib/projection";
 import { usePlan } from "../lib/plan";
 
@@ -37,6 +38,8 @@ export function MySpending() {
   const personal = useEnsurePersonalGroup();
   const { archived: localArchived } = useArchivedGroups();
   const [reclass, setReclass] = useState(false);
+  // Novedades: se abren al entrar salvo "no volver a mostrar".
+  const [news, setNews] = useState(() => !vaultNewsHidden());
   const all = useMemo(() => myItems(groups, localArchived), [groups, localArchived]);
   const [editing, setEditing] = useState(false);
   const pro = usePlan() === "pro";
@@ -186,6 +189,14 @@ export function MySpending() {
                 <div className="font-display font-extrabold text-white truncate" style={{ fontSize: compact ? 18 : 24, transition: "font-size .3s ease" }}>🔒 {personal?.name || t("mine.personal")}</div>
                 <div className="text-xs text-white/75 mt-0.5" style={{ maxHeight: compact ? 0 : 80, opacity: compact ? 0 : 1, overflow: "hidden", transition: "max-height .3s ease, opacity .2s ease" }}>{t("mine.subtitle")}</div>
               </div>
+              <button
+                onClick={() => setNews(true)}
+                className="h-9 rounded-full px-3 flex items-center gap-1 text-white text-xs font-semibold shrink-0"
+                style={{ background: "rgba(255,255,255,.18)" }}
+                aria-label={t("vnews.button")}
+              >
+                <Icon name="sparkles" size={14} />{!compact && <span>{t("vnews.button")}</span>}
+              </button>
               {personal && (
                 <button
                   onClick={() => setEditing(true)}
@@ -355,6 +366,7 @@ export function MySpending() {
       {personal && <AddExpense group={personal} />}
 
       {editing && personal && <GroupSettings group={personal} onClose={() => setEditing(false)} />}
+      {news && <VaultNewsModal onClose={() => setNews(false)} />}
       {reclass && <ReclassifyModal items={all} onClose={() => setReclass(false)} />}
 
       {confirmDel && (
