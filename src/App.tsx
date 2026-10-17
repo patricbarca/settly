@@ -69,9 +69,13 @@ export default function App() {
   const quick = useQuickAdd();
   const groupsLoading = useGroupsLoading();
   const { archived: localArchived } = useArchivedGroups();
-  const pickable = allGroups.filter((g) => !localArchived.has(g.id) && !g.archived && !g.personal);
-  // El grupo abierto primero: es la opción más probable.
-  const pickOrder = group ? [...pickable].sort((a, b) => (a.id === group.id ? -1 : b.id === group.id ? 1 : 0)) : pickable;
+  // Incluye el grupo personal (gastos solo míos): va primero en la lista.
+  const pickable = allGroups.filter((g) => !localArchived.has(g.id) && !g.archived);
+  // El grupo abierto primero (es la opción más probable); si no, el personal.
+  const pickOrder = [...pickable].sort((a, b) => {
+    const rank = (g: typeof a) => (group && g.id === group.id ? 0 : g.personal ? 1 : 2);
+    return rank(a) - rank(b);
+  });
   const quickReady = !!quick && !quick.groupId && !!user && (phase === "authenticated" || phase === "guest") && !groupsLoading;
   useEffect(() => {
     if (quickReady && pickable.length === 1) pickQuickGroup(pickable[0].id);
@@ -81,7 +85,12 @@ export default function App() {
     assignQuickAdd(id);
     setShowActivity(false);
     setShowAccount(false);
-    setActiveGroup(id);
+    // El personal no se abre como grupo: vive en la pestaña "Mis gastos", que
+    // monta su propio AddExpense y recoge el gasto.
+    if (allGroups.find((g) => g.id === id)?.personal) {
+      setActiveGroup(null);
+      setHomeTab("mine");
+    } else setActiveGroup(id);
   }
   const unread = countUnread(allGroups);
   const navActive: NavKey = showActivity

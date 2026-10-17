@@ -118,6 +118,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "join.noneOfThese": { es: "Ninguno, soy nuevo/a", en: "None of these, I'm new" },
   "quickAdd.title": { es: "¿A qué grupo lo añado?", en: "Which group is this for?" },
   "quickAdd.scanTitle": { es: "¿De qué grupo es el ticket?", en: "Which group is the receipt for?" },
+  "quickAdd.justMe": { es: "Solo tú", en: "Just you" },
   "quickAdd.people": { es: "{n} pers.", en: "{n} people" },
   "quickAdd.noGroups": { es: "Aún no tienes grupos. Crea uno y vuelve a intentarlo.", en: "You don't have any groups yet. Create one and try again." },
   "quickAdd.cancel": { es: "Cancelar", en: "Cancel" },
