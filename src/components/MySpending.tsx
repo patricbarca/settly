@@ -20,6 +20,7 @@ import { ReclassifyModal } from "./ReclassifyModal";
 import { VaultNewsModal, vaultNewsHidden } from "./VaultNewsModal";
 import { fixedItems } from "../lib/projection";
 import { usePlan } from "../lib/plan";
+import { Paywall } from "./Paywall";
 
 type Mode = "converted" | "byCurrency" | "projection";
 
@@ -38,6 +39,7 @@ export function MySpending() {
   const personal = useEnsurePersonalGroup();
   const { archived: localArchived } = useArchivedGroups();
   const [reclass, setReclass] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
   // Novedades: se abren al entrar salvo "no volver a mostrar".
   const [news, setNews] = useState(() => !vaultNewsHidden());
   const all = useMemo(() => myItems(groups, localArchived), [groups, localArchived]);
@@ -311,8 +313,8 @@ export function MySpending() {
             <>
               <div className="flex items-center justify-between gap-2 mt-6 mb-2">
                 <h3 className="font-display text-lg font-bold">{t("mine.movements")}</h3>
-                <button onClick={() => setReclass(true)} className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: "var(--teal)" }}>
-                  <Icon name="sparkles" size={13} /> {t("reclass.button")}
+                <button onClick={() => (pro ? setReclass(true) : setShowPaywall(true))} className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: "var(--teal)" }}>
+                  <Icon name="sparkles" size={13} /> {t("reclass.button")}{!pro && <span className="text-[9px] font-bold ml-0.5">PRO</span>}
                 </button>
               </div>
               <div className="glass rounded-3xl divide-y divide-[var(--line)]">
@@ -367,6 +369,7 @@ export function MySpending() {
 
       {editing && personal && <GroupSettings group={personal} onClose={() => setEditing(false)} />}
       {news && <VaultNewsModal onClose={() => setNews(false)} />}
+      {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
       {reclass && <ReclassifyModal items={all} onClose={() => setReclass(false)} />}
 
       {confirmDel && (

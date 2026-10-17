@@ -18,6 +18,10 @@ import { Overlay } from "./Overlay";
 import { haptic } from "../lib/haptics";
 import { Avatar } from "./Avatar";
 import { ConfirmModal } from "./ConfirmModal";
+import { ReclassifyModal } from "./ReclassifyModal";
+import { Paywall } from "./Paywall";
+import { usePlan } from "../lib/plan";
+
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 import { ItemizedExpenseEditor, type ItemizedResult } from "./ItemizedExpenseEditor";
 import { ReceiptButton } from "./ReceiptButton";
@@ -55,6 +59,9 @@ export function ExpenseList({ group }: { group: Group }) {
 
   // Filtros de la sección de gastos: por pagador, participante, categoría y mes.
   const [showFilters, setShowFilters] = useState(false);
+  const [reclass, setReclass] = useState(false);
+  const [reclassPaywall, setReclassPaywall] = useState(false);
+  const isPro = usePlan() === "pro";
   const [fPayer, setFPayer] = useState<string | null>(null);
   const [fPart, setFPart] = useState<string | null>(null);
   const [fCat, setFCat] = useState<Category | null>(null);
@@ -254,6 +261,14 @@ export function ExpenseList({ group }: { group: Group }) {
       <div className="flex items-center justify-between px-1">
         <h3 className="font-display text-lg font-bold">{t("exp.title")}</h3>
         {group.expenses.length > 0 && (
+          <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => (isPro ? setReclass(true) : setReclassPaywall(true))}
+            className="glass rounded-full px-3 py-1 text-xs hover-lift inline-flex items-center gap-1"
+            style={{ color: "var(--teal)" }}
+          >
+            <Icon name="sparkles" size={13} /> {t("reclass.short")}{!isPro && <span className="text-[9px] font-bold ml-0.5">PRO</span>}
+          </button>
           <button
             onClick={() => setShowFilters((v) => !v)}
             className="glass rounded-full px-3 py-1 text-xs hover-lift inline-flex items-center gap-1.5"
@@ -267,8 +282,21 @@ export function ExpenseList({ group }: { group: Group }) {
               </span>
             )}
           </button>
+          </div>
         )}
       </div>
+      {reclass && (
+        <ReclassifyModal
+          onClose={() => setReclass(false)}
+          items={group.expenses.map((e) => ({
+            key: `${group.id}:${e.id}`, expenseId: e.id, groupId: group.id, groupName: group.name,
+            personal: !!group.personal, archived: false, label: e.label, date: e.date,
+            category: e.category, aiReviewed: !!e.aiReviewed, currency: currencyOf(e, group),
+            amount: e.amount, total: e.amount,
+          }))}
+        />
+      )}
+      {reclassPaywall && <Paywall onClose={() => setReclassPaywall(false)} />}
       {myClaims.length > 0 && (
         <button
           onClick={() => setClaimId(myClaims[0].id)}
