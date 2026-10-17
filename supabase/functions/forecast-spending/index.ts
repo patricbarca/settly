@@ -18,6 +18,7 @@ const corsHeaders = {
 const API_KEY = Deno.env.get("AI_TEXT_API_KEY") ?? Deno.env.get("STT_API_KEY") ?? "";
 const API_URL = Deno.env.get("AI_TEXT_API_URL") ?? "https://api.groq.com/openai/v1/chat/completions";
 const MODEL = Deno.env.get("AI_FORECAST_MODEL") ?? "llama-3.3-70b-versatile";
+const FALLBACK_MODEL = Deno.env.get("AI_TEXT_MODEL") ?? "llama-3.1-8b-instant";
 
 const json = (b: unknown, status = 200) =>
   new Response(JSON.stringify(b), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -60,20 +61,28 @@ Deno.serve(async (req) => {
       `with numbers, e.g. what grew, where to cut, whether they will end the month above or below. ` +
       `Respond ONLY with JSON: {"goals": {"<category>": number}, "insights": ["..."]}.`;
 
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: MODEL,
-        temperature: 0.2,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: JSON.stringify({ currency, income, fixedCosts: fixed, months, thisMonth, today: body.today }) },
-        ],
-      }),
-    });
-    if (!res.ok) return json({ error: "upstream", status: res.status }, 502);
+    // Si el modelo grande falla (deprecado, límite, error), se reintenta con
+    // el pequeño: mejor una sugerencia algo peor que ninguna.
+    const models = [...new Set([MODEL, FALLBACK_MODEL])];
+    let res: Response | null = null;
+    for (const model of models) {
+      res = await fetch(API_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          temperature: 0.2,
+          response_format: { type: "json_object" },
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: JSON.stringify({ currency, income, fixedCosts: fixed, months, thisMonth, today: body.today }) },
+          ],
+        }),
+      });
+      if (res.ok) break;
+      console.error("forecast-spending upstream", model, res.status, (await res.text()).slice(0, 300));
+    }
+    if (!res || !res.ok) return json({ error: "upstream", status: res?.status }, 502);
     const data = await res.json();
     let out: any = {};
     try { out = JSON.parse(data.choices?.[0]?.message?.content ?? "{}"); } catch { out = {}; }
