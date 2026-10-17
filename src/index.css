@@ -395,3 +395,7 @@ button:focus-visible, input:focus-visible, a:focus-visible, [role="button"]:focu
   }
   .no-print { display: none !important; }
 }
+
+/* Filas de chips con scroll horizontal sin barra visible ("Mis gastos"). */
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }

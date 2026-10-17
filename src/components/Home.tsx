@@ -19,11 +19,12 @@ import { InstallButton } from "./InstallButton";
 import { Paywall } from "./Paywall";
 import type { Group } from "../lib/types";
 
-export type HomeTab = "groups" | "contacts";
+export type HomeTab = "groups" | "contacts" | "mine";
 
 export function Home({ tab }: { tab: HomeTab }) {
   const t = useT();
-  const groups = useGroups();
+  // El grupo personal ("Mis gastos") no es un grupo de la lista ni cuenta para el límite.
+  const groups = useGroups().filter((g) => !g.personal);
   const plan = usePlan();
   const [creating, setCreating] = useState(false);
   // Cabecera: compacta al bajar; animación de entrada solo la 1.ª vez por sesión.

@@ -290,6 +290,11 @@ export interface Group {
   heroImage?: string | null;
   /** Encuadre de la foto: punto de enfoque x/y en % (0-100) y zoom (1-3). */
   heroImagePos?: { x: number; y: number; z: number } | null;
+  /** "Mis gastos": grupo privado de UNA persona para sus gastos personales.
+   *  No sale en la lista de grupos ni cuenta para el límite del plan gratis.
+   *  Va con `kind: "home"` para que `daily-reminders` no le mande el aviso de
+   *  "¿ya agregaste todo?" (no tiene deudas, así que tampoco el de pagar). */
+  personal?: boolean;
 }
 
 import type { IconName } from "../components/Icon";

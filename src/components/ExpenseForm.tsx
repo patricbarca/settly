@@ -166,6 +166,7 @@ export function ExpenseForm({
   const t = useT();
   const lang = useLang();
   const [f, setF] = useState<ExpenseDraft>(() => ({ ...initial, date: initial.date || todayLocal() }));
+  const solo = !!group.personal;
   const currencyCode = (currencyEditable && f.currency) || amountCurrency || group.currency;
   // Recibo adjunto (opcional) — para gastos manuales, por voz o texto. La foto
   // se sube a Storage al guardar y se guarda solo la ruta en el gasto.
@@ -416,6 +417,8 @@ export function ExpenseForm({
         </div>
       </div>
 
+      {/* Gasto personal ("Mis gastos"): no hay a quién repartir. */}
+      {!solo && (<>
       {/* Who paid */}
       <div data-miss={!missLabel && !missAmount && missPay ? "1" : undefined} style={bad(missPay)} className="rounded-xl">
         <div className="flex items-center justify-between">
@@ -606,6 +609,8 @@ export function ExpenseForm({
           />
         </span>
       </button>
+
+      </>)}
 
       {/* Adjuntar recibo (opcional) — sirve para gastos manuales, por voz o texto */}
       <div>

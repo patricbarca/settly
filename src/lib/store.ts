@@ -244,9 +244,11 @@ export function setActiveGroup(id: string | null) {
 
 export async function addGroup(
   group: Group,
-  extraMembers: { userId: string; memberId: string }[] = []
+  extraMembers: { userId: string; memberId: string }[] = [],
+  opts: { open?: boolean } = {}
 ) {
-  state = { groups: [group, ...state.groups], activeId: group.id, loading: false };
+  const open = opts.open ?? true;
+  state = { groups: [group, ...state.groups], activeId: open ? group.id : state.activeId, loading: false };
   emit();
   if (!currentUserId) return;
   idbPutGroup(group).catch(() => {});

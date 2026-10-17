@@ -115,17 +115,19 @@ Bloquean lanzamiento serio / publicación en stores.
 - 🔧 **Codemagic ya NO construye automáticamente en push a `master`** (`codemagic.yaml` → `branch_patterns include: false`). Solo build manual (Start new build) o por API. Motivo: poder desplegar cambios de la PWA a `master` sin generar builds de iOS mientras la app está en review. **Para reactivar el auto-build:** volver a poner `include: true`.
 - ⚠️ **No lanzar un build de iOS a Codemagic mientras la app siga "In Review"** (subiría un build nuevo a TestFlight; no rompe la review pero conviene esperar el veredicto).
 
-## Fase 4.5 — Vault personal de gastos (idea a evaluar)
+## Fase 4.5 — Vault personal de gastos (🔧 v1 hecha 2026-10-17: pestaña "Mis gastos")
+- ✅ **"Mis gastos" (v1, gratis):** pestaña en la barra inferior con tu parte de cada gasto de tus grupos + gastos personales (grupo privado `personal: true`, sin tabla nueva). Vistas "Todo en {moneda principal}" (tasa de hoy) y "Por moneda". Filtros por mes y por origen. El + reutiliza IA/voz/escaneo con el mismo cupo gratis (3/mes).
+- ⬜ Editar un gasto personal (hoy solo borrar), presupuestos por categoría, exportar CSV.
 > Inspirado en Easy Expense. Complementa el core de gastos grupales con un módulo **personal** para rastrear gastos individuales deducibles de impuestos. Especialmente relevante para Australia (año fiscal ATO: 1 jul → 30 jun).
 
-- ⬜ **Tab "Vault" en Home** — junto a Grupos y Contactos. Gastos personales, no compartidos.
+- ✅ **Tab "Vault"** → hecho como "Mis gastos" en la barra inferior (v1).
 - ⬜ **Escanear recibo → vault** — reutiliza el scanner AI existente (`scan-receipt` Edge Function). Extrae monto, fecha, proveedor, categoría automáticamente.
 - ⬜ **Categorías ATO** — Work from home, Vehicle & travel, Phone & internet, Education, Clothing, Meals (client), Other. Distintas a las categorías de gastos grupales.
 - ⬜ **Resumen Jul–Jun** — vista de gastos deducibles por año fiscal australiano, agrupados por categoría, con total acumulado.
 - ⬜ **Export CSV/PDF para el contador** — todos los recibos del año fiscal en un solo archivo. PDF = printable con logo + tabla. CSV = para contadores/software contable.
 - ⬜ **Recibos en Storage** — cada recibo del vault en bucket privado `vault-receipts/{userId}/{uid}.jpg` (igual que los de grupos).
 - ⬜ **"Mover al vault"** — desde un gasto grupal, guardar tu parte como gasto personal deducible en el vault con un toque.
-- ⬜ **Pro gate** — vault ilimitado en Pro; free = hasta 10 recibos/año.
+- ❌ **Pro gate** — descartado por el usuario (2026-10-17): "Mis gastos" es gratis; solo la IA tiene el cupo de siempre.
 
 > **Dependencias:** bucket Storage en Supabase + nueva tabla `vault_expenses` con RLS por `user_id`. Reutiliza el componente `ScanReceiptModal` y `src/lib/storage.ts`.
 > **Por qué Australia:** el ATO exige comprobante por cada deducción >$300; trabajadores en relación de dependencia pueden deducir gastos de trabajo; autónomos (ABN) necesitan llevar libros. La app ya tiene usuarios en AU.
