@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Fix: presupuesto mensual contaba dos veces los recurrentes de grupos (2026-10-17)
+- El gasto estimado (media de 3 meses de TODO lo gastado) ya incluye los cobros de los recurrentes de grupos (p. ej. Rent). `BudgetTotal` los sumaba aparte → total inflado (captura: 1.846,73 + 3.841). Ahora la fila es "Resto del gasto estimado" = estimado − recurrentes de grupos (`estRest`), y "Tu próximo año"/ahorros usan `estRest` como variable cuando se usa el estimado (antes también duplicaba). `tsc` + build.
+
 ### Proyección: consejos de ahorro con IA (2026-10-17)
 - `forecast-spending` **v6 (✅ desplegada)** devuelve además `tips` (3-5 consejos concretos según tus categorías más altas o en subida, ingresos y fijos, con ahorro estimado al mes; saneados, máx 200 chars). Se guardan en `Budget.tips` y salen en un bloque verde "💡 Consejos para ahorrar" bajo el gasto estimado. Se piden con el mismo botón ("Calcular media + consejos IA" / "Recalcular y nuevos consejos"), 1 uso de IA de texto. `tsc` + build; no probado con datos reales.
 
