@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Consejos de ahorro separados del "Recalcular" y en la pantalla principal de Mis gastos (2026-10-17)
+- `forecast-spending` **v7 (✅ desplegada)**: `body.mode === "tips"` → solo devuelve `tips` (prompt propio); el modo normal (Recalcular del gasto estimado) ya no pide consejos. Componente nuevo **`SavingTips.tsx`** arriba de la vista principal de Mis gastos (no en Proyección): botón "Pedir consejos a la IA" / "Nuevos consejos" (Pro; gratis → Paywall; 1 uso de IA de texto), manda 6 meses por categoría + este mes + ingresos + fijos, guarda `Budget.tips/tipsAt` y muestra "Actualizado {fecha}". Se quitó el bloque de consejos de `ProjectionView`. `tsc` + build; no probado en pantalla.
+
 ### Fix: presupuesto mensual contaba dos veces los recurrentes de grupos (2026-10-17)
 - El gasto estimado (media de 3 meses de TODO lo gastado) ya incluye los cobros de los recurrentes de grupos (p. ej. Rent). `BudgetTotal` los sumaba aparte → total inflado (captura: 1.846,73 + 3.841). Ahora la fila es "Resto del gasto estimado" = estimado − recurrentes de grupos (`estRest`), y "Tu próximo año"/ahorros usan `estRest` como variable cuando se usa el estimado (antes también duplicaba). `tsc` + build.
 
