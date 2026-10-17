@@ -1,18 +1,12 @@
-// ============================================================
-// Settlia – Edge Function: cache-avatar
-// Baja la foto de perfil de Google (lh3.googleusercontent.com) UNA vez y la
-// guarda como data URL en `profiles.avatar`, para no depender del hotlink de
-// Google (que a veces devuelve 403/429 → la foto sale rota y cae a iniciales).
-//
-// Seguro para exponer (verify_jwt=false): SOLO "repara" — reemplaza el avatar
-// cuando el valor guardado actual es una URL de googleusercontent, cacheando esa
-// MISMA imagen pública. Nunca pisa una foto subida por el usuario (data:) ni
-// expone datos. Idempotente. El servidor de Supabase sí alcanza a Google.
-//
-// Body: { "userId": "<uuid>" }  → cachea la foto de ese usuario.
-// ============================================================
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+// Baja UNA vez la foto de Google del usuario (Google bloquea el hotlink desde el
+// navegador) y la guarda como data URL en profiles.avatar.
+// Seguridad (2026-10-17): exige sesión y actúa SOLO sobre el usuario del JWT
+// (antes aceptaba cualquier userId sin sesión), y solo descarga de
+// *.googleusercontent.com con respuesta de tipo imagen — la URL sale de
+// user_metadata, que el propio usuario puede editar, así que sin esto la
+// función podía descargar cualquier dirección (SSRF).
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -38,45 +32,49 @@ function json(body: unknown, status = 200) {
   });
 }
 
+const isGoogleImageUrl = (u: string) => {
+  try {
+    const url = new URL(u);
+    return url.protocol === "https:" && /(^|\.)googleusercontent\.com$/.test(url.hostname);
+  } catch {
+    return false;
+  }
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
     if (!SERVICE_ROLE) return json({ error: "not_configured" }, 503);
-    const { userId } = await req.json().catch(() => ({}));
-    if (!userId) return json({ error: "no_user" }, 400);
-
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    // Avatar guardado actual: solo reparamos si es una URL de Google (o vacío).
+    const token = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "");
+    const { data: who } = await admin.auth.getUser(token);
+    const userId = who?.user?.id;
+    if (!userId) return json({ error: "unauthorized" }, 401);
+
     const { data: prof } = await admin.from("profiles").select("avatar").eq("id", userId).maybeSingle();
     const current = (prof?.avatar ?? "").trim();
     if (current.startsWith("data:")) return json({ ok: true, skipped: "already_cached" });
-    if (current && !/googleusercontent\.com/.test(current)) {
-      return json({ ok: true, skipped: "not_google" });
-    }
+    if (current && !isGoogleImageUrl(current)) return json({ ok: true, skipped: "not_google" });
 
-    // URL de Google desde el metadata de auth (fuente de verdad).
-    const { data: u } = await admin.auth.admin.getUserById(userId);
-    const meta = (u?.user?.user_metadata ?? {}) as Record<string, unknown>;
+    const meta = (who.user!.user_metadata ?? {}) as Record<string, unknown>;
     let url = (meta.avatar_url as string) || (meta.picture as string) || current;
-    if (!url || !/^https?:\/\//.test(url)) return json({ error: "no_google_avatar" }, 404);
-
-    // Pide una resolución razonable para retina (los avatars de Google aceptan =sNNN-c).
+    if (!url || !isGoogleImageUrl(url)) return json({ error: "no_google_avatar" }, 404);
     url = url.replace(/=s\d+(-c)?$/, "=s256-c");
 
-    const res = await fetch(url, { headers: { "user-agent": "Settlia/1.0" } });
+    const res = await fetch(url, { headers: { "user-agent": "Settlia/1.0" }, redirect: "error" });
     if (!res.ok) return json({ error: "fetch_failed", status: res.status }, 502);
+    const type = (res.headers.get("content-type")?.split(";")[0] || "").toLowerCase();
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(type)) return json({ error: "not_image" }, 415);
     const buf = new Uint8Array(await res.arrayBuffer());
-    // Tope de seguridad (los avatars de Google pesan pocos KB).
-    if (buf.length > 400_000) return json({ error: "too_large", bytes: buf.length }, 413);
-    const type = res.headers.get("content-type")?.split(";")[0] || "image/jpeg";
+    if (buf.length > 400000) return json({ error: "too_large" }, 413);
     const dataUrl = `data:${type};base64,${toBase64(buf)}`;
 
     const { error } = await admin.from("profiles").update({ avatar: dataUrl }).eq("id", userId);
-    if (error) return json({ error: "save_failed", detail: error.message }, 500);
-
+    if (error) return json({ error: "save_failed" }, 500);
     return json({ ok: true, bytes: buf.length, type });
   } catch (e) {
-    return json({ error: "internal", detail: e instanceof Error ? e.message : String(e) }, 500);
+    console.error("cache-avatar", e);
+    return json({ error: "internal" }, 500);
   }
 });

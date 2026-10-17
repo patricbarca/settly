@@ -26,9 +26,13 @@ const num = (v: unknown) => (typeof v === "number" && isFinite(v) ? v : Number(v
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const guard = await aiGuard(req, "text");
+  if (guard) return guard;
   try {
     if (!API_KEY) return json({ error: "not_configured" }, 503);
-    const body = await req.json();
+    const raw = await req.text();
+    if (raw.length > 60_000) return json({ error: "too_large" }, 413);
+    const body = JSON.parse(raw);
     const currency = String(body.currency || "").slice(0, 5);
     const lang = body.lang === "en" ? "en" : "es";
     const categories: string[] = Array.isArray(body.categories) ? body.categories.map(String).slice(0, 30) : [];
@@ -90,3 +94,36 @@ Deno.serve(async (req) => {
     return json({ error: "failed" }, 500);
   }
 });
+
+/** Límite de uso de la IA en el SERVIDOR (RPC `ai_guard`, migrate_v21): corta
+ *  el abuso de alguien que llame a esta función saltándose la app. Si el
+ *  propio control falla (red, RPC), no bloquea al usuario: solo se registra. */
+async function aiGuard(req: Request, kind: string): Promise<Response | null> {
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const anon = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!url || !anon) return null;
+    const r = await fetch(`${url}/rest/v1/rpc/ai_guard`, {
+      method: "POST",
+      headers: {
+        apikey: anon,
+        authorization: req.headers.get("authorization") ?? "",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ p_kind: kind }),
+    });
+    if (!r.ok) {
+      console.error("ai_guard http", r.status);
+      return null;
+    }
+    if ((await r.json()) === false) {
+      return new Response(JSON.stringify({ error: "rate_limited" }), {
+        status: 429,
+        headers: { ...corsHeaders, "content-type": "application/json" },
+      });
+    }
+  } catch (e) {
+    console.error("ai_guard", e);
+  }
+  return null;
+}

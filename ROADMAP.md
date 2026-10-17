@@ -64,6 +64,7 @@ Bloquean lanzamiento serio / publicación en stores.
 - ⬜ **Identidad legal/operador** (persona/empresa + país) para cuentas de ads y jurisdicción de los términos.
 
 **Seguridad:**
+- ✅ **Hardening 2026-10-17:** tope diario de IA en servidor (`ai_guard`), RPCs sin `anon`, `cache-avatar` con JWT y sin SSRF, prompts anti-injection. ⬜ Activar *Leaked password protection* en Supabase Auth. ⬜ Validar `members` en `update_group_data` server-side.
 - ✅ **Auditar RLS** — todas las tablas con RLS activo. Políticas añadidas a `access_codes`; EXECUTE revocado a `anon` en `handle_new_user`, `is_member_of`, `redeem_access_code` (migraciones v9 + v10, 2026-07-01). Warnings restantes son falsos positivos (`is_member_of`/`redeem_access_code` para `authenticated` es correcto e intencional) o limitaciones de plataforma (`pg_net` en public schema).
 - ✅ **Leaked password protection** — activado en Supabase Dashboard → Authentication → Password Settings.
 - ⬜ **Cabeceras de seguridad / CSP** (HSTS, CSP, X-Frame-Options, Referrer-Policy) — GitHub Pages no las permite; **Cloudflare Pages sí** (otra razón para migrar el hosting, Fase 2).

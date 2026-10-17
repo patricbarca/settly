@@ -1,36 +1,32 @@
-// ============================================================
 // Settly – Edge Function: transcribe (speech-to-text)
-// Transcribe un clip de audio a texto. Pensado para iPhone/Safari, donde
-// la Web Speech API del navegador no está disponible.
-//
-// Despliegue:
-//   supabase functions deploy transcribe
-//   supabase secrets set STT_API_KEY=sk-...
-//
-// Por defecto usa OpenAI Whisper (whisper-1, ~$0.006/min). Es configurable:
-//   STT_API_URL   (def. https://api.openai.com/v1/audio/transcriptions)
-//   STT_MODEL     (def. whisper-1)
-// Como la API es compatible con la de OpenAI, puedes apuntar STT_API_URL a
-// Groq (https://api.groq.com/openai/v1/audio/transcriptions, más barato/rápido)
-// y STT_MODEL a whisper-large-v3-turbo sin tocar el código.
-// ============================================================
-import { corsHeaders } from "../_shared/cors.ts";
+// Recibe un clip de audio y lo transcribe vía Groq (API compatible OpenAI).
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
 
 const STT_API_KEY = Deno.env.get("STT_API_KEY") ?? "";
 const STT_API_URL =
   Deno.env.get("STT_API_URL") ?? "https://api.openai.com/v1/audio/transcriptions";
 const STT_MODEL = Deno.env.get("STT_MODEL") ?? "whisper-1";
+// Tope de tamaño del audio (un dictado de gasto dura segundos).
+const MAX_AUDIO_BYTES = 8 * 1024 * 1024;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const guard = await aiGuard(req, "voice");
+  if (guard) return guard;
 
   try {
     if (!STT_API_KEY) return json({ error: "not_configured" }, 503);
 
     const inForm = await req.formData();
     const file = inForm.get("file");
-    const lang = (inForm.get("lang") as string) || "es";
+    const langIn = String(inForm.get("lang") || "es");
+    const lang = /^[a-z]{2}$/.test(langIn) ? langIn : "es";
     if (!(file instanceof File)) return json({ error: "no_audio" }, 400);
+    if (file.size > MAX_AUDIO_BYTES) return json({ error: "too_large" }, 413);
 
     const outForm = new FormData();
     outForm.append("file", file, file.name || "audio.webm");
@@ -49,7 +45,7 @@ Deno.serve(async (req) => {
     }
 
     const data = await res.json();
-    return json({ text: data?.text ?? "" });
+    return json({ text: String(data?.text ?? "").slice(0, 1000) });
   } catch (e) {
     console.error(e);
     return json({ error: "internal" }, 500);
@@ -61,4 +57,37 @@ function json(body: unknown, status = 200) {
     status,
     headers: { ...corsHeaders, "content-type": "application/json" },
   });
+}
+
+/** Límite de uso de la IA en el SERVIDOR (RPC `ai_guard`, migrate_v21): corta
+ *  el abuso de alguien que llame a esta función saltándose la app. Si el
+ *  propio control falla (red, RPC), no bloquea al usuario: solo se registra. */
+async function aiGuard(req: Request, kind: string): Promise<Response | null> {
+  try {
+    const url = Deno.env.get("SUPABASE_URL");
+    const anon = Deno.env.get("SUPABASE_ANON_KEY");
+    if (!url || !anon) return null;
+    const r = await fetch(`${url}/rest/v1/rpc/ai_guard`, {
+      method: "POST",
+      headers: {
+        apikey: anon,
+        authorization: req.headers.get("authorization") ?? "",
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ p_kind: kind }),
+    });
+    if (!r.ok) {
+      console.error("ai_guard http", r.status);
+      return null;
+    }
+    if ((await r.json()) === false) {
+      return new Response(JSON.stringify({ error: "rate_limited" }), {
+        status: 429,
+        headers: { ...corsHeaders, "content-type": "application/json" },
+      });
+    }
+  } catch (e) {
+    console.error("ai_guard", e);
+  }
+  return null;
 }
