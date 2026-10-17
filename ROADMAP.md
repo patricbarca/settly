@@ -118,7 +118,8 @@ Bloquean lanzamiento serio / publicación en stores.
 ## Fase 4.5 — Vault personal de gastos (🔧 v1 hecha 2026-10-17: pestaña "Mis gastos")
 - ✅ **"Mis gastos" (v1, gratis):** pestaña en la barra inferior con tu parte de cada gasto de tus grupos + gastos personales (grupo privado `personal: true`, sin tabla nueva). Vistas "Todo en {moneda principal}" (tasa de hoy) y "Por moneda". Filtros por mes y por origen. El + reutiliza IA/voz/escaneo con el mismo cupo gratis (3/mes).
 - ✅ **Proyección (2026-10-17):** ingresos, ahorros, lo que queda libre (gratis); fijos incl. recurrentes de grupos, fin de mes y ahorros a 3/6/12 meses (Pro).
-- ⬜ Editar un gasto personal (hoy solo borrar), presupuestos por categoría, exportar CSV.
+- ✅ **Proyección v2 (2026-10-17):** recurrentes con plantillas, semanal con cobros reales del mes, gráfico mes/semana, objetivo de gasto por categoría sugerido por IA (`forecast-spending`) y editable.
+- ⬜ Importar recurrentes desde el CSV del banco (la IA detecta pagos que se repiten). Editar un gasto personal (hoy solo borrar), exportar CSV.
 > Inspirado en Easy Expense. Complementa el core de gastos grupales con un módulo **personal** para rastrear gastos individuales deducibles de impuestos. Especialmente relevante para Australia (año fiscal ATO: 1 jul → 30 jun).
 
 - ✅ **Tab "Vault"** → hecho como "Mis gastos" en la barra inferior (v1).

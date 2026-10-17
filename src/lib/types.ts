@@ -309,8 +309,23 @@ export interface Income {
   freq: IncomeFreq;
 }
 
+/** Gasto fijo planificado en la Proyección (no genera gastos reales): alquiler,
+ *  luz, súper… `category` es un id de CATEGORIES o un nombre propio. */
+export interface PlannedRecurrent {
+  id: string;
+  label: string;
+  category: string;
+  amount: number;
+  currency: string; // ISO
+  freq: IncomeFreq;
+}
+
 export interface Budget {
   incomes: Income[];
+  recurrents?: PlannedRecurrent[];
+  /** Objetivo de gasto mensual por categoría (sugerido por la IA o a mano). */
+  goals?: Record<string, number> | null;
+  insights?: string[] | null;
   /** Ahorros que tengo hoy (punto de partida de la proyección). */
   savings?: { amount: number; currency: string } | null;
 }

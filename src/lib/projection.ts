@@ -1,4 +1,5 @@
 import type { Expense, Group, IncomeFreq, RecurrenceInterval } from "./types";
+import type { Category } from "./types";
 import { resolveToCode } from "./currencies";
 import { shareFor } from "./split";
 
@@ -23,8 +24,61 @@ export interface FixedItem {
   currency: string;
   amount: number; // mi parte por ocurrencia
   interval: RecurrenceInterval;
-  monthly: number; // mi parte al mes
+  monthly: number; // mi parte al mes (media)
+  thisMonth: number; // mi parte en los cobros que caen ESTE mes
+  times: number; // cuántos cobros caen este mes
 }
+
+const DAY = 86400000;
+const parseDay = (iso: string) => Date.UTC(+iso.slice(0, 4), +iso.slice(5, 7) - 1, +iso.slice(8, 10));
+
+/** Cuántos cobros de una regla caen en el mes de `now` (contando hacia atrás y
+ *  hacia delante desde `nextDate`). Un semanal da 4 o 5, no 4,33. */
+export function occurrencesInMonth(nextDate: string, interval: RecurrenceInterval, now = new Date()): number {
+  const y = now.getFullYear(), m = now.getMonth();
+  const start = Date.UTC(y, m, 1), end = Date.UTC(y, m + 1, 1);
+  if (interval === "daily") return (end - start) / DAY;
+  if (!/^\d{4}-\d{2}-\d{2}/.test(nextDate || "")) return interval === "weekly" ? 4 : interval === "monthly" ? 1 : 0;
+  const base = parseDay(nextDate);
+  if (interval === "weekly") {
+    const step = 7 * DAY;
+    let t = base + Math.ceil((start - base) / step) * step;
+    let n = 0;
+    for (; t < end; t += step) n++;
+    return n;
+  }
+  const bd = new Date(base);
+  if (interval === "monthly") return 1;
+  // yearly
+  return bd.getUTCMonth() === m ? 1 : 0;
+}
+
+/** Cobros de un recurrente PLANIFICADO (sin fecha) en un mes: semanas
+ *  completas (4), quincenas (2), 1 mensual; el anual se prorratea. */
+export function plannedThisMonth(amount: number, freq: IncomeFreq): number {
+  switch (freq) {
+    case "weekly": return amount * 4;
+    case "biweekly": return amount * 2;
+    case "yearly": return amount / 12;
+    default: return amount;
+  }
+}
+
+export const RECURRENT_TEMPLATES: { key: string; category: Category; freq: IncomeFreq }[] = [
+  { key: "rent", category: "alojamiento", freq: "weekly" },
+  { key: "electricity", category: "servicios", freq: "monthly" },
+  { key: "gas", category: "servicios", freq: "monthly" },
+  { key: "water", category: "servicios", freq: "monthly" },
+  { key: "internet", category: "servicios", freq: "monthly" },
+  { key: "phone", category: "servicios", freq: "monthly" },
+  { key: "groceries", category: "mercado", freq: "weekly" },
+  { key: "transport", category: "transporte", freq: "weekly" },
+  { key: "fuel", category: "transporte", freq: "weekly" },
+  { key: "gym", category: "salud", freq: "monthly" },
+  { key: "streaming", category: "suscripciones", freq: "monthly" },
+  { key: "insurance", category: "seguros", freq: "monthly" },
+  { key: "loan", category: "prestamos", freq: "monthly" },
+];
 
 /** Recurrentes activos de mis grupos (no archivados) y de mi personal. */
 export function fixedItems(groups: Group[], localArchived: Set<string> = new Set()): FixedItem[] {
@@ -49,6 +103,8 @@ export function fixedItems(groups: Group[], localArchived: Set<string> = new Set
         amount: mine,
         interval: r.interval,
         monthly: perMonth(mine, r.interval),
+        thisMonth: mine * occurrencesInMonth(r.nextDate, r.interval),
+        times: occurrencesInMonth(r.nextDate, r.interval),
       });
     }
   }
