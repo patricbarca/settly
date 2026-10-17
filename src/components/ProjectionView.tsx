@@ -45,6 +45,8 @@ export function ProjectionView({
   const [aiBusy, setAiBusy] = useState(false);
   const [aiErr, setAiErr] = useState<string | null>(null);
   const [openCat, setOpenCat] = useState<string | null>(null);
+  const [fold, setFold] = useState<Record<string, boolean>>({});
+  const tog = (k: string) => setFold((f) => ({ ...f, [k]: !f[k] }));
   const budget: Budget = personal.budget ?? { incomes: [] };
   const planned = budget.recurrents ?? [];
   const conv = (v: number, cur: string) => {
@@ -195,6 +197,12 @@ export function ProjectionView({
             </div>
           </>
         )}
+        {pro && budget.incomes.length > 0 && (
+          <div className="flex justify-between gap-2 text-xs mt-3 pt-3 border-t border-[var(--line)]">
+            <span className="text-muted">{t("proj.endOfMonth")} · {t(projLeft >= 0 ? "proj.endLeft" : "proj.endShort")}</span>
+            <span className="font-mono font-semibold" style={{ color: good(projLeft) }}>{money(Math.abs(projLeft), mainCur)}</span>
+          </div>
+        )}
         {budget.savings && (
           <div className="text-xs text-muted mt-3">
             {t("proj.savingsNow")}: <span className="font-mono font-semibold" style={{ color: "var(--ink)" }}>{money(savings, mainCur)}</span>
@@ -202,8 +210,6 @@ export function ProjectionView({
         )}
       </div>
 
-      {/* Gráfico de gasto por mes / semana (gratis) */}
-      <SpendingChart items={items} conv={conv} cur={mainCur} goal={goalTotal > 0 ? goalTotal + fixedMonth : null} />
 
       {!pro ? (
         <div className="glass rounded-3xl p-5">
@@ -234,12 +240,24 @@ export function ProjectionView({
             ]}
             income={income}
           />
+          {/* Año completo: gasto y ahorro proyectados por mes o semana */}
+          {budget.incomes.length > 0 && (
+            <YearForecast
+              cur={mainCur}
+              savings={savings}
+              projVar={projVar}
+              avgVar={avgVar}
+              income={(by) => budget.incomes.reduce((s, i) => s + conv((by === "month" ? perMonth : perWeek)(i.amount, i.freq), i.currency), 0)}
+              fixedIn={(by, a, b) =>
+                fixed.reduce((s, f) => s + conv(f.amount * occurrencesBetween(f.nextDate, f.interval, a, b), f.currency), 0) +
+                planned.reduce((s, r) => s + conv(by === "month" ? plannedThisMonth(r.amount, r.freq) : perWeek(r.amount, r.freq), r.currency), 0)
+              }
+              hint={t("proj.savingsHint", { net: money(net, mainCur), avg: money(avgVar, mainCur) })}
+            />
+          )}
           {/* Recurrentes */}
-          <div className="glass-strong rounded-3xl p-5">
-            <H right={<div className="font-mono font-bold">{money(fixedMonth, mainCur)}<span className="text-xs text-muted font-normal"> {t("proj.thisMonthShort")}</span></div>}>
-              {t("proj.recurrents")}
-            </H>
-            <div className="flex items-center justify-between mt-3">
+          <Fold title={t("proj.recurrents")} summary={money(fixedMonth, mainCur)} open={!!fold.rec} onToggle={() => tog("rec")}>
+            <div className="flex items-center justify-between">
               <div className="text-sm font-semibold">{t("proj.yours")}</div>
               <button onClick={() => setEditRec(true)} className={linkBtn} style={{ color: "var(--teal)" }}>
                 <Icon name={planned.length ? "edit" : "plus"} size={13} /> {t(planned.length ? "proj.editRecurrents" : "proj.addRecurrents")}
@@ -283,20 +301,19 @@ export function ProjectionView({
               </>
             )}
             <p className="text-[11px] text-muted mt-2">{t("proj.recurrentsNote")}</p>
-          </div>
+          </Fold>
 
           {/* Objetivo de gasto (IA + editable) */}
-          <div className="glass-strong rounded-3xl p-5">
-            <H right={goals && <button onClick={() => setEditGoals(true)} className={linkBtn} style={{ color: "var(--teal)" }}><Icon name="edit" size={13} /> {t("proj.editGoals")}</button>}>
-              {t("proj.goals")}
-            </H>
+          <Fold
+            title={t("proj.goals")}
+            summary={goals ? <>{money(Object.keys(goals).reduce((s, c) => s + (monthByCat[c] || 0), 0), mainCur)}<span className="text-muted font-normal"> / {money(goalTotal, mainCur)}</span></> : undefined}
+            open={!!fold.goals}
+            onToggle={() => tog("goals")}
+          >
+            {goals && <div className="flex justify-end"><button onClick={() => setEditGoals(true)} className={linkBtn} style={{ color: "var(--teal)" }}><Icon name="edit" size={13} /> {t("proj.editGoals")}</button></div>}
             {goals && Object.keys(goals).length > 0 ? (
               <>
-                <div className="font-mono text-sm mt-2">
-                  <span className="font-bold">{money(Object.keys(goals).reduce((s, c) => s + (monthByCat[c] || 0), 0), mainCur)}</span>
-                  <span className="text-muted"> {t("proj.soFar")} / {money(goalTotal, mainCur)}</span>
-                </div>
-                <div className="space-y-2.5 mt-3">
+                <div className="space-y-2.5 mt-2">
                   {Object.entries(goals).sort((a, b) => b[1] - a[1]).map(([c, g]) => {
                     const sp = monthByCat[c] || 0;
                     const over = sp > g;
@@ -381,35 +398,14 @@ export function ProjectionView({
               )}
             </div>
             {aiErr && <p className="text-xs mt-2" style={{ color: "var(--coral)" }}>{aiErr}</p>}
-          </div>
+          </Fold>
 
-          {/* Fin de mes */}
-          {budget.incomes.length > 0 && (
-            <div className="glass-strong rounded-3xl p-5">
-              <H>{t("proj.endOfMonth")}</H>
-              <div className="font-display text-3xl font-bold mt-1 font-mono" style={{ color: good(projLeft) }}>{money(projLeft, mainCur)}</div>
-              <div className="text-xs text-muted">{t(projLeft >= 0 ? "proj.endLeft" : "proj.endShort")}</div>
-              <div className="text-xs text-muted mt-2">{t("proj.endDetail", { fixed: money(fixedMonth, mainCur), variable: money(projVar, mainCur) })}</div>
-            </div>
-          )}
-
-          {/* Año completo: gasto y ahorro proyectados por mes o semana */}
-          {budget.incomes.length > 0 && (
-            <YearForecast
-              cur={mainCur}
-              savings={savings}
-              projVar={projVar}
-              avgVar={avgVar}
-              income={(by) => budget.incomes.reduce((s, i) => s + conv((by === "month" ? perMonth : perWeek)(i.amount, i.freq), i.currency), 0)}
-              fixedIn={(by, a, b) =>
-                fixed.reduce((s, f) => s + conv(f.amount * occurrencesBetween(f.nextDate, f.interval, a, b), f.currency), 0) +
-                planned.reduce((s, r) => s + conv(by === "month" ? plannedThisMonth(r.amount, r.freq) : perWeek(r.amount, r.freq), r.currency), 0)
-              }
-              hint={t("proj.savingsHint", { net: money(net, mainCur), avg: money(avgVar, mainCur) })}
-            />
-          )}
         </>
       )}
+
+      <Fold title={t("proj.chart")} open={!!fold.chart} onToggle={() => tog("chart")}>
+        <SpendingChart items={items} conv={conv} cur={mainCur} goal={goalTotal > 0 ? goalTotal + fixedMonth : null} bare />
+      </Fold>
 
       {editing && <BudgetModal group={personal} onClose={() => setEditing(false)} />}
       {editRec && <RecurrentsModal group={personal} defCur={mainCur} onClose={() => setEditRec(false)} />}
@@ -427,7 +423,7 @@ export function ProjectionView({
 }
 
 /** Barras de gasto por mes (últimos 6) o por semana (últimas 8). */
-function SpendingChart({ items, conv, cur, goal }: { items: MyItem[]; conv: (v: number, c: string) => number; cur: string; goal: number | null }) {
+function SpendingChart({ items, conv, cur, goal, bare }: { items: MyItem[]; conv: (v: number, c: string) => number; cur: string; goal: number | null; bare?: boolean }) {
   const t = useT();
   const lang = useLang();
   const [by, setBy] = useState<"month" | "week">("month");
@@ -456,9 +452,9 @@ function SpendingChart({ items, conv, cur, goal }: { items: MyItem[]; conv: (v: 
   const goalLine = by === "month" ? goal : goal != null ? goal / 4.33 : null;
   const max = Math.max(1, ...bars.map((b) => b.v), goalLine ?? 0);
   return (
-    <div className="glass-strong rounded-3xl p-5">
+    <div className={bare ? "" : "glass-strong rounded-3xl p-5"}>
       <div className="flex items-center justify-between">
-        <div className="text-xs font-semibold uppercase tracking-wider text-muted">{t("proj.chart")}</div>
+        <div className="text-xs font-semibold uppercase tracking-wider text-muted">{bare ? "" : t("proj.chart")}</div>
         <div className="seg !p-0.5 text-xs" role="tablist">
           <button role="tab" aria-selected={by === "month"} onClick={() => setBy("month")}>{t("proj.byMonth")}</button>
           <button role="tab" aria-selected={by === "week"} onClick={() => setBy("week")}>{t("proj.byWeek")}</button>
@@ -873,5 +869,21 @@ function BudgetModal({ group, onClose }: { group: Group; onClose: () => void }) 
         </button>
       </div>
     </Overlay>
+  );
+}
+
+/** Sección plegable: título + resumen a la derecha; el detalle se abre al tocar. */
+function Fold({ title, summary, open, onToggle, children }: { title: string; summary?: React.ReactNode; open: boolean; onToggle: () => void; children: React.ReactNode }) {
+  return (
+    <div className="glass-strong rounded-3xl">
+      <button onClick={onToggle} className="w-full flex items-center justify-between gap-2 px-5 py-4 text-left" aria-expanded={open}>
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted">{title}</span>
+        <span className="flex items-center gap-2 shrink-0">
+          {summary && <span className="font-mono text-sm font-semibold">{summary}</span>}
+          <span className="text-muted text-xs transition-transform" style={{ transform: open ? "rotate(180deg)" : "none" }}>▾</span>
+        </span>
+      </button>
+      {open && <div className="px-5 pb-5 -mt-1">{children}</div>}
+    </div>
   );
 }

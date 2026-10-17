@@ -29,6 +29,7 @@ export function SavingTips({ personal, items, fixed, mainCur, rate, pro }: {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(false);
   const [paywall, setPaywall] = useState(false);
+  const [open, setOpen] = useState(false);
   const budget = personal.budget ?? { incomes: [] };
   const tips = budget.tips ?? [];
   const conv = (v: number, c: string) => v * (rate(c) ?? 0);
@@ -94,14 +95,18 @@ export function SavingTips({ personal, items, fixed, mainCur, rate, pro }: {
   }
 
   return (
-    <div className="glass-strong rounded-3xl p-5 mb-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5">💡 {t("proj.tipsTitle")}</div>
-        {!pro && <span className="text-[9px] font-bold" style={{ color: "var(--teal)" }}>PRO</span>}
-      </div>
+    <div className="glass-strong rounded-3xl mb-3">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between gap-2 px-5 py-4 text-left" aria-expanded={open}>
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted flex items-center gap-1.5">💡 {t("proj.tipsTitle")}{tips.length > 0 && <span className="normal-case tracking-normal font-normal">· {tips.length}</span>}</span>
+        <span className="flex items-center gap-2 shrink-0">
+          {!pro && <span className="text-[9px] font-bold" style={{ color: "var(--teal)" }}>PRO</span>}
+          <span className="text-muted text-xs transition-transform" style={{ transform: open ? "rotate(180deg)" : "none" }}>▾</span>
+        </span>
+      </button>
+      {open && <div className="px-5 pb-5 -mt-1">
       {tips.length > 0 ? (
         <>
-          <ul className="mt-3 space-y-2">
+          <ul className="space-y-2">
             {tips.map((s, k) => (
               <li key={k} className="text-sm flex gap-2"><span className="shrink-0" style={{ color: "#2ED573" }}>•</span><span>{s}</span></li>
             ))}
@@ -109,12 +114,13 @@ export function SavingTips({ personal, items, fixed, mainCur, rate, pro }: {
           {budget.tipsAt && <div className="text-[11px] text-muted mt-2">{t("tips.updated", { date: fmtDate(budget.tipsAt) })}</div>}
         </>
       ) : (
-        <p className="text-sm text-muted mt-2">{t("tips.hint")}</p>
+        <p className="text-sm text-muted">{t("tips.hint")}</p>
       )}
       {err && <p className="text-xs mt-2" style={{ color: "var(--coral)" }}>{t("tips.error")}</p>}
       <button onClick={ask} disabled={busy} className="mt-3 rounded-full px-4 py-2 text-sm font-semibold text-white inline-flex items-center gap-1.5 disabled:opacity-60" style={{ background: "linear-gradient(90deg, var(--indigo), var(--teal))" }}>
         <Icon name="sparkles" size={14} /> {busy ? t("tips.thinking") : t(tips.length ? "tips.again" : "tips.ask")}
       </button>
+      </div>}
       {paywall && <Paywall onClose={() => setPaywall(false)} reason={t("proj.tipsTitle")} />}
     </div>
   );
