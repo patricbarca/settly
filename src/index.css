@@ -302,6 +302,9 @@ button { cursor: pointer; font-family: inherit; }
 /* Lo de dentro SIEMPRE por delante del difuminado: con z-index:-1 en el
    pseudo, Safari/WKWebView (capa compuesta por backdrop-filter + máscara) lo
    pintaba ENCIMA de los botones y de la tarjeta compacta. */
+/* Sin scroll no hay nada detrás: se oculta para no tapar lo de debajo. */
+.home-sticky-bg::before, .floating-header::before { transition: opacity .2s ease; }
+[data-stuck="false"]::before { opacity: 0; }
 .home-sticky-bg > *, .floating-header > * { position: relative; z-index: 1; }
 /* Botones de arriba: flotan con sombra, siempre visibles. */
 .home-sticky-bg .glass { box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.35); }

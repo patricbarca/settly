@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Fix: el difuminado tapaba las pestañas bajo la cabecera (2026-10-17)
+- Captura de iPhone (Mis gastos): la franja difuminada de 36 px bajo la cabecera "Personal" tapaba "All in AUD / By currency / Forecast" aunque no hubiera scroll. Ahora la capa solo aparece cuando la cabecera está plegada (`data-stuck={compact}` + `[data-stuck="false"]::before { opacity: 0 }` en `index.css`). Aplicado a Mis gastos y a la tarjeta de los grupos. `tsc` + build limpios; no probado en iPhone.
+
 ### Proyección: vista de un año por mes o semana (2026-10-17)
 - **Pro.** La tarjeta "Tus ahorros" (3/6/12 meses) se sustituye por **"Tu próximo año"** (`YearForecast` en `ProjectionView.tsx`): selector **Mes / Semana** (12 meses desde el actual o 52 semanas lunes-domingo), resumen con **gasto previsto del año** (y media por mes/semana), **ahorro previsto** y **ahorros en 1 año**; gráfico de barras (gasto) + línea (ahorros acumulados); "Ver detalle" con tabla por periodo y fila **Total**.
 - **Cálculo:** fijos de grupos con sus cobros REALES en cada periodo (`occurrencesBetween` con `FixedItem.nextDate`, nuevo); recurrentes planificados: `plannedThisMonth` por mes y `perWeek` por semana; ingresos `perMonth`/`perWeek`; variable = media de los 3 últimos meses (el mes actual usa el ritmo del mes). Helpers en `projection.ts`: `perWeek`, `occurrencesBetween`, `yearPeriods`.
