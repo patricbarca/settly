@@ -49,10 +49,21 @@ export type IconName =
   | "search"
   | "doc"
   | "share"
-  | "info";
+  | "info"
+  | "key"
+  | "wrench";
 
 function glyph(name: IconName): ReactNode {
   switch (name) {
+    case "key":
+      return (
+        <>
+          <circle cx="8" cy="15" r="4" />
+          <path d="M11 12l9-9M17 6l3 3M15 8l2 2" />
+        </>
+      );
+    case "wrench":
+      return <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z" />;
     case "filter":
       return <path d="M3 5h18l-7 8v6l-4 2v-8z" />;
     case "search":

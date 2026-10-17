@@ -112,7 +112,8 @@ export function mapCategory(sw: string): Category {
   if (has("liquor", "alcohol")) return "bebidas";
   if (has("taxi", "parking", "fuel", "gas/", "bus", "train", "car", "bicycle")) return "transporte";
   if (has("plane", "flight")) return "viajes";
-  if (has("hotel", "rent", "mortgage")) return "alojamiento";
+  if (has("rent", "mortgage")) return "alquiler";
+  if (has("hotel")) return "alojamiento";
   if (has("entertainment", "games", "movies", "music", "sports")) return "ocio";
   if (has("clothing", "household", "electronics", "furniture", "pets", "maintenance")) return "compras";
   if (has("medical", "health")) return "salud";

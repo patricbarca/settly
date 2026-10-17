@@ -62,6 +62,7 @@ export interface MyItem {
   label: string;
   date: string;
   category: string;
+  aiReviewed: boolean;
   currency: string; // ISO
   amount: number; // mi parte
   total: number; // importe total del gasto
@@ -88,6 +89,7 @@ export function myItems(groups: Group[], localArchived: Set<string> = new Set())
         label: e.label,
         date: e.date,
         category: e.category,
+        aiReviewed: !!e.aiReviewed,
         currency: currencyOf(e, g),
         amount: mine,
         total: e.amount,

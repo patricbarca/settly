@@ -167,7 +167,7 @@ Rules:
   - CRITICAL: many receipts (Australia/NZ especially) print a "GST Sales" / "GST Amount" (or "Tax Sales" / "Tax Amount") breakdown near the bottom purely as a statutory disclosure of the tax portion ALREADY inside the prices — it is NOT an extra charge to add. If the printed subtotal equals (or is within a cent of) the final total/amount paid, the tax is included: set included:true. Only set included:false when the tax amount is clearly added ON TOP — i.e. subtotal + tax ≈ total, with total strictly greater than subtotal. This is common on INVOICES / tax invoices that print line prices "Excl. GST/Tax", then a separate GST/Tax line, then a "Total Incl. GST/Tax" — there the tax IS added on top: set included:false and make sure subtotal (excl. tax) + tax = total.
 - ACCURACY OF THE NUMBERS MATTERS MOST: subtotal, tax.amount and total must be read exactly as printed so that subtotal + (all fees) + (tax if not included) = total. Re-check these three before answering.
 - subtotal: the subtotal that YOUR EXTRACTED ITEM PRICES add up to. Some receipts print SEVERAL subtotal-like lines — e.g. a tax-inclusive "Subtotal" AND a "Total ex tax" / "Excl. GST" line. Pick the one that matches the sum of the item prices you read from the right-hand column. Only report a pre-tax figure when the ITEM PRICES themselves are printed excluding tax. total: the FINAL amount paid.
-- category: one of exactly these — comida, mercado, bebidas, transporte, viajes, alojamiento, ocio, compras, salud, servicios, suscripciones, seguros, regalos, otros.
+- category: one of exactly these — comida, mercado, bebidas, transporte, viajes, alojamiento, alquiler, hogar, ocio, compras, salud, servicios, suscripciones, seguros, regalos, otros.
   - VENUE MATTERS: "comida" = a restaurant/café/diner/food-truck with a prepared meal (a bill you'd tip on). "bebidas" = a bar/pub/coffee shop mainly selling drinks. "mercado" = a SUPERMARKET / grocery store (Aldi, Coles, Woolworths, IGA, corner shop) — many packaged products, NO table service and NO tip. If the receipt is a supermarket/grocery run, use "mercado", never "comida", even if it contains food items.
 - currency: ISO 4217 code detected (AUD, USD, EUR, GBP, ARS, CLP, COP, MXN…). Default EUR.
 - If you cannot read the image at all: {"description":"","subtotal":0,"total":0,"category":"otros","currency":"EUR","items":[],"fees":[],"tax":{"amount":0,"rate":0,"included":true}}`;
@@ -296,7 +296,7 @@ async function callProvider(
   }
 }
 
-const VALID_CATEGORIES = ["comida","mercado","bebidas","transporte","viajes","alojamiento","ocio","compras","salud","servicios","suscripciones","seguros","prestamos","regalos","otros"];
+const VALID_CATEGORIES = ["comida","mercado","bebidas","transporte","viajes","alojamiento","alquiler","hogar","ocio","compras","salud","servicios","suscripciones","seguros","prestamos","regalos","otros"];
 function sanitizeCategory(cat: unknown): string {
   const s = String(cat ?? "").trim().toLowerCase();
   return VALID_CATEGORIES.includes(s) ? s : "otros";

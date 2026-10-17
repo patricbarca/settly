@@ -141,3 +141,17 @@ export async function forecastSpendingAI(payload: {
   if (!res || res.error) throw new Error(res?.error || "forecast_failed");
   return { goals: res.goals || {}, insights: res.insights || [] };
 }
+
+/** Sugiere una categoría para cada gasto (solo sugerencias; el usuario decide). */
+export async function classifyExpensesAI(payload: {
+  items: { id: string; label: string; category: string; group: string }[];
+  categories: string[];
+  labels: Record<string, string>;
+}): Promise<{ id: string; category: string }[]> {
+  if (!(await requestAIConsent())) throw new AIConsentDeclined();
+  const { data, error } = await supabase.functions.invoke("classify-expenses", { body: payload });
+  if (error) throw error;
+  const res = data as { suggestions?: { id: string; category: string }[]; error?: string };
+  if (!res || res.error) throw new Error(res?.error || "classify_failed");
+  return res.suggestions ?? [];
+}
