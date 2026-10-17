@@ -281,7 +281,10 @@ button { cursor: pointer; font-family: inherit; }
 /* Barra de botones + cabecera de Home pegadas arriba: fondo de la página
    (fijo, para que el degradado cuadre) → lo que sube por detrás queda tapado. */
 :root { --home-top: 48px; }
-.home-sticky-bg { background: var(--bg); background-attachment: fixed; }
+.home-sticky-bg { background: transparent; }
+/* Cabeceras flotantes: el contenido pasa por debajo; la tarjeta lleva sombra
+   para despegarse de lo que tiene detrás. */
+.home-sticky-bg .hero, .floating-header .hero { box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12); }
 /* Cabecera de Home: entrada (pop + giro del logo + letras una a una). */
 .home-hero-letter { display: inline-block; }
 .home-hero-intro { animation: heroPop .7s cubic-bezier(.2,1.4,.4,1) both; }

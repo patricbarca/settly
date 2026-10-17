@@ -15,8 +15,11 @@ import { haptic } from "../lib/haptics";
 import { useArchivedGroups } from "../lib/archivedGroups";
 import { heroBackground, HeroCover } from "../lib/heroStyle";
 import { GroupSettings } from "./GroupSettings";
+import { ProjectionView } from "./ProjectionView";
+import { fixedItems } from "../lib/projection";
+import { usePlan } from "../lib/plan";
 
-type Mode = "converted" | "byCurrency";
+type Mode = "converted" | "byCurrency" | "projection";
 
 const catIcon = (c: string) => CATEGORIES.find((x) => x.id === c)?.icon ?? "other";
 
@@ -34,6 +37,8 @@ export function MySpending() {
   const { archived: localArchived } = useArchivedGroups();
   const all = useMemo(() => myItems(groups, localArchived), [groups, localArchived]);
   const [editing, setEditing] = useState(false);
+  const pro = usePlan() === "pro";
+  const fixed = useMemo(() => fixedItems(groups, localArchived), [groups, localArchived]);
   // Cabecera compacta al bajar (histéresis 60/8 px, como en los grupos).
   const [compact, setCompact] = useState(false);
 
@@ -95,12 +100,20 @@ export function MySpending() {
 
   // Tasas de hoy hacia la moneda principal (cacheadas por día en fxCache).
   const [rates, setRates] = useState<Record<string, number | null>>({});
-  const curKey = [...new Set(all.map((i) => i.currency))].sort().join(",") + "|" + mainCur;
+  const rateCurs = [
+    ...new Set([
+      ...all.map((i) => i.currency),
+      ...fixed.map((f) => f.currency),
+      ...(personal?.budget?.incomes ?? []).map((i) => i.currency),
+      ...(personal?.budget?.savings ? [personal.budget.savings.currency] : []),
+    ]),
+  ].sort();
+  const curKey = rateCurs.join(",") + "|" + mainCur;
   useEffect(() => {
     let alive = true;
     (async () => {
       const next: Record<string, number | null> = {};
-      for (const c of new Set(all.map((i) => i.currency))) next[c] = c === mainCur ? 1 : await getDailyRate(c, mainCur);
+      for (const c of rateCurs) next[c] = c === mainCur ? 1 : await getDailyRate(c, mainCur);
       if (alive) setRates(next);
     })();
     return () => { alive = false; };
@@ -143,38 +156,6 @@ export function MySpending() {
   return (
     <div className="fixed inset-0 z-30 flex flex-col anim-up" style={{ background: "var(--bg)", paddingTop: "env(safe-area-inset-top)" }}>
       <div className="max-w-2xl mx-auto w-full px-4 pt-5 flex-1 flex flex-col min-h-0">
-        {/* Cabecera editable como la de cualquier grupo (nombre, color o foto). */}
-        <div
-          className="hero shrink-0 mb-3 relative"
-          style={{ ...(personal ? heroBackground(personal) : {}), padding: compact ? "10px 18px" : "16px 22px", transition: "padding .3s ease" }}
-        >
-          {personal && <HeroCover g={personal} />}
-          {!(personal && heroBackground(personal)) && (
-            <>
-              <span className="blob b1" />
-              <span className="blob b2" />
-              <span className="blob b3" />
-            </>
-          )}
-          <div className="relative z-10 flex items-center gap-3">
-            <div className="flex-1 min-w-0">
-              <div className="text-[11px] uppercase tracking-widest text-white/70 font-semibold" style={{ maxHeight: compact ? 0 : 80, opacity: compact ? 0 : 1, overflow: "hidden", transition: "max-height .3s ease, opacity .2s ease" }}>{t("mine.title")}</div>
-              <div className="font-display font-extrabold text-white truncate" style={{ fontSize: compact ? 18 : 24, transition: "font-size .3s ease" }}>🔒 {personal?.name || t("mine.personal")}</div>
-              <div className="text-xs text-white/75 mt-0.5" style={{ maxHeight: compact ? 0 : 80, opacity: compact ? 0 : 1, overflow: "hidden", transition: "max-height .3s ease, opacity .2s ease" }}>{t("mine.subtitle")}</div>
-            </div>
-            {personal && (
-              <button
-                onClick={() => setEditing(true)}
-                className="h-9 w-9 rounded-full flex items-center justify-center text-white shrink-0"
-                style={{ background: "rgba(255,255,255,.18)" }}
-                aria-label={t("settings.title")}
-              >
-                <Icon name="settings" size={16} />
-              </button>
-            )}
-          </div>
-        </div>
-
         <div
           className="flex-1 overflow-y-auto -mx-4 px-4"
           onScroll={(e) => {
@@ -182,6 +163,54 @@ export function MySpending() {
             setCompact((c) => (c ? y > 8 : y > 60));
           }}
           style={{ paddingBottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 96px)" }}>
+          {/* Cabecera flotante: se queda arriba y el contenido pasa por debajo. */}
+          <div className="sticky top-0 z-10 pb-3 pt-1 floating-header">
+          {/* Cabecera editable como la de cualquier grupo (nombre, color o foto). */}
+          <div
+            className="hero relative"
+            style={{ ...(personal ? heroBackground(personal) : {}), padding: compact ? "10px 18px" : "16px 22px", transition: "padding .3s ease" }}
+          >
+            {personal && <HeroCover g={personal} />}
+            {!(personal && heroBackground(personal)) && (
+              <>
+                <span className="blob b1" />
+                <span className="blob b2" />
+                <span className="blob b3" />
+              </>
+            )}
+            <div className="relative z-10 flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-[11px] uppercase tracking-widest text-white/70 font-semibold" style={{ maxHeight: compact ? 0 : 80, opacity: compact ? 0 : 1, overflow: "hidden", transition: "max-height .3s ease, opacity .2s ease" }}>{t("mine.title")}</div>
+                <div className="font-display font-extrabold text-white truncate" style={{ fontSize: compact ? 18 : 24, transition: "font-size .3s ease" }}>🔒 {personal?.name || t("mine.personal")}</div>
+                <div className="text-xs text-white/75 mt-0.5" style={{ maxHeight: compact ? 0 : 80, opacity: compact ? 0 : 1, overflow: "hidden", transition: "max-height .3s ease, opacity .2s ease" }}>{t("mine.subtitle")}</div>
+              </div>
+              {personal && (
+                <button
+                  onClick={() => setEditing(true)}
+                  className="h-9 w-9 rounded-full flex items-center justify-center text-white shrink-0"
+                  style={{ background: "rgba(255,255,255,.18)" }}
+                  aria-label={t("settings.title")}
+                >
+                  <Icon name="settings" size={16} />
+                </button>
+              )}
+            </div>
+          </div>
+          </div>
+          {/* Vista */}
+          <div className="seg mb-3" role="tablist">
+            <button role="tab" aria-selected={mode === "converted"} onClick={() => { haptic("selection"); setMode("converted"); }}>
+              {t("mine.allIn", { cur: mainCur })}
+            </button>
+            <button role="tab" aria-selected={mode === "byCurrency"} onClick={() => { haptic("selection"); setMode("byCurrency"); }}>
+              {t("mine.byCurrency")}
+            </button>
+            <button role="tab" aria-selected={mode === "projection"} onClick={() => { haptic("selection"); setMode("projection"); }}>
+              {t("mine.projection")}
+            </button>
+          </div>
+
+          {mode !== "projection" && (<>
           {/* Filtros: periodo y grupo */}
           <div className="flex gap-2">
             <select value={period} onChange={(e) => setPeriod(e.target.value)} className="glass rounded-xl px-3 py-2.5 text-sm font-semibold flex-1 min-w-0" aria-label={t("mine.period")}>
@@ -215,17 +244,20 @@ export function MySpending() {
             </select>
           </div>
 
-          {/* Vista */}
-          <div className="seg my-3" role="tablist">
-            <button role="tab" aria-selected={mode === "converted"} onClick={() => { haptic("selection"); setMode("converted"); }}>
-              {t("mine.allIn", { cur: mainCur })}
-            </button>
-            <button role="tab" aria-selected={mode === "byCurrency"} onClick={() => { haptic("selection"); setMode("byCurrency"); }}>
-              {t("mine.byCurrency")}
-            </button>
-          </div>
+          </>)}
 
-          {items.length === 0 ? (
+          {mode === "projection" ? (
+            personal && (
+              <ProjectionView
+                personal={personal}
+                items={all.filter((i) => !i.archived)}
+                fixed={fixed}
+                mainCur={mainCur}
+                rate={(c) => (c === mainCur ? 1 : rates[c] ?? null)}
+                pro={pro}
+              />
+            )
+          ) : items.length === 0 ? (
             <div className="glass rounded-3xl p-6 text-center">
               <div className="text-3xl mb-2">🧾</div>
               <div className="font-semibold">{t("mine.empty")}</div>
@@ -262,7 +294,7 @@ export function MySpending() {
           )}
 
           {/* Movimientos */}
-          {items.length > 0 && (
+          {mode !== "projection" && items.length > 0 && (
             <>
               <h3 className="font-display text-lg font-bold mt-6 mb-2">{t("mine.movements")}</h3>
               <div className="glass rounded-3xl divide-y divide-[var(--line)]">
