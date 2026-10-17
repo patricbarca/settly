@@ -348,6 +348,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "vnews.dontShow": { es: "No volver a mostrar", en: "Don't show again" },
   "vnews.ok": { es: "Entendido", en: "Got it" },
   "reclass.title": { es: "Reclasificar con IA", en: "Re-categorise with AI" },
+  "mine.category": { es: "Categoría", en: "Category" },
+  "mine.allCategories": { es: "Todas las categorías", en: "All categories" },
   "reclass.short": { es: "Reclasificar", en: "Re-categorise" },
   "reclass.button": { es: "Reclasificar con IA", en: "Re-categorise with AI" },
   "reclass.intro": { es: "La IA revisa tus gastos (primero los de Otros) y propone una categoría mejor. Tú decides cuáles aplicar. Cada gasto se revisa una sola vez.", en: "AI reviews your expenses (Other first) and suggests a better category. You choose which to apply. Each expense is reviewed only once." },
