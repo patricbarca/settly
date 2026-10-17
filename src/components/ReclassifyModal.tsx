@@ -58,12 +58,13 @@ export function ReclassifyModal({ items, onClose }: { items: MyItem[]; onClose: 
   async function apply() {
     setPhase("saving");
     let n = 0;
-    for (const i of sent) {
+    const jobs = sent.map((i) => {
       const c = choice[i.key];
-      const patch = c?.on ? { category: c.cat as Category, aiReviewed: true } : { aiReviewed: true };
       if (c?.on) n++;
-      await patchExpense(i.groupId, i.expenseId, patch);
-    }
+      return () => patchExpense(i.groupId, i.expenseId, c?.on ? { category: c.cat as Category, aiReviewed: true } : { aiReviewed: true });
+    });
+    // De 6 en 6 en paralelo: mucho más rápido que uno a uno.
+    for (let k = 0; k < jobs.length; k += 6) await Promise.all(jobs.slice(k, k + 6).map((f) => f()));
     setChanged(n);
     setPhase("done");
   }

@@ -1,3 +1,4 @@
+import { supabase } from "./supabase";
 import { useEffect } from "react";
 import type { Group } from "./types";
 import { uid } from "./format";
@@ -26,6 +27,16 @@ export function useEnsurePersonalGroup(): Group | undefined {
   const personal = usePersonalGroup();
   useEffect(() => {
     if (loading || personal || !user) return;
+    let cancelled = false;
+    (async () => {
+      // Antes de crear uno, comprobar en el servidor que de verdad no existe:
+      // si la lista local llegó vacía por un fallo, se creaban duplicados.
+      if (user.provider !== "guest") {
+        const { data, error } = await supabase
+          .from("groups").select("id").eq("owner_id", user.id).eq("data->>personal", "true").limit(1);
+        if (error || (data && data.length) || cancelled) return;
+      }
+      if (cancelled) return;
     const count: Record<string, number> = {};
     for (const g of groups) {
       const c = resolveToCode(g.currency);
@@ -46,6 +57,8 @@ export function useEnsurePersonalGroup(): Group | undefined {
       expenses: [],
     };
     addGroup(g, [], { open: false });
+    })();
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, !!personal, !!user]);
   return personal;

@@ -51,6 +51,11 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### 🐛 Fix: al reclasificar la app "perdía" los grupos y creaba "Personal" duplicados (2026-10-17)
+- **Síntoma (captura iPhone):** al pulsar Analizar/Aplicar en Reclasificar, la app volvía a Home sin grupos ("Create your first group") y solo con "Personal".
+- **Causa:** cada `patch_expense` dispara un evento realtime → `loadGroups` completo (todos los blobs, ~100-370 KB cada uno). 60 recargas a la vez → alguna consulta fallaba y `loadGroups` trataba el error como "sin grupos" (`rows ?? []`) → `groups=[]`. Con eso `useEnsurePersonalGroup` creaba OTRO "Personal": **15 duplicados vacíos** en la cuenta de Patric (borrados; se conserva `uy40xao`, el que tiene `budget`).
+- **Fix (`store.ts`):** `loadGroups` ignora errores (no vacía la lista) y solo aplica la ÚLTIMA carga (`loadSeq`); el realtime agrupa ráfagas en una recarga (debounce 800 ms). **`personal.ts`:** antes de crear el Personal consulta al servidor si ya existe. **`ReclassifyModal`:** guarda de 6 en 6 en paralelo (antes uno a uno). `tsc` + build; no probado en iPhone.
+
 ### "Reclasificar con IA" en todos los grupos + solo Pro (2026-10-17)
 - Botón **"✨ Reclasificar"** junto a "Filtros" en la pestaña Gastos de cada grupo (`ExpenseList`), reutiliza `ReclassifyModal` con los gastos del grupo (importe total). **Pro:** en gratis el botón lleva "PRO" y abre el `Paywall` (también en Mis gastos).
 - **La categoría NO está en otra tabla:** es `Expense.category` dentro del blob del grupo. Reclasificar desde Mis gastos cambia el mismo gasto del grupo (para todos los miembros); `aiReviewed` también es por gasto, así que lo revisado en un sitio no se vuelve a revisar en el otro. `tsc` + build; no probado en pantalla.

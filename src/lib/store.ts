@@ -61,11 +61,20 @@ async function loadFromIndexedDB() {
   }
 }
 
+let loadSeq = 0;
 async function loadGroups(userId: string) {
-  const { data: memberships } = await supabase
+  // Solo manda la respuesta de la ÚLTIMA carga, y un error de red/servidor
+  // NUNCA vacía la lista: antes un fallo (p. ej. muchas recargas a la vez al
+  // reclasificar) dejaba groups=[] y la app parecía otra cuenta sin grupos.
+  const seq = ++loadSeq;
+  const { data: memberships, error: mErr } = await supabase
     .from("group_members")
     .select("group_id, member_id")
     .eq("user_id", userId);
+  if (mErr || seq !== loadSeq) {
+    if (mErr) { console.error("loadGroups:", mErr); state = { ...state, loading: false }; emit(); }
+    return;
+  }
 
   if (!memberships?.length) {
     state = { groups: [], activeId: null, loading: false };
@@ -76,11 +85,15 @@ async function loadGroups(userId: string) {
   const ids = memberships.map((m) => m.group_id);
   const meMap = Object.fromEntries(memberships.map((m) => [m.group_id, m.member_id]));
 
-  const { data: rows } = await supabase
+  const { data: rows, error: rowsErr } = await supabase
     .from("groups")
     .select("id, data, created_at, owner_id")
     .in("id", ids)
     .order("created_at", { ascending: false });
+  if (rowsErr || seq !== loadSeq) {
+    if (rowsErr) { console.error("loadGroups:", rowsErr); state = { ...state, loading: false }; emit(); }
+    return;
+  }
 
   const groups: Group[] = [];
   const removedFrom: string[] = [];
@@ -144,12 +157,15 @@ async function syncOutbox() {
   }
 }
 
+let reloadTimer: ReturnType<typeof setTimeout> | null = null;
 function subscribeRealtime(userId: string) {
   channel?.unsubscribe();
   channel = supabase
     .channel(`groups:${userId}`)
     .on("postgres_changes", { event: "*", schema: "public", table: "groups" }, () => {
-      if (currentUserId) loadGroups(currentUserId);
+      // Agrupa ráfagas de cambios (p. ej. 60 gastos reclasificados) en UNA recarga.
+      if (reloadTimer) clearTimeout(reloadTimer);
+      reloadTimer = setTimeout(() => { if (currentUserId) loadGroups(currentUserId); }, 800);
     })
     .subscribe();
 }
