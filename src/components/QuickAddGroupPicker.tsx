@@ -40,8 +40,8 @@ export function QuickAddGroupPicker({
                 onClick={() => onPick(g.id)}
                 className="w-full flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-left hover-lift glass"
               >
-                <span className="flex-1 min-w-0 truncate font-semibold text-sm">{g.name}</span>
-                <span className="text-xs text-muted">{t("quickAdd.people", { n: String(g.members.length) })}</span>
+                <span className="flex-1 min-w-0 truncate font-semibold text-sm">{g.personal ? `🔒 ${g.name}` : g.name}</span>
+                <span className="text-xs text-muted">{g.personal ? t("quickAdd.justMe") : t("quickAdd.people", { n: String(g.members.length) })}</span>
                 <span style={{ transform: "rotate(-90deg)" }} className="inline-flex text-muted">
                   <Icon name="chevron" size={14} />
                 </span>
