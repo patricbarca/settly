@@ -12,5 +12,9 @@
 	<array>
 		<string>applinks:app.settlia.app</string>
 	</array>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.app.settlia.pwa</string>
+	</array>
 </dict>
 </plist>
