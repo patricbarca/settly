@@ -4,7 +4,7 @@ import { fmtDate } from "../lib/format";
 import { updateGroup } from "../lib/store";
 import { CATEGORIES, type Group } from "../lib/types";
 import type { MyItem } from "../lib/personal";
-import { perMonth, type FixedItem } from "../lib/projection";
+import type { FixedItem } from "../lib/projection";
 import { monthKey } from "../lib/report";
 import { consumeAI } from "../lib/plan";
 import { forecastSpendingAI } from "../lib/ai";
@@ -45,16 +45,26 @@ export function SavingTips({ personal, items, fixed, mainCur, rate, pro }: {
       for (const i of list) by[i.category] = (by[i.category] || 0) + conv(i.amount, i.currency);
       return by;
     };
-    const months: { month: string; byCategory: Record<string, number> }[] = [];
-    for (let k = 6; k >= 1; k--) {
+    // Presupuesto por categoría = gasto estimado guardado (Proyección) o, si no
+    // hay, la media de los 3 meses completos anteriores.
+    const avg: Record<string, number> = {};
+    let n = 0;
+    for (let k = 1; k <= 3; k++) {
       const d = new Date(now.getFullYear(), now.getMonth() - k, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const list = items.filter((i) => monthKey(i.date) === key);
-      if (list.length) months.push({ month: key, byCategory: sum(list) });
+      if (!list.length) continue;
+      n++;
+      for (const [c, v] of Object.entries(sum(list))) avg[c] = (avg[c] || 0) + v;
     }
-    const income = budget.incomes.reduce((s, i) => s + conv(perMonth(i.amount, i.freq), i.currency), 0);
-    const fixedM = fixed.reduce((s, f) => s + conv(f.monthly, f.currency), 0)
-      + (budget.recurrents ?? []).reduce((s, r) => s + conv(perMonth(r.amount, r.freq), r.currency), 0);
+    const budgets: Record<string, number> = budget.goals && Object.keys(budget.goals).length
+      ? budget.goals
+      : Object.fromEntries(Object.entries(avg).map(([c, v]) => [c, v / Math.max(n, 1)]));
+    const spent = sum(items.filter((i) => monthKey(i.date) === nowKey));
+    const cats = new Set([...Object.keys(budgets), ...Object.keys(spent)]);
+    const rows = [...cats]
+      .map((c) => ({ name: catName(c), spent: Math.round((spent[c] || 0) * 100) / 100, budget: Math.round((budgets[c] || 0) * 100) / 100 }))
+      .filter((r) => r.spent > 0 || r.budget > 0);
     setBusy(true);
     try {
       const res = await forecastSpendingAI({
@@ -63,14 +73,15 @@ export function SavingTips({ personal, items, fixed, mainCur, rate, pro }: {
         lang,
         categories: CATEGORIES.map((c) => c.id),
         labels: Object.fromEntries(CATEGORIES.map((c) => [c.id, catName(c.id)])),
-        months,
+        months: [],
+        rows,
         thisMonth: {
           day: now.getDate(),
           daysInMonth: new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate(),
-          byCategory: sum(items.filter((i) => monthKey(i.date) === nowKey)),
+          byCategory: {},
         },
-        income,
-        fixed: fixedM,
+        income: 0,
+        fixed: 0,
         today: now.toLocaleDateString("en-CA"),
       });
       if (!res.tips.length) throw new Error("empty");

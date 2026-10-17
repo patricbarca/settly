@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Consejos de ahorro = gastado este mes vs presupuesto, sin cifras inventadas (2026-10-17)
+- Problema: la IA usaba los ids de categoría ("Mercado", "Bebidas") en vez de los nombres visibles e inventaba medias. Ahora `SavingTips` calcula en el cliente, por categoría, **gastado este mes** y **presupuesto** (= gasto estimado guardado en Proyección, o media de los 3 meses anteriores si no hay) y manda `rows` con el **nombre visible**. `forecast-spending` **v8** (modo `tips`) solo redacta con esos números: "Este mes llevas X en <cat>; tu presupuesto es Y" + lo que queda o cuánto te pasaste; categorías con presupuesto y 0 gastado → recordatorio amable de que ese dinero es para disfrutar ("treat yourself"). Hasta 6 consejos. `tsc` + build; no probado con datos reales.
+
 ### Consejos de ahorro separados del "Recalcular" y en la pantalla principal de Mis gastos (2026-10-17)
 - `forecast-spending` **v7 (✅ desplegada)**: `body.mode === "tips"` → solo devuelve `tips` (prompt propio); el modo normal (Recalcular del gasto estimado) ya no pide consejos. Componente nuevo **`SavingTips.tsx`** arriba de la vista principal de Mis gastos (no en Proyección): botón "Pedir consejos a la IA" / "Nuevos consejos" (Pro; gratis → Paywall; 1 uso de IA de texto), manda 6 meses por categoría + este mes + ingresos + fijos, guarda `Budget.tips/tipsAt` y muestra "Actualizado {fecha}". Se quitó el bloque de consejos de `ProjectionView`. `tsc` + build; no probado en pantalla.
 
