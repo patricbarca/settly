@@ -51,6 +51,10 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### "Reclasificar con IA" en todos los grupos + solo Pro (2026-10-17)
+- Botón **"✨ Reclasificar"** junto a "Filtros" en la pestaña Gastos de cada grupo (`ExpenseList`), reutiliza `ReclassifyModal` con los gastos del grupo (importe total). **Pro:** en gratis el botón lleva "PRO" y abre el `Paywall` (también en Mis gastos).
+- **La categoría NO está en otra tabla:** es `Expense.category` dentro del blob del grupo. Reclasificar desde Mis gastos cambia el mismo gasto del grupo (para todos los miembros); `aiReviewed` también es por gasto, así que lo revisado en un sitio no se vuelve a revisar en el otro. `tsc` + build; no probado en pantalla.
+
 ### "Bebidas" → "Salidas / Going out" + categoría "Deporte y bienestar" (2026-10-17)
 - **Salidas:** solo cambia el nombre visible de `bebidas` (ES "Salidas", EN "Going out"); el id no cambia, así que los datos y los builds viejos siguen funcionando (muestran "Bebidas"). Ahora es bares, copas, discotecas, fiesta; el **café** va a `comida` (parser local, prompts de `scan-receipt` y `classify-expenses`).
 - **`fitness` nueva** ("Deporte y bienestar" / "Fitness & wellness", icono `dumbbell`, verde esmeralda): gimnasio, clases (yoga, pilates, crossfit), entrenador, proteína, suplementos, material deportivo. El gym sale de `salud` en el parser local. ✅ `scan-receipt` v58 y `classify-expenses` v2 desplegadas con las reglas nuevas; `parse-expense` recibe la lista de categorías del cliente.
