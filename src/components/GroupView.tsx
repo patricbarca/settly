@@ -49,7 +49,9 @@ export function GroupView({ group }: { group: Group }) {
   // del hero se sustituye por uno pequeño).
   const [compact, setCompact] = useState(false);
   useEffect(() => {
-    const onScroll = () => setCompact(window.scrollY > 110);
+    // Histéresis: se pliega al bajar 60 px y se vuelve a abrir al volver arriba
+    // (umbrales distintos para que no parpadee al plegarse y cambiar la altura).
+    const onScroll = () => setCompact((c) => (c ? window.scrollY > 8 : window.scrollY > 60));
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -88,26 +90,18 @@ export function GroupView({ group }: { group: Group }) {
 
   return (
     <div className="max-w-2xl mx-auto px-4 pb-10">
+      {/* Barra de botones: fija arriba con el fondo de la página (como en Home). */}
       <div
-        className={`sticky z-20 -mx-4 px-4 pt-2 pb-2 mb-1 flex items-center justify-between gap-2 transition-[background-color,box-shadow] duration-200 ${compact ? "glass-chrome rounded-b-3xl" : ""}`}
-        style={{ top: "env(safe-area-inset-top)", ...(compact ? { borderTop: 0 } : { border: "1px solid transparent" }) }}
+        className="sticky z-30 -mx-4 px-4 flex items-center justify-between gap-2 home-sticky-bg"
+        style={{ top: "env(safe-area-inset-top)", height: "var(--home-top)" }}
       >
         <div className="flex items-center gap-2 shrink-0">
-          {!compact && (
-            <div className="glass rounded-2xl p-1">
-              <Logo size={24} />
-            </div>
-          )}
+          <div className="glass rounded-2xl p-1">
+            <Logo size={24} />
+          </div>
           <button onClick={() => setActiveGroup(null)} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift" title={t("group.back")}>
             <Icon name="back" size={16} />
           </button>
-        </div>
-        <div
-          className="min-w-0 flex-1 text-center font-semibold text-[15px] truncate transition-opacity duration-200"
-          style={{ opacity: compact ? 1 : 0 }}
-          aria-hidden={!compact}
-        >
-          {group.name}
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           <button onClick={() => setShowUsers(true)} className="glass rounded-full h-8 w-8 flex items-center justify-center text-muted hover-lift" title={t("users.title")}>
@@ -127,7 +121,11 @@ export function GroupView({ group }: { group: Group }) {
 
       <PayMethodReminder group={group} />
 
-      <Hero group={group} onShare={share} shareState={inviteError ? "error" : copied ? "copied" : undefined} />
+      {/* La tarjeta del grupo se queda pegada bajo la barra y, al bajar, se
+          pliega a una franja con solo el nombre (vuelve a abrirse arriba). */}
+      <div className="sticky z-20 -mx-4 px-4 pb-2 home-sticky-bg" style={{ top: "calc(env(safe-area-inset-top) + var(--home-top))" }}>
+        <Hero group={group} compact={compact} onShare={share} shareState={inviteError ? "error" : copied ? "copied" : undefined} />
+      </div>
 
       <div className="mt-4">
         <Members group={group} />
