@@ -295,6 +295,24 @@ export interface Group {
    *  Va con `kind: "home"` para que `daily-reminders` no le mande el aviso de
    *  "¿ya agregaste todo?" (no tiene deudas, así que tampoco el de pagar). */
   personal?: boolean;
+  /** Solo en el grupo personal: ingresos y ahorros para la vista Proyección. */
+  budget?: Budget;
+}
+
+export type IncomeFreq = "weekly" | "biweekly" | "monthly" | "yearly";
+
+export interface Income {
+  id: string;
+  label: string;
+  amount: number;
+  currency: string; // ISO
+  freq: IncomeFreq;
+}
+
+export interface Budget {
+  incomes: Income[];
+  /** Ahorros que tengo hoy (punto de partida de la proyección). */
+  savings?: { amount: number; currency: string } | null;
 }
 
 import type { IconName } from "../components/Icon";
