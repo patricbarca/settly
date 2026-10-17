@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useT, useLang } from "../lib/i18n";
-import { money, uid, decimalInput, categoryColor } from "../lib/format";
+import { money, uid, decimalInput, categoryColor, fmtDate } from "../lib/format";
 import { CURRENCIES, resolveToCode } from "../lib/currencies";
 import { updateGroup } from "../lib/store";
 import { CATEGORIES, type Budget, type Group, type Income, type IncomeFreq, type PlannedRecurrent } from "../lib/types";
@@ -44,6 +44,7 @@ export function ProjectionView({
   const [paywall, setPaywall] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
   const [aiErr, setAiErr] = useState<string | null>(null);
+  const [openCat, setOpenCat] = useState<string | null>(null);
   const budget: Budget = personal.budget ?? { incomes: [] };
   const planned = budget.recurrents ?? [];
   const conv = (v: number, cur: string) => {
@@ -111,9 +112,25 @@ export function ProjectionView({
   const saveBudget = (patch: Partial<Budget>) =>
     updateGroup(personal.id, (g) => ({ ...g, budget: { ...(g.budget ?? { incomes: [] }), ...patch } }));
 
+  // Base del estimado: los 3 meses completos anteriores. La media por
+  // categoría se calcula aquí (exacta); la IA solo comenta esos números.
+  const base3Keys = [1, 2, 3].map((k) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - k, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const base3Items = items.filter((i) => base3Keys.includes(monthKey(i.date)));
+  const base3Months = base3Keys.filter((k) => base3Items.some((i) => monthKey(i.date) === k)).length;
+  const avg3: Record<string, number> = {};
+  for (const i of base3Items) avg3[i.category] = (avg3[i.category] || 0) + conv(i.amount, i.currency);
+  for (const c of Object.keys(avg3)) avg3[c] = Math.round(avg3[c] / Math.max(base3Months, 1));
+
   async function suggest() {
     setAiErr(null);
-    if (!consumeAI("text")) { setAiErr(t("proj.aiQuota")); return; }
+    const goalsNow = Object.fromEntries(Object.entries(avg3).filter(([, v]) => v > 0));
+    if (!Object.keys(goalsNow).length) { setAiErr(t("proj.noHistory")); return; }
+    // Las cifras no dependen de la IA: se guardan siempre.
+    saveBudget({ goals: goalsNow, insights: null, useEstimate: null });
+    if (!consumeAI("text")) return;
     setAiBusy(true);
     try {
       const res = await forecastSpendingAI({
@@ -121,13 +138,13 @@ export function ProjectionView({
         lang,
         categories: CATEGORIES.map((c) => c.id),
         labels: Object.fromEntries(CATEGORIES.map((c) => [c.id, catName(c.id)])),
-        months: history,
+        months: history.filter((h) => base3Keys.includes(h.month)),
         thisMonth: { day, daysInMonth: daysIn, byCategory: monthByCat },
         income,
         fixed: fixedMonth,
         today: now.toLocaleDateString("en-CA"),
       });
-      saveBudget({ goals: res.goals, insights: res.insights, useEstimate: null });
+      saveBudget({ insights: res.insights });
     } catch (e) {
       if ((e as Error)?.name !== "AIConsentDeclined") setAiErr(t("proj.aiError"));
     } finally {
@@ -269,15 +286,42 @@ export function ProjectionView({
                   {Object.entries(goals).sort((a, b) => b[1] - a[1]).map(([c, g]) => {
                     const sp = monthByCat[c] || 0;
                     const over = sp > g;
+                    const open = openCat === c;
+                    const list = open ? [...items.filter((i) => i.category === c && (base3Keys.includes(monthKey(i.date)) || monthKey(i.date) === nowKey))] : [];
                     return (
                       <div key={c} className="text-sm">
+                        <button onClick={() => setOpenCat(open ? null : c)} className="w-full text-left">
                         <div className="flex justify-between gap-2">
-                          <span className="truncate">{catName(c)}</span>
+                          <span className="truncate">{catName(c)} <span className="text-muted text-xs">{open ? "▴" : "▾"}</span></span>
                           <span className="font-mono text-xs shrink-0" style={{ color: over ? "var(--coral)" : undefined }}>{money(sp, mainCur)} / {money(g, mainCur)}</span>
                         </div>
                         <div className="h-2 rounded-full overflow-hidden mt-1" style={{ background: "var(--seg-track)" }}>
                           <div className="h-full rounded-full" style={{ width: `${Math.min(100, g > 0 ? (sp / g) * 100 : 100)}%`, background: over ? "var(--coral)" : categoryColor(c) }} />
                         </div>
+                        </button>
+                        {open && (
+                          <div className="mt-2 rounded-2xl p-2 text-xs" style={{ background: "var(--seg-track)" }}>
+                            {[nowKey, ...base3Keys].map((k) => {
+                              const rows = list.filter((i) => monthKey(i.date) === k);
+                              const tot = rows.reduce((a, i) => a + conv(i.amount, i.currency), 0);
+                              return (
+                                <div key={k} className="py-1">
+                                  <div className="flex justify-between font-semibold text-muted">
+                                    <span className="capitalize">{monthLabel(k, lang)}{k === nowKey ? ` · ${t("proj.soFar")}` : ""}</span>
+                                    <span className="font-mono">{money(tot, mainCur)}</span>
+                                  </div>
+                                  {rows.length === 0 ? <div className="text-muted">—</div> : rows.map((i) => (
+                                    <div key={i.key} className="flex justify-between gap-2 py-0.5">
+                                      <span className="truncate">{fmtDate(i.date)} · {i.label} <span className="text-muted">· {i.personal ? t("mine.personal") : i.groupName}</span></span>
+                                      <span className="font-mono shrink-0">{show(i.amount, i.currency)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              );
+                            })}
+                            <div className="text-muted pt-1 border-t border-[var(--line)]">{t("proj.avgOf3", { avg: money(avg3[c] || 0, mainCur) })}</div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

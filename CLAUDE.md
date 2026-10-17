@@ -51,6 +51,10 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Gasto estimado = media de los 3 últimos meses + detalle por categoría (2026-10-17)
+- A pedido: el estimado ya **no lo inventa la IA**. `ProjectionView` calcula en el cliente la **media por categoría de los 3 meses completos anteriores** (`avg3`, convertida a la moneda principal; divide entre los meses que tienen gastos) y la guarda como `Budget.goals` aunque la IA falle o no quede cupo. La IA (`forecast-spending`) solo aporta las **observaciones**, con los 3 meses de base.
+- **Tocar una categoría** la despliega: gastos de este mes ("llevas") y de cada uno de los 3 meses anteriores, con fecha, concepto, grupo e importe, total por mes y la media. Botón: "Calcular media (3 meses)" / "Recalcular". Sigue la pregunta Usar / Ajustar / No usar. `tsc` + build; no probado en pantalla.
+
 ### "Objetivo de gasto" → "Gasto estimado al mes" + preguntar si usarlo (2026-10-17)
 - El usuario vio que la IA ponía "límites" ≈ el doble de lo gastado (extrapolaba el mes) y categorías sin gasto, con observaciones en idiomas mezclados. Pidió: **estimar el gasto mensual típico** y **preguntar** si usarlo en la proyección.
 - **`forecast-spending` v5:** el prompt pide una ESTIMACIÓN realista de un mes típico (media de meses anteriores + mes actual extrapolado, sin recortar ni inflar), omite categorías sin gasto en 3 meses, y escribe las observaciones solo en el idioma de la app usando los **nombres visibles** de las categorías (el cliente manda `labels`). Descarta importes 0.
