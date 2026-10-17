@@ -289,14 +289,15 @@ button { cursor: pointer; font-family: inherit; }
 .home-sticky-bg::before, .floating-header::before {
   content: "";
   position: absolute;
-  inset: 0 0 -18px 0;
+  inset: 0 0 -36px 0;
   z-index: 0;
   pointer-events: none;
   background: color-mix(in srgb, var(--bg) 72%, transparent);
   -webkit-backdrop-filter: blur(16px) saturate(140%);
   backdrop-filter: blur(16px) saturate(140%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent);
-  mask-image: linear-gradient(to bottom, #000 70%, transparent);
+  /* Opaco hasta 12 px bajo la tarjeta y luego se desvanece en 24 px. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent);
 }
 /* Lo de dentro SIEMPRE por delante del difuminado: con z-index:-1 en el
    pseudo, Safari/WKWebView (capa compuesta por backdrop-filter + máscara) lo
