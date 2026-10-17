@@ -164,7 +164,7 @@ export function MySpending() {
           }}
           style={{ paddingBottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 96px)" }}>
           {/* Cabecera flotante: se queda arriba y el contenido pasa por debajo. */}
-          <div className="sticky top-0 z-10 pb-3 pt-1 floating-header">
+          <div className="sticky top-0 z-10 -mx-4 px-4 pb-3 pt-1 floating-header">
           {/* Cabecera editable como la de cualquier grupo (nombre, color o foto). */}
           <div
             className="hero relative"
@@ -212,7 +212,7 @@ export function MySpending() {
 
           {mode !== "projection" && (<>
           {/* Filtros: periodo y grupo */}
-          <div className="flex gap-2">
+          <div className="flex gap-2 mb-3">
             <select value={period} onChange={(e) => setPeriod(e.target.value)} className="glass rounded-xl px-3 py-2.5 text-sm font-semibold flex-1 min-w-0" aria-label={t("mine.period")}>
               <option value="thisMonth">{t("mine.thisMonth")}</option>
               <option value="lastMonth">{t("mine.lastMonth")}</option>

@@ -281,9 +281,23 @@ button { cursor: pointer; font-family: inherit; }
 /* Barra de botones + cabecera de Home pegadas arriba: fondo de la página
    (fijo, para que el degradado cuadre) → lo que sube por detrás queda tapado. */
 :root { --home-top: 48px; }
-.home-sticky-bg { background: transparent; }
-/* Cabeceras flotantes: el contenido pasa por debajo; la tarjeta lleva sombra
-   para despegarse de lo que tiene detrás. */
+.home-sticky-bg, .floating-header { background: transparent; isolation: isolate; }
+/* Cabeceras flotantes: detrás, una capa de cristal difuminado que se
+   desvanece hacia abajo, así los datos que pasan por debajo se ven borrosos
+   y no superpuestos. La capa es un pseudo-elemento (con máscara) para no
+   recortar la propia tarjeta. */
+.home-sticky-bg::before, .floating-header::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -18px 0;
+  z-index: -1;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 70%, transparent);
+  mask-image: linear-gradient(to bottom, #000 70%, transparent);
+}
 .home-sticky-bg .hero, .floating-header .hero { box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.12); }
 /* Cabecera de Home: entrada (pop + giro del logo + letras una a una). */
 .home-hero-letter { display: inline-block; }
