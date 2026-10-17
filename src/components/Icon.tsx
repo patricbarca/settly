@@ -51,7 +51,8 @@ export type IconName =
   | "share"
   | "info"
   | "key"
-  | "wrench";
+  | "wrench"
+  | "dumbbell";
 
 function glyph(name: IconName): ReactNode {
   switch (name) {
@@ -62,6 +63,8 @@ function glyph(name: IconName): ReactNode {
           <path d="M11 12l9-9M17 6l3 3M15 8l2 2" />
         </>
       );
+    case "dumbbell":
+      return <path d="M6 7v10M3 9.5v5M18 7v10M21 9.5v5M6 12h12" />;
     case "wrench":
       return <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z" />;
     case "filter":

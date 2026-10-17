@@ -5,10 +5,11 @@ import type { Category, Member, RecurrenceInterval } from "./types";
 // sustituirla/ampliarla con un LLM (voz → gasto) desde un backend con tu clave.
 
 const CAT_KW: [RegExp, Category][] = [
-  [/cervez|vino|copas?|\bbar\b|pub|cocktail|c[oó]ctel|\bgin\b|\bron\b|whisky|bebidas?|trago/i, "bebidas"],
-  [/desayun|almuerz|comid|cen[ao]|caf[eé]|restaurante|pizza|sushi|tapas|brunch|hamburg|kebab|taco|men[uú]/i, "comida"],
+  [/gimnasio|\bgym\b|crossfit|pilates|\byoga\b|prote[ií]na|protein|suplement|supplement|creatin|personal trainer|entrenador/i, "fitness"],
+  [/cervez|\bbeers?\b|vino|wine|copas?|\bbar\b|pub|cocktail|c[oó]ctel|\bgin\b|\bron\b|whisky|bebidas?|drinks?|trago|chelas?|discoteca|club|fiesta|party/i, "bebidas"],
+  [/desayun|almuerz|comid|cen[ao]|caf[eé]|coffee|restaurante|pizza|sushi|tapas|brunch|hamburg|kebab|taco|men[uú]/i, "comida"],
   [/s[uú]per|supermercado|mercado|verdur|frut|carnicer|panader|grocer/i, "mercado"],
-  [/farmac|m[eé]dico|doctor|hospital|dentista|salud|medicina|gimnasio|\bgym\b|cl[ií]nica/i, "salud"],
+  [/farmac|m[eé]dico|doctor|hospital|dentista|salud|medicina|cl[ií]nica/i, "salud"],
   [/vuelo|avi[oó]n|crucero|\bviaje|excursi[oó]n/i, "viajes"],
   [/taxi|uber|cabify|bus|tren|gasolina|peaje|parking|metro|billete|combustible|nafta/i, "transporte"],
   [/\brent\b|alquiler|renta|arriendo|mortgage|hipoteca/i, "alquiler"],
