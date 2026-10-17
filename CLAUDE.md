@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Proyección: consejos de ahorro con IA (2026-10-17)
+- `forecast-spending` **v6 (✅ desplegada)** devuelve además `tips` (3-5 consejos concretos según tus categorías más altas o en subida, ingresos y fijos, con ahorro estimado al mes; saneados, máx 200 chars). Se guardan en `Budget.tips` y salen en un bloque verde "💡 Consejos para ahorrar" bajo el gasto estimado. Se piden con el mismo botón ("Calcular media + consejos IA" / "Recalcular y nuevos consejos"), 1 uso de IA de texto. `tsc` + build; no probado con datos reales.
+
 ### Proyección: "Tu presupuesto mensual" + (i) en "Tu próximo año" (2026-10-17)
 - Tarjeta nueva `BudgetTotal` (Pro, arriba de Recurrentes): total mensual = tus recurrentes (media mensual) + recurrentes de grupos + gasto estimado (o media de 3 meses si no hay estimado); con ingresos muestra "Te queda/Te falta al mes". Botón (i) en `YearForecast` que explica cada cifra, las barras, la línea y el cálculo (`proj.yi.*`). `tsc` + build; no probado en pantalla.
 

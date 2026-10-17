@@ -129,7 +129,7 @@ export function ProjectionView({
     const goalsNow = Object.fromEntries(Object.entries(avg3).filter(([, v]) => v > 0));
     if (!Object.keys(goalsNow).length) { setAiErr(t("proj.noHistory")); return; }
     // Las cifras no dependen de la IA: se guardan siempre.
-    saveBudget({ goals: goalsNow, insights: null, useEstimate: null });
+    saveBudget({ goals: goalsNow, insights: null, tips: null, useEstimate: null });
     if (!consumeAI("text")) return;
     setAiBusy(true);
     try {
@@ -144,7 +144,7 @@ export function ProjectionView({
         fixed: fixedMonth,
         today: now.toLocaleDateString("en-CA"),
       });
-      saveBudget({ insights: res.insights });
+      saveBudget({ insights: res.insights, tips: res.tips });
     } catch (e) {
       if ((e as Error)?.name !== "AIConsentDeclined") setAiErr(t("proj.aiError"));
     } finally {
@@ -346,6 +346,16 @@ export function ProjectionView({
                   <li key={k} className="text-xs flex gap-1.5"><Icon name="sparkles" size={12} className="shrink-0 mt-0.5" /> <span>{s}</span></li>
                 ))}
               </ul>
+            )}
+            {(budget.tips ?? []).length > 0 && (
+              <div className="mt-4 rounded-2xl p-3" style={{ background: "color-mix(in srgb, #2ED573 12%, transparent)" }}>
+                <div className="text-sm font-semibold flex items-center gap-1.5"><Icon name="sparkles" size={14} /> {t("proj.tipsTitle")}</div>
+                <ul className="mt-2 space-y-1.5">
+                  {budget.tips!.map((s, k) => (
+                    <li key={k} className="text-xs flex gap-1.5"><span className="shrink-0">💡</span> <span>{s}</span></li>
+                  ))}
+                </ul>
+              </div>
             )}
             {goals && Object.keys(goals).length > 0 && (budget.useEstimate == null ? (
               <div className="mt-4 rounded-2xl p-3" style={{ background: "color-mix(in srgb, var(--teal) 12%, transparent)" }}>
