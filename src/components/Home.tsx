@@ -1,4 +1,7 @@
 import { heroBackground, HeroCover } from "../lib/heroStyle";
+import { useEnsurePersonalGroup } from "../lib/personal";
+import { resolveToCode } from "../lib/currencies";
+import type { Group as PGroup } from "../lib/types";
 import { useState, useRef, useEffect } from "react";
 import { useGroups, useTrashedGroups, setActiveGroup, archiveGroup, recoverGroup, purgeGroup } from "../lib/store";
 import { useArchivedGroups } from "../lib/archivedGroups";
@@ -26,6 +29,7 @@ export function Home({ tab }: { tab: HomeTab }) {
   // El grupo personal ("Mis gastos") no es un grupo de la lista ni cuenta para el límite.
   const groups = useGroups().filter((g) => !g.personal);
   const plan = usePlan();
+  const personal = useEnsurePersonalGroup();
   const [creating, setCreating] = useState(false);
   // Cabecera: compacta al bajar; animación de entrada solo la 1.ª vez por sesión.
   const [heroCompact, setHeroCompact] = useState(false);
@@ -280,6 +284,7 @@ export function Home({ tab }: { tab: HomeTab }) {
         {active.length === 0 && allDone && (
           <div className="glass rounded-3xl p-8 text-center text-muted">{t("home.empty")}</div>
         )}
+        {personal && <PersonalCard g={personal} />}
         {active.map((g) => (
           <GroupCard key={g.id} g={g} t={t} money={money} onOpen={() => setActiveGroup(g.id)} onArchive={() => localArchiveGroup(g.id)} />
         ))}
@@ -565,5 +570,42 @@ function GroupCard({
         </button>
       </div>
     </div>
+  );
+}
+
+/** Tarjeta de "Mis gastos" en Home: el grupo personal, con su color o foto.
+ *  Abre la pestaña Mis gastos (no el grupo). */
+function PersonalCard({ g }: { g: PGroup }) {
+  const t = useT();
+  const cover = heroBackground(g);
+  const nowKey = new Date().toLocaleDateString("en-CA").slice(0, 7);
+  const month = g.expenses.filter((e) => (e.date || "").slice(0, 7) === nowKey);
+  const byCur: Record<string, number> = {};
+  for (const e of month) {
+    const c = resolveToCode(e.currency || g.currency);
+    byCur[c] = (byCur[c] || 0) + e.amount;
+  }
+  const totals = Object.entries(byCur).map(([c, v]) => money(v, c)).join(" · ");
+  return (
+    <button
+      onClick={() => window.dispatchEvent(new Event("settlia:open-mine"))}
+      className={`${cover ? "relative isolate overflow-hidden text-white" : "glass"} rounded-3xl p-4 w-full text-left hover-lift flex items-center gap-3`}
+      style={cover}
+    >
+      {cover && <HeroCover g={g} />}
+      <span
+        className="h-11 w-11 rounded-full flex items-center justify-center shrink-0"
+        style={{ background: cover ? "rgba(255,255,255,.18)" : "var(--seg-track)" }}
+      >
+        <Icon name="lock" size={18} />
+      </span>
+      <div className="flex-1 min-w-0">
+        <div className="font-display text-lg font-bold truncate leading-relaxed">{g.name}</div>
+        <div className={`text-xs mt-0.5 ${cover ? "text-white/75" : "text-muted"}`}>
+          {month.length ? t("mine.cardMonth", { n: String(month.length) }) : t("mine.cardEmpty")}
+        </div>
+      </div>
+      {totals && <div className="font-mono font-bold text-right shrink-0">{totals}</div>}
+    </button>
   );
 }

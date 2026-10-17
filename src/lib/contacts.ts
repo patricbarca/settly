@@ -18,7 +18,8 @@ export async function getNetwork(): Promise<Contact[]> {
     if (!groupIds.length) return [];
 
     // Metadatos de esos grupos: para ordenar por actividad reciente y excluir
-    // los archivados / en papelera (solo sugerimos grupos activos).
+    // los de la papelera. Los ARCHIVADOS sí cuentan (archivar un grupo no
+    // borra a la gente con la que lo compartiste), pero van después.
     const { data: groupsMeta } = await supabase
       .from("groups")
       .select("id, updated_at, data")
@@ -27,9 +28,10 @@ export async function getNetwork(): Promise<Contact[]> {
     const activeGroupIds: string[] = [];
     for (const g of groupsMeta ?? []) {
       const d = (g.data ?? {}) as { archived?: boolean; deletedAt?: string };
-      if (d.archived || d.deletedAt) continue;
+      if (d.deletedAt) continue;
       activeGroupIds.push(g.id);
-      recencyByGroup.set(g.id, g.updated_at ? new Date(g.updated_at).getTime() : 0);
+      const ts = g.updated_at ? new Date(g.updated_at).getTime() : 0;
+      recencyByGroup.set(g.id, d.archived ? ts - 1e13 : ts);
     }
     if (!activeGroupIds.length) return [];
 
@@ -43,7 +45,7 @@ export async function getNetwork(): Promise<Contact[]> {
     const recencyByUser = new Map<string, number>();
     for (const o of others ?? []) {
       const ts = recencyByGroup.get(o.group_id) ?? 0;
-      if (ts > (recencyByUser.get(o.user_id) ?? -1)) recencyByUser.set(o.user_id, ts);
+      if (!recencyByUser.has(o.user_id) || ts > recencyByUser.get(o.user_id)!) recencyByUser.set(o.user_id, ts);
     }
     const ids = [...recencyByUser.keys()];
     if (!ids.length) return [];

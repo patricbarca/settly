@@ -12,6 +12,9 @@ import { Icon } from "./Icon";
 import { AddExpense } from "./AddExpense";
 import { ConfirmModal } from "./ConfirmModal";
 import { haptic } from "../lib/haptics";
+import { useArchivedGroups } from "../lib/archivedGroups";
+import { heroBackground, HeroCover } from "../lib/heroStyle";
+import { GroupSettings } from "./GroupSettings";
 
 type Mode = "converted" | "byCurrency";
 
@@ -28,7 +31,9 @@ export function MySpending() {
   const user = useUser();
   const groups = useGroups();
   const personal = useEnsurePersonalGroup();
-  const all = useMemo(() => myItems(groups), [groups]);
+  const { archived: localArchived } = useArchivedGroups();
+  const all = useMemo(() => myItems(groups, localArchived), [groups, localArchived]);
+  const [editing, setEditing] = useState(false);
 
   const nowKey = new Date().toLocaleDateString("en-CA").slice(0, 7);
   const months = useMemo(() => {
@@ -36,24 +41,42 @@ export function MySpending() {
     s.add(nowKey);
     return [...s].sort().reverse();
   }, [all, nowKey]);
-  const [month, setMonth] = useState<string>(nowKey);
+  const [period, setPeriod] = useState<string>("thisMonth");
   const [mode, setMode] = useState<Mode>("converted");
-  const [source, setSource] = useState<string>("all"); // all | personal | groupId
+  // all = grupos activos + personal · allArch = también archivados · personal · id de grupo
+  const [source, setSource] = useState<string>("all");
   const [open, setOpen] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState<MyItem | null>(null);
 
-  // Grupos con gastos míos, para el filtro de origen (lo personal va aparte).
+  // Grupos con gastos míos para el desplegable (activos primero, luego archivados).
   const sources = useMemo(() => {
-    const seen = new Map<string, string>();
-    for (const i of all) if (!i.personal && !seen.has(i.groupId)) seen.set(i.groupId, i.groupName);
-    return [...seen.entries()];
+    const seen = new Map<string, { name: string; archived: boolean }>();
+    for (const i of all) if (!i.personal && !seen.has(i.groupId)) seen.set(i.groupId, { name: i.groupName, archived: i.archived });
+    const list = [...seen.entries()].map(([id, v]) => ({ id, ...v })).sort((x, y) => x.name.localeCompare(y.name));
+    return { active: list.filter((x) => !x.archived), archived: list.filter((x) => x.archived) };
   }, [all]);
 
-  const items = all.filter(
-    (i) =>
-      (month === "all" || monthKey(i.date) === month) &&
-      (source === "all" || (source === "personal" ? i.personal : i.groupId === source))
-  );
+  const prevKey = (() => {
+    const [y, m] = nowKey.split("-").map(Number);
+    return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+  })();
+  const from3 = (() => {
+    const [y, m] = nowKey.split("-").map(Number);
+    const d = new Date(y, m - 3, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  })();
+  const inPeriod = (date: string) => {
+    const k = monthKey(date);
+    if (period === "all") return true;
+    if (period === "thisMonth") return k === nowKey;
+    if (period === "lastMonth") return k === prevKey;
+    if (period === "last3") return k >= from3 && k <= nowKey;
+    if (period === "thisYear") return k.slice(0, 4) === nowKey.slice(0, 4);
+    return k === period.slice(2); // "m:YYYY-MM"
+  };
+  const inSource = (i: MyItem) =>
+    source === "all" ? !i.archived : source === "allArch" ? true : source === "personal" ? i.personal : i.groupId === source;
+  const items = all.filter((i) => inPeriod(i.date) && inSource(i));
 
   // Moneda principal: la del perfil; si no, la más usada en mis gastos.
   const mainCur = useMemo(() => {
@@ -94,9 +117,6 @@ export function MySpending() {
     return Object.entries(m).filter(([, v]) => v > 0.004).sort((a, b) => b[1] - a[1]);
   };
 
-  const chip = (on: boolean) =>
-    `shrink-0 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap ${on ? "" : "glass text-muted"}`;
-  const chipStyle = (on: boolean) => (on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined);
 
   const CatBars = ({ rows, cur }: { rows: [string, number][]; cur: string }) => {
     const max = rows[0]?.[1] || 1;
@@ -121,38 +141,68 @@ export function MySpending() {
   return (
     <div className="fixed inset-0 z-30 flex flex-col anim-up" style={{ background: "var(--bg)", paddingTop: "env(safe-area-inset-top)" }}>
       <div className="max-w-2xl mx-auto w-full px-4 pt-5 flex-1 flex flex-col min-h-0">
-        <h2 className="font-display text-2xl font-bold shrink-0">{t("mine.title")}</h2>
-        <p className="text-xs text-muted mt-1 mb-3 shrink-0">{t("mine.subtitle")}</p>
+        {/* Cabecera editable como la de cualquier grupo (nombre, color o foto). */}
+        <div className="hero shrink-0 mb-3 !py-4 relative" style={personal ? heroBackground(personal) : undefined}>
+          {personal && <HeroCover g={personal} />}
+          {!(personal && heroBackground(personal)) && (
+            <>
+              <span className="blob b1" />
+              <span className="blob b2" />
+              <span className="blob b3" />
+            </>
+          )}
+          <div className="relative z-10 flex items-start gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="text-[11px] uppercase tracking-widest text-white/70 font-semibold">{t("mine.title")}</div>
+              <div className="font-display text-2xl font-extrabold text-white truncate">🔒 {personal?.name || t("mine.personal")}</div>
+              <div className="text-xs text-white/75 mt-0.5">{t("mine.subtitle")}</div>
+            </div>
+            {personal && (
+              <button
+                onClick={() => setEditing(true)}
+                className="h-9 w-9 rounded-full flex items-center justify-center text-white shrink-0"
+                style={{ background: "rgba(255,255,255,.18)" }}
+                aria-label={t("settings.title")}
+              >
+                <Icon name="settings" size={16} />
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="flex-1 overflow-y-auto -mx-4 px-4" style={{ paddingBottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 96px)" }}>
-          {/* Mes */}
-          <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
-            <button className={chip(month === "all")} style={chipStyle(month === "all")} onClick={() => setMonth("all")}>
-              {t("mine.allTime")}
-            </button>
-            {months.map((m) => (
-              <button key={m} className={chip(month === m)} style={chipStyle(month === m)} onClick={() => setMonth(m)}>
-                {m === nowKey ? t("mine.thisMonth") : monthLabel(m, lang)}
-              </button>
-            ))}
-          </div>
-
-          {/* Origen */}
-          {(sources.length > 0 || all.some((i) => i.personal)) && (
-            <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
-              <button className={chip(source === "all")} style={chipStyle(source === "all")} onClick={() => setSource("all")}>
-                {t("mine.allSources")}
-              </button>
-              <button className={chip(source === "personal")} style={chipStyle(source === "personal")} onClick={() => setSource("personal")}>
-                <Icon name="lock" size={11} /> {t("mine.personal")}
-              </button>
-              {sources.map(([id, name]) => (
-                <button key={id} className={chip(source === id)} style={chipStyle(source === id)} onClick={() => setSource(id)}>
-                  {name}
-                </button>
+          {/* Filtros: periodo y grupo */}
+          <div className="flex gap-2">
+            <select value={period} onChange={(e) => setPeriod(e.target.value)} className="glass rounded-xl px-3 py-2.5 text-sm font-semibold flex-1 min-w-0" aria-label={t("mine.period")}>
+              <option value="thisMonth">{t("mine.thisMonth")}</option>
+              <option value="lastMonth">{t("mine.lastMonth")}</option>
+              <option value="last3">{t("mine.last3")}</option>
+              <option value="thisYear">{t("mine.thisYear")}</option>
+              <option value="all">{t("mine.allTime")}</option>
+              {months.length > 0 && (
+                <optgroup label={t("mine.byMonth")}>
+                  {months.map((m) => (
+                    <option key={m} value={`m:${m}`}>{monthLabel(m, lang)}</option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+            <select value={source} onChange={(e) => setSource(e.target.value)} className="glass rounded-xl px-3 py-2.5 text-sm font-semibold flex-1 min-w-0" aria-label={t("mine.source")}>
+              <option value="all">{t("mine.allSources")}</option>
+              <option value="personal">🔒 {personal?.name || t("mine.personal")}</option>
+              {sources.active.map((g) => (
+                <option key={g.id} value={g.id}>{g.name}</option>
               ))}
-            </div>
-          )}
+              {sources.archived.length > 0 && (
+                <optgroup label={t("mine.archivedGroups")}>
+                  <option value="allArch">{t("mine.allInclArchived")}</option>
+                  {sources.archived.map((g) => (
+                    <option key={g.id} value={g.id}>{g.name}</option>
+                  ))}
+                </optgroup>
+              )}
+            </select>
+          </div>
 
           {/* Vista */}
           <div className="seg my-3" role="tablist">
@@ -253,6 +303,8 @@ export function MySpending() {
 
       {/* + flotante: añade un gasto SOLO mío (grupo personal). */}
       {personal && <AddExpense group={personal} />}
+
+      {editing && personal && <GroupSettings group={personal} onClose={() => setEditing(false)} />}
 
       {confirmDel && (
         <ConfirmModal
