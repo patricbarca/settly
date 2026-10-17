@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Proyección más minimal + consejos plegados (2026-10-17)
+- `ProjectionView`: "A fin de mes" ya no es una tarjeta aparte, va como línea dentro de "Este mes". Orden Pro: Este mes → Tu presupuesto mensual → Tu próximo año → **Recurrentes** y **Gasto estimado al mes** como secciones plegables (`Fold`, cerradas por defecto, con el total a la derecha) → gráfico "Tu gasto" también plegable al final (`SpendingChart bare`). `SavingTips` (Mis gastos) plegado por defecto con el nº de consejos en la cabecera. `tsc` + build; no revisado en pantalla.
+
 ### Consejos de ahorro = gastado este mes vs presupuesto, sin cifras inventadas (2026-10-17)
 - Problema: la IA usaba los ids de categoría ("Mercado", "Bebidas") en vez de los nombres visibles e inventaba medias. Ahora `SavingTips` calcula en el cliente, por categoría, **gastado este mes** y **presupuesto** (= gasto estimado guardado en Proyección, o media de los 3 meses anteriores si no hay) y manda `rows` con el **nombre visible**. `forecast-spending` **v8** (modo `tips`) solo redacta con esos números: "Este mes llevas X en <cat>; tu presupuesto es Y" + lo que queda o cuánto te pasaste; categorías con presupuesto y 0 gastado → recordatorio amable de que ese dinero es para disfrutar ("treat yourself"). Hasta 6 consejos. `tsc` + build; no probado con datos reales.
 
