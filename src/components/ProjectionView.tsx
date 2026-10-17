@@ -99,7 +99,11 @@ export function ProjectionView({
   // a la media histórica como gasto variable mensual en la proyección.
   const estVar = budget.goals ? Object.entries(budget.goals).filter(([c]) => !plannedCats.has(c)).reduce((a, [, v]) => a + v, 0) : 0;
   const useEst = budget.useEstimate === true && estVar > 0;
-  const avgVar = useEst ? estVar : histVar;
+  // El estimado sale de TODO lo gastado (incluye los cobros de los recurrentes
+  // de grupos), así que la parte variable es el estimado menos esos fijos.
+  const groupFixedAvg = fixed.reduce((s, f) => s + conv(f.monthly, f.currency), 0);
+  const estRest = Math.max(0, estVar - groupFixedAvg);
+  const avgVar = useEst ? estRest : histVar;
   const net = income - fixedAvg - avgVar;
 
   const monthByCat: Record<string, number> = {};
@@ -225,8 +229,8 @@ export function ProjectionView({
             cur={mainCur}
             rows={[
               { label: t("proj.bPlanned"), v: planned.reduce((s2, r) => s2 + conv(perMonth(r.amount, r.freq), r.currency), 0) },
-              { label: t("proj.bGroups"), v: fixed.reduce((s2, f) => s2 + conv(f.monthly, f.currency), 0) },
-              { label: t(goals && estVar > 0 ? "proj.bEstimate" : "proj.bAvg3"), v: goals && estVar > 0 ? estVar : histVar },
+              { label: t("proj.bGroups"), v: groupFixedAvg },
+              { label: t(goals && estVar > 0 ? "proj.bEstRest" : "proj.bAvg3"), v: goals && estVar > 0 ? estRest : histVar },
             ]}
             income={income}
           />
