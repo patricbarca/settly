@@ -118,7 +118,7 @@ export async function transcribeAudio(blob: Blob, lang = "es"): Promise<string> 
 }
 
 
-export type ForecastAI = { goals: Record<string, number>; insights: string[] };
+export type ForecastAI = { goals: Record<string, number>; insights: string[]; tips: string[] };
 
 /** Pide a la IA (función `forecast-spending`) un objetivo de gasto mensual por
  *  categoría + observaciones, a partir del historial ya convertido a la moneda
@@ -139,7 +139,7 @@ export async function forecastSpendingAI(payload: {
   if (error) throw error;
   const res = data as ForecastAI & { error?: string };
   if (!res || res.error) throw new Error(res?.error || "forecast_failed");
-  return { goals: res.goals || {}, insights: res.insights || [] };
+  return { goals: res.goals || {}, insights: res.insights || [], tips: res.tips || [] };
 }
 
 /** Sugiere una categoría para cada gasto (solo sugerencias; el usuario decide). */

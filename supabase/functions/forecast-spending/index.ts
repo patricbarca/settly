@@ -63,7 +63,10 @@ Deno.serve(async (req) => {
       `Category ids allowed as JSON keys: ${categories.join(", ")}. ` +
       `Also give 2 to 4 short, concrete observations (max 140 chars each) written ONLY in ${lang === "es" ? "Spanish" : "English"}, ` +
       `naming categories by these display names, never by id: ${JSON.stringify(labels)}. Include numbers (e.g. what grew vs the average, how the month is trending). ` +
-      `Respond ONLY with JSON: {"goals": {"<category id>": number}, "insights": ["..."]}.`;
+      `Also give 3 to 5 practical SAVING TIPS (max 180 chars each, same language and display names) based on THIS user's biggest or growing categories, ` +
+      `income vs spending and fixed costs: concrete actions with an estimated monthly saving in ${currency} when possible ` +
+      `(e.g. "Salidas: you spent X, 30% above your average; capping it at Y would save ~Z/month"). No generic advice unrelated to their data, no financial products. ` +
+      `Respond ONLY with JSON: {"goals": {"<category id>": number}, "insights": ["..."], "tips": ["..."]}.`;
 
     const models = [...new Set([MODEL, FALLBACK_MODEL])];
     let res: Response | null = null;
@@ -100,7 +103,11 @@ Deno.serve(async (req) => {
       .map((s: unknown) => String(s).trim().slice(0, 160))
       .filter(Boolean)
       .slice(0, 4);
-    return json({ goals, insights });
+    const tips = (Array.isArray(out.tips) ? out.tips : [])
+      .map((s: unknown) => String(s).trim().slice(0, 200))
+      .filter(Boolean)
+      .slice(0, 5);
+    return json({ goals, insights, tips });
   } catch (e) {
     console.error("forecast-spending:", e);
     return json({ error: "failed" }, 500);
