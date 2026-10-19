@@ -57,7 +57,7 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - ✅ Capturas en navegador (invitado, 390 px): menú de 4 tarjetas y paso "Escribir". `tsc` limpio. No probado en iPhone.
 
 ### Reparto por defecto por grupo (2026-10-19)
-- **Ajustes del grupo → "Reparto por defecto"**: Iguales / % / Partes, con un valor por miembro (0 = no entra por defecto). Se guarda en `Group.defaultSplit {mode, values}` (JSON). Los % deben sumar 100.
+- **Ajustes del grupo → "Reparto por defecto"**: Iguales / % / Partes, con un valor por miembro (0 = no entra por defecto). Se guarda en `Group.defaultSplit {mode, values}` (JSON). Los % deben sumar 100; al escribir el % de alguien, el **último** de la lista se autocompleta con lo que falta hasta 100 (`setDefVal`).
 - **Dónde se aplica** (`src/lib/defaultSplit.ts`: `initialSplit`, `defaultValuesFor`): gasto manual, gasto por texto/voz/IA cuando no se dijo un % ni personas concretas (participantes = todos o = los del reparto por defecto), y recurrentes nuevos. En el formulario, al quitar a alguien los % se reescalan a 100 entre los que quedan (60/40/0 → con uno fuera mantiene la proporción); al elegir el modo %/Partes se rellenan con el reparto por defecto. Línea "Reparto por defecto del grupo" bajo el reparto. Fix de paso: cambiar el importe ya no reinicia los % escritos.
 - **No se aplica** al escaneo por ítems (cada plato lleva su gente) ni a gastos ya creados.
 - **Servidor (`migrate_v22_keep_default_split.sql`, ✅ aplicada vía MCP):** `update_group_data` conserva `defaultSplit` **y `budget`** si un cliente viejo guarda el blob sin esas claves (cierra el riesgo anotado de perder el `budget` del grupo personal); para quitarlas se manda `null`.

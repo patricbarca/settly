@@ -92,6 +92,22 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
       return [m.id, String(i === n - 1 ? Math.round((100 - base * (n - 1)) * 100) / 100 : base)];
     })));
   }
+  // En %: al escribir el de alguien, el ÚLTIMO de la lista se autocompleta con
+  // lo que falta hasta 100 (igual que en el formulario de gasto). Editar al
+  // último lo respeta.
+  function setDefVal(id: string, val: string) {
+    setDefVals((v) => {
+      const next = { ...v, [id]: val };
+      if (defMode !== "percent") return next;
+      const order = sortedMembers(group.members).map((m) => m.id);
+      const last = order[order.length - 1];
+      if (order.length < 2 || id === last) return next;
+      const others = order.filter((x) => x !== last).reduce((a, x) => a + (Number(next[x]) || 0), 0);
+      const rem = Math.round((100 - others) * 100) / 100;
+      next[last] = String(rem > 0 ? rem : 0);
+      return next;
+    });
+  }
   const defNums = Object.fromEntries(Object.entries(defVals).map(([k, v]) => [k, Number(v) || 0]));
   const defSum = Object.values(defNums).reduce((a, b) => a + b, 0);
   const defValid = defMode === "equal" || (defMode === "percent" ? Math.abs(defSum - 100) < 0.01 : defSum > 0);
@@ -475,7 +491,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
                   <div className="glass rounded-lg px-2 py-1 flex items-center gap-1 w-24 shrink-0">
                     <input
                       value={defVals[m.id] ?? ""}
-                      onChange={(e) => setDefVals((v) => ({ ...v, [m.id]: decimalInput(e.target.value) }))}
+                      onChange={(e) => setDefVal(m.id, decimalInput(e.target.value))}
                       inputMode="decimal"
                       placeholder="0"
                       className="bg-transparent text-sm w-full text-right font-mono"
