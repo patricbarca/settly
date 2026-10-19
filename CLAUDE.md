@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### iOS 1.7 (2026-10-19)
+- `MARKETING_VERSION` 1.6 → **1.7** en los 4 `buildSettings` (App + ShareExtension) para el build de Codemagic con: reparto por defecto, panel de añadir por métodos, Personal en el selector y la notificación de pagos de Wallet.
+
 ### Wallet: "Preguntar por un pago" con notificación + mínimo + comercios (2026-10-19)
 - **Acción nueva de iOS `PaymentPromptIntent`** ("Ask about a payment" / "Preguntar por un pago", `SettliaIntents.swift`, `openAppWhenRun = false`): la automatización de Wallet la ejecuta en segundo plano y Settlia manda una **notificación local** "¿Compartir este gasto? · Comercio · importe" con botones **Añadir** (abre `://add` → Revisar y confirmar), **Añadir con ticket** (`://scan` con lo cobrado), **Siempre a Personal** y **No preguntar por este comercio**. Ya no hace falta el menú "Elegir del menú" en Atajos. Las acciones viejas (Añadir gasto / Escanear ticket) siguen igual.
 - **Ajustes en el App Group** (`UserDefaults(suiteName: "group.app.settlia.pwa")`, `PaymentPrefs`): `pay.minAmount` (pagos por debajo no preguntan), `pay.ignored` y `pay.personal` (listas `{key,name}`; `key` = `merchantKey()`: primera palabra con sustancia, sin números → "TRANSLINK ROMA ST" = "translink"), `pay.queue` (pagos "Siempre a Personal" pendientes) y `pay.lang`.
