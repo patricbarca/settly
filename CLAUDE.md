@@ -51,6 +51,11 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Panel "Añadir gasto": primero se elige el método (2026-10-19)
+- **Por qué:** mucha gente escribía en el cuadro de texto y luego pulsaba **Manual** esperando que el texto se usara; el texto se perdía.
+- **Ahora (`AddExpense.tsx`, estado `entry`):** al abrir el + salen **4 tarjetas**: **Escribir (IA)**, **Dictar (IA)**, **Escanear ticket (IA)** y **Manual**, cada una con una línea que explica qué hace y el cupo de IA del plan gratis. El cuadro de texto solo aparece al elegir **Escribir** (con "‹ Otras opciones" para volver y una pista debajo). Si aun así hay texto escrito al pulsar Manual, se usa como **concepto**. Al cerrar el panel sin texto vuelve al menú. Strings `add.opt*`, `add.ai`, `add.back`, `add.textHint`.
+- ✅ Capturas en navegador (invitado, 390 px): menú de 4 tarjetas y paso "Escribir". `tsc` limpio. No probado en iPhone.
+
 ### Reparto por defecto por grupo (2026-10-19)
 - **Ajustes del grupo → "Reparto por defecto"**: Iguales / % / Partes, con un valor por miembro (0 = no entra por defecto). Se guarda en `Group.defaultSplit {mode, values}` (JSON). Los % deben sumar 100.
 - **Dónde se aplica** (`src/lib/defaultSplit.ts`: `initialSplit`, `defaultValuesFor`): gasto manual, gasto por texto/voz/IA cuando no se dijo un % ni personas concretas (participantes = todos o = los del reparto por defecto), y recurrentes nuevos. En el formulario, al quitar a alguien los % se reescalan a 100 entre los que quedan (60/40/0 → con uno fuera mantiene la proporción); al elegir el modo %/Partes se rellenan con el reparto por defecto. Línea "Reparto por defecto del grupo" bajo el reparto. Fix de paso: cambiar el importe ya no reinicia los % escritos.

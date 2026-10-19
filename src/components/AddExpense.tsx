@@ -38,6 +38,8 @@ export function AddExpense({ group }: { group: Group }) {
   const voiceLeft = useAIRemaining("voice");
   const textLeft = useAIRemaining("text");
   const [text, setText] = useState("");
+  // Pantalla del panel: elegir método ("menu") o escribir la nota ("text").
+  const [entry, setEntry] = useState<"menu" | "text">("menu");
   const [draft, setDraft] = useState<ExpenseDraft | null>(null);
   const [expenseType, setExpenseType] = useState<ExpenseType>("one-time");
   const [recurInterval, setRecurInterval] = useState<RecurrenceInterval>("monthly");
@@ -79,6 +81,10 @@ export function AddExpense({ group }: { group: Group }) {
   // despliega al tocarlo. Sigue montada aunque esté plegada, para que un gasto
   // de Siri / Atajos / Wallet se recoja igual (y la abra).
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!open && !text.trim()) setEntry("menu");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
@@ -354,7 +360,7 @@ function sanitizePercents(
     setManualCurrency(resolveToCode(group.currency));
     setManualRate(null);
     setDraft({
-      label: "",
+      label: text.trim(),
       amount: "",
       payerId: group.meId,
       multiPay: false,
@@ -518,29 +524,69 @@ function sanitizePercents(
           otro gasto encima). Vuelven a aparecer al guardar o cancelar. */}
       {!draft && (
         <>
-          {/* Texto + "Agregar" (la magia con IA) */}
-          <div className="flex gap-2 items-stretch">
-            <input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && interpret()}
-              placeholder={t("add.placeholder")}
-              maxLength={200}
-              className="glass rounded-2xl px-4 py-3 text-sm flex-1 min-w-0"
-            />
-            <button
-              onClick={() => interpret()}
-              disabled={!text.trim() || interpreting}
-              className="shrink-0 rounded-2xl px-5 text-sm font-semibold text-white hover-lift disabled:opacity-40 inline-flex items-center gap-1.5"
-              style={{ background: "var(--teal)" }}
-            >
-              <Icon name="sparkles" size={16} /> {interpreting ? "…" : t("add.add")}
-              {!pro && !interpreting && <span className="text-[9px] font-mono opacity-80">{textLeft}/{FREE_AI_QUOTA}</span>}
-            </button>
-          </div>
-          {(sp.listening || sp.busy) && (
-            <div className="text-xs text-muted mt-1.5 pl-1 anim-up">
-              {sp.busy ? t("add.transcribing") : t("add.listening")}
+          {/* Primero se elige CÓMO añadir (4 opciones). El cuadro de texto solo
+              aparece con "Escribir": antes la gente escribía y luego pulsaba
+              Manual esperando que el texto se usara. */}
+          {entry === "menu" ? (
+            <div className="grid grid-cols-2 gap-2">
+              {([
+                { k: "text", icon: "sparkles", title: t("add.optText"), sub: t("add.optTextSub"), left: textLeft, onClick: () => setEntry("text") },
+                { k: "voice", icon: "mic", title: t("add.optVoice"), sub: sp.listening ? t("add.listening") : sp.busy ? t("add.transcribing") : t("add.optVoiceSub"), left: voiceLeft, onClick: sp.toggle },
+                { k: "scan", icon: "camera", title: t("add.optScan"), sub: t("add.optScanSub"), left: scanLeft, onClick: () => openScan() },
+                { k: "manual", icon: "edit", title: t("add.manual"), sub: t("add.optManualSub"), left: null, onClick: manual },
+              ] as const).map((o) => {
+                const rec = o.k === "voice" && sp.listening;
+                return (
+                  <button
+                    key={o.k}
+                    onClick={() => { haptic("light"); o.onClick(); }}
+                    disabled={o.k === "voice" && (!sp.supported || sp.busy)}
+                    className={`rounded-2xl p-3 text-left hover-lift disabled:opacity-40 flex flex-col gap-1 min-h-[86px] ${rec ? "" : "glass"}`}
+                    style={rec ? { background: "#D14444", color: "#fff" } : undefined}
+                  >
+                    <span className="flex items-center justify-between w-full">
+                      <span className="inline-flex items-center justify-center h-8 w-8 rounded-xl" style={{ background: o.k === "manual" ? "var(--pill-bg)" : "rgba(15,163,163,0.16)", color: rec ? "#fff" : o.k === "manual" ? "var(--pill-fg)" : "var(--teal)" }}>
+                        <Icon name={o.icon} size={17} />
+                      </span>
+                      {o.k !== "manual" && (
+                        <span className="text-[9px] font-bold rounded-full px-1.5 py-0.5" style={{ background: "rgba(15,163,163,0.16)", color: rec ? "#fff" : "var(--teal)" }}>
+                          {t("add.ai")}{!pro && o.left !== null ? ` · ${o.left}/${FREE_AI_QUOTA}` : ""}
+                        </span>
+                      )}
+                    </span>
+                    <span className="text-sm font-semibold">{o.title}</span>
+                    <span className={`text-[11px] leading-tight ${rec ? "" : "text-muted"}`}>{o.sub}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="anim-up">
+              <button onClick={() => setEntry("menu")} className="lk text-xs text-muted mb-2 inline-flex items-center gap-1">
+                <span style={{ transform: "rotate(90deg)" }} className="inline-flex"><Icon name="chevron" size={12} /></span>
+                {t("add.back")}
+              </button>
+              <div className="flex gap-2 items-stretch">
+                <input
+                  autoFocus
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && interpret()}
+                  placeholder={t("add.placeholder")}
+                  maxLength={200}
+                  className="glass rounded-2xl px-4 py-3 text-sm flex-1 min-w-0"
+                />
+                <button
+                  onClick={() => interpret()}
+                  disabled={!text.trim() || interpreting}
+                  className="shrink-0 rounded-2xl px-5 text-sm font-semibold text-white hover-lift disabled:opacity-40 inline-flex items-center gap-1.5"
+                  style={{ background: "var(--teal)" }}
+                >
+                  <Icon name="sparkles" size={16} /> {interpreting ? "…" : t("add.add")}
+                  {!pro && !interpreting && <span className="text-[9px] font-mono opacity-80">{textLeft}/{FREE_AI_QUOTA}</span>}
+                </button>
+              </div>
+              <p className="text-[11px] text-muted mt-1.5 pl-1">{t("add.textHint")}</p>
             </div>
           )}
           {sp.error && !sp.listening && !sp.busy && (
@@ -548,39 +594,6 @@ function sanitizePercents(
               {sp.error === "mic" ? t("add.micError") : t("add.sttError")}
             </div>
           )}
-
-          {/* Métodos: Voz · Escanear · Manual */}
-          <div className="grid grid-cols-3 gap-2 mt-3">
-            <button
-              onClick={sp.toggle}
-              disabled={!sp.supported || sp.busy}
-              className={`rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift disabled:opacity-40 ${sp.listening ? "" : "glass"}`}
-              style={sp.listening ? { background: "#D14444", color: "#fff" } : undefined}
-            >
-              <Icon name="mic" size={18} />
-              <span className="inline-flex items-center gap-1">
-                {t("add.voice")}
-                {!pro && !sp.listening && <span className="text-[9px] font-mono opacity-70">{voiceLeft}/{FREE_AI_QUOTA}</span>}
-              </span>
-            </button>
-            <button
-              onClick={() => openScan()}
-              className="glass rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift"
-            >
-              <Icon name="camera" size={18} />
-              <span className="inline-flex items-center gap-1">
-                {t("add.scan")}
-                {!pro && <span className="text-[9px] font-mono opacity-70">{scanLeft}/{FREE_AI_QUOTA}</span>}
-              </span>
-            </button>
-            <button
-              onClick={manual}
-              className="glass rounded-2xl py-3 flex flex-col items-center gap-1 text-xs font-medium hover-lift"
-            >
-              <Icon name="edit" size={18} />
-              {t("add.manual")}
-            </button>
-          </div>
         </>
       )}
 
