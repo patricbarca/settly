@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import UserNotifications
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,7 +8,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Arranque en frío desde un botón de la notificación "¿Compartir este
+        // gasto?": hay que tener delegado antes de terminar de arrancar. Luego
+        // Capacitor pone el suyo y nos llama como manejador de locales.
+        UNUserNotificationCenter.current().delegate = PaymentNotifications.shared
         return true
     }
 

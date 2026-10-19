@@ -100,6 +100,46 @@
           }
         }
       }
+    },
+    "Ask about a payment": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preguntar por un pago"
+          }
+        }
+      }
+    },
+    "For the Wallet automation: Settlia sends a notification to add the payment, without opening the app. Small payments and merchants you chose are skipped.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para la automatización de Wallet: Settlia te manda una notificación para añadir el pago, sin abrir la app. Se saltan los pagos pequeños y los comercios que elegiste."
+          }
+        }
+      }
+    },
+    "Ask about a payment at ${merchant}": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Preguntar por un pago en ${merchant}"
+          }
+        }
+      }
+    },
+    "Turn on Settlia notifications in Settings so it can ask about your payments.": {
+      "localizations": {
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activa las notificaciones de Settlia en Ajustes para que te pregunte por tus pagos."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

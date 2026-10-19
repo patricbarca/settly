@@ -24,6 +24,7 @@ import { BottomNav, type NavKey } from "./components/BottomNav";
 import { countUnread } from "./lib/notifications";
 import { refreshNativePush } from "./lib/nativePush";
 import { initIAP } from "./lib/iap";
+import { drainPaymentQueue } from "./lib/walletPrefs";
 import { capturePromoFromUrl, takePendingPromo } from "./lib/promoLink";
 import { redeemCode } from "./lib/plan";
 import { initAdTracking, trackConversion } from "./lib/adtrack";
@@ -161,6 +162,22 @@ export default function App() {
       window.history.replaceState({}, "", window.location.pathname);
     }
   }, []);
+
+  // Pagos de comercios "Siempre a Personal" (notificación de Wallet): la acción
+  // nativa los deja en cola; aquí se apuntan en Personal al abrir/volver a la app.
+  useEffect(() => {
+    if (phase !== "authenticated" || groupsLoading) return;
+    let busy = false;
+    const run = () => {
+      if (busy || document.visibilityState !== "visible") return;
+      busy = true;
+      void drainPaymentQueue(allGroups).finally(() => { busy = false; });
+    };
+    run();
+    document.addEventListener("visibilitychange", run);
+    return () => document.removeEventListener("visibilitychange", run);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, groupsLoading, allGroups.some((g) => g.personal)]);
 
   // iOS/WKWebView: al REANUDAR la app (traerla del segundo plano) el viewport
   // queda momentáneamente obsoleto y la barra inferior fija se descoloca hasta

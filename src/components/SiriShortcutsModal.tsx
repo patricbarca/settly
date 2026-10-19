@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getPaymentPrefs, setPaymentPrefs, type PaymentPrefs, type MerchantRef } from "../lib/walletPrefs";
+import { decimalInput } from "../lib/format";
 import { createPortal } from "react-dom";
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
-import { WalletGuideAnimation } from "./WalletGuideAnimation";
 
 // "Siri y Atajos": lo que la app expone a iOS (ios/App/App/SettliaIntents.swift)
 // y cómo montar la automatización de Wallet. Solo se muestra en la app nativa
@@ -51,10 +52,9 @@ export function SiriShortcutsModal({ onClose }: { onClose: () => void }) {
     { text: t("siri.step1") },
     { text: t("siri.step2") },
     { text: t("siri.step3") },
-    { text: t("siri.step4"), copy: [t("siri.menuPrompt"), t("siri.menuScan"), t("siri.menuNoReceipt")] },
+    { text: t("siri.step4"), copy: ["Settlia"] },
     { text: t("siri.step5") },
     { text: t("siri.step6") },
-    { text: t("siri.step7") },
   ];
 
   return createPortal(
@@ -98,9 +98,6 @@ export function SiriShortcutsModal({ onClose }: { onClose: () => void }) {
 
               <div className="rounded-2xl p-3" style={{ background: "rgba(15,163,163,0.10)" }}>
                 <div className="text-sm font-semibold mb-1">{t("siri.guideTitle")}</div>
-                <div className="my-3">
-                  <WalletGuideAnimation />
-                </div>
                 <ol className="space-y-2.5 mt-2">
                   {steps.map((s, i) => (
                     <li key={i} className="flex gap-2.5">
@@ -130,6 +127,8 @@ export function SiriShortcutsModal({ onClose }: { onClose: () => void }) {
                 </button>
               </div>
 
+              <PaymentPrefsCard />
+
               <div className="rounded-2xl p-3 glass">
                 <div className="text-sm font-semibold">{t("siri.linkTitle")}</div>
                 <p className="text-xs text-muted mt-1 leading-relaxed">{t("siri.linkBody")}</p>
@@ -158,5 +157,79 @@ export function SiriShortcutsModal({ onClose }: { onClose: () => void }) {
       </div>
     </div>,
     document.body
+  );
+}
+
+/** Ajustes de "Preguntar por un pago": importe mínimo y comercios que van
+ *  solos a Personal o que nunca preguntan. Viven en el App Group (los lee la
+ *  acción nativa sin la web cargada). */
+function PaymentPrefsCard() {
+  const t = useT();
+  const [p, setP] = useState<PaymentPrefs | null | undefined>(undefined);
+  const [min, setMin] = useState("");
+  useEffect(() => {
+    void getPaymentPrefs().then((r) => {
+      setP(r);
+      if (r) setMin(r.minAmount ? String(r.minAmount) : "");
+    });
+  }, []);
+  if (p === undefined) return null;
+  if (p === null) {
+    return <p className="text-xs text-muted">{t("pp.oldBuild")}</p>;
+  }
+  const save = (next: Partial<PaymentPrefs>) => {
+    setP({ ...p, ...next });
+    void setPaymentPrefs(next);
+  };
+  const List = ({ field, title, hint }: { field: "personal" | "ignored"; title: string; hint: string }) => (
+    <div>
+      <div className="text-xs font-semibold text-muted">{title}</div>
+      {p[field].length === 0 ? (
+        <div className="text-xs text-muted mt-1">{t("pp.none")}</div>
+      ) : (
+        <div className="flex flex-wrap gap-1.5 mt-1.5">
+          {p[field].map((m: MerchantRef) => (
+            <button
+              key={m.key}
+              onClick={() => save({ [field]: p[field].filter((x) => x.key !== m.key) } as Partial<PaymentPrefs>)}
+              className="inline-flex items-center gap-1.5 rounded-xl glass px-2.5 py-1 text-xs font-semibold hover-lift"
+              title={t("pp.remove")}
+            >
+              {m.name || m.key} <Icon name="close" size={11} className="text-muted" />
+            </button>
+          ))}
+        </div>
+      )}
+      <p className="text-[11px] text-muted mt-1 leading-snug">{hint}</p>
+    </div>
+  );
+  return (
+    <div className="rounded-2xl p-3 glass space-y-3">
+      <div className="text-sm font-semibold">{t("pp.title")}</div>
+      {p.notifications === false && (
+        <p className="text-xs rounded-xl px-2.5 py-2" style={{ background: "rgba(255,90,77,0.12)", color: "var(--coral)" }}>
+          {t("pp.notifOff")}
+        </p>
+      )}
+      <div>
+        <label className="text-xs font-semibold text-muted">{t("pp.min")}</label>
+        <div className="flex items-center gap-2 mt-1">
+          <input
+            value={min}
+            onChange={(e) => {
+              const v = decimalInput(e.target.value);
+              setMin(v);
+              void setPaymentPrefs({ minAmount: Number(v) || 0 });
+            }}
+            inputMode="decimal"
+            placeholder="0"
+            className="glass rounded-xl px-3 py-2 text-sm w-28 font-mono"
+          />
+        </div>
+        <p className="text-[11px] text-muted mt-1 leading-snug">{t("pp.minHint")}</p>
+      </div>
+      <List field="personal" title={t("pp.personal")} hint={t("pp.personalHint")} />
+      <List field="ignored" title={t("pp.ignored")} hint={t("pp.ignoredHint")} />
+    </div>
   );
 }
