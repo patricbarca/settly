@@ -8,6 +8,7 @@ import { currencySymbol, CURRENCIES, localCurrencyName } from "../lib/currencies
 import { uploadReceipt } from "../lib/storage";
 import { useT, useLang } from "../lib/i18n";
 import { Icon } from "./Icon";
+import { defaultValuesFor, cleanDefault } from "../lib/defaultSplit";
 
 export type { SplitMode };
 
@@ -199,10 +200,16 @@ export function ExpenseForm({
       const newSplitValues =
         s.splitMode === "equal"
           ? s.splitValues
-          : initSplitValues(s.splitMode, newIds, Number(s.amount) || 0);
+          : initValues(s.splitMode, newIds, Number(s.amount) || 0);
       return { ...s, participantIds: newIds, splitValues: newSplitValues };
     });
   }
+
+  // Valores iniciales: el reparto por defecto del grupo si encaja, si no el normal.
+  function initValues(mode: SplitMode, ids: string[], total: number) {
+    return defaultValuesFor(group, mode, ids) ?? initSplitValues(mode, ids, total);
+  }
+  const groupDefault = cleanDefault(group);
 
   // Selecciona o deselecciona TODOS los participantes de golpe.
   function setAllParticipants(all: boolean) {
@@ -211,7 +218,7 @@ export function ExpenseForm({
       const newSplitValues =
         s.splitMode === "equal"
           ? s.splitValues
-          : initSplitValues(s.splitMode, newIds, Number(s.amount) || 0);
+          : initValues(s.splitMode, newIds, Number(s.amount) || 0);
       return { ...s, participantIds: newIds, splitValues: newSplitValues };
     });
   }
@@ -221,7 +228,7 @@ export function ExpenseForm({
     setF((s) => ({
       ...s,
       splitMode: mode,
-      splitValues: initSplitValues(mode, s.participantIds, Number(s.amount) || 0),
+      splitValues: initValues(mode, s.participantIds, Number(s.amount) || 0),
     }));
   }
 
@@ -229,7 +236,9 @@ export function ExpenseForm({
   function changeAmount(val: string) {
     setF((s) => {
       const newAmt = Number(val) || 0;
-      const needsReinit = s.splitMode === "exact" || s.splitMode === "percent";
+      // Los % no dependen del importe: no se reinician (así no se pierde el
+      // reparto por defecto del grupo ni uno escrito antes del importe).
+      const needsReinit = s.splitMode === "exact";
       return {
         ...s,
         amount: val,
@@ -533,6 +542,10 @@ export function ExpenseForm({
             <button type="button" onClick={() => setAllParticipants(true)} className="lk text-[11px] text-muted">{t("scan.selectAll")}</button>
             <button type="button" onClick={() => setAllParticipants(false)} className="lk text-[11px] text-muted">{t("scan.deselectAll")}</button>
           </div>
+        )}
+
+        {groupDefault && f.splitMode === groupDefault.mode && (
+          <div className="text-[11px] text-muted mt-1">{t("form.defaultSplitHint")}</div>
         )}
 
         {/* Value inputs for non-equal modes */}

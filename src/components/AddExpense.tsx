@@ -9,6 +9,7 @@ import { makeActivity } from "../lib/activity";
 import { notifyGroup } from "../lib/push";
 import { parseExpenseAI } from "../lib/ai";
 import { useQuickAdd, takeQuickAdd } from "../lib/quickAdd";
+import { initialSplit } from "../lib/defaultSplit";
 import { knownMerchant, merchantKey, countryForCurrency } from "../lib/merchants";
 import { recallMerchant, rememberMerchant, loadMerchantMemory } from "../lib/merchantMemory";
 import { convertCurrency, fmtRate } from "../lib/fx";
@@ -266,11 +267,13 @@ export function AddExpense({ group }: { group: Group }) {
       payments: useMulti
         ? Object.fromEntries(pays.map((p) => [p.memberId, p.amount]))
         : {},
-      participantIds: r.participantIds,
-      splitMode: r.percents ? "percent" : "equal",
-      splitValues: r.percents
-        ? Object.fromEntries(r.participantIds.map((id) => [id, Math.round((r.percents![id] ?? 0) * 100) / 100]))
-        : {},
+      ...(r.percents
+        ? {
+            participantIds: r.participantIds,
+            splitMode: "percent" as const,
+            splitValues: Object.fromEntries(r.participantIds.map((id) => [id, Math.round((r.percents![id] ?? 0) * 100) / 100])),
+          }
+        : initialSplit(group, r.participantIds)),
       category: r.category,
       allowEdits: false,
     });
@@ -356,9 +359,7 @@ function sanitizePercents(
       payerId: group.meId,
       multiPay: false,
       payments: {},
-      participantIds: group.members.map((m) => m.id),
-      splitMode: "equal",
-      splitValues: {},
+      ...initialSplit(group),
       category: "otros",
       allowEdits: false,
     });
