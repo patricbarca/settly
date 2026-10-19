@@ -51,6 +51,13 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Reparto por defecto por grupo (2026-10-19)
+- **Ajustes del grupo → "Reparto por defecto"**: Iguales / % / Partes, con un valor por miembro (0 = no entra por defecto). Se guarda en `Group.defaultSplit {mode, values}` (JSON). Los % deben sumar 100.
+- **Dónde se aplica** (`src/lib/defaultSplit.ts`: `initialSplit`, `defaultValuesFor`): gasto manual, gasto por texto/voz/IA cuando no se dijo un % ni personas concretas (participantes = todos o = los del reparto por defecto), y recurrentes nuevos. En el formulario, al quitar a alguien los % se reescalan a 100 entre los que quedan (60/40/0 → con uno fuera mantiene la proporción); al elegir el modo %/Partes se rellenan con el reparto por defecto. Línea "Reparto por defecto del grupo" bajo el reparto. Fix de paso: cambiar el importe ya no reinicia los % escritos.
+- **No se aplica** al escaneo por ítems (cada plato lleva su gente) ni a gastos ya creados.
+- **Servidor (`migrate_v22_keep_default_split.sql`, ✅ aplicada vía MCP):** `update_group_data` conserva `defaultSplit` **y `budget`** si un cliente viejo guarda el blob sin esas claves (cierra el riesgo anotado de perder el `budget` del grupo personal); para quitarlas se manda `null`.
+- `tsc` + build + prueba de `defaultSplit.ts` (60/40 entre todos, reescalado, fallback a iguales); **no probado en pantalla**. Builds viejos de iOS ignoran el ajuste (reparten a partes iguales).
+
 ### Compartir / Siri / Wallet: "Personal" aparece al elegir grupo (2026-10-17)
 - `QuickAddGroupPicker` ahora incluye el grupo personal (primero tras el abierto, como "🔒 Personal · Solo tú"). Elegirlo no abre un grupo: `App.pickQuickGroup` cierra el grupo activo y va a la pestaña **Mis gastos**, cuyo `AddExpense` recoge el gasto/escaneo. Efecto: con 1 grupo compartido + Personal ya siempre se pregunta. String `quickAdd.justMe`. `tsc` + build; no probado en iPhone.
 
@@ -167,7 +174,7 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 
 ### "Mis gastos" → Proyección (ingresos, ahorros, fijos) + cabeceras flotantes (2026-10-17)
 - **Vista "Proyección"** (3ª pestaña de Mis gastos, `ProjectionView.tsx` + `src/lib/projection.ts`). **Gratis:** ingresos (salario y otros, con frecuencia mensual/quincenal/semanal/anual y moneda) y ahorros de hoy → "te queda libre este mes" = ingresos − gastado este mes (tu parte de grupos no archivados + personales), barra de progreso. **Pro** (decisión del usuario: el gratis NO ve recurrentes ni proyección, ve un aviso con "Obtener Settlia Pro" → `Paywall`): **gastos fijos** = recurrentes activos de tu Personal **y tu parte de los recurrentes de tus grupos** (`fixedItems`, sin duplicar nada, marcados con el grupo), **a fin de mes** (fijos + gasto variable al ritmo del mes; las ocurrencias `recur_*` no cuentan como variables) y **ahorros a 3/6/12 meses** (ahorros + (ingresos − fijos − variable medio de los últimos 3 meses) × n, con mini gráfica SVG). Todo en la moneda principal con la tasa de hoy.
-- **Datos:** `Group.budget { incomes[], savings }` en el grupo personal (blob JSON, sincroniza, solo lo ve el usuario). ⚠️ Un build viejo que reescriba el blob del grupo personal podría perder `budget` (no está en la lista de claves que conserva `update_group_data`); riesgo bajo porque solo lo escribe su dueño.
+- **Datos:** `Group.budget { incomes[], savings }` en el grupo personal (blob JSON, sincroniza, solo lo ve el usuario). (Desde migrate_v22 el servidor conserva `budget` aunque un build viejo reescriba el blob.)
 - Los recurrentes personales se crean con el + de siempre ("Repetir este gasto", Pro).
 - **Cabeceras flotantes (a pedido):** `.home-sticky-bg` ya es transparente (antes tapaba con el fondo de la página): la barra de botones y la tarjeta (Home, grupos) flotan sobre el contenido con sombra. En Mis gastos la tarjeta "Personal" pasó a ser sticky dentro de la lista (`.floating-header`).
 - ✅ Verificado en navegador (invitado, cambio EUR→USD simulado): gratis → aviso Pro; ingresos €3000 + ahorros €5000 → $3240 libres / $5400; con Pro: fijos, fin de mes y ahorros. `tsc` + build limpios. **No probado:** un recurrente real de grupo en la lista de fijos.

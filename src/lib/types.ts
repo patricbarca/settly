@@ -251,6 +251,11 @@ export interface ActivityEvent {
  *  - "home": continuo (casa/piso). Sin "he agregado todo"; cuentas siempre vivas. */
 export type GroupKind = "trip" | "home";
 
+export interface DefaultSplit {
+  mode: "percent" | "shares";
+  values: Record<string, number>;
+}
+
 export interface Group {
   id: string;
   name: string;
@@ -295,6 +300,10 @@ export interface Group {
   heroImage?: string | null;
   /** Encuadre de la foto: punto de enfoque x/y en % (0-100) y zoom (1-3). */
   heroImagePos?: { x: number; y: number; z: number } | null;
+  /** Reparto por defecto de los gastos nuevos (Ajustes del grupo). Ausente/null
+   *  = a partes iguales entre todos. `values`: memberId → % o nº de partes;
+   *  quien no está (o vale 0) no participa por defecto. */
+  defaultSplit?: DefaultSplit | null;
   /** "Mis gastos": grupo privado de UNA persona para sus gastos personales.
    *  No sale en la lista de grupos ni cuenta para el límite del plan gratis.
    *  Va con `kind: "home"` para que `daily-reminders` no le mande el aviso de

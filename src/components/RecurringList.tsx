@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { initialSplit } from "../lib/defaultSplit";
 import type { Group, RecurrenceInterval } from "../lib/types";
 import { addRecurring, updateRecurring, deleteRecurring } from "../lib/store";
 import { draftToExpenseFields, ExpenseForm, type ExpenseDraft } from "./ExpenseForm";
@@ -26,9 +27,7 @@ function RecurringModal({ group, onClose }: { group: Group; onClose: () => void 
     payerId: group.meId,
     multiPay: false,
     payments: {},
-    participantIds: group.members.map((m) => m.id),
-    splitMode: "equal",
-    splitValues: {},
+    ...initialSplit(group),
     category: "otros",
   });
 

@@ -6,7 +6,7 @@ import { updateGroup, deleteGroup, leaveGroup } from "../lib/store";
 import { useUser } from "../lib/auth";
 import { withActivity } from "../lib/activity";
 import { computeSettle, settleOf, mainView } from "../lib/split";
-import { money, memberInitials, sortedMembers } from "../lib/format";
+import { money, memberInitials, sortedMembers, decimalInput } from "../lib/format";
 import { Avatar } from "./Avatar";
 import { useT, useLang } from "../lib/i18n";
 import { usePlan } from "../lib/plan";
@@ -46,6 +46,11 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
   const [heroPos, setHeroPos] = useState(group.heroImagePos ?? DEFAULT_POS);
   const drag = useRef<{ x: number; y: number; px: number; py: number; w: number; h: number } | null>(null);
   const [imgErr, setImgErr] = useState(false);
+  // Reparto por defecto: "equal" o % / partes por miembro (texto crudo al teclear).
+  const [defMode, setDefMode] = useState<"equal" | "percent" | "shares">(group.defaultSplit?.mode ?? "equal");
+  const [defVals, setDefVals] = useState<Record<string, string>>(() =>
+    Object.fromEntries(group.members.map((m) => [m.id, group.defaultSplit?.values?.[m.id] != null ? String(group.defaultSplit.values[m.id]) : ""]))
+  );
   const [displayCurrency, setDisplayCurrency] = useState(group.displayCurrency ?? group.currency);
   const [saved, setSaved] = useState(false);
   const [confirmDanger, setConfirmDanger] = useState(false);
@@ -75,7 +80,32 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
     referenced.add(s.to);
   });
 
+  function pickDefMode(mode: "equal" | "percent" | "shares") {
+    setDefMode(mode);
+    if (mode === "equal") return;
+    const same = group.defaultSplit?.mode === mode;
+    const n = group.members.length;
+    setDefVals(Object.fromEntries(group.members.map((m, i) => {
+      if (same && group.defaultSplit?.values?.[m.id] != null) return [m.id, String(group.defaultSplit.values[m.id])];
+      if (mode === "shares") return [m.id, "1"];
+      const base = Math.floor((100 / n) * 100) / 100;
+      return [m.id, String(i === n - 1 ? Math.round((100 - base * (n - 1)) * 100) / 100 : base)];
+    })));
+  }
+  const defNums = Object.fromEntries(Object.entries(defVals).map(([k, v]) => [k, Number(v) || 0]));
+  const defSum = Object.values(defNums).reduce((a, b) => a + b, 0);
+  const defValid = defMode === "equal" || (defMode === "percent" ? Math.abs(defSum - 100) < 0.01 : defSum > 0);
+  const savedDefault = group.defaultSplit?.mode ? {
+    mode: group.defaultSplit.mode,
+    values: Object.fromEntries(group.members.map((m) => [m.id, Number(group.defaultSplit?.values?.[m.id]) || 0]).filter(([, v]) => (v as number) > 0)),
+  } : null;
+  const nextDefault = defMode === "equal" ? null : {
+    mode: defMode,
+    values: Object.fromEntries(group.members.map((m) => [m.id, defNums[m.id] || 0]).filter(([, v]) => (v as number) > 0)),
+  };
+
   const dirty =
+    JSON.stringify(nextDefault) !== JSON.stringify(savedDefault) ||
     name.trim() !== group.name ||
     currency !== resolveToCode(group.currency) ||
     kind !== (group.kind ?? "trip") ||
@@ -90,7 +120,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
   function save() {
     const n = name.trim();
     const c = currency.trim();
-    if (!n || !c) return;
+    if (!n || !c || !defValid) return;
     const sc = plan === "pro" ? secondaryCurrency.trim() || undefined : undefined;
     const dc = sc && displayCurrency === sc ? sc : c;
     updateGroup(group.id, (g) => ({
@@ -106,6 +136,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
       heroColor: heroCol === "default" ? null : heroCol,
       heroImage: heroImg || null,
       heroImagePos: heroImg ? heroPos : null,
+      defaultSplit: nextDefault,
     }));
     setSaved(true);
     setTimeout(() => { setSaved(false); onClose(); }, 800);
@@ -416,6 +447,53 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
           )}
         </div>
 
+        {/* Default split */}
+        <div className="mb-5">
+          <label className="text-xs font-semibold text-muted">{t("settings.defSplit")}</label>
+          <div className="grid grid-cols-3 gap-2 mt-1.5">
+            {(["equal", "percent", "shares"] as const).map((m) => {
+              const on = defMode === m;
+              return (
+                <button
+                  key={m}
+                  onClick={() => pickDefMode(m)}
+                  className={`rounded-2xl p-2.5 text-sm font-semibold text-center hover-lift ${on ? "" : "glass"}`}
+                  style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
+                >
+                  {t(m === "equal" ? "settings.defEqual" : m === "percent" ? "settings.defPercent" : "settings.defShares")}
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-muted mt-1.5">{t("settings.defSplitHint")}</p>
+          {defMode !== "equal" && (
+            <div className="mt-2 space-y-1.5">
+              {sortedMembers(group.members).map((m) => (
+                <div key={m.id} className="flex items-center gap-2">
+                  <Avatar name={m.name} avatar={m.avatar} initials={memberInitials(m)} size={22} />
+                  <span className="text-sm flex-1 min-w-0 truncate">{m.name}</span>
+                  <div className="glass rounded-lg px-2 py-1 flex items-center gap-1 w-24 shrink-0">
+                    <input
+                      value={defVals[m.id] ?? ""}
+                      onChange={(e) => setDefVals((v) => ({ ...v, [m.id]: decimalInput(e.target.value) }))}
+                      inputMode="decimal"
+                      placeholder="0"
+                      className="bg-transparent text-sm w-full text-right font-mono"
+                    />
+                    <span className="text-muted text-xs">{defMode === "percent" ? "%" : "×"}</span>
+                  </div>
+                </div>
+              ))}
+              {defMode === "percent" && !defValid && (
+                <p className="text-[11px]" style={{ color: "var(--coral)" }}>
+                  {t("settings.defSum", { sum: String(Math.round(defSum * 100) / 100) })}
+                </p>
+              )}
+              <p className="text-[11px] text-muted">{t("settings.defZeroHint")}</p>
+            </div>
+          )}
+        </div>
+
         {/* Members */}
         <div className="mb-5">
           <div className="text-xs font-semibold text-muted mb-2">{t("settings.members")}</div>
@@ -459,7 +537,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
 
         <button
           onClick={save}
-          disabled={!dirty || !name.trim()}
+          disabled={!dirty || !name.trim() || !defValid}
           className="w-full rounded-full py-3 font-semibold text-white hover-lift disabled:opacity-40"
           style={{ background: saved ? "#0A8B5E" : "var(--ink)" }}
         >
