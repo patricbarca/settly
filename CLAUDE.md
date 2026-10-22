@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### "Siri y Atajos": se quita "Instalar atajo" (2026-10-22)
+- El enlace de iCloud instalaba solo el atajo viejo del menú (📸/✏️), **sin** el disparador de Wallet (Apple no deja instalar automatizaciones), y confundía a los usuarios. Se quitó la tarjeta y `SHORTCUT_URL` de `SiriShortcutsModal`; queda solo la guía de la automatización con la acción "Preguntar por un pago" y una nota (`siri.manualNote`) que explica que se crea a mano una vez. `siriFix.three` ahora dice qué hacer si no aparece la acción nueva (actualizar y abrir Settlia). `tsc` limpio.
+
 ### iOS 1.7 (2026-10-19)
 - `MARKETING_VERSION` 1.6 → **1.7** en los 4 `buildSettings` (App + ShareExtension) para el build de Codemagic con: reparto por defecto, panel de añadir por métodos, Personal en el selector y la notificación de pagos de Wallet.
 

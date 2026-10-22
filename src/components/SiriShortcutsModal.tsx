@@ -15,8 +15,6 @@ import { Icon } from "./Icon";
 // comercio ni el importe. Por eso: enlace = rápido pero hay que escribir el
 // gasto; guía = 2 minutos y lo rellena solo.
 
-/** Atajo "Settlia: ¿compartido?" (menú escanear / sin ticket), compartido por iCloud. */
-const SHORTCUT_URL = "https://www.icloud.com/shortcuts/f75f782c369446349bad0f68960aa130";
 
 // En Capacitor, navegar a un host externo o a otro esquema lo abre el sistema
 // (Safari / la app Atajos), no el WebView.
@@ -98,6 +96,7 @@ export function SiriShortcutsModal({ onClose }: { onClose: () => void }) {
 
               <div className="rounded-2xl p-3" style={{ background: "rgba(15,163,163,0.10)" }}>
                 <div className="text-sm font-semibold mb-1">{t("siri.guideTitle")}</div>
+                <p className="text-xs text-muted mb-2 leading-relaxed">{t("siri.manualNote")}</p>
                 <ol className="space-y-2.5 mt-2">
                   {steps.map((s, i) => (
                     <li key={i} className="flex gap-2.5">
@@ -128,17 +127,6 @@ export function SiriShortcutsModal({ onClose }: { onClose: () => void }) {
               </div>
 
               <PaymentPrefsCard />
-
-              <div className="rounded-2xl p-3 glass">
-                <div className="text-sm font-semibold">{t("siri.linkTitle")}</div>
-                <p className="text-xs text-muted mt-1 leading-relaxed">{t("siri.linkBody")}</p>
-                <button
-                  onClick={() => openExternal(SHORTCUT_URL)}
-                  className="mt-2.5 w-full rounded-2xl py-2.5 text-sm font-semibold glass flex items-center justify-center gap-2 hover-lift"
-                >
-                  {t("siri.installShortcut")} <Icon name="external" size={14} />
-                </button>
-              </div>
 
               {/* Lo que falla en la práctica: se abre la app Atajos en vez de ir solo. */}
               <div className="rounded-2xl p-3" style={{ background: "rgba(232,146,12,0.12)" }}>
