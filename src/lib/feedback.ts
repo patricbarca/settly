@@ -1,6 +1,6 @@
 // Envío de feedback de usuarios (valoración ⭐ o reporte de bug) a Supabase.
 // La tabla `feedback` (ver supabase/feedback.sql) solo permite INSERT propio;
-// nadie lo lee desde la app — se consulta desde el panel de Supabase.
+// solo el admin lo lee, en Admin → Feedback (RPC get_admin_feedback).
 import { supabase } from "./supabase";
 import { getLang } from "./i18n";
 import { isStandalone, isIOS } from "./pwa";

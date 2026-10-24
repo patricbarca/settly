@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
 import { ServiceStatusView } from "./ServiceStatusView";
+import { FeedbackView } from "./FeedbackView";
 
 type Stats = {
   total_users: number;
@@ -39,7 +40,7 @@ export function AdminDashboard({ onClose }: { onClose: () => void }) {
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState<"stats" | "status">("stats");
+  const [view, setView] = useState<"stats" | "feedback" | "status">("stats");
 
   useEffect(() => {
     supabase.rpc("get_admin_stats").then(({ data, error }) => {
@@ -66,9 +67,11 @@ export function AdminDashboard({ onClose }: { onClose: () => void }) {
         <div className="max-w-2xl mx-auto px-4 pb-8 space-y-6 pt-2">
           <div className="seg" role="tablist">
             <button role="tab" aria-selected={view === "stats"} onClick={() => setView("stats")}>Métricas</button>
+            <button role="tab" aria-selected={view === "feedback"} onClick={() => setView("feedback")}>Feedback</button>
             <button role="tab" aria-selected={view === "status"} onClick={() => setView("status")}>Servicios</button>
           </div>
           {view === "status" && <ServiceStatusView />}
+          {view === "feedback" && <FeedbackView />}
           {view === "stats" && loading && (
             <div className="glass rounded-2xl p-8 text-center text-muted">Cargando...</div>
           )}
