@@ -1,5 +1,6 @@
 import { HERO_COLORS, heroBackground, HeroCover, DEFAULT_POS } from "../lib/heroStyle";
 import { fileToCoverDataUrl } from "../lib/image";
+import { toMediaUrl } from "../lib/media";
 import { useRef, useState } from "react";
 import type { Group, GroupKind } from "../lib/types";
 import { updateGroup, deleteGroup, leaveGroup } from "../lib/store";
@@ -267,7 +268,7 @@ export function GroupSettings({ group, onClose }: { group: Group; onClose: () =>
                   const f = e.target.files?.[0];
                   e.target.value = "";
                   if (!f) return;
-                  try { setHeroImg(await fileToCoverDataUrl(f)); setHeroPos(DEFAULT_POS); setImgErr(false); } catch { setImgErr(true); }
+                  try { setHeroImg(await toMediaUrl(await fileToCoverDataUrl(f))); setHeroPos(DEFAULT_POS); setImgErr(false); } catch { setImgErr(true); }
                 }}
               />
             </label>
