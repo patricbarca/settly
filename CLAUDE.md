@@ -51,9 +51,11 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
-### Página de estado: settlia.app/status (2026-10-24)
-- En `settly-landing`: `status/index.html` (noindex) lee `status.json` de la rama **`status-data`** (raw.githubusercontent). Lo genera `.github/workflows/status.yml` cada 15 min (`scripts/status-check.mjs`, Node sin dependencias): app, landing, Supabase (login, DB, archivos), Edge Functions (preflight OPTIONS, sin gastar IA), modelos de Groq y las páginas de estado de Supabase, Groq, RevenueCat, Stripe, Resend, GitHub, Codemagic, Cloudflare (no crítico) y Apple. OpenRouter se revisa directo. Historial de 24 h (96 puntos).
-- **Pendiente (usuario):** secreto `GROQ_API_KEY` en settly-landing → Settings → Secrets → Actions para comprobar que los modelos siguen existiendo. Si se cambian los modelos de las funciones, actualizar `GROQ_MODELS` en el script.
+### Estado de servicios en el panel de Admin (2026-10-24)
+- **Admin → pestaña "Servicios"** (`ServiceStatusView.tsx`; "Métricas" es la vista de siempre). Solo la ve el admin: la tabla `service_status` no tiene acceso por la API y se lee con el RPC `get_service_status(p_hours)` (SECURITY DEFINER, mismo email de admin que `get_admin_stats`).
+- **Quién revisa:** Edge Function **`service-status`** (✅ v1, `verify_jwt:false`, protegida por `CRON_SECRET`), lanzada por pg_cron **`settlia-service-status`** cada 15 min (`migrate_v23_service_status.sql`, ✅ aplicada; la tarea copia la cabecera de `settlia-daily-reminders` para no escribir el secreto en el repo). Guarda 3 días.
+- **Qué revisa (23):** app, landing, login, DB, archivos, 7 Edge Functions (preflight OPTIONS, sin gastar IA), **modelos de Groq** (con `STT_API_KEY`; si Groq retira uno, sale en rojo), OpenRouter directo, y las páginas de estado de Supabase, Groq, RevenueCat, Stripe, Resend, GitHub, Codemagic, Cloudflare (no crítico, máx. "con problemas") y Apple. Si se cambian los modelos de las funciones, actualizar `GROQ_MODELS`.
+- La primera versión (página pública en settlia.app/status + GitHub Actions) se **quitó** de la landing a pedido del usuario (era pública).
 - ⚠️ Supabase avisó de cuota superada (egress probable): grupos de hasta 1,3 MB por comprobantes de pago, avatares y portadas en base64 dentro del blob, que se descargan enteros en cada cambio. Restricción el 20-nov-2026 si sigue.
 
 ### "Siri y Atajos": se quita "Instalar atajo" (2026-10-22)
