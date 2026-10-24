@@ -51,6 +51,12 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Egress de Supabase: tiempo real ligero + descarga solo del grupo que cambió (2026-10-24)
+- **Problema (cuota de egress superada, aviso de restricción el 20-nov-2026):** la app escuchaba `postgres_changes` de `groups` → cada cambio mandaba el **blob entero** (hasta 1,3 MB) a cada miembro conectado, y el handler además llamaba a `loadGroups` → **volvía a bajar TODOS los grupos**. Cada guardado propio también disparaba la recarga completa.
+- **Fix (`migrate_v25_group_changes.sql`, ✅ aplicada):** tabla **`group_changes`** (`group_id`, `changed_at`, `changed_by`) rellenada por el trigger `groups_touch_change` (after insert/update en `groups`), RLS `is_member_of`, en la publicación de realtime. **Cliente (`store.ts`):** escucha `group_changes`, agrupa ráfagas (800 ms) y llama a **`loadSomeGroups(ids)`**, que baja solo esos grupos (carga completa si es un grupo nuevo, borrado o me sacaron). Ignora el aviso si es un guardado de blob de **este** dispositivo en los últimos 5 s (`lastBlobWrite`); lo hecho desde otro dispositivo mío o por RPCs que recalculan en el servidor sí se baja.
+- **⚠️ `groups` sigue en la publicación** para los builds viejos de iOS (≤1.7), que siguen recibiendo el blob entero. Cuando no quede ninguno: `alter publication supabase_realtime drop table public.groups;`.
+- **Pendiente (paso 2):** sacar las imágenes del blob (comprobantes de pago `settlement.proof` en base64 — ~940 KB en un solo grupo —, avatares `member.avatar` y portadas `heroImage`) a Storage.
+
 ### Admin → pestaña "Feedback" (2026-10-24)
 - `FeedbackView.tsx`: resumen (valoración media, bugs, últimos 30 días, con comentario), reparto de estrellas y las **últimas 5** (estrellas o "Bug", nombre, comentario, dispositivo/idioma/email/versión), con "Solo con comentario", "Ver todas" y **filtro por estrellas** (chips Todas/5★…1★/Bugs, o tocando una barra del reparto; al filtrar se cargan todas). RPC **`get_admin_feedback(p_limit)`** (`migrate_v24_admin_feedback.sql`, ✅ aplicada; SECURITY DEFINER, solo el email admin). Pestañas del panel: Métricas · Feedback · Servicios. Al aplicar: 28 valoraciones, todas 5★, 7 con comentario, 0 bugs.
 
