@@ -53,6 +53,12 @@ export function FeedbackView() {
   const [error, setError] = useState<string | null>(null);
   const [limit, setLimit] = useState(5);
   const [onlyText, setOnlyText] = useState(false);
+  // null = todas; 1–5 = estrellas; "bug" = reportes de bug.
+  const [stars, setStars] = useState<number | "bug" | null>(null);
+  const pick = (v: number | "bug" | null) => {
+    setStars(v);
+    if (v != null) setLimit(200); // para filtrar hacen falta todas
+  };
 
   useEffect(() => {
     supabase.rpc("get_admin_feedback", { p_limit: limit }).then(({ data, error }) => {
@@ -65,7 +71,11 @@ export function FeedbackView() {
   if (!data) return <div className="glass rounded-2xl p-8 text-center text-muted">Cargando...</div>;
 
   const maxStars = Math.max(1, ...Object.values(data.by_stars));
-  const list = onlyText ? data.latest.filter((f) => f.message?.trim()) : data.latest;
+  const filtering = stars != null || onlyText;
+  const list = data.latest
+    .filter((f) => (stars === "bug" ? f.type === "bug" : stars != null ? f.rating === stars : true))
+    .filter((f) => (onlyText ? !!f.message?.trim() : true))
+    .slice(0, limit === 5 && !filtering ? 5 : undefined);
 
   return (
     <div className="space-y-4">
@@ -86,13 +96,18 @@ export function FeedbackView() {
           {[5, 4, 3, 2, 1].map((s) => {
             const c = data.by_stars[String(s)] ?? 0;
             return (
-              <div key={s} className="flex items-center gap-3 text-sm">
+              <button
+                key={s}
+                onClick={() => pick(stars === s ? null : s)}
+                className="w-full flex items-center gap-3 text-sm rounded-lg -mx-1 px-1"
+                style={{ background: stars === s ? "var(--glass-border)" : undefined }}
+              >
                 <span className="w-8 shrink-0 font-mono text-xs text-muted">{s} ★</span>
                 <div className="flex-1 rounded-full overflow-hidden h-2" style={{ background: "var(--glass-border)" }}>
                   <div className="h-full rounded-full" style={{ width: `${(c / maxStars) * 100}%`, background: "var(--amber)" }} />
                 </div>
                 <span className="font-mono font-bold w-6 text-right">{c}</span>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -100,11 +115,29 @@ export function FeedbackView() {
 
       <div className="glass rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-2">
-          <h3 className="font-semibold text-sm flex-1">{limit === 5 ? "Últimas 5" : "Todas"}</h3>
+          <h3 className="font-semibold text-sm flex-1">
+            {filtering ? `${list.length} resultado${list.length === 1 ? "" : "s"}` : limit === 5 ? "Últimas 5" : "Todas"}
+          </h3>
           <label className="text-xs text-muted flex items-center gap-1.5">
-            <input type="checkbox" checked={onlyText} onChange={(e) => setOnlyText(e.target.checked)} />
+            <input type="checkbox" checked={onlyText} onChange={(e) => { setOnlyText(e.target.checked); if (e.target.checked) setLimit(200); }} />
             Solo con comentario
           </label>
+        </div>
+        <div className="flex gap-1.5 overflow-x-auto pb-2 -mx-1 px-1">
+          {([null, 5, 4, 3, 2, 1, "bug"] as const).map((v) => (
+            <button
+              key={String(v)}
+              onClick={() => pick(v)}
+              className="shrink-0 rounded-full px-3 py-1 text-xs font-semibold"
+              style={
+                stars === v
+                  ? { background: "var(--teal)", color: "#fff" }
+                  : { background: "var(--glass-border)", color: "var(--muted)" }
+              }
+            >
+              {v == null ? "Todas" : v === "bug" ? `Bugs (${data.bugs})` : `${v} ★ (${data.by_stars[String(v)] ?? 0})`}
+            </button>
+          ))}
         </div>
         {list.length === 0 && <p className="text-muted text-sm py-2">Nada que mostrar.</p>}
         {list.map((f) => (
@@ -128,7 +161,7 @@ export function FeedbackView() {
             </div>
           </div>
         ))}
-        {limit === 5 && data.total > 5 && (
+        {limit === 5 && !filtering && data.total > 5 && (
           <button onClick={() => setLimit(200)} className="w-full text-sm font-semibold pt-3" style={{ color: "var(--teal)" }}>
             Ver todas ({data.total})
           </button>

@@ -52,7 +52,7 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 
 ## Recent work completed
 ### Admin → pestaña "Feedback" (2026-10-24)
-- `FeedbackView.tsx`: resumen (valoración media, bugs, últimos 30 días, con comentario), reparto de estrellas y las **últimas 5** (estrellas o "Bug", nombre, comentario, dispositivo/idioma/email/versión), con "Solo con comentario" y "Ver todas". RPC **`get_admin_feedback(p_limit)`** (`migrate_v24_admin_feedback.sql`, ✅ aplicada; SECURITY DEFINER, solo el email admin). Pestañas del panel: Métricas · Feedback · Servicios. Al aplicar: 28 valoraciones, todas 5★, 7 con comentario, 0 bugs.
+- `FeedbackView.tsx`: resumen (valoración media, bugs, últimos 30 días, con comentario), reparto de estrellas y las **últimas 5** (estrellas o "Bug", nombre, comentario, dispositivo/idioma/email/versión), con "Solo con comentario", "Ver todas" y **filtro por estrellas** (chips Todas/5★…1★/Bugs, o tocando una barra del reparto; al filtrar se cargan todas). RPC **`get_admin_feedback(p_limit)`** (`migrate_v24_admin_feedback.sql`, ✅ aplicada; SECURITY DEFINER, solo el email admin). Pestañas del panel: Métricas · Feedback · Servicios. Al aplicar: 28 valoraciones, todas 5★, 7 con comentario, 0 bugs.
 
 ### Estado de servicios en el panel de Admin (2026-10-24)
 - **Admin → pestaña "Servicios"** (`ServiceStatusView.tsx`; "Métricas" es la vista de siempre). Solo la ve el admin: la tabla `service_status` no tiene acceso por la API y se lee con el RPC `get_service_status(p_hours)` (SECURITY DEFINER, mismo email de admin que `get_admin_stats`).
