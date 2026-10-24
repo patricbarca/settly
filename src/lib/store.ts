@@ -157,16 +157,60 @@ async function syncOutbox() {
   }
 }
 
+// Descarga solo los grupos que cambiaron (no todos). Si alguno no lo conocemos
+// (nos añadieron a un grupo nuevo) o ya no somos miembros, hace la carga completa.
+async function loadSomeGroups(userId: string, ids: string[]) {
+  const known = new Map(state.groups.map((g) => [g.id, g]));
+  if (ids.some((id) => !known.has(id))) return loadGroups(userId);
+  const seq = loadSeq; // si mientras tanto empieza una carga completa, esta se descarta
+  const { data: rows, error } = await supabase
+    .from("groups")
+    .select("id, data, owner_id")
+    .in("id", ids);
+  if (error || seq !== loadSeq) return;
+  const fresh = new Map<string, Group>();
+  for (const r of rows ?? []) {
+    const prev = known.get(r.id)!;
+    const data = r.data as Group;
+    if (!(data.members ?? []).some((m) => m.id === prev.meId)) return loadGroups(userId); // me sacaron
+    fresh.set(r.id, { ...data, id: r.id, meId: prev.meId, ownerId: r.owner_id as string });
+  }
+  if (fresh.size < ids.length) return loadGroups(userId); // borrado o sin acceso
+  state = { ...state, groups: state.groups.map((g) => fresh.get(g.id) ?? g) };
+  emit();
+  for (const g of fresh.values()) idbPutGroup(g).catch(() => {});
+}
+
 let reloadTimer: ReturnType<typeof setTimeout> | null = null;
+const lastBlobWrite = new Map<string, number>();
+const changedIds = new Set<string>();
 function subscribeRealtime(userId: string) {
   channel?.unsubscribe();
+  // Escucha `group_changes` (aviso de pocos bytes: qué grupo y quién) en vez de
+  // `groups`, que mandaba el blob entero en cada cambio. Ahorro de egress.
   channel = supabase
-    .channel(`groups:${userId}`)
-    .on("postgres_changes", { event: "*", schema: "public", table: "groups" }, () => {
-      // Agrupa ráfagas de cambios (p. ej. 60 gastos reclasificados) en UNA recarga.
-      if (reloadTimer) clearTimeout(reloadTimer);
-      reloadTimer = setTimeout(() => { if (currentUserId) loadGroups(currentUserId); }, 800);
-    })
+    .channel(`group-changes:${userId}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "group_changes" },
+      (payload: { new?: { group_id?: string; changed_by?: string | null } }) => {
+        const row = payload.new;
+        if (!row?.group_id) return;
+        // Un guardado del blob que acaba de hacer ESTE dispositivo ya está en pantalla.
+        // (Lo hecho desde otro dispositivo mío, o por RPCs que recalculan en el
+        // servidor, sí se descarga.)
+        const mine = lastBlobWrite.get(row.group_id);
+        if (row.changed_by === userId && mine && Date.now() - mine < 5000) return;
+        changedIds.add(row.group_id);
+        // Agrupa ráfagas (p. ej. 60 gastos reclasificados) en UNA descarga.
+        if (reloadTimer) clearTimeout(reloadTimer);
+        reloadTimer = setTimeout(() => {
+          const ids = [...changedIds];
+          changedIds.clear();
+          if (currentUserId && ids.length) loadSomeGroups(currentUserId, ids);
+        }, 800);
+      },
+    )
     .subscribe();
 }
 
@@ -180,6 +224,7 @@ function persist(group: Group) {
   // Vía RPC que preserva/une por id los arrays críticos (settlements, notifs,
   // activity) con el servidor → una escritura de blob completo con datos viejos
   // NUNCA borra un pago ya guardado por otro dispositivo (fix del clobber).
+  lastBlobWrite.set(group.id, Date.now());
   supabase
     .rpc("update_group_data", { p_group_id: group.id, p_data: group })
     .then(({ error }: { error: unknown }) => {
