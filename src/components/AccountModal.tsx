@@ -3,6 +3,7 @@ import type { PayType, PayMethod } from "../lib/types";
 import { useUser, setProfileName, setProfileAvatar, setProfileExtra, deleteAccount, signOut } from "../lib/auth";
 import { useAllGroups, updateMyMember } from "../lib/store";
 import { fileToAvatarDataUrl } from "../lib/image";
+import { toMediaUrl } from "../lib/media";
 import { personColor, memberInitials, firstName } from "../lib/format";
 import { enablePush, disablePush, isPushEnabled, pushSupported } from "../lib/push";
 import { enableNativePush, disableNativePush, isNativePushOn, nativePushSupported } from "../lib/nativePush";
@@ -144,7 +145,7 @@ export function AccountModal({ onClose }: { onClose: () => void }) {
     const file = e.target.files?.[0];
     if (!file) return;
     try {
-      setAvatar(await fileToAvatarDataUrl(file));
+      setAvatar(await toMediaUrl(await fileToAvatarDataUrl(file)));
       setSaved(false);
     } catch {
       /* imagen no válida */

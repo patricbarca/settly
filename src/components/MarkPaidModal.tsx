@@ -11,6 +11,8 @@ import { computeSettle, expenseDebtsBetween, fifoExpenseIdsForAmount } from "../
 import { useT } from "../lib/i18n";
 import { Icon } from "./Icon";
 import { Overlay } from "./Overlay";
+import { fileToCoverDataUrl } from "../lib/image";
+import { toMediaUrl } from "../lib/media";
 
 export function MarkPaidModal({
   group,
@@ -195,12 +197,15 @@ export function MarkPaidModal({
   // solo `max`, y lo avisamos para que el usuario no se confunda.
   const capped = usingPicker && pickedTotal > max + 0.005;
 
-  function onFile(e: ChangeEvent<HTMLInputElement>) {
+  async function onFile(e: ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     if (!f) return;
-    const r = new FileReader();
-    r.onload = () => setProof(String(r.result));
-    r.readAsDataURL(f);
+    // Comprimida y fuera del blob del grupo (antes iba la foto original en base64).
+    try {
+      setProof(await toMediaUrl(await fileToCoverDataUrl(f, 1600)));
+    } catch {
+      /* imagen no válida */
+    }
   }
 
   function confirm() {
