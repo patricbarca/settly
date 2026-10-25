@@ -51,6 +51,10 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Landing: 5 artículos nuevos de blog + SEO (2026-10-25)
+- `settly-landing` PR #29: `blog-gastos-pareja`, `blog-gastos-varias-monedas`, `blog-cobrar-a-amigos`, `blog-tricount-vs-splitwise`, `blog-facturas-piso` (ES/EN). Cada uno con JSON-LD **BlogPosting + FAQPage**, "Sigue leyendo" con enlaces internos y UTM `utm_source=blog` en el CTA. Tarjetas en la portada y en `sitemap.xml`.
+- **Pendiente SEO:** dar de alta Google Search Console y enviar el sitemap (usuario); el español está en la misma URL oculto por JS → valorar URLs `/es/` con `hreflang`; `og:image` propia por artículo.
+
 ### Login de Google: marca verificada + app publicada (2026-10-25)
 - Google Cloud → Branding: nombre **Settlia**, logo 120×120 (de `icon-maskable-512.png`), home/privacy/terms de settlia.app. Dominios autorizados: `settlia.app` y `ziawqnavocwrkybdhkla.supabase.co` (`supabase.co` a secas no se acepta: es un sufijo público). La app estaba en **Testing** (solo usuarios de prueba podían entrar con Google) → **publicada a producción**, y la **marca quedó verificada** ("Your branding has been verified and is being shown to users"): la pantalla de Google muestra "Settlia" en vez de la URL de Supabase.
 - **Subdominio `settlia.supabase.co` / dominio propio: descartados por ahora** (decisión del usuario: con la marca verificada los usuarios ya solo ven "Settlia"). Si se retoma: requiere Pro, añadir el nuevo callback y dominio en Google conservando los viejos, y confirmar que la URL vieja sigue viva para los builds de iOS instalados.
