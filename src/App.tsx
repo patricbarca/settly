@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useUser, useAuthPhase, setProfileName, submitPhone, verifyPhone, skipPhone, usePendingPhone } from "./lib/auth";
-import { useLang, setLang, useT } from "./lib/i18n";
+import { useLang, setLang, useT, tr } from "./lib/i18n";
 import { resetSeed, useActiveGroup, loadGuestMode, setActiveGroup, addGroup, useGroups, useGroupsLoading, syncMyMemberAvatar } from "./lib/store";
 import { useQuickAdd, assignQuickAdd, clearQuickAdd } from "./lib/quickAdd";
 import { useArchivedGroups } from "./lib/archivedGroups";
 import { useTheme, toggleTheme } from "./lib/theme";
-import { joinByToken, getJoinPreview } from "./lib/invite";
+import { joinByToken, getJoinPreview, type JoinResult } from "./lib/invite";
+import { notifyUser } from "./lib/push";
 import { ClaimMemberModal } from "./components/ClaimMemberModal";
 import { QuickAddGroupPicker } from "./components/QuickAddGroupPicker";
 import { Icon } from "./components/Icon";
@@ -56,6 +57,7 @@ export default function App() {
   const [showAIConsent, setShowAIConsent] = useState(false);
   // Resultado del enlace de regalo de Pro (?pro=CODIGO): "ok" o la clave del error.
   const [promoResult, setPromoResult] = useState<string | null>(null);
+  const [joinPending, setJoinPending] = useState<string | null>(null);
   const [joinPreview, setJoinPreview] = useState<{
     token: string;
     groupName: string;
@@ -227,9 +229,7 @@ export default function App() {
           setJoinPreview({ token, groupName: preview.groupName, unclaimed: preview.unclaimed });
           return;
         }
-        joinByToken(token, user.id).then((g) => {
-          if (g) { addGroup(g); setActiveGroup(g.id); }
-        });
+        joinByToken(token, user.id).then(handleJoin);
       });
     };
     processPendingJoin();
@@ -241,9 +241,17 @@ export default function App() {
     if (!joinPreview || !user) return;
     const { token } = joinPreview;
     setJoinPreview(null);
-    joinByToken(token, user.id, memberId).then((g) => {
-      if (g) { addGroup(g); setActiveGroup(g.id); }
-    });
+    joinByToken(token, user.id, memberId).then(handleJoin);
+  }
+
+  function handleJoin(r: JoinResult) {
+    if (!r) return;
+    if (r.status === "joined") { addGroup(r.group); setActiveGroup(r.group.id); return; }
+    setJoinPending(r.groupName);
+    if (r.ownerId) {
+      notifyUser(r.groupId, r.ownerId, tr("joinReq.pushTitle"),
+        tr("joinReq.pushBody", { name: user?.name || "?", group: r.groupName }));
+    }
   }
 
   useEffect(() => {
@@ -453,6 +461,23 @@ export default function App() {
           unclaimed={joinPreview.unclaimed}
           onPick={resolveJoin}
         />
+      )}
+
+      {joinPending !== null && (
+        <Overlay onClose={() => setJoinPending(null)}>
+          <div className="glass-strong rounded-3xl w-full max-w-sm p-6 text-center anim-pop" onClick={(e) => e.stopPropagation()}>
+            <div className="text-4xl mb-2">⏳</div>
+            <h3 className="font-display text-xl font-bold mb-1">{t("joinReq.sentTitle")}</h3>
+            <p className="text-sm text-muted mb-4">{t("joinReq.sentBody", { group: joinPending })}</p>
+            <button
+              onClick={() => setJoinPending(null)}
+              className="w-full rounded-2xl py-2.5 text-sm font-semibold text-white"
+              style={{ background: "var(--teal)" }}
+            >
+              {t("common.ok")}
+            </button>
+          </div>
+        </Overlay>
       )}
 
       {showActivity && <NotificationsBell open={showActivity} onClose={() => setShowActivity(false)} />}

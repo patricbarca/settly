@@ -54,16 +54,47 @@ export async function getJoinPreview(
   return { groupName: d.group_name, unclaimed: d.unclaimed ?? [] };
 }
 
-/** Une la cuenta al grupo del link (o la vincula al miembro elegido). Todo
- *  ocurre en el servidor (`join_by_token`), que exige el token. */
-export async function joinByToken(token: string, _userId: string, claimMemberId?: string): Promise<Group | null> {
+export type JoinResult =
+  | { status: "joined"; group: Group }
+  | { status: "pending"; groupId: string; groupName: string; ownerId: string }
+  | null;
+
+/** Abre un link de invitación (`join_by_token`, exige el token). Si ya eres
+ *  miembro o eres el dueño, entras; si no, queda una solicitud pendiente que el
+ *  dueño del grupo tiene que aceptar. */
+export async function joinByToken(token: string, _userId: string, claimMemberId?: string): Promise<JoinResult> {
   const { data, error } = await supabase.rpc("join_by_token", {
     p_token: token,
     p_claim_member_id: claimMemberId ?? null,
   });
   if (error || !data) return null;
-  const { group_id, member_id } = data as { group_id: string; member_id: string };
-  const { data: row } = await supabase.from("groups").select("id, data").eq("id", group_id).single();
+  const d = data as { pending?: boolean; group_id: string; member_id?: string; group_name?: string; owner_id?: string };
+  if (d.pending) {
+    return { status: "pending", groupId: d.group_id, groupName: d.group_name ?? "", ownerId: d.owner_id ?? "" };
+  }
+  const { data: row } = await supabase.from("groups").select("id, data").eq("id", d.group_id).single();
   if (!row) return null;
-  return { ...(row.data as Group), id: row.id, meId: member_id };
+  return { status: "joined", group: { ...(row.data as Group), id: row.id, meId: d.member_id ?? "" } };
+}
+
+export type JoinRequest = { id: string; user_id: string; name: string | null; avatar: string | null; created_at: string };
+
+export async function listJoinRequests(groupId: string): Promise<JoinRequest[]> {
+  const { data } = await supabase
+    .from("join_requests")
+    .select("id, user_id, name, avatar, created_at")
+    .eq("group_id", groupId)
+    .eq("status", "pending")
+    .order("created_at");
+  return (data as JoinRequest[] | null) ?? [];
+}
+
+export async function approveJoinRequest(id: string): Promise<boolean> {
+  const { error } = await supabase.rpc("approve_join_request", { p_id: id });
+  return !error;
+}
+
+export async function rejectJoinRequest(id: string): Promise<boolean> {
+  const { error } = await supabase.rpc("reject_join_request", { p_id: id });
+  return !error;
 }
