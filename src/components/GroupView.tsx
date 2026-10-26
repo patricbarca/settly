@@ -23,6 +23,7 @@ import { ReportModal } from "./ReportModal";
 import { Paywall } from "./Paywall";
 import { ShareLinkModal } from "./ShareLinkModal";
 import { PayMethodReminder } from "./PayMethodReminder";
+import { JoinRequests } from "./JoinRequests";
 import { isPro } from "../lib/plan";
 import { haptic } from "../lib/haptics";
 
@@ -119,6 +120,7 @@ export function GroupView({ group }: { group: Group }) {
         </div>
       </div>
 
+      <JoinRequests group={group} />
       <PayMethodReminder group={group} />
 
       {/* La tarjeta del grupo se queda pegada bajo la barra y, al bajar, se
