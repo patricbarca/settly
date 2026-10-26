@@ -792,7 +792,7 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 
 ## Pending / known issues
 - **🔒 Auditoría de seguridad (2026-10-26):** los dos ALTOS ✅ **arreglados** (ver "Recent work"). Quedan:
-  3. **MEDIO — `groups` UPDATE directo para cualquier miembro** (sin `with_check`): un cliente manipulado puede reescribir el blob sin los merges de `update_group_data` o cambiar `owner_id`. Lo usan aún `store.ts:421` e `invite.ts:138/165` (y builds viejos de iOS) → migrar a RPC antes de revocar.
+  3. ✅ **MEDIO arreglado (`migrate_v30`, 2026-10-26):** trigger `groups_guard_direct_update`: un UPDATE directo (rol authenticated, builds viejos/`leaveGroup`) ya no puede cambiar `owner_id` y su `data` pasa por `merge_group_data` (mismas reglas que `update_group_data`: no borra gastos/pagos ajenos). Verificado en transacción abortada.
   4. ✅ `send-push` **v51** (2026-10-26): solo pueden avisar los miembros del grupo, o quien tiene una solicitud pendiente y solo al dueño (antes cualquiera con sesión y el `groupId`). **BAJO pendiente:** `group_members` INSERT deja a un miembro meter a cualquier `user_id`; *Leaked password protection* desactivada; función `env-probe` sobrante (borrar); `pg_net` en `public`.
   - ✅ Bien: webhooks de Stripe (firma) y RevenueCat (secreto), funciones de cron con `CRON_SECRET`, IA con JWT + `ai_guard`, buckets `receipts` (solo miembros) y `access_codes` cerrado.
 > Plan completo y fases en **`ROADMAP.md`**.
