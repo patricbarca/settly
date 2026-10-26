@@ -149,6 +149,19 @@ Deno.serve(async (req) => {
       .from("group_members")
       .select("user_id")
       .eq("group_id", groupId);
+    // Solo pueden avisar los miembros del grupo. Excepción: quien tiene una
+    // solicitud pendiente para unirse puede avisar al DUEÑO (y solo a él).
+    if (!callerId) return json({ error: "unauthorized" }, 401);
+    const isMember = (members ?? []).some((m) => m.user_id === callerId);
+    if (!isMember) {
+      const { data: reqRow } = await admin
+        .from("join_requests").select("id")
+        .eq("group_id", groupId).eq("user_id", callerId).eq("status", "pending")
+        .maybeSingle();
+      const { data: g } = await admin.from("groups").select("owner_id").eq("id", groupId).maybeSingle();
+      if (!reqRow || !g || !toUserId || toUserId !== g.owner_id) return json({ error: "forbidden" }, 403);
+    }
+
     let userIds = [
       ...new Set((members ?? []).map((m) => m.user_id).filter((id) => id && id !== callerId)),
     ];
