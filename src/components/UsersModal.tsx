@@ -75,12 +75,9 @@ export function UsersModal({ group, onClose }: { group: Group; onClose: () => vo
     if (!q) return;
     setSearching(true);
     setFoundUser(null);
-    const isPhone = q.startsWith("+") || /^\+?\d[\d\s\-().]{6,}$/.test(q);
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, name, phone")
-      .eq(isPhone ? "phone" : "email", q)
-      .maybeSingle();
+    // Búsqueda exacta en el servidor: los perfiles ajenos ya no se leen directo.
+    const { data: rows } = await supabase.rpc("find_user", { p_query: q });
+    const data = (rows as { id: string; name: string }[] | null)?.[0] ?? null;
     setSearching(false);
     if (data) {
       if (existingIds.has(data.id)) {
