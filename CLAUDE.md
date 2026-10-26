@@ -51,6 +51,13 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Unirse por link requiere aprobación del dueño (2026-10-26, PR #338 + `migrate_v29`)
+- **Antes:** cualquiera con el link (reenviado, en un chat grande…) entraba directo durante 7 días.
+- **Ahora:** `join_by_token` une directo solo si ya eres miembro o eres el **dueño** (o el grupo no tiene dueño); si no, crea una fila en **`join_requests`** (`pending`, guarda nombre/avatar y la plaza elegida en `claim_member_id`; una pendiente por usuario y grupo) y devuelve `{pending, group_name, owner_id}`. El dueño acepta/rechaza con **`approve_join_request(id)`** / **`reject_join_request(id)`** (solo `groups.owner_id`). La lógica de unir (reclamar plaza o crear miembro + actividad) vive en `_join_member` (interna, sin execute para nadie).
+- **Cliente:** quien abre el link ve el modal **"Solicitud enviada"** (`App.tsx`, `joinPending`) y se manda push al dueño (`notifyUser`). El dueño ve arriba del grupo la tarjeta **`JoinRequests.tsx`** (Aceptar/Rechazar, realtime sobre `join_requests`); al aceptar, push al invitado y el grupo le aparece por `group_changes`. Strings `joinReq.*`. `joinByToken` devuelve `JoinResult` (`joined`/`pending`).
+- **✅ Verificado** (transacción abortada): abrir el link → pendiente (repetir no duplica); ni el invitado ni un tercero pueden aprobar (`not_allowed`); el invitado ve su solicitud, un tercero no; el dueño aprueba → miembro. **No probado en pantalla** (tarjeta y modal) ni el push real.
+- **Builds viejos de iOS:** no les afecta la unión (el link abre la web); el dueño con un build viejo **no ve la tarjeta** → tiene que aceptar desde la web o con un build nuevo.
+
 ### 🔒 Seguridad: perfiles e invitaciones cerrados (2026-10-26, PR #336 + `migrate_v28`)
 - **Antes:** cualquier usuario con sesión leía por la API **todos los perfiles** (email de 81, teléfono de 11, datos de cobro de 10) y **todos los links de invitación** vigentes (podía unirse a cualquier grupo); `groups` dejaba leer cualquier grupo con un link vigente sin tener el token.
 - **Ahora:** `profiles` SELECT = uno mismo + quien comparte grupo (`shares_group_with`); `invite_links` SELECT = solo los que creaste; `groups` SELECT = dueño o miembro; `group_members` INSERT ya no deja unirse "porque existe un link". Vista previa y unión por link → RPCs **`preview_invite(token)`** / **`join_by_token(token, claim)`** (SECURITY DEFINER, hacen todo en el servidor: reclamar plaza o crear miembro + actividad). Búsqueda por email/teléfono en `UsersModal` → **`find_user`** (coincidencia exacta).
@@ -786,7 +793,7 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 ## Pending / known issues
 - **🔒 Auditoría de seguridad (2026-10-26):** los dos ALTOS ✅ **arreglados** (ver "Recent work"). Quedan:
   3. **MEDIO — `groups` UPDATE directo para cualquier miembro** (sin `with_check`): un cliente manipulado puede reescribir el blob sin los merges de `update_group_data` o cambiar `owner_id`. Lo usan aún `store.ts:421` e `invite.ts:138/165` (y builds viejos de iOS) → migrar a RPC antes de revocar.
-  4. **BAJO:** `group_members` INSERT deja a un miembro meter a cualquier `user_id`; *Leaked password protection* desactivada; función `env-probe` sobrante (borrar); `pg_net` en `public`.
+  4. **BAJO:** `send-push` no comprueba que quien llama sea miembro del grupo (cualquiera con sesión y el `groupId` podría mandar avisos a sus miembros; hoy lo usa a propósito el invitado para avisar al dueño → limitarlo a miembros o a quien tenga una solicitud pendiente); `group_members` INSERT deja a un miembro meter a cualquier `user_id`; *Leaked password protection* desactivada; función `env-probe` sobrante (borrar); `pg_net` en `public`.
   - ✅ Bien: webhooks de Stripe (firma) y RevenueCat (secreto), funciones de cron con `CRON_SECRET`, IA con JWT + `ai_guard`, buckets `receipts` (solo miembros) y `access_codes` cerrado.
 > Plan completo y fases en **`ROADMAP.md`**.
 - **Receipt/proof images:** scanned receipts stored in **Supabase Storage** (private bucket `receipts` **created + verified**, `Expense.receiptPath`, signed URLs, member-only RLS — `src/lib/storage.ts`; `migrate_v5_receipts_storage.sql` **already applied**). ✅ Receipt **now shown in the report** (`ReportModal` thumbnails + CSV yes/no). ✅ **Payment proofs, avatars and covers** moved out of the group JSON to the public `media` bucket (2026-10-24, see "Egress de Supabase").
