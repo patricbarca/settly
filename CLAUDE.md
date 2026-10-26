@@ -51,6 +51,13 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### 🔒 Seguridad: perfiles e invitaciones cerrados (2026-10-26, PR #336 + `migrate_v28`)
+- **Antes:** cualquier usuario con sesión leía por la API **todos los perfiles** (email de 81, teléfono de 11, datos de cobro de 10) y **todos los links de invitación** vigentes (podía unirse a cualquier grupo); `groups` dejaba leer cualquier grupo con un link vigente sin tener el token.
+- **Ahora:** `profiles` SELECT = uno mismo + quien comparte grupo (`shares_group_with`); `invite_links` SELECT = solo los que creaste; `groups` SELECT = dueño o miembro; `group_members` INSERT ya no deja unirse "porque existe un link". Vista previa y unión por link → RPCs **`preview_invite(token)`** / **`join_by_token(token, claim)`** (SECURITY DEFINER, hacen todo en el servidor: reclamar plaza o crear miembro + actividad). Búsqueda por email/teléfono en `UsersModal` → **`find_user`** (coincidencia exacta).
+- **Cómo se aplicó:** las funciones con `apply_migration`; las políticas con **`alter policy`** vía `execute_sql` (el `drop policy` de `apply_migration` pide una confirmación de Supabase que se queda colgada). Los nombres de política viejos se conservan ("Read profiles", "Auth users view invites") pero con la regla nueva. `migrate_v28_security_invites_profiles.sql` es la versión equivalente con drop/create.
+- **✅ Verificado** (transacción abortada, rol `authenticated`): un usuario ve 1/82 perfiles, 0 links, 0 grupos ajenos; `join_by_token` une y reclama plaza; token falso → null; repetir no duplica.
+- **Builds viejos de iOS:** la búsqueda por email deja de encontrar gente (usar link). La unión por link no les afecta (el link abre la web).
+
 ### Landing: 5 artículos nuevos de blog + SEO (2026-10-25)
 - `settly-landing` PR #29: `blog-gastos-pareja`, `blog-gastos-varias-monedas`, `blog-cobrar-a-amigos`, `blog-tricount-vs-splitwise`, `blog-facturas-piso` (ES/EN). Cada uno con JSON-LD **BlogPosting + FAQPage**, "Sigue leyendo" con enlaces internos y UTM `utm_source=blog` en el CTA. Tarjetas en la portada y en `sitemap.xml`.
 - **Pendiente SEO:** dar de alta Google Search Console y enviar el sitemap (usuario); el español está en la misma URL oculto por JS → valorar URLs `/es/` con `hreflang`; `og:image` propia por artículo.
@@ -777,9 +784,7 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
   - **Probar la compra (sandbox):** crear Sandbox Tester (App Store Connect → Users and Access → **Sandbox → Testers**, con un email real controlable — alias `+sandbox` sirve, Apple pide verificar el código). En el iPhone se mete en **Ajustes → App Store → Sandbox Account** (NUNCA en el Apple ID de arriba) o al pulsar Subscribe. El sandbox account NO es la cuenta de la app (esa sigue siendo tu login normal); solo sustituye el pago.
 
 ## Pending / known issues
-- **🔒 Auditoría de seguridad (2026-10-26) — SIN ARREGLAR, pendiente de decisión del usuario:**
-  1. **ALTO — `profiles` legible por cualquier usuario con sesión** (política `Read profiles`: `auth.uid() is not null`): email (81), teléfono (11) y **datos de cobro `pays`** (10, BSB/cuenta/PayID) descargables por la API. Fix: limitar el SELECT a uno mismo + co-miembros (`is_member_of`) y mover la búsqueda por email/teléfono de `UsersModal` a un RPC de coincidencia exacta.
-  2. **ALTO — `invite_links` legible por cualquier usuario con sesión** (`Auth users view invites`) → se pueden listar los tokens vigentes y unirse a cualquier grupo; además `groups` SELECT deja leer cualquier grupo con un link vigente **sin tener el token**. Fix: RPCs `preview_invite(token)`/`join_by_token(token)` SECURITY DEFINER y quitar esas dos políticas.
+- **🔒 Auditoría de seguridad (2026-10-26):** los dos ALTOS ✅ **arreglados** (ver "Recent work"). Quedan:
   3. **MEDIO — `groups` UPDATE directo para cualquier miembro** (sin `with_check`): un cliente manipulado puede reescribir el blob sin los merges de `update_group_data` o cambiar `owner_id`. Lo usan aún `store.ts:421` e `invite.ts:138/165` (y builds viejos de iOS) → migrar a RPC antes de revocar.
   4. **BAJO:** `group_members` INSERT deja a un miembro meter a cualquier `user_id`; *Leaked password protection* desactivada; función `env-probe` sobrante (borrar); `pg_net` en `public`.
   - ✅ Bien: webhooks de Stripe (firma) y RevenueCat (secreto), funciones de cron con `CRON_SECRET`, IA con JWT + `ai_guard`, buckets `receipts` (solo miembros) y `access_codes` cerrado.
