@@ -27,7 +27,7 @@ import { Paywall } from "./Paywall";
 
 type FxInfo = { originalAmount: number; originalCurrency: string; fxRate: number };
 
-const INTERVALS: RecurrenceInterval[] = ["daily", "weekly", "monthly", "yearly"];
+const INTERVALS: RecurrenceInterval[] = ["daily", "weekly", "biweekly", "monthly", "yearly"];
 type ExpenseType = "one-time" | "recurring";
 
 export function AddExpense({ group }: { group: Group }) {
@@ -351,6 +351,11 @@ function sanitizePercents(
     }
   }
 
+  function cancelDraft() {
+    setDraft(null); setExpenseType("one-time"); setAiSummary(null); setManualMode(false);
+    setFx(null); setFxUpsell(null); setFxError(null);
+  }
+
   function manual() {
     setAiSummary(null);
     setFx(null);
@@ -511,7 +516,13 @@ function sanitizePercents(
       <div className="flex items-center justify-between mb-2">
         <div className="text-xs uppercase tracking-widest font-mono" style={{ color: "var(--muted)" }}>{t("add.title")}</div>
         <button
-          onClick={() => setOpen(false)}
+          onClick={() => {
+            // La X vuelve un paso atrás: del borrador o de "Escribir" al menú de
+            // métodos; solo en el menú cierra el panel.
+            if (draft) { cancelDraft(); setEntry("menu"); }
+            else if (entry !== "menu") setEntry("menu");
+            else setOpen(false);
+          }}
           className="glass rounded-full h-7 w-7 flex items-center justify-center text-muted hover-lift"
           aria-label={t("common.close")}
           title={t("common.close")}
@@ -667,7 +678,7 @@ function sanitizePercents(
             group={group}
             initial={draft}
             onSave={save}
-            onCancel={() => { setDraft(null); setExpenseType("one-time"); setAiSummary(null); setManualMode(false); setFx(null); setFxUpsell(null); setFxError(null); }}
+            onCancel={cancelDraft}
             submitLabel={expenseType === "recurring" ? t("recur.save") : t("add.submit")}
             amountCurrency={manualMode || group.multiCurrency ? manualCurrency : undefined}
             showDate={expenseType !== "recurring"}

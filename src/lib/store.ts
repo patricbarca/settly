@@ -740,6 +740,7 @@ function advanceDate(date: string, interval: RecurrenceInterval): string {
   const d = new Date(date + "T00:00:00Z");
   if (interval === "daily")   d.setUTCDate(d.getUTCDate() + 1);
   if (interval === "weekly")  d.setUTCDate(d.getUTCDate() + 7);
+  if (interval === "biweekly") d.setUTCDate(d.getUTCDate() + 14);
   if (interval === "monthly") d.setUTCMonth(d.getUTCMonth() + 1);
   if (interval === "yearly")  d.setUTCFullYear(d.getUTCFullYear() + 1);
   return d.toISOString().slice(0, 10);

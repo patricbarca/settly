@@ -39,10 +39,10 @@ export function occurrencesInMonth(nextDate: string, interval: RecurrenceInterva
   const y = now.getFullYear(), m = now.getMonth();
   const start = Date.UTC(y, m, 1), end = Date.UTC(y, m + 1, 1);
   if (interval === "daily") return (end - start) / DAY;
-  if (!/^\d{4}-\d{2}-\d{2}/.test(nextDate || "")) return interval === "weekly" ? 4 : interval === "monthly" ? 1 : 0;
+  if (!/^\d{4}-\d{2}-\d{2}/.test(nextDate || "")) return interval === "weekly" ? 4 : interval === "biweekly" ? 2 : interval === "monthly" ? 1 : 0;
   const base = parseDay(nextDate);
-  if (interval === "weekly") {
-    const step = 7 * DAY;
+  if (interval === "weekly" || interval === "biweekly") {
+    const step = (interval === "weekly" ? 7 : 14) * DAY;
     let t = base + Math.ceil((start - base) / step) * step;
     let n = 0;
     for (; t < end; t += step) n++;
@@ -133,8 +133,8 @@ export function occurrencesBetween(nextDate: string, interval: RecurrenceInterva
   if (interval === "daily") return Math.round((end - start) / DAY);
   if (!/^\d{4}-\d{2}-\d{2}/.test(nextDate || "")) return Math.round(perWeek(1, interval) * ((end - start) / (7 * DAY)));
   const base = parseDay(nextDate);
-  if (interval === "weekly") {
-    const step = 7 * DAY;
+  if (interval === "weekly" || interval === "biweekly") {
+    const step = (interval === "weekly" ? 7 : 14) * DAY;
     let n = 0;
     for (let t = base + Math.ceil((start - base) / step) * step; t < end; t += step) n++;
     return n;
