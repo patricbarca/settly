@@ -20,6 +20,8 @@ export default defineConfig({
       registerType: "autoUpdate",
       workbox: {
         globPatterns: ["**/*.{js,css,html,woff2}"],
+        // pdf.js (importar estado de cuenta) se descarga solo al usarlo.
+        globIgnores: ["**/pdf*.js", "**/pdf*.mjs"],
         navigateFallback: "/index.html",
         navigateFallbackDenylist: [/^\/api/],
         importScripts: ["push-sw.js"],

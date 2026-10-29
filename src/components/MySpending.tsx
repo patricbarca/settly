@@ -18,6 +18,7 @@ import { GroupSettings } from "./GroupSettings";
 import { ProjectionView } from "./ProjectionView";
 import { SavingTips } from "./SavingTips";
 import { ReclassifyModal } from "./ReclassifyModal";
+import { StatementImportModal } from "./StatementImportModal";
 import { VaultNewsModal, vaultNewsHidden } from "./VaultNewsModal";
 import { fixedItems } from "../lib/projection";
 import { usePlan } from "../lib/plan";
@@ -40,6 +41,7 @@ export function MySpending() {
   const personal = useEnsurePersonalGroup();
   const { archived: localArchived } = useArchivedGroups();
   const [reclass, setReclass] = useState(false);
+  const [stmt, setStmt] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   // Novedades: se abren al entrar salvo "no volver a mostrar".
   const [news, setNews] = useState(() => !vaultNewsHidden());
@@ -323,7 +325,20 @@ export function MySpending() {
           {/* Movimientos */}
           {mode !== "projection" && items.length > 0 && (
             <>
-              <div className="flex items-center justify-between gap-2 mt-6 mb-2">
+              {personal && (
+                <button
+                  onClick={() => (pro ? setStmt(true) : setShowPaywall(true))}
+                  className="glass rounded-2xl w-full mt-5 p-3 flex items-center gap-3 text-left hover-lift"
+                >
+                  <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl shrink-0" style={{ background: "rgba(15,163,163,0.16)", color: "var(--teal)" }}><Icon name="doc" size={18} /></span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold">{t("stmt.title")}{!pro && <span className="text-[9px] font-bold ml-1" style={{ color: "var(--teal)" }}>PRO</span>}</span>
+                    <span className="block text-[11px] text-muted">{t("stmt.cta")}</span>
+                  </span>
+                  <Icon name="chevron" size={14} className="text-muted -rotate-90" />
+                </button>
+              )}
+              <div className="flex items-center justify-between gap-2 mt-5 mb-2">
                 <h3 className="font-display text-lg font-bold">{t("mine.movements")}</h3>
                 <select value={cat} onChange={(e) => setCat(e.target.value)} className="glass rounded-full px-3 py-1 text-xs font-semibold min-w-0 max-w-[45%] ml-auto" aria-label={t("mine.category")}>
                   <option value="all">{t("mine.allCategories")}</option>
@@ -389,6 +404,7 @@ export function MySpending() {
       {news && <VaultNewsModal onClose={() => setNews(false)} />}
       {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
       {reclass && <ReclassifyModal items={all} onClose={() => setReclass(false)} />}
+      {stmt && personal && <StatementImportModal personal={personal} onClose={() => setStmt(false)} />}
 
       {confirmDel && (
         <ConfirmModal
