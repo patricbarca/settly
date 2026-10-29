@@ -18,6 +18,7 @@ import { GroupSettings } from "./GroupSettings";
 import { ProjectionView } from "./ProjectionView";
 import { SavingTips } from "./SavingTips";
 import { ReclassifyModal } from "./ReclassifyModal";
+import { MoveToGroupModal } from "./MoveToGroupModal";
 import { StatementImportModal } from "./StatementImportModal";
 import { VaultNewsModal, vaultNewsHidden } from "./VaultNewsModal";
 import { fixedItems } from "../lib/projection";
@@ -65,6 +66,7 @@ export function MySpending() {
   const [cat, setCat] = useState<string>("all");
   const [open, setOpen] = useState<string | null>(null);
   const [confirmDel, setConfirmDel] = useState<MyItem | null>(null);
+  const [moving, setMoving] = useState<MyItem | null>(null);
 
   // Grupos con gastos míos para el desplegable (activos primero, luego archivados).
   const sources = useMemo(() => {
@@ -378,7 +380,14 @@ export function MySpending() {
                         </span>
                       </button>
                       {isOpen && (
-                        <div className="px-4 pb-3 -mt-1 flex justify-end">
+                        <div className="px-4 pb-3 -mt-1 flex justify-end gap-2">
+                          <button
+                            className="rounded-full px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1"
+                            style={{ color: "var(--teal)", background: "color-mix(in srgb, var(--teal) 12%, transparent)" }}
+                            onClick={() => setMoving(i)}
+                          >
+                            <Icon name="users" size={13} /> {t("move.button")}
+                          </button>
                           <button
                             className="rounded-full px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1"
                             style={{ color: "var(--coral)", background: "color-mix(in srgb, var(--coral) 12%, transparent)" }}
@@ -405,6 +414,11 @@ export function MySpending() {
       {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
       {reclass && <ReclassifyModal items={all} onClose={() => setReclass(false)} />}
       {stmt && personal && <StatementImportModal personal={personal} onClose={() => setStmt(false)} />}
+
+      {moving && personal && (() => {
+        const e = personal.expenses.find((x) => x.id === moving.expenseId);
+        return e ? <MoveToGroupModal personal={personal} expense={e} onClose={() => { setMoving(null); setOpen(null); }} /> : null;
+      })()}
 
       {confirmDel && (
         <ConfirmModal

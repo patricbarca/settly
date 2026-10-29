@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Mis gastos: "Pasar a un grupo" (2026-10-29)
+- Al tocar un gasto **personal** en Mis gastos, junto a "Eliminar" sale **"Pasar a un grupo"** → `MoveToGroupModal`: eliges grupo compartido (no archivado) y entre quiénes (por defecto todos); se crea en ese grupo como pagado por ti, a partes iguales (con notificación + push + actividad, igual que un gasto nuevo), conserva fecha/categoría/ticket y se **borra del Personal**. Si la moneda difiere de la del grupo se guarda con `currency` y se activa `multiCurrency`. Strings `move.*`. `tsc` + build; **no probado en pantalla**.
+
 ### Importar estado de cuenta del banco → "Mis gastos" (2026-10-29, Pro)
 - **Qué hace:** en Mis gastos, tarjeta **"Importar estado de cuenta"** (Pro; gratis → Paywall) → `StatementImportModal`: se elige la moneda y un **CSV o PDF** del banco → la IA saca los movimientos → lista para revisar con casilla y desplegable de categoría por fila → **"Añadir N · total"** los guarda en el grupo **Personal** (`addExpense`, de 6 en 6; `aiReviewed:true`; `currency` si difiere de la del Personal).
 - **Transferencias** (`isTransfer`: "transfer", "trf", "transferencia", "traspaso"…) entran **desmarcadas** con etiqueta "Transferencia" (2026-10-29: con un estado de cuenta real, un traspaso a otra cuenta propia se contaba como gasto).
