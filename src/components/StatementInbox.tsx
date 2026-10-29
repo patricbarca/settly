@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useT } from "../lib/i18n";
 import { deleteExpense, patchExpense } from "../lib/store";
 import { CATEGORIES, type Category, type Expense, type Group } from "../lib/types";
@@ -24,7 +24,25 @@ export function StatementInbox({ personal }: { personal: Group }) {
   const [editing, setEditing] = useState<Expense | null>(null);
   const [moving, setMoving] = useState<Expense | null>(null);
   const [confirmDel, setConfirmDel] = useState(false);
-  if (!items.length) return null;
+  const [confirmVault, setConfirmVault] = useState(false);
+  const [undo, setUndo] = useState<string[] | null>(null);
+  useEffect(() => {
+    if (!undo) return;
+    const id = setTimeout(() => setUndo(null), 10000);
+    return () => clearTimeout(id);
+  }, [undo]);
+  const undoBar = undo && (
+    <div className="glass rounded-2xl mt-5 p-3 flex items-center gap-3 text-sm">
+      <span className="flex-1">{t("inbox.moved", { n: undo.length })}</span>
+      <button className="font-semibold" style={{ color: "var(--teal)" }} onClick={undoVault}>{t("inbox.undo")}</button>
+    </div>
+  );
+  async function undoVault() {
+    const ids = undo ?? [];
+    setUndo(null);
+    for (let k = 0; k < ids.length; k += 6) await Promise.all(ids.slice(k, k + 6).map((id) => patchExpense(personal.id, id, { inbox: true })));
+  }
+  if (!items.length) return undoBar || null;
 
   const live = new Set([...sel].filter((id) => items.some((e) => e.id === id)));
   const picked = items.filter((e) => live.has(e.id));
@@ -39,7 +57,9 @@ export function StatementInbox({ personal }: { personal: Group }) {
   for (const e of items) byDate.set(e.date, [...(byDate.get(e.date) ?? []), e]);
 
   async function toVault() {
+    setConfirmVault(false);
     const ids = [...live];
+    setUndo(ids);
     for (let k = 0; k < ids.length; k += 6) await Promise.all(ids.slice(k, k + 6).map((id) => patchExpense(personal.id, id, { inbox: null } as Partial<Expense>)));
     haptic("success");
     setSel(new Set());
@@ -56,7 +76,10 @@ export function StatementInbox({ personal }: { personal: Group }) {
     setEditing(null);
   }
 
+  const pickedTotal = picked.reduce((s, e) => s + e.amount, 0);
   return (
+    <>
+    {undoBar}
     <div className="glass rounded-3xl mt-5 overflow-hidden">
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 p-3 text-left">
         <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl shrink-0" style={{ background: "rgba(232,146,12,0.16)", color: "var(--amber)" }}><Icon name="doc" size={18} /></span>
@@ -95,7 +118,7 @@ export function StatementInbox({ personal }: { personal: Group }) {
           </div>
           {live.size > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
-              <button onClick={toVault} className="flex-1 rounded-2xl py-2.5 text-sm font-semibold text-white" style={{ background: "var(--teal)" }}>
+              <button onClick={() => (live.size > 1 ? setConfirmVault(true) : toVault())} className="flex-1 rounded-2xl py-2.5 text-sm font-semibold text-white" style={{ background: "var(--teal)" }}>
                 {t("inbox.toVault", { n: live.size })}
               </button>
               {live.size === 1 && (
@@ -137,6 +160,16 @@ export function StatementInbox({ personal }: { personal: Group }) {
         </Overlay>
       )}
       {moving && <MoveToGroupModal personal={personal} expense={moving} onClose={() => { setMoving(null); setSel(new Set()); }} />}
+      {confirmVault && (
+        <ConfirmModal
+          title={t("inbox.vaultTitle", { n: live.size })}
+          message={t("inbox.vaultBody", { total: money(pickedTotal, cur(picked[0])) })}
+          confirmLabel={t("inbox.toVault", { n: live.size })}
+          danger={false}
+          onConfirm={toVault}
+          onClose={() => setConfirmVault(false)}
+        />
+      )}
       {confirmDel && (
         <ConfirmModal
           title={t("inbox.discardTitle", { n: live.size })}
@@ -148,5 +181,6 @@ export function StatementInbox({ personal }: { personal: Group }) {
       )}
       <span className="hidden">{CATEGORIES.length}</span>
     </div>
+    </>
   );
 }

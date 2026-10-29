@@ -55,6 +55,7 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - Lo importado del banco ya **no entra directo** en Mis gastos: se guarda en el Personal con `Expense.inbox: true` + `source: "statement"` y aparece en la tarjeta **"Del estado de cuenta · N"** (`StatementInbox.tsx`, en Mis gastos encima de Movimientos), agrupado **por fecha**, con casillas y "Seleccionar todos". Tocar uno abre el `ExpenseForm` para **editarlo** (concepto, importe, categoría, fecha). Con la selección: **"Pasar N a Mis gastos"** (`patchExpense inbox:null`), **"Pasar a un grupo"** (solo con 1 marcado, `MoveToGroupModal`) o **Descartar** (borra).
 - Los gastos en bandeja **no cuentan** en ningún total: `myItems` los salta (Mis gastos, Proyección, consejos) y la tarjeta Personal de Home también. Siguen contando para detectar duplicados al reimportar.
 - En Movimientos, los que vinieron del banco llevan **"🏦 Banco"** (`MyItem.fromStatement`: `source` o id `stm_`). Strings `inbox.*`.
+- **Protección contra errores:** pasar **más de 1** a Mis gastos pide confirmación con el total; después sale **"N pasados a Mis gastos · Deshacer"** durante 10 s (vuelve a poner `inbox:true`). Y en Movimientos, un gasto **🏦 Banco** de tu Personal tiene **"Volver a la bandeja"** al tocarlo, para arreglarlo más tarde.
 - ⚠️ Builds viejos de iOS no conocen `inbox`: verán esos gastos como gastos personales normales. `tsc` + build; **no probado en pantalla**.
 
 ### Mis gastos: "Pasar a un grupo" (2026-10-29)

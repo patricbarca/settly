@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useT, useLang } from "../lib/i18n";
-import { useGroups, setActiveGroup, deleteExpense } from "../lib/store";
+import { useGroups, setActiveGroup, deleteExpense, patchExpense } from "../lib/store";
 import { useUser } from "../lib/auth";
 import { money, fmtDate, categoryColor } from "../lib/format";
 import { resolveToCode } from "../lib/currencies";
@@ -383,7 +383,16 @@ export function MySpending() {
                         </span>
                       </button>
                       {isOpen && (
-                        <div className="px-4 pb-3 -mt-1 flex justify-end gap-2">
+                        <div className="px-4 pb-3 -mt-1 flex justify-end gap-2 flex-wrap">
+                          {i.fromStatement && (
+                            <button
+                              className="rounded-full px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1"
+                              style={{ color: "var(--amber)", background: "color-mix(in srgb, var(--amber) 12%, transparent)" }}
+                              onClick={() => { patchExpense(i.groupId, i.expenseId, { inbox: true }); setOpen(null); }}
+                            >
+                              <Icon name="doc" size={13} /> {t("inbox.back")}
+                            </button>
+                          )}
                           <button
                             className="rounded-full px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1"
                             style={{ color: "var(--teal)", background: "color-mix(in srgb, var(--teal) 12%, transparent)" }}
