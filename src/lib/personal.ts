@@ -76,6 +76,7 @@ export interface MyItem {
   date: string;
   category: string;
   aiReviewed: boolean;
+  fromStatement?: boolean;
   currency: string; // ISO
   amount: number; // mi parte
   total: number; // importe total del gasto
@@ -90,6 +91,7 @@ export function myItems(groups: Group[], localArchived: Set<string> = new Set())
     if (g.deletedAt) continue;
     const ids = g.members.map((m) => m.id);
     for (const e of g.expenses) {
+      if (e.inbox) continue;
       const mine = g.personal ? e.amount : shareFor(e, ids)[g.meId] || 0;
       if (Math.abs(mine) < 0.005) continue;
       out.push({
@@ -103,6 +105,7 @@ export function myItems(groups: Group[], localArchived: Set<string> = new Set())
         date: e.date,
         category: e.category,
         aiReviewed: !!e.aiReviewed,
+        fromStatement: e.source === "statement" || e.id.startsWith("stm_"),
         currency: currencyOf(e, g),
         amount: mine,
         total: e.amount,

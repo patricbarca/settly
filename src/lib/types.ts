@@ -77,6 +77,10 @@ export interface Expense {
   category: Category;
   /** Ya revisado por "Reclasificar con IA": no se vuelve a analizar. */
   aiReviewed?: boolean;
+  /** Importado de un estado de cuenta y aún en la bandeja (no cuenta en Mis gastos). */
+  inbox?: boolean | null;
+  /** De dónde vino el gasto ("statement" = estado de cuenta del banco). */
+  source?: "statement";
   date: string; // ISO YYYY-MM-DD
   note?: string;
   /** custom split memberId -> amount; null/undefined = partes iguales */

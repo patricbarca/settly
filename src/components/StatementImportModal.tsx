@@ -79,6 +79,8 @@ export function StatementImportModal({ personal, onClose }: { personal: Group; o
         date: x.date,
         createdBy: personal.meId,
         aiReviewed: true,
+        inbox: true,
+        source: "statement",
         ...(currency !== groupCode ? { currency } : {}),
       }),
     );

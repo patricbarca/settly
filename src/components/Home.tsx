@@ -599,7 +599,7 @@ function PersonalCard({ g }: { g: PGroup }) {
   const t = useT();
   const cover = heroBackground(g);
   const nowKey = new Date().toLocaleDateString("en-CA").slice(0, 7);
-  const month = g.expenses.filter((e) => (e.date || "").slice(0, 7) === nowKey);
+  const month = g.expenses.filter((e) => !e.inbox && (e.date || "").slice(0, 7) === nowKey);
   const byCur: Record<string, number> = {};
   for (const e of month) {
     const c = resolveToCode(e.currency || g.currency);

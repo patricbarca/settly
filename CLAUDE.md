@@ -51,6 +51,12 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Bandeja "Del estado de cuenta" (2026-10-29)
+- Lo importado del banco ya **no entra directo** en Mis gastos: se guarda en el Personal con `Expense.inbox: true` + `source: "statement"` y aparece en la tarjeta **"Del estado de cuenta · N"** (`StatementInbox.tsx`, en Mis gastos encima de Movimientos), agrupado **por fecha**, con casillas y "Seleccionar todos". Tocar uno abre el `ExpenseForm` para **editarlo** (concepto, importe, categoría, fecha). Con la selección: **"Pasar N a Mis gastos"** (`patchExpense inbox:null`), **"Pasar a un grupo"** (solo con 1 marcado, `MoveToGroupModal`) o **Descartar** (borra).
+- Los gastos en bandeja **no cuentan** en ningún total: `myItems` los salta (Mis gastos, Proyección, consejos) y la tarjeta Personal de Home también. Siguen contando para detectar duplicados al reimportar.
+- En Movimientos, los que vinieron del banco llevan **"🏦 Banco"** (`MyItem.fromStatement`: `source` o id `stm_`). Strings `inbox.*`.
+- ⚠️ Builds viejos de iOS no conocen `inbox`: verán esos gastos como gastos personales normales. `tsc` + build; **no probado en pantalla**.
+
 ### Mis gastos: "Pasar a un grupo" (2026-10-29)
 - Al tocar un gasto **personal** en Mis gastos, junto a "Eliminar" sale **"Pasar a un grupo"** → `MoveToGroupModal`: 1) eliges el grupo compartido (no archivado); 2) se abre el **mismo `ExpenseForm` que al añadir a mano** (quién pagó, varios pagadores, entre quiénes, iguales/%/importes/partes, reparto por defecto del grupo, categoría, fecha) relleno con el gasto. Al guardar se crea en el grupo (notificación + push + actividad) y se **borra del Personal**. Si la moneda difiere de la del grupo se guarda con `currency` y se activa `multiCurrency`. Strings `move.*`. `tsc` + build; **no probado en pantalla**.
 

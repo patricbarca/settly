@@ -19,6 +19,7 @@ import { ProjectionView } from "./ProjectionView";
 import { SavingTips } from "./SavingTips";
 import { ReclassifyModal } from "./ReclassifyModal";
 import { MoveToGroupModal } from "./MoveToGroupModal";
+import { StatementInbox } from "./StatementInbox";
 import { StatementImportModal } from "./StatementImportModal";
 import { VaultNewsModal, vaultNewsHidden } from "./VaultNewsModal";
 import { fixedItems } from "../lib/projection";
@@ -340,6 +341,7 @@ export function MySpending() {
                   <Icon name="chevron" size={14} className="text-muted -rotate-90" />
                 </button>
               )}
+              {personal && <StatementInbox personal={personal} />}
               <div className="flex items-center justify-between gap-2 mt-5 mb-2">
                 <h3 className="font-display text-lg font-bold">{t("mine.movements")}</h3>
                 <select value={cat} onChange={(e) => setCat(e.target.value)} className="glass rounded-full px-3 py-1 text-xs font-semibold min-w-0 max-w-[45%] ml-auto" aria-label={t("mine.category")}>
@@ -369,6 +371,7 @@ export function MySpending() {
                           <span className="block font-semibold truncate">{i.label}</span>
                           <span className="block text-xs text-muted truncate">
                             {fmtDate(i.date)} · {i.personal ? t("mine.personal") : i.groupName}
+                            {i.fromStatement && <> · 🏦 {t("inbox.bank")}</>}
                             {!i.personal && Math.abs(i.total - i.amount) > 0.004 && <> · {t("mine.ofTotal", { total: money(i.total, i.currency) })}</>}
                           </span>
                         </span>
