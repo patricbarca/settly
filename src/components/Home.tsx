@@ -22,7 +22,7 @@ import { InstallButton } from "./InstallButton";
 import { Paywall } from "./Paywall";
 import type { Group } from "../lib/types";
 
-export type HomeTab = "groups" | "contacts" | "mine";
+export type HomeTab = "groups" | "contacts" | "mine" | "bank";
 
 export function Home({ tab }: { tab: HomeTab }) {
   const t = useT();

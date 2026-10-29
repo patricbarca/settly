@@ -81,6 +81,10 @@ export interface Expense {
   inbox?: boolean | null;
   /** De dónde vino el gasto ("statement" = estado de cuenta del banco). */
   source?: "statement";
+  /** Importación a la que pertenece (agrupa los movimientos de un mismo estado de cuenta). */
+  statementId?: string;
+  statementName?: string;
+  importedAt?: string;
   date: string; // ISO YYYY-MM-DD
   note?: string;
   /** custom split memberId -> amount; null/undefined = partes iguales */

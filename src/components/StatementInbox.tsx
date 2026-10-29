@@ -13,11 +13,14 @@ import { haptic } from "../lib/haptics";
 
 /** Bandeja "Del estado de cuenta": lo importado del banco queda aquí (no cuenta
  *  en Mis gastos) hasta que lo pasas a tu bóveda, a un grupo, o lo descartas. */
-export function StatementInbox({ personal }: { personal: Group }) {
+export function StatementInbox({ personal, statementId, title }: { personal: Group; statementId?: string; title?: string }) {
   const t = useT();
   const items = useMemo(
-    () => personal.expenses.filter((e) => e.inbox).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)),
-    [personal.expenses],
+    () =>
+      personal.expenses
+        .filter((e) => (statementId ? stmtKey(e) === statementId : e.inbox))
+        .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)),
+    [personal.expenses, statementId],
   );
   const [open, setOpen] = useState(true);
   const [sel, setSel] = useState<Set<string>>(new Set());
@@ -84,8 +87,8 @@ export function StatementInbox({ personal }: { personal: Group }) {
       <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-3 p-3 text-left">
         <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl shrink-0" style={{ background: "rgba(232,146,12,0.16)", color: "var(--amber)" }}><Icon name="doc" size={18} /></span>
         <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold">{t("inbox.title")} · {items.length}</span>
-          <span className="block text-[11px] text-muted">{t("inbox.sub")}</span>
+          <span className="block text-sm font-semibold truncate">{title ?? t("inbox.title")} · {items.length}</span>
+          <span className="block text-[11px] text-muted">{statementId ? t("bank.detailSub", { n: items.filter((e) => e.inbox).length }) : t("inbox.sub")}</span>
         </span>
         <Icon name="chevron" size={14} className={`text-muted transition-transform ${open ? "" : "-rotate-90"}`} />
       </button>
@@ -107,6 +110,7 @@ export function StatementInbox({ personal }: { personal: Group }) {
                       <button className="min-w-0 flex-1 text-left" onClick={() => setEditing(e)}>
                         <span className="block text-sm font-medium truncate">{e.label}</span>
                         <span className="text-[11px]" style={{ color: categoryColor(e.category) }}>{t(`cat.${e.category}`)}</span>
+                        {!e.inbox && <span className="text-[10px] font-semibold ml-1.5 rounded-full px-1.5 py-0.5" style={{ background: "rgba(15,163,163,.15)", color: "var(--teal)" }}>{t("bank.inVault")}</span>}
                       </button>
                       <span className="text-sm font-mono shrink-0">{money(e.amount, cur(e))}</span>
                       <button onClick={() => setEditing(e)} className="text-muted shrink-0 p-1" aria-label={t("inbox.edit")}><Icon name="edit" size={14} /></button>
@@ -183,4 +187,11 @@ export function StatementInbox({ personal }: { personal: Group }) {
     </div>
     </>
   );
+}
+
+/** Clave de la importación de un gasto (las viejas sin statementId van juntas). */
+export function stmtKey(e: Expense): string | null {
+  if (e.statementId) return e.statementId;
+  if (e.source === "statement" || e.id.startsWith("stm_")) return "legacy";
+  return null;
 }

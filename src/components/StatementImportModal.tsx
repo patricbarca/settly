@@ -28,6 +28,7 @@ export function StatementImportModal({ personal, onClose }: { personal: Group; o
   const [sel, setSel] = useState<Record<string, { on: boolean; cat: string }>>({});
   const [currency, setCurrency] = useState(() => resolveToCode(personal.currency));
   const [saved, setSaved] = useState(0);
+  const [fileName, setFileName] = useState("");
   const groups = useGroups();
   const inGroup = useMemo(() => {
     const m = new Map<string, string | undefined>();
@@ -43,6 +44,7 @@ export function StatementImportModal({ personal, onClose }: { personal: Group; o
 
   async function onFile(f: File | undefined) {
     if (!f) return;
+    setFileName(f.name.replace(/\.(pdf|csv|txt)$/i, ""));
     setErr(null);
     if (f.size > 8 * 1024 * 1024) { setErr(t("stmt.tooBig")); return; }
     if (!consumeAI("text")) { setErr(t("proj.aiQuota")); return; }
@@ -67,6 +69,8 @@ export function StatementImportModal({ personal, onClose }: { personal: Group; o
     setPhase("saving");
     const groupCode = resolveToCode(personal.currency);
     const picked = txs.filter((x) => sel[x.key]?.on);
+    const statementId = "st_" + Date.now().toString(36);
+    const importedAt = new Date().toISOString();
     const jobs = picked.map((x) => () =>
       addExpense(personal.id, {
         id: x.key,
@@ -81,6 +85,9 @@ export function StatementImportModal({ personal, onClose }: { personal: Group; o
         aiReviewed: true,
         inbox: true,
         source: "statement",
+        statementId,
+        statementName: fileName || t("stmt.title"),
+        importedAt,
         ...(currency !== groupCode ? { currency } : {}),
       }),
     );

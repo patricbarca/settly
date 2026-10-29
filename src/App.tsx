@@ -13,6 +13,7 @@ import { Icon } from "./components/Icon";
 import { Overlay } from "./components/Overlay";
 import { Login } from "./components/Login";
 import { Home, type HomeTab } from "./components/Home";
+import { StatementsView } from "./components/StatementsView";
 import { MySpending } from "./components/MySpending";
 import { GroupView } from "./components/GroupView";
 import { Logo } from "./components/Logo";
@@ -104,6 +105,8 @@ export default function App() {
     ? "friends"
     : homeTab === "mine" && !group
     ? "mine"
+    : homeTab === "bank" && !group
+    ? "bank"
     : "groups";
   // La pantalla de carga se ve al menos 3s (evita un parpadeo si la sesión
   // resuelve casi al instante, p. ej. con Supabase cacheado).
@@ -126,9 +129,12 @@ export default function App() {
     window.addEventListener("settlia:open-profile", open);
     const openMine = () => { setShowActivity(false); setShowAccount(false); setActiveGroup(null); setHomeTab("mine"); };
     window.addEventListener("settlia:open-mine", openMine);
+    const openBank = () => { setShowActivity(false); setShowAccount(false); setActiveGroup(null); setHomeTab("bank"); };
+    window.addEventListener("settlia:open-bank", openBank);
     return () => {
       window.removeEventListener("settlia:open-profile", open);
       window.removeEventListener("settlia:open-mine", openMine);
+      window.removeEventListener("settlia:open-bank", openBank);
     };
   }, []);
   const showLoading = phase === "loading" || !minLoadDone;
@@ -411,7 +417,7 @@ export default function App() {
         </div>
       )}
 
-      {group ? <GroupView group={group} /> : homeTab === "mine" ? <MySpending /> : <Home tab={homeTab} />}
+      {group ? <GroupView group={group} /> : homeTab === "mine" ? <MySpending /> : homeTab === "bank" ? <StatementsView /> : <Home tab={homeTab} />}
 
       <BottomNav
         active={navActive}
@@ -427,6 +433,12 @@ export default function App() {
         onMine={() => {
           setActiveGroup(null);
           setHomeTab("mine");
+          setShowActivity(false);
+          setShowAccount(false);
+        }}
+        onBank={() => {
+          setActiveGroup(null);
+          setHomeTab("bank");
           setShowActivity(false);
           setShowAccount(false);
         }}
