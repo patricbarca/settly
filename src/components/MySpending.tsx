@@ -19,8 +19,6 @@ import { ProjectionView } from "./ProjectionView";
 import { SavingTips } from "./SavingTips";
 import { ReclassifyModal } from "./ReclassifyModal";
 import { MoveToGroupModal } from "./MoveToGroupModal";
-import { StatementInbox } from "./StatementInbox";
-import { StatementImportModal } from "./StatementImportModal";
 import { VaultNewsModal, vaultNewsHidden } from "./VaultNewsModal";
 import { fixedItems } from "../lib/projection";
 import { usePlan } from "../lib/plan";
@@ -43,13 +41,13 @@ export function MySpending() {
   const personal = useEnsurePersonalGroup();
   const { archived: localArchived } = useArchivedGroups();
   const [reclass, setReclass] = useState(false);
-  const [stmt, setStmt] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   // Novedades: se abren al entrar salvo "no volver a mostrar".
   const [news, setNews] = useState(() => !vaultNewsHidden());
   const all = useMemo(() => myItems(groups, localArchived), [groups, localArchived]);
   const [editing, setEditing] = useState(false);
   const pro = usePlan() === "pro";
+  const pendingBank = personal?.expenses.filter((e) => e.inbox).length ?? 0;
   const fixed = useMemo(() => fixedItems(groups, localArchived), [groups, localArchived]);
   // Cabecera compacta al bajar (histéresis 60/8 px, como en los grupos).
   const [compact, setCompact] = useState(false);
@@ -328,20 +326,16 @@ export function MySpending() {
           {/* Movimientos */}
           {mode !== "projection" && items.length > 0 && (
             <>
-              {personal && (
+              {pendingBank > 0 && (
                 <button
-                  onClick={() => (pro ? setStmt(true) : setShowPaywall(true))}
+                  onClick={() => window.dispatchEvent(new Event("settlia:open-bank"))}
                   className="glass rounded-2xl w-full mt-5 p-3 flex items-center gap-3 text-left hover-lift"
                 >
-                  <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl shrink-0" style={{ background: "rgba(15,163,163,0.16)", color: "var(--teal)" }}><Icon name="doc" size={18} /></span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold">{t("stmt.title")}{!pro && <span className="text-[9px] font-bold ml-1" style={{ color: "var(--teal)" }}>PRO</span>}</span>
-                    <span className="block text-[11px] text-muted">{t("stmt.cta")}</span>
-                  </span>
+                  <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl shrink-0" style={{ background: "rgba(232,146,12,0.16)", color: "var(--amber)" }}><Icon name="doc" size={18} /></span>
+                  <span className="min-w-0 flex-1 text-sm font-semibold">{t("bank.pendingLink", { n: pendingBank })}</span>
                   <Icon name="chevron" size={14} className="text-muted -rotate-90" />
                 </button>
               )}
-              {personal && <StatementInbox personal={personal} />}
               <div className="flex items-center justify-between gap-2 mt-5 mb-2">
                 <h3 className="font-display text-lg font-bold">{t("mine.movements")}</h3>
                 <select value={cat} onChange={(e) => setCat(e.target.value)} className="glass rounded-full px-3 py-1 text-xs font-semibold min-w-0 max-w-[45%] ml-auto" aria-label={t("mine.category")}>
@@ -425,7 +419,6 @@ export function MySpending() {
       {news && <VaultNewsModal onClose={() => setNews(false)} />}
       {showPaywall && <Paywall onClose={() => setShowPaywall(false)} />}
       {reclass && <ReclassifyModal items={all} onClose={() => setReclass(false)} />}
-      {stmt && personal && <StatementImportModal personal={personal} onClose={() => setStmt(false)} />}
 
       {moving && personal && (() => {
         const e = personal.expenses.find((x) => x.id === moving.expenseId);

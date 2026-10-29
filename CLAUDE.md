@@ -51,6 +51,11 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Sección "Banco" (estados de cuenta) en la barra inferior (2026-10-29)
+- Pestaña nueva **"Banco" / "Bank"** (`BottomNav` `bank`, icono `doc`; `HomeTab "bank"` → `StatementsView.tsx`). Lista **un elemento por estado de cuenta importado**: nombre del archivo, rango de fechas (primer–último movimiento), nº de movimientos, total y "N por revisar". Tocar uno → sus movimientos por fecha (`StatementInbox` con `statementId`), cada uno con su estado ("En Mis gastos" o por revisar) y las mismas acciones (editar, pasar a Mis gastos, a un grupo, descartar). El botón **Importar estado de cuenta** (Pro) vive aquí.
+- Cada importación guarda en sus gastos `statementId` (`st_<time>`), `statementName` (archivo sin extensión) e `importedAt`. Lo importado antes de esto se agrupa en **"Importados antes"** (`stmtKey`: `source`/id `stm_` sin `statementId`).
+- **Mis gastos** ya no tiene la tarjeta de importar ni la bandeja: si hay pendientes muestra un enlace "N movimientos del banco por revisar" que abre Banco (evento `settlia:open-bank`). Strings `nav.bank`, `bank.*`. Barra inferior verificada en captura (375 px, 6 botones caben). `tsc` + build; resto **no probado en pantalla**.
+
 ### Bandeja "Del estado de cuenta" (2026-10-29)
 - Lo importado del banco ya **no entra directo** en Mis gastos: se guarda en el Personal con `Expense.inbox: true` + `source: "statement"` y aparece en la tarjeta **"Del estado de cuenta · N"** (`StatementInbox.tsx`, en Mis gastos encima de Movimientos), agrupado **por fecha**, con casillas y "Seleccionar todos". Tocar uno abre el `ExpenseForm` para **editarlo** (concepto, importe, categoría, fecha). Con la selección: **"Pasar N a Mis gastos"** (`patchExpense inbox:null`), **"Pasar a un grupo"** (solo con 1 marcado, `MoveToGroupModal`) o **Descartar** (borra).
 - Los gastos en bandeja **no cuentan** en ningún total: `myItems` los salta (Mis gastos, Proyección, consejos) y la tarjeta Personal de Home también. Siguen contando para detectar duplicados al reimportar.
