@@ -69,7 +69,7 @@ export async function parseStatement(text: string, categories: string[], labels:
   const year = new Date().getFullYear();
   const all: StatementTx[] = [];
   const seen = new Map<string, number>();
-  for (const chunk of chunkText(text).slice(0, 8)) {
+  for (const chunk of chunkText(redactStatement(text)).slice(0, 8)) {
     const { data, error } = await supabase.functions.invoke("parse-statement", { body: { text: chunk, categories, labels, year } });
     if (error) throw error;
     const res = data as { transactions?: Omit<StatementTx, "key">[]; error?: string };
@@ -94,4 +94,9 @@ export function findDuplicate(tx: StatementTx, expenses: Expense[]): Expense | u
       e.id === tx.key ||
       (Math.abs(e.amount - tx.amount) < 0.011 && Math.abs(Date.parse(e.date) - t) <= 2 * 86400000),
   );
+}
+
+/** Tapa números de tarjeta/cuenta (12-19 dígitos) antes de mandar el texto a la IA. */
+export function redactStatement(text: string): string {
+  return text.replace(/\b\d(?:[ -]?\d){11,18}\b/g, "[nº]");
 }
