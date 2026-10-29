@@ -114,6 +114,7 @@ export function parseExpense(
   // Intervalo de recurrencia.
   let interval: RecurrenceInterval | undefined;
   if (/\bdaily\b|\bdiari[ao]\b|cada d[ií]a|(every|per|each)\s+day|al d[ií]a/.test(t)) interval = "daily";
+  else if (/\bbi-?weekly\b|\bfortnight(ly)?\b|\bquincenal\b|cada (dos|2) semanas|(every|each)\s+(two|2) weeks/.test(t)) interval = "biweekly";
   else if (/\bweekly\b|\bsemanal\b|cada semana|(every|per|each)\s+week|(a la|por) semana/.test(t)) interval = "weekly";
   else if (/\bmonthly\b|\bmensual(es)?\b|cada mes|(every|per|each)\s+month|(al|por) mes/.test(t)) interval = "monthly";
   else if (/\byearly\b|\banual(es)?\b|\bannual(ly)?\b|cada a[ñn]o|(every|per|each)\s+year|(al|por) a[ñn]o/.test(t)) interval = "yearly";

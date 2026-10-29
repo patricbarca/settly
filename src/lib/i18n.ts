@@ -979,6 +979,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "recur.startDate": { es: "Primera fecha", en: "First date" },
   "recur.daily":     { es: "Diario", en: "Daily" },
   "recur.weekly":    { es: "Semanal", en: "Weekly" },
+  "recur.biweekly":  { es: "Cada 2 semanas", en: "Fortnightly" },
   "recur.monthly":   { es: "Mensual", en: "Monthly" },
   "recur.yearly":    { es: "Anual", en: "Yearly" },
   "recur.next":      { es: "Próx. {date}", en: "Next {date}" },

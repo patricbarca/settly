@@ -12,7 +12,7 @@ import { MemberBubble } from "./MemberBubble";
 import { Overlay } from "./Overlay";
 import { ConfirmModal } from "./ConfirmModal";
 
-const INTERVALS: RecurrenceInterval[] = ["daily", "weekly", "monthly", "yearly"];
+const INTERVALS: RecurrenceInterval[] = ["daily", "weekly", "biweekly", "monthly", "yearly"];
 
 function RecurringModal({ group, onClose }: { group: Group; onClose: () => void }) {
   const t = useT();

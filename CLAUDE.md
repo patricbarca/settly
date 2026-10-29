@@ -51,6 +51,12 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Añadir gasto: categoría en desplegable, "Cada 2 semanas" y la X vuelve atrás (2026-10-29)
+- **Categoría:** en `ExpenseForm` las 15 pastillas pasan a un `<select>` (con el icono de la categoría elegida a la izquierda), igual que en el editor del escaneo.
+- **Frecuencia "Cada 2 semanas" / "Fortnightly":** `RecurrenceInterval` gana `"biweekly"` (`types.ts`); `advanceDate` suma 14 días; `projection.ts` cuenta sus cobros reales (2 o 3 por mes) en `occurrencesInMonth`/`occurrencesBetween`; sale en las frecuencias de `AddExpense` y `RecurringList` (string `recur.biweekly`). El parser local reconoce "cada dos semanas", "quincenal", "fortnightly", "biweekly". `parse-expense` (IA) no se tocó: no devuelve `biweekly` (cae al parser o se elige a mano). ⚠️ Builds viejos de iOS no conocen `biweekly`: no avanzan la fecha de ese recurrente (los ids deterministas `recur_<regla>_<fecha>` evitan duplicados).
+- **La X del panel de añadir** ya no cierra todo: desde "Escribir" o desde el borrador (manual/IA) vuelve al menú de los 4 métodos (descarta el borrador, `cancelDraft`); solo en el menú cierra el panel.
+- `tsc` limpio; **no probado en pantalla**.
+
 ### Unirse por link requiere aprobación del dueño (2026-10-26, PR #338 + `migrate_v29`)
 - **Antes:** cualquiera con el link (reenviado, en un chat grande…) entraba directo durante 7 días.
 - **Ahora:** `join_by_token` une directo solo si ya eres miembro o eres el **dueño** (o el grupo no tiene dueño); si no, crea una fila en **`join_requests`** (`pending`, guarda nombre/avatar y la plaza elegida en `claim_member_id`; una pendiente por usuario y grupo) y devuelve `{pending, group_name, owner_id}`. El dueño acepta/rechaza con **`approve_join_request(id)`** / **`reject_join_request(id)`** (solo `groups.owner_id`). La lógica de unir (reclamar plaza o crear miembro + actividad) vive en `_join_member` (interna, sin execute para nadie).

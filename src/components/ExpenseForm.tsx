@@ -409,20 +409,19 @@ export function ExpenseForm({
       {/* Category */}
       <div>
         <label className="text-xs font-semibold text-muted">{t("form.category")}</label>
-        <div className="flex gap-1.5 flex-wrap mt-1">
-          {CATEGORIES.map((c) => {
-            const on = f.category === c.id;
-            return (
-              <button
-                key={c.id}
-                onClick={() => up("category", c.id)}
-                className={`rounded-full px-3 py-1 text-sm inline-flex items-center gap-1.5 ${on ? "" : "glass text-muted"}`}
-                style={on ? { background: "var(--pill-bg)", color: "var(--pill-fg)" } : undefined}
-              >
-                <Icon name={c.icon} size={15} /> {t(`cat.${c.id}`)}
-              </button>
-            );
-          })}
+        <div className="relative mt-1">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-muted">
+            <Icon name={(CATEGORIES.find((c) => c.id === f.category) ?? CATEGORIES[0]).icon} size={16} />
+          </span>
+          <select
+            value={f.category}
+            onChange={(e) => up("category", e.target.value as Category)}
+            className="glass w-full min-w-0 rounded-xl pl-9 pr-3 py-2.5 text-sm"
+          >
+            {CATEGORIES.map((c) => (
+              <option key={c.id} value={c.id}>{t(`cat.${c.id}`)}</option>
+            ))}
+          </select>
         </div>
       </div>
 

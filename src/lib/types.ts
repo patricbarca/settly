@@ -19,7 +19,7 @@ export type Category =
   | "otros";
 
 export type SplitMode = "equal" | "percent" | "exact" | "shares";
-export type RecurrenceInterval = "daily" | "weekly" | "monthly" | "yearly";
+export type RecurrenceInterval = "daily" | "weekly" | "biweekly" | "monthly" | "yearly";
 
 export interface RecurringExpense {
   id: string;
