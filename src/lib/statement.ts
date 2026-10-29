@@ -3,7 +3,7 @@
 // archivo. El usuario revisa los movimientos antes de guardarlos.
 import { supabase } from "./supabase";
 import { requestAIConsent, AIConsentDeclined } from "./aiConsent";
-import type { Category, Expense } from "./types";
+import type { Category, Expense, Group } from "./types";
 
 export interface StatementTx {
   key: string; // id estable del movimiento (para no duplicar al reimportar)
@@ -99,4 +99,21 @@ export function findDuplicate(tx: StatementTx, expenses: Expense[]): Expense | u
 /** Tapa números de tarjeta/cuenta (12-19 dígitos) antes de mandar el texto a la IA. */
 export function redactStatement(text: string): string {
   return text.replace(/\b\d(?:[ -]?\d){11,18}\b/g, "[nº]");
+}
+
+/** Gasto de un grupo compartido que pagaste tú por el mismo total (±0,01) a ≤2 días:
+ *  el cargo del banco probablemente ya está en ese grupo. Devuelve el nombre del grupo. */
+export function findInGroups(tx: StatementTx, groups: Group[]): string | undefined {
+  const t = Date.parse(tx.date);
+  for (const g of groups) {
+    if (g.personal || g.archived) continue;
+    for (const e of g.expenses) {
+      if (Math.abs(Date.parse(e.date) - t) > 2 * 86400000) continue;
+      const paid = e.payments?.length
+        ? (e.payments.find((p) => p.memberId === g.meId)?.amount ?? 0)
+        : e.payerId === g.meId ? e.amount : 0;
+      if (paid && (Math.abs(paid - tx.amount) < 0.011 || Math.abs(e.amount - tx.amount) < 0.011)) return g.name;
+    }
+  }
+  return undefined;
 }

@@ -397,6 +397,7 @@ const DICT: Record<string, { es: string; en: string }> = {
   "stmt.found": { es: "{n} movimientos encontrados", en: "{n} transactions found" },
   "stmt.credit": { es: "Ingreso", en: "Income" },
   "stmt.transfer": { es: "Transferencia", en: "Transfer" },
+  "stmt.inGroup": { es: "Ya agregado en {g}", en: "Already added in {g}" },
   "stmt.dup": { es: "¿Ya apuntado?", en: "Already logged?" },
   "stmt.save": { es: "Añadir {n} · {total}", en: "Add {n} · {total}" },
   "stmt.saving": { es: "Guardando…", en: "Saving…" },
