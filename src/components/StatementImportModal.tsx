@@ -10,6 +10,8 @@ import { Overlay } from "./Overlay";
 import { Icon } from "./Icon";
 
 const KNOWN = new Set(CATEGORIES.map((c) => c.id as string));
+/** Transferencias (a otra cuenta tuya, a otro banco…): no suelen ser gasto. */
+const isTransfer = (d: string) => /\b(transfer|trf|tfr|bpay to self|internal|transferencia|traspaso)\b/i.test(d);
 
 /** "Importar estado de cuenta" (Pro): CSV o PDF del banco → la IA saca los
  *  movimientos → el usuario elige cuáles van a su grupo Personal. Los cargos
@@ -45,7 +47,7 @@ export function StatementImportModal({ personal, onClose }: { personal: Group; o
       const res = await parseStatement(text, CATEGORIES.map((c) => c.id), Object.fromEntries(CATEGORIES.map((c) => [c.id, catName(c.id)])));
       if (!res.length) { setPhase("pick"); setErr(t("stmt.none")); return; }
       const s: Record<string, { on: boolean; cat: string }> = {};
-      for (const x of res) s[x.key] = { on: x.type === "debit" && !findDuplicate(x, personal.expenses), cat: x.category };
+      for (const x of res) s[x.key] = { on: x.type === "debit" && !isTransfer(x.description) && !findDuplicate(x, personal.expenses), cat: x.category };
       setTxs(res);
       setSel(s);
       setPhase("review");
@@ -147,6 +149,7 @@ export function StatementImportModal({ personal, onClose }: { personal: Group; o
                       <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                         <span className="text-[11px] text-muted">{fmtDate(x.date)}</span>
                         {x.type === "credit" && <span className="text-[10px] font-semibold rounded-full px-1.5 py-0.5" style={{ background: "rgba(22,163,74,.15)", color: "#16a34a" }}>{t("stmt.credit")}</span>}
+                        {isTransfer(x.description) && x.type === "debit" && <span className="text-[10px] font-semibold rounded-full px-1.5 py-0.5" style={{ background: "rgba(91,91,240,.15)", color: "var(--indigo)" }}>{t("stmt.transfer")}</span>}
                         {dup && <span className="text-[10px] font-semibold rounded-full px-1.5 py-0.5" style={{ background: "rgba(232,146,12,.15)", color: "var(--amber)" }}>{t("stmt.dup")}</span>}
                         <select
                           value={s.cat}
