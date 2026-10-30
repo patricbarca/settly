@@ -90,13 +90,23 @@ export function InviteLanding({ token, onJoin, onOwn }: { token: string; onJoin:
       <p className="text-xs text-muted text-center mt-2">{t("invl.free")}</p>
 
       <div className="glass rounded-3xl p-4 mt-6">
-        <h2 className="font-display text-lg font-bold">{t("invl.whatTitle")}</h2>
-        <ul className="mt-2 space-y-2 text-sm">
-          <li>✍️ {t("invl.b1")}</li>
-          <li>📸 {t("invl.b2")}</li>
-          <li>🔁 {t("invl.b3")}</li>
-          <li>🔒 {t("invl.b4")}</li>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="font-display text-lg font-bold">{t("invl.whatTitle")}</h2>
+          <span className="text-[10px] font-bold uppercase tracking-wide rounded-full px-2 py-1 text-white shrink-0" style={{ background: "linear-gradient(135deg, var(--indigo), var(--teal))" }}>✨ {t("invl.aiTag")}</span>
+        </div>
+        <p className="text-sm text-muted mt-1">{t("invl.whatSub")}</p>
+        <ul className="mt-3 space-y-3 text-sm">
+          {([["✍️", "b1"], ["📸", "b2"], ["🔁", "b3"], ["🔒", "b4"]] as const).map(([icon, k]) => (
+            <li key={k} className="flex gap-3">
+              <span className="text-lg leading-none mt-0.5">{icon}</span>
+              <span><b>{t(`invl.${k}t`)}.</b> {t(`invl.${k}`)}</span>
+            </li>
+          ))}
         </ul>
+        <div className="rounded-2xl p-3 mt-4 text-sm" style={{ background: "color-mix(in srgb, var(--teal) 12%, transparent)" }}>
+          <b style={{ color: "var(--teal)" }}>{t("invl.diffTitle")}</b>
+          <p className="mt-0.5">{t("invl.diff")}</p>
+        </div>
       </div>
 
       <div className="mt-auto pt-8 text-center">
