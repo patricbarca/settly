@@ -40,3 +40,7 @@ do $$ declare d text; begin
     execute d;
   end if;
 end $$;
+
+-- 4) (mismo día) invite_landing devuelve también hero_color / hero_image (solo si
+--    es URL https, no base64) / hero_pos, para que la página use la portada del grupo.
+--    Aplicada como migración "invite_landing_hero" (ver la versión en producción).

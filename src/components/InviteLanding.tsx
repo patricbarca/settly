@@ -3,6 +3,7 @@ import { supabase } from "../lib/supabase";
 import { useT, useLang, setLang } from "../lib/i18n";
 import { money } from "../lib/format";
 import { Logo } from "./Logo";
+import { heroBackground, HeroCover } from "../lib/heroStyle";
 
 type Info = {
   name: string;
@@ -13,6 +14,9 @@ type Info = {
   first_names: string[];
   expenses: number;
   total: number;
+  hero_color?: string | null;
+  hero_image?: string | null;
+  hero_pos?: { x: number; y: number; z: number } | null;
 };
 
 /** Origen de la cuenta: se guarda aquí y se apunta en el perfil al crear la cuenta. */
@@ -43,6 +47,9 @@ export function InviteLanding({ token, onJoin, onOwn }: { token: string; onJoin:
 
   const shown = info.first_names.slice(0, 5);
   const more = info.members - shown.length;
+  // Misma apariencia que la tarjeta del grupo (color o foto de portada).
+  const look = { heroColor: info.hero_color ?? undefined, heroImage: info.hero_image ?? undefined, heroImagePos: info.hero_pos ?? undefined };
+  const cover = heroBackground(look);
   const join = () => { setAcq("invite"); onJoin(); };
   const own = () => { setAcq("invite_cta"); onOwn(); };
 
@@ -58,7 +65,8 @@ export function InviteLanding({ token, onJoin, onOwn }: { token: string; onJoin:
         </button>
       </div>
 
-      <div className="hero rounded-3xl p-5 mt-6 text-white relative overflow-hidden">
+      <div className={`${cover ? "relative isolate" : "hero"} rounded-3xl p-5 mt-6 text-white relative overflow-hidden`} style={cover}>
+        {cover && <HeroCover g={look} />}
         <p className="text-xs uppercase tracking-wide opacity-80">
           {info.owner ? t("invl.from", { name: info.owner }) : t("invl.fromSomeone")}
         </p>
