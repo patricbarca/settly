@@ -29,7 +29,7 @@ export const FREE_AI_QUOTA = 3;
 /** Máximo de grupos activos en el plan gratis (Pro = ilimitado). */
 export const FREE_GROUP_LIMIT = 3;
 /** Cuota mensual de IA para Pro (por tipo). Se elimina cuando Stripe esté activo. */
-export const PRO_AI_QUOTA: Record<AIKind, number> = { scan: 30, voice: 30, text: 50 };
+export const PRO_AI_QUOTA: Record<AIKind, number> = { scan: 100000, voice: 100000, text: 100000 }; // sin tope mensual; el freno es ai_guard (300/día)
 
 let plan: Plan = "free";
 let planReady = false;
