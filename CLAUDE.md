@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Pro = IA sin tope mensual + tope diario por tipo (2026-10-30, `migrate_v31` + `migrate_v32`, ✅ aplicadas)
+- Pro ya no tiene cupo mensual (`ai_quota` y `PRO_AI_QUOTA` = 100000, un "sin límite" técnico). El freno contra abusos es **`ai_guard`** en las Edge Functions: Pro **por tipo y día: 20 escaneos, 20 dictados, 50 textos** (peor caso ≈ $2/mes por usuario frente a ~$5.94 netos). Gratis: 3 al mes por tipo + 30 al día en total. Al llegar al tope la función devuelve 429 y la app muestra un error genérico (pendiente: mensaje "vuelve mañana"). Landing y Paywall dicen "IA ilimitada (uso justo)".
+
 ### Sección "Banco" (estados de cuenta) en la barra inferior (2026-10-29)
 - Pestaña nueva **"Banco" / "Bank"** (`BottomNav` `bank`, icono `doc`; `HomeTab "bank"` → `StatementsView.tsx`). Lista **un elemento por estado de cuenta importado**: nombre del archivo, rango de fechas (primer–último movimiento), nº de movimientos, total y "N por revisar". Tocar uno → sus movimientos por fecha (`StatementInbox` con `statementId`), cada uno con su estado ("En Mis gastos" o por revisar) y las mismas acciones (editar, pasar a Mis gastos, a un grupo, descartar). El botón **Importar estado de cuenta** (Pro) vive aquí.
 - Cada importación guarda en sus gastos `statementId` (`st_<time>`), `statementName` (archivo sin extensión) e `importedAt`. Lo importado antes de esto se agrupa en **"Importados antes"** (`stmtKey`: `source`/id `stm_` sin `statementId`).
