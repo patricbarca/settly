@@ -35,12 +35,19 @@ import { AIConsentModal } from "./components/AIConsentModal";
 import { registerAIConsentOpener, resolveAIConsent } from "./lib/aiConsent";
 import { registerAppOpen, shouldShowFeedbackPrompt, markFeedbackPromptShown } from "./lib/feedbackPrompt";
 import { AdminDashboard } from "./components/AdminDashboard";
+import { InviteLanding, ACQ_KEY } from "./components/InviteLanding";
+import { supabase } from "./lib/supabase";
 
 const ADMIN_EMAIL = "paabarcad@gmail.com";
 
 export default function App() {
   const user = useUser();
   const phase = useAuthPhase();
+  // Enlace de invitación con el que se abrió la app (para la página previa al login).
+  const [inviteToken] = useState(() => {
+    try { return new URLSearchParams(window.location.search).get("join") || sessionStorage.getItem("settly.pendingJoin"); } catch { return null; }
+  });
+  const [inviteSeen, setInviteSeen] = useState(false);
   const t = useT();
   const lang = useLang();
   const theme = useTheme();
@@ -291,6 +298,18 @@ export default function App() {
   }, [phase]);
 
   useEffect(() => {
+    // Origen de la cuenta (enlace de invitación / "crea tu propio grupo"): solo
+    // en cuentas recién creadas y una sola vez, para medir si el ciclo funciona.
+    if (phase !== "authenticated" || !user?.createdAt || user.provider === "guest") return;
+    let acq: string | null = null;
+    try { acq = localStorage.getItem(ACQ_KEY); } catch { /* */ }
+    if (!acq) return;
+    try { localStorage.removeItem(ACQ_KEY); } catch { /* */ }
+    if (Date.now() - new Date(user.createdAt).getTime() > 30 * 60 * 1000) return;
+    void supabase.from("profiles").update({ acquired_via: acq }).eq("id", user.id).is("acquired_via", null);
+  }, [phase, user?.id, user?.createdAt, user?.provider]);
+
+  useEffect(() => {
     // Conversión "registro": SOLO cuentas recién creadas, no cada login — si
     // no, el optimizador de la campaña aprendería de usuarios recurrentes y
     // compraría tráfico que ya teníamos. Ventana de 10 min sobre created_at +
@@ -354,6 +373,18 @@ export default function App() {
         </div>
         <div className="text-white font-brand text-2xl font-extrabold">Settlia</div>
       </div>
+    );
+  }
+
+  // Quien abre un enlace de invitación sin sesión ve primero de qué grupo se
+  // trata y qué es Settlia (y un "crea tu propio grupo" para los curiosos).
+  if ((phase === "unauthenticated") && inviteToken && !inviteSeen) {
+    return (
+      <InviteLanding
+        token={inviteToken}
+        onJoin={() => setInviteSeen(true)}
+        onOwn={() => { try { sessionStorage.removeItem("settly.pendingJoin"); } catch { /* */ } setInviteSeen(true); }}
+      />
     );
   }
 

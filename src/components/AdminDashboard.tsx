@@ -22,6 +22,9 @@ type Stats = {
   pro_users: number;
   total_redemptions: number;
   push_subs: number;
+  via_invite?: number;
+  via_invite_cta?: number;
+  groups_from_cta?: number;
   recent_users: { email: string; name: string; created_at: string; provider: string }[];
   users_by_month: { month: string; count: number }[];
 };
@@ -96,6 +99,8 @@ export function AdminDashboard({ onClose }: { onClose: () => void }) {
                 <StatCard label="Pagos registrados" value={stats.total_settlements ?? 0} />
                 <StatCard label="Códigos canjeados" value={stats.total_redemptions} />
                 <StatCard label="Push suscripciones" value={stats.push_subs} />
+                <StatCard label="Llegaron por un enlace" value={stats.via_invite ?? 0} sub="se unieron a un grupo" />
+                <StatCard label="Crearon su propio grupo" value={stats.via_invite_cta ?? 0} sub={`desde un enlace · ${stats.groups_from_cta ?? 0} grupos`} />
                 <StatCard label="Free" value={stats.total_users - stats.pro_users} sub="sin plan Pro" />
               </div>
 
