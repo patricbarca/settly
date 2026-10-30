@@ -51,6 +51,13 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Página del enlace de invitación + medir el ciclo viral (2026-10-30, `migrate_v33`, ✅ aplicada)
+- Consejo de Reddit: "que el enlace del grupo sea lo mejor de Settlia y lleve un 'crea tu propio viaje'". Antes, quien abría `?join=` sin sesión iba directo al login.
+- **`InviteLanding.tsx`** (se muestra si `phase === "unauthenticated"` y hay token): "{dueño} te invita a", nombre del grupo, nombres de pila (máx. 5 + "+N"), "N gastos · total", botón **"Unirme a {grupo}"**, bloque "¿Qué es Settlia?" y al pie **"¿Organizas otro viaje? Crea tu propio grupo gratis"** (este quita el `pendingJoin`). Strings `invl.*`. Enlace caducado/falso → login de siempre.
+- **RPC `invite_landing(token)`** (SECURITY DEFINER, también para `anon`): solo nombre del grupo, tipo, moneda, nombre de pila del dueño, nº de miembros, nombres de pila, nº de gastos y total en la moneda del grupo. **Sin saldos, emails ni importes por persona** (el enlace se reenvía).
+- **Medición:** columna `profiles.acquired_via` (`invite` / `invite_cta`); el cliente la guarda en localStorage (`settlia.acq`) al pulsar y la escribe en el perfil solo si la cuenta se creó hace <30 min y el campo está vacío. **Admin → Métricas:** "Llegaron por un enlace", "Crearon su propio grupo" (+ nº de grupos que crearon). Ese último es el número que dice si el ciclo funciona.
+- ✅ Probado en navegador (servidor simulado): página, "Unirme" → login con `acq=invite`, "Crea tu propio grupo" → `acq=invite_cta` y sin `pendingJoin`, enlace inválido → login. RPC probado en la DB con un enlace real y uno falso. ⚠️ Builds viejos de iOS y la app nativa: el enlace abre la web, así que también ven la página.
+
 ### Pro = IA sin tope mensual + tope diario por tipo (2026-10-30, `migrate_v31` + `migrate_v32`, ✅ aplicadas)
 - Pro ya no tiene cupo mensual (`ai_quota` y `PRO_AI_QUOTA` = 100000, un "sin límite" técnico). El freno contra abusos es **`ai_guard`** en las Edge Functions: Pro **por tipo y día: 20 escaneos, 20 dictados, 50 textos** (peor caso ≈ $2/mes por usuario frente a ~$5.94 netos). Gratis: 3 al mes por tipo + 30 al día en total. Al llegar al tope la función devuelve 429 y la app muestra un error genérico (pendiente: mensaje "vuelve mañana"). Landing y Paywall dicen "IA ilimitada (uso justo)".
 
