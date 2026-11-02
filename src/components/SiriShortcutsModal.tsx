@@ -186,12 +186,15 @@ function PaymentPrefsCard() {
       )}
       <div>
         <div className="text-xs font-semibold text-muted">{t("pp.mode")}</div>
-        <div className="seg mt-1.5" role="tablist">
-          {(["ask", "inbox"] as const).map((m) => (
+        <div className="grid grid-cols-2 gap-2 mt-1.5" role="radiogroup">
+          {(["ask", "inbox"] as const).map((m) => {
+            const on = (p.mode ?? "ask") === m;
+            return (
             <button
               key={m}
-              role="tab"
-              aria-selected={(p.mode ?? "ask") === m}
+              type="button"
+              role="radio"
+              aria-checked={on}
               disabled={modeBusy}
               onClick={async () => {
                 if ((p.mode ?? "ask") === m) return;
@@ -207,11 +210,23 @@ function PaymentPrefsCard() {
                 }
                 setModeBusy(false);
               }}
-              className="flex-1 text-xs"
+              className="rounded-2xl px-3 py-2.5 text-sm font-semibold flex items-center gap-2 text-left leading-tight transition-colors"
+              style={{
+                border: `2px solid ${on ? "var(--teal)" : "var(--line)"}`,
+                background: on ? "rgba(15,163,163,0.16)" : "transparent",
+                color: on ? "var(--ink)" : "var(--muted)",
+              }}
             >
+              <span
+                className="h-4 w-4 rounded-full shrink-0 flex items-center justify-center"
+                style={{ border: `2px solid ${on ? "var(--teal)" : "var(--muted)"}` }}
+              >
+                {on && <span className="h-2 w-2 rounded-full" style={{ background: "var(--teal)" }} />}
+              </span>
               {m === "ask" ? t("pp.modeAsk") : t("pp.modeInbox")}
             </button>
-          ))}
+            );
+          })}
         </div>
         {modeErr && <p className="text-xs mt-1" style={{ color: "var(--coral)" }}>{t("pp.modeError")}</p>}
         {p.mode === "inbox" && (

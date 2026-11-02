@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### "Qué pagos te pregunta": selector de modo más claro (2026-11-02)
+- En iPhone el control segmentado "Preguntarme en cada pago / Guardar en la bandeja" no dejaba ver cuál estaba elegido. Ahora son dos tarjetas tipo radio (borde teal + punto en la elegida, texto que puede partirse en dos líneas). `tsc` limpio.
+
 ### Guía animada estilo iOS de la automatización de Wallet (2026-11-02)
 - `public/guides/wallet-automation.html`: página autónoma que imita la app Atajos (dedo que toca, pantallas que se deslizan, escribe "Settlia" en el buscador, elige "Preguntar por un pago", conecta Comercio/Importe a "Entrada del atajo" y termina con el aviso en la pantalla bloqueada). 6 pasos, ~30 s en bucle, pausar/reiniciar/saltar. ES por defecto, `?lang=en` traduce. Se muestra en un `<iframe>` (760 px) dentro de "Siri y Atajos"; sustituye a `WalletGuideAnimation.tsx` (borrado; strings `siriAnim.*` quedan sin uso). Revisada en navegador; en iPhone, con el próximo build. Borrador aprobado por el usuario en el artifact "Automatización de Wallet".
 
