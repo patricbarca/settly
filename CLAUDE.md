@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Guía de la automatización: flujo real de iOS 26 (2026-11-02)
+- Con capturas del usuario: en iOS 26 se entra por **Atajos → ＋ (abajo) → pantalla de IA "Describe a shortcut" → Edit → chip Automation → buscar "Wallet" → "When I tap a Wallet Card or Pass"** → "When Any Card is tapped" (⌄: Automation on, Notify off) → buscador de abajo "Settlia" → Ask about a payment → Merchant/Amount vía variable **Transaction**. Animación (`public/guides/wallet-automation.html`) rehecha a 7 pasos con esas pantallas (ES/EN) y textos `siri.step1-6` actualizados (mencionan también el camino de iOS anteriores). Revisada en capturas de navegador. El usuario completó la automatización en su iPhone; falta confirmar que llega el aviso al pagar.
+
 ### Guía de la automatización adaptada a iOS 26 (2026-11-02)
 - Capturas del usuario (iOS 26): el disparador es "When <tarjeta> is tapped" con interruptores **Automation** y **Notify** (ya no "Ejecutar inmediatamente"), la acción se busca en el buscador de abajo (sin "Nuevo atajo en blanco") y la variable se llama **Transaction** (hay que tocarla y elegir Merchant/Amount). El usuario se quedó con Merchant vacío. Pasos `siri.step2-5` reescritos para iOS 26 y versiones anteriores; la animación `public/guides/wallet-automation.html` muestra los interruptores, el buscador y la variable Transacción.
 

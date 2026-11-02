@@ -39,7 +39,7 @@ h1{font-size:20px;margin:0;text-align:center;text-wrap:balance}
 .search .typed{color:#fff}.caret{display:inline-block;width:1.5px;height:14px;background:var(--ios-blue);vertical-align:-2px;animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
 .action{margin:10px 14px;background:var(--ios-card);border-radius:12px;padding:12px;line-height:1.9}
-.action .h{display:flex;gap:8px;align-items:center;font-weight:600;margin-bottom:4px}
+.action .h{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-weight:600;margin-bottom:4px}
 .app{width:22px;height:22px;border-radius:6px;background:linear-gradient(145deg,#0f2d54,#0a1a2e);display:grid;place-items:center;color:#2ee6c8;font-size:12px;font-weight:800}
 .param{display:inline-block;padding:0 7px;border-radius:6px;color:var(--ios-blue);background:rgba(10,132,255,.14);transition:all .25s}
 .param.var{background:var(--ios-blue);color:#fff}
@@ -57,6 +57,16 @@ h1{font-size:20px;margin:0;text-align:center;text-wrap:balance}
 .notif .btns span{padding:8px 2px;border-bottom:1px solid var(--ios-line);color:var(--ios-blue)}
 .finger{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:rgba(255,255,255,.35);border:2px solid rgba(255,255,255,.85);z-index:40;pointer-events:none;transition:left .55s cubic-bezier(.4,0,.2,1),top .55s cubic-bezier(.4,0,.2,1),transform .12s,opacity .3s;opacity:0}
 .finger.press{transform:scale(.75);background:rgba(255,255,255,.6)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px}
+.tile{height:62px;border-radius:14px;padding:8px;font-weight:600;font-size:11px;display:flex;align-items:flex-end;color:#fff}
+.fab{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);width:48px;height:48px;border-radius:50%;background:rgba(120,120,140,.55);display:grid;place-items:center;font-size:24px;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+.pill{background:#2c2c2e;color:#fff;border-radius:16px;padding:5px 12px;font-size:13px}
+.aibox{margin:40px 18px 0;border-radius:24px;border:1px solid #333;padding:30px 14px;text-align:center;font-weight:600;font-size:15px}
+.sheet{margin-top:auto;background:#1c1c1e;border-radius:22px 22px 0 0;padding:10px 0 18px}
+.chips{display:flex;gap:6px;padding:0 14px 8px;overflow:hidden}
+.chipb{background:#2c2c2e;color:var(--ios-blue);border-radius:14px;padding:5px 10px;font-size:11px;white-space:nowrap;transition:background .2s}
+.chipb.hl{background:#3a3a3c}
+.chip{background:#636366;color:#fff;border-radius:6px;padding:0 6px;font-size:11px}
 .caption{min-height:66px;text-align:center;font-size:15px;line-height:1.45;max-width:340px}
 .caption b{color:var(--teal)}
 .ctrls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
@@ -76,66 +86,76 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
       <div class="island"></div>
       <div class="status"><span>9:41</span><span>100%</span></div>
 
-      <!-- 1 Atajos: Automatización -->
+      <!-- 1 Atajos: todos los atajos, ＋ abajo -->
       <section class="scene" id="s1">
-        <div class="nav"><span></span><span id="plus" style="font-size:22px">＋</span></div>
-        <div class="big">Automatización</div>
-        <div class="group"><div class="row"><div class="ic" style="background:#ff9f0a">⏰</div><div class="t">Al despertar<div class="s">Cuando suena la alarma</div></div></div></div>
-        <div class="tabbar"><span>Atajos</span><span class="a">Automatización</span><span>Galería</span></div>
+        <div class="nav"><span>‹</span><span style="color:#fff">Seleccionar</span></div>
+        <div class="big">Todos los atajos</div>
+        <div class="tiles">
+          <div class="tile" style="background:#e5646a">Atajo nuevo</div><div class="tile" style="background:#e7c43b">Abrir tarjeta</div>
+          <div class="tile" style="background:#eaa154">TV YouTube</div><div class="tile" style="background:#5fc46a">Escanear QR</div>
+          <div class="tile" style="background:#c972c9">Dictado</div><div class="tile" style="background:#4fc5a9">Robodock</div>
+        </div>
+        <div class="fab" id="plus">＋</div>
       </section>
 
-      <!-- 2 Nueva automatización -->
+      <!-- 2 Pantalla de IA: tocar Edit -->
       <section class="scene off-b" id="s2">
-        <div class="nav"><span>Cancelar</span><b>Nueva automatización</b><span></span></div>
-        <div class="search">🔍 Buscar</div>
-        <div class="group">
-          <div class="row"><div class="ic" style="background:#ff9f0a">⏰</div><div class="t">Hora del día</div><span class="chev">›</span></div>
-          <div class="row"><div class="ic" style="background:#ff9f0a">⏱</div><div class="t">Alarma</div><span class="chev">›</span></div>
-          <div class="row"><div class="ic" style="background:#0a84ff">✉</div><div class="t">Correo</div><span class="chev">›</span></div>
-          <div class="row"><div class="ic" style="background:#30d158">💬</div><div class="t">Mensaje</div><span class="chev">›</span></div>
-          <div class="row" id="walletRow"><div class="ic" style="background:#111;border:1px solid #333">💳</div><div class="t">Wallet<div class="s">Al acercar una tarjeta o pase de Wallet</div></div><span class="chev">›</span></div>
-          <div class="row"><div class="ic" style="background:#636366">📶</div><div class="t">NFC</div><span class="chev">›</span></div>
-        </div>
+        <div class="nav"><span>‹</span><b>Atajo nuevo</b><span class="pill" id="edit">Editar</span></div>
+        <div class="aibox">¿Qué quieres que haga tu atajo?<div class="s" style="margin-top:8px">“Pon mi playlist al llegar al gimnasio”</div></div>
+        <div class="search" style="margin-top:auto;margin-bottom:24px">Describe un atajo</div>
       </section>
 
-      <!-- 3 Wallet -->
+      <!-- 3 Editor vacío: chip Automatización + buscar Wallet -->
       <section class="scene off-r" id="s3">
-        <div class="nav"><span>‹ Atrás</span><b>Wallet</b><span id="next">Siguiente</span></div>
-        <div class="group">
-          <div class="row"><div class="t">Mi tarjeta<div class="s">Visa ···· 4321</div></div><span class="check on">✓</span></div>
-        </div>
-        <div class="group">
-          <div class="row"><div class="t">Categorías</div><span style="color:var(--ios-blue)">Todas</span></div>
-          <div class="row"><div class="t">Comercios</div><span style="color:var(--ios-blue)">Todos</span></div>
-          <div class="row" id="runNow"><div class="t">Automatización</div><span class="tog offt" id="tog2"></span><span id="ck1" hidden></span><span id="ck2" hidden></span></div>
-          <div class="row" id="notifyRow"><div class="t">Notificar</div><span class="tog" id="tog"></span></div>
+        <div class="nav"><span>‹</span><b>Atajo nuevo</b><span></span></div>
+        <div class="s" style="text-align:center;margin-top:30px;color:var(--ios-sub)">Añade acciones desde abajo.</div>
+        <div class="sheet">
+          <div class="search" id="search3">🔍 <span id="chip" class="chip" hidden>Automatización</span> <span id="typed3" class="typed"></span></div>
+          <div class="chips" id="chips"><span class="chipb" id="chipAuto">⏱ Automatización</span><span class="chipb">Scripting</span><span class="chipb">Controles</span></div>
+          <div class="group" id="res3" style="opacity:0;transition:opacity .25s">
+            <div class="row" id="walletRow"><div class="ic" style="background:#0a84ff">💳</div><div class="t">Wallet<div class="s">“Al acercar una tarjeta o pase de Wallet”</div></div></div>
+          </div>
         </div>
       </section>
 
-      <!-- 4 Elegir acción -->
+      <!-- 4 Disparador + buscar Settlia -->
       <section class="scene off-r" id="s4">
-        <div class="nav"><span>‹ Atrás</span><b>Automatización</b><span>OK</span></div>
-        <div class="group" id="blankBtn" hidden><div class="row"><div class="ic" style="background:#0a84ff">＋</div><div class="t">Nueva automatización en blanco</div></div></div>
-        <div class="search" id="search">🔍 <span id="typed" class="typed"></span><span class="caret" id="caret" hidden></span><span id="ph">Buscar apps y acciones</span></div>
-        <div class="group" id="results" style="opacity:0;transition:opacity .25s">
-          <div class="row" id="askRow"><div class="app">S</div><div class="t">Preguntar por un pago<div class="s">Settlia</div></div></div>
-          <div class="row"><div class="app">S</div><div class="t">Añadir gasto<div class="s">Settlia</div></div></div>
-          <div class="row"><div class="app">S</div><div class="t">Escanear ticket<div class="s">Settlia</div></div></div>
+        <div class="nav"><span>‹</span><b>Atajo nuevo</b><span></span></div>
+        <div class="group">
+          <div class="row" id="trig"><div class="t" style="font-size:14px">Cuando <span style="color:var(--ios-blue)">Cualquier tarjeta</span> se acerque</div><span style="color:var(--ios-blue)">⌄</span></div>
+          <div id="trigMore" style="display:none">
+            <div class="row"><div class="t">Categorías</div><span style="color:var(--ios-blue)">Todas</span></div>
+            <div class="row"><div class="t">Comercios</div><span style="color:var(--ios-blue)">Todos</span></div>
+            <div class="row"><div class="t">Automatización</div><span class="tog" id="tog2"></span></div>
+            <div class="row"><div class="t">Notificar</div><span class="tog offt" id="tog"></span></div>
+          </div>
+        </div>
+        <div class="sheet">
+          <div class="search" id="search">🔍 <span id="typed" class="typed"></span><span class="caret" id="caret" hidden></span><span id="ph">Buscar</span></div>
+          <div class="group" id="results" style="opacity:0;transition:opacity .25s">
+            <div class="row" id="askRow"><div class="app">S</div><div class="t">Preguntar por un pago<div class="s">Settlia</div></div></div>
+            <div class="row"><div class="app">S</div><div class="t">Añadir gasto<div class="s">Settlia</div></div></div>
+          </div>
         </div>
       </section>
 
       <!-- 5 Comercio / Importe -->
       <section class="scene off-r" id="s5">
-        <div class="nav"><span>‹ Atrás</span><b>Automatización</b><span id="done">OK</span></div>
+        <div class="nav"><span id="done">‹</span><b>Atajo nuevo</b><span></span></div>
+        <div class="group"><div class="row"><div class="t" style="font-size:14px">Cuando <span style="color:var(--ios-blue)">Cualquier tarjeta</span> se acerque</div></div></div>
         <div class="action">
-          <div class="h"><div class="app">S</div>Preguntar por un pago</div>
-          Comercio: <span class="param" id="pM">Comercio</span><br>
+          <div class="h"><div class="app">S</div>Preguntar por un pago en <span class="param" id="pM">Comercio</span></div>
           Importe: <span class="param" id="pA">Importe</span>
         </div>
-        <div class="pop" id="pop" style="top:190px">
-          <div class="row" id="popInput"><div class="ic" style="background:#636366">⤷</div><div class="t">Transacción<div class="s">elige Comercio / Importe</div></div></div>
-          <div class="row"><div class="ic" style="background:#636366">📋</div><div class="t">Portapapeles</div></div>
-          <div class="row"><div class="ic" style="background:#636366">📅</div><div class="t">Fecha actual</div></div>
+        <div class="pop" id="pop" style="top:230px">
+          <div class="row" id="popVar"><div class="ic" style="background:#0a84ff">💳</div><div class="t">Transacción<div class="s">variable</div></div></div>
+        </div>
+        <div class="pop" id="pop2" style="top:210px">
+          <div class="row"><div class="t">Transacción</div></div>
+          <div class="row"><div class="t">Tarjeta o pase</div></div>
+          <div class="row" id="optM"><div class="t">Comercio</div></div>
+          <div class="row" id="optA"><div class="t">Importe</div></div>
+          <div class="row"><div class="t">Nombre</div></div>
         </div>
       </section>
 
@@ -170,14 +190,14 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
   const screen = $("screen"), finger = $("finger");
 
   const EN = new URLSearchParams(location.search).get("lang") === "en";
-  const T = {"Automatización": "Automation", "Al despertar": "Wake Up", "Cuando suena la alarma": "When alarm stops", "Atajos": "Shortcuts", "Galería": "Gallery", "Cancelar": "Cancel", "Nueva automatización": "New Automation", "Buscar": "Search", "Hora del día": "Time of Day", "Alarma": "Alarm", "Correo": "Email", "Mensaje": "Message", "Al acercar una tarjeta o pase de Wallet": "When I tap a Wallet card or pass", "‹ Atrás": "‹ Back", "Siguiente": "Next", "Mi tarjeta": "My card", "Ejecutar inmediatamente": "Run Immediately", "Ejecutar tras confirmación": "Run After Confirmation", "Notificar al ejecutarse": "Notify When Run", "Nueva automatización en blanco": "New Blank Automation", "Buscar apps y acciones": "Search for apps and actions", "Preguntar por un pago": "Ask about a payment", "Añadir gasto": "Add expense", "Escanear ticket": "Scan receipt", "Comercio": "Merchant", "Categorías": "Categories", "Comercios": "Merchants", "Todas": "Any Category", "Todos": "Any Merchant", "Notificar": "Notify", "Transacción": "Transaction", "elige Comercio / Importe": "pick Merchant / Amount", "Importe": "Amount", "Entrada del atajo": "Shortcut Input", "Portapapeles": "Clipboard", "Fecha actual": "Current Date", "lunes, 2 de noviembre": "Monday, November 2", "Pagado · Woolworths": "Paid · Woolworths", "ahora": "now", "¿Compartir este gasto?": "Share this expense?", "Añadir": "Add", "Añadir con ticket": "Add with receipt", "Siempre a Personal": "Always to Personal", "No preguntar por este comercio": "Don't ask for this merchant", "Pausar": "Pause", "Reproducir": "Play", "Desde el inicio": "Restart"};
-  const CAPS_EN = ["Open the <b>Shortcuts</b> app, go to <b>Automation</b> and tap <b>＋</b>.", "Choose <b>Wallet</b>: “When I tap a Wallet card or pass”.", "Turn on <b>Automation</b> (runs by itself) and turn off <b>Notify</b>. Then <b>Next</b>.", "In the search bar at the bottom type <b>Settlia</b> and pick <b>Ask about a payment</b>.", "Tap the grey <b>Merchant</b>, choose the <b>Transaction</b> variable and pick <b>Merchant</b> in its list. Same for <b>Amount</b> → <b>Amount</b>.", "Done. When you pay with Apple Pay, Settlia sends a notification. <b>Long-press</b> it to see the buttons."];
+  const T = {"Seleccionar": "Select", "Todos los atajos": "All Shortcuts", "Atajo nuevo": "New Shortcut", "Abrir tarjeta": "Open Card", "Escanear QR": "Decode QR", "Dictado": "Dictation", "Editar": "Edit", "¿Qué quieres que haga tu atajo?": "What do you want your shortcut to do?", "“Pon mi playlist al llegar al gimnasio”": "“Play my exercise playlist when I arrive at the gym”", "Describe un atajo": "Describe a shortcut", "Añade acciones desde abajo.": "Add actions from below to create a shortcut.", "Controles": "Controls", "“Al acercar una tarjeta o pase de Wallet”": "“When I tap a Wallet Card or Pass”", "Cuando": "When", "Cualquier tarjeta": "Any Card", "se acerque": "is tapped", "Preguntar por un pago en": "Ask about a payment at", "Tarjeta o pase": "Card or Pass", "Nombre": "Name", "Importe:": "Amount", "Automatización": "Automation", "Al despertar": "Wake Up", "Cuando suena la alarma": "When alarm stops", "Atajos": "Shortcuts", "Galería": "Gallery", "Cancelar": "Cancel", "Nueva automatización": "New Automation", "Buscar": "Search", "Hora del día": "Time of Day", "Alarma": "Alarm", "Correo": "Email", "Mensaje": "Message", "Al acercar una tarjeta o pase de Wallet": "When I tap a Wallet card or pass", "‹ Atrás": "‹ Back", "Siguiente": "Next", "Mi tarjeta": "My card", "Ejecutar inmediatamente": "Run Immediately", "Ejecutar tras confirmación": "Run After Confirmation", "Notificar al ejecutarse": "Notify When Run", "Nueva automatización en blanco": "New Blank Automation", "Buscar apps y acciones": "Search for apps and actions", "Preguntar por un pago": "Ask about a payment", "Añadir gasto": "Add expense", "Escanear ticket": "Scan receipt", "Comercio": "Merchant", "Categorías": "Categories", "Comercios": "Merchants", "Todas": "Any Category", "Todos": "Any Merchant", "Notificar": "Notify", "Transacción": "Transaction", "elige Comercio / Importe": "pick Merchant / Amount", "Importe": "Amount", "Entrada del atajo": "Shortcut Input", "Portapapeles": "Clipboard", "Fecha actual": "Current Date", "lunes, 2 de noviembre": "Monday, November 2", "Pagado · Woolworths": "Paid · Woolworths", "ahora": "now", "¿Compartir este gasto?": "Share this expense?", "Añadir": "Add", "Añadir con ticket": "Add with receipt", "Siempre a Personal": "Always to Personal", "No preguntar por este comercio": "Don't ask for this merchant", "Pausar": "Pause", "Reproducir": "Play", "Desde el inicio": "Restart"};
+  const CAPS_EN = ["Open <b>Shortcuts</b> and tap the <b>＋</b> at the bottom.", "If “Describe a shortcut” appears, tap <b>Edit</b> at the top right.", "Tap <b>Automation</b>, type <b>Wallet</b> and pick “When I tap a Wallet Card or Pass”.", "Tap <b>⌄</b>: keep <b>Automation</b> on and <b>Notify</b> off. (You can pick your card in “Any Card”.)", "In the search bar at the bottom type <b>Settlia</b> and pick <b>Ask about a payment</b>.", "Tap the grey <b>Merchant</b> → <b>Transaction</b> → tap it and choose <b>Merchant</b>. Same for <b>Amount</b> → <b>Amount</b>. Save with <b>‹</b>.", "Done. When you pay with Apple Pay, Settlia sends a notification. <b>Long-press</b> it to see the buttons."];
   if (EN) {
     document.documentElement.lang = "en";
     const walk = document.createTreeWalker(document.querySelector(".wrap"), NodeFilter.SHOW_TEXT);
     const nodes = []; while (walk.nextNode()) nodes.push(walk.currentNode);
     nodes.forEach(n => { const k = n.nodeValue.trim(); if (T[k]) n.nodeValue = n.nodeValue.replace(k, T[k]); });
-    $("done").textContent = "Done";
+    
   }
   const L = (es, en) => EN ? en : es;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -194,35 +214,43 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 
   function reset() {
     ["s2","s6"].forEach(i => hide(i, "off-b")); ["s3","s4","s5"].forEach(i => hide(i, "off-r")); show("s1");
-    $("ck1").classList.remove("on"); $("ck2").classList.add("on"); $("tog").classList.remove("offt"); $("tog2").classList.add("offt");
+    $("chip").hidden = true; $("chips").style.display = ""; $("typed3").textContent = ""; $("res3").style.opacity = 0;
+    $("trigMore").style.display = "none";
     $("typed").textContent = ""; $("ph").hidden = false; $("caret").hidden = true; $("results").style.opacity = 0;
     $("pM").className = "param"; $("pM").textContent = L("Comercio","Merchant"); $("pA").className = "param"; $("pA").textContent = L("Importe","Amount");
-    $("pop").classList.remove("show"); $("notif").className = "notif"; finger.style.opacity = 0;
+    $("pop").classList.remove("show"); $("pop2").classList.remove("show"); $("notif").className = "notif"; finger.style.opacity = 0;
   }
+  const pick = (param, opt, label) => [
+    [0, () => fingerTo($(param))], [600, () => { press(); $("pop").classList.add("show"); }],
+    [1000, () => fingerTo($("popVar"))], [1500, () => press($("popVar"))],
+    [1700, () => { $("pop").classList.remove("show"); $("pop2").classList.add("show"); }],
+    [2000, () => fingerTo($(opt))], [2500, () => press($(opt))],
+    [2700, () => { $("pop2").classList.remove("show"); $(param).className = "param var"; $(param).textContent = "▭ " + label(); }],
+  ];
+  const shift = (arr, d) => arr.map(([t, f]) => [t + d, f]);
 
-  // Pasos: texto + acciones con tiempos (ms desde el inicio del paso)
   const steps = [
-    { cap: "Abre la app <b>Atajos</b>, ve a <b>Automatización</b> y toca <b>＋</b>.", ms: 2600, run: [
-      [300, () => fingerTo($("plus"))], [1200, () => press()], [1500, () => show("s2")] ]},
-    { cap: "Elige <b>Wallet</b>: «Al acercar una tarjeta o pase de Wallet».", ms: 2600, run: [
-      [300, () => fingerTo($("walletRow"))], [1300, () => press($("walletRow"))], [1700, () => { hide("s1","off-l"); hide("s2","off-l"); show("s3"); }] ]},
-    { cap: "Activa <b>Automatización</b> (se ejecuta sola) y apaga <b>Notificar</b>. Luego <b>Siguiente</b>.", ms: 4200, run: [
-      [300, () => fingerTo($("tog2"))], [1100, () => { press(); $("tog2").classList.remove("offt"); }],
-      [1500, () => fingerTo($("tog"))], [2300, () => { press(); $("tog").classList.add("offt"); }],
-      [2800, () => fingerTo($("next"))], [3500, () => press()], [3800, () => { hide("s3","off-l"); show("s4"); }] ]},
-    { cap: "En el buscador de abajo escribe <b>Settlia</b> y elige <b>Preguntar por un pago</b>.", ms: 5200, run: [
-      [1400, () => fingerTo($("search"))], [2000, () => { press(); $("ph").hidden = true; $("caret").hidden = false; }],
-      ...[..."Settlia"].map((c, k) => [2200 + k * 110, () => { $("typed").textContent += c; }]),
-      [3100, () => { $("results").style.opacity = 1; }],
-      [3400, () => fingerTo($("askRow"))], [4300, () => press($("askRow"))], [4700, () => { hide("s4","off-l"); show("s5"); }] ]},
-    { cap: "Toca <b>Comercio</b> (en gris), elige la variable <b>Transacción</b> y en su lista marca <b>Comercio</b>. Igual con <b>Importe</b> → <b>Importe</b>.", ms: 6000, run: [
-      [300, () => fingerTo($("pM"))], [1000, () => { press(); $("pop").classList.add("show"); }],
-      [1500, () => fingerTo($("popInput"))], [2100, () => { press($("popInput")); }],
-      [2350, () => { $("pop").classList.remove("show"); $("pM").className = "param var"; $("pM").textContent = "⤷ " + L("Comercio","Merchant"); }],
-      [2700, () => fingerTo($("pA"))], [3300, () => { press(); $("pop").classList.add("show"); }],
-      [3700, () => fingerTo($("popInput"))], [4200, () => press($("popInput"))],
-      [4450, () => { $("pop").classList.remove("show"); $("pA").className = "param var"; $("pA").textContent = "⤷ " + L("Importe","Amount"); }],
-      [4900, () => fingerTo($("done"))], [5500, () => press()] ]},
+    { cap: "Abre <b>Atajos</b> y toca el <b>＋</b> de abajo.", ms: 2400, run: [
+      [300, () => fingerTo($("plus"))], [1100, () => press()], [1400, () => show("s2")] ]},
+    { cap: "Si sale «Describe un atajo», toca <b>Editar</b> arriba a la derecha.", ms: 2400, run: [
+      [300, () => fingerTo($("edit"))], [1100, () => press()], [1400, () => { hide("s1","off-l"); hide("s2","off-l"); show("s3"); }] ]},
+    { cap: "Toca <b>Automatización</b>, escribe <b>Wallet</b> y elige «Al acercar una tarjeta o pase de Wallet».", ms: 4600, run: [
+      [300, () => fingerTo($("chipAuto"))], [1000, () => { press($("chipAuto")); $("chip").hidden = false; $("chips").style.display = "none"; }],
+      ...[..."Wallet"].map((c, k) => [1300 + k * 110, () => { $("typed3").textContent += c; }]),
+      [2100, () => { $("res3").style.opacity = 1; }],
+      [2500, () => fingerTo($("walletRow"))], [3300, () => press($("walletRow"))], [3700, () => { hide("s3","off-l"); show("s4"); }] ]},
+    { cap: "Toca <b>⌄</b>: deja <b>Automatización</b> activado y <b>Notificar</b> apagado. (Puedes elegir tu tarjeta en «Cualquier tarjeta».)", ms: 3600, run: [
+      [300, () => fingerTo($("trig"), 110)], [1000, () => { press(); $("trigMore").style.display = ""; }],
+      [1500, () => fingerTo($("tog2"))], [2400, () => fingerTo($("tog"))] ]},
+    { cap: "En el buscador de abajo escribe <b>Settlia</b> y elige <b>Preguntar por un pago</b>.", ms: 4200, run: [
+      [300, () => { $("trigMore").style.display = "none"; fingerTo($("search")); }], [900, () => { press(); $("ph").hidden = true; $("caret").hidden = false; }],
+      ...[..."Settlia"].map((c, k) => [1100 + k * 110, () => { $("typed").textContent += c; }]),
+      [2000, () => { $("results").style.opacity = 1; }],
+      [2400, () => fingerTo($("askRow"))], [3200, () => press($("askRow"))], [3600, () => { hide("s4","off-l"); show("s5"); }] ]},
+    { cap: "Toca <b>Comercio</b> (gris) → <b>Transacción</b> → tócala y elige <b>Comercio</b>. Igual con <b>Importe</b> → <b>Importe</b>. Guarda con <b>‹</b>.", ms: 7200, run: [
+      ...shift(pick("pM", "optM", () => L("Comercio","Merchant")), 300),
+      ...shift(pick("pA", "optA", () => L("Importe","Amount")), 3300),
+      [6300, () => fingerTo($("done"))], [6800, () => press()] ]},
     { cap: "Listo. Al pagar con Apple Pay te llega el aviso de Settlia. <b>Mantén pulsado</b> para ver los botones.", ms: 5600, run: [
       [100, () => { finger.style.opacity = 0; hide("s5","off-l"); show("s6"); }],
       [1300, () => $("notif").classList.add("show")],
