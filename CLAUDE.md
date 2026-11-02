@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### "Banco" pasa dentro de Mis gastos (2026-11-02)
+- Se quita la pestaña **Banco** de la barra inferior (5 botones). Ahora es la 4ª vista de **Mis gastos** (Todo en X · Por moneda · Proyección · **Banco**), que pinta `StatementsView embedded`. El evento `settlia:open-bank` (enlace "N movimientos por revisar" y el aviso nocturno de Apple Pay) abre Mis gastos en la vista Banco (`sessionStorage settlia.mineBank` + evento `settlia:mine-bank`). Pestañas a 12 px para que quepan. `tsc` limpio; no probado en pantalla.
+
 ### "Qué pagos te pregunta": selector de modo más claro (2026-11-02)
 - En iPhone el control segmentado "Preguntarme en cada pago / Guardar en la bandeja" no dejaba ver cuál estaba elegido. Ahora son dos tarjetas tipo radio (borde teal + punto en la elegida, texto que puede partirse en dos líneas). `tsc` limpio.
 
