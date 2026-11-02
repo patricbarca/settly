@@ -76,23 +76,16 @@ export function SiriShortcutsModal({ onClose }: { onClose: () => void }) {
           className="flex-1 overflow-y-auto space-y-5"
           style={{ paddingBottom: "calc(var(--bottomnav-h) + env(safe-area-inset-bottom) + 24px)" }}
         >
-          {/* Frases de Siri */}
-          <div>
-            <div className="text-xs uppercase tracking-widest font-mono text-muted mb-2">{t("siri.phrasesTitle")}</div>
-            <div className="glass rounded-3xl p-4 space-y-2">
-              <p className="text-sm text-muted">{t("siri.phrasesHint")}</p>
-              <div className="flex flex-wrap gap-1.5">
-                <CopyChip text={t("siri.phraseAdd")} />
-                <CopyChip text={t("siri.phraseScan")} />
-              </div>
-            </div>
-          </div>
-
-          {/* Al pagar con Apple Pay */}
           <div>
             <div className="text-xs uppercase tracking-widest font-mono text-muted mb-2">{t("siri.walletTitle")}</div>
             <div className="glass rounded-3xl p-4 space-y-3">
-              <p className="text-sm text-muted">{t("siri.walletIntro")}</p>
+                <button
+                  onClick={() => openExternal("shortcuts://")}
+                  className="w-full rounded-2xl py-3.5 text-base font-semibold text-white flex items-center justify-center gap-2"
+                  style={{ background: "var(--teal)" }}
+                >
+                  {t("siri.openShortcuts")} <Icon name="external" size={14} />
+                </button>
 
               <div className="rounded-2xl p-3" style={{ background: "rgba(15,163,163,0.10)" }}>
                 <div className="text-sm font-semibold mb-1">{t("siri.guideTitle")}</div>
@@ -117,26 +110,9 @@ export function SiriShortcutsModal({ onClose }: { onClose: () => void }) {
                     </li>
                   ))}
                 </ol>
-                <button
-                  onClick={() => openExternal("shortcuts://")}
-                  className="mt-3 w-full rounded-2xl py-2.5 text-sm font-semibold text-white flex items-center justify-center gap-2"
-                  style={{ background: "var(--teal)" }}
-                >
-                  {t("siri.openShortcuts")} <Icon name="external" size={14} />
-                </button>
               </div>
 
               <PaymentPrefsCard />
-
-              {/* Lo que falla en la práctica: se abre la app Atajos en vez de ir solo. */}
-              <div className="rounded-2xl p-3" style={{ background: "rgba(232,146,12,0.12)" }}>
-                <div className="text-sm font-semibold">{t("siriFix.title")}</div>
-                <ol className="list-decimal pl-4 mt-1.5 space-y-1 text-xs leading-relaxed">
-                  <li>{t("siriFix.one")}</li>
-                  <li>{t("siriFix.two")}</li>
-                  <li>{t("siriFix.three")}</li>
-                </ol>
-              </div>
 
               <p className="text-xs text-muted leading-relaxed">{t("siri.applePayOnly")}</p>
             </div>
