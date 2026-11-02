@@ -119,7 +119,7 @@ export function WalletGuideAnimation() {
             <span>Settlia</span>
           </div>
           <Group>
-            <Row hot sub="Ask about a payment">{t("siriAnim.askPayment")}</Row>
+            <Row hot sub="Settlia">{t("siriAnim.askPayment")}</Row>
             <Row sub="Settlia">{t("siriAnim.addExpense")}</Row>
             <Row sub="Settlia">{t("siriAnim.scanReceipt")}</Row>
           </Group>
