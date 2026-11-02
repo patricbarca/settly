@@ -6,6 +6,7 @@ import { addExpense } from "./store";
 import { parseMoney } from "./quickAdd";
 import { knownMerchant, countryForCurrency } from "./merchants";
 import { getLang } from "./i18n";
+import { supabase } from "./supabase";
 
 // Ajustes de "Preguntar por un pago" (automatización de Wallet). La acción
 // nativa (ios/App/App/SettliaIntents.swift, PaymentPromptIntent) corre sin la
@@ -18,13 +19,16 @@ export interface PaymentPrefs {
   ignored: MerchantRef[];
   personal: MerchantRef[];
   notifications?: boolean;
+  /** "ask" = notificación en cada pago · "inbox" = se guardan solos en la bandeja y aviso por la noche */
+  mode?: "ask" | "inbox";
+  digestHour?: number;
 }
-interface QueueItem { id: string; merchant: string; amount: string; date: string }
+interface QueueItem { id: string; merchant: string; amount: string; date: string; inbox?: string }
 
 const Plugin = registerPlugin<{
   get(): Promise<PaymentPrefs>;
-  set(p: Partial<PaymentPrefs> & { lang?: string }): Promise<void>;
-  takeQueue(): Promise<{ items: QueueItem[] }>;
+  set(p: Partial<PaymentPrefs> & { lang?: string; token?: string; apiUrl?: string; apiKey?: string }): Promise<void>;
+  takeQueue(): Promise<{ items: QueueItem[]; openInbox?: boolean }>;
 }>("WalletPrefs");
 
 export const walletPrefsAvailable = () => isNativePlatform() && isIOS();
@@ -47,6 +51,37 @@ export async function setPaymentPrefs(p: Partial<PaymentPrefs>): Promise<void> {
   }
 }
 
+/** Activa la bandeja de pagos: pide un token de dispositivo (solo sirve para
+ *  añadir pagos a TU bandeja) y lo guarda en el App Group para la acción de Atajos. */
+export async function enableInboxMode(digestHour: number): Promise<boolean> {
+  if (!walletPrefsAvailable()) return false;
+  const { data, error } = await supabase.rpc("wallet_device_token");
+  if (error || !data) return false;
+  try {
+    await Plugin.set({
+      mode: "inbox",
+      digestHour,
+      token: String(data),
+      apiUrl: import.meta.env.VITE_SUPABASE_URL as string,
+      apiKey: import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+      lang: getLang(),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function disableInboxMode(): Promise<void> {
+  if (!walletPrefsAvailable()) return;
+  try {
+    await Plugin.set({ mode: "ask", token: "" });
+  } catch {
+    /* build viejo */
+  }
+  await supabase.rpc("wallet_revoke_tokens");
+}
+
 /** Nombre legible del comercio: sin números de tienda ("WOOLWORTHS 2393" → "Woolworths"). */
 function cleanMerchant(s: string): string {
   const t = s.replace(/\b\d+\b/g, " ").replace(/\s+/g, " ").trim();
@@ -62,7 +97,10 @@ export async function drainPaymentQueue(groups: Group[]): Promise<number> {
   if (!personal) return 0; // se reintenta en la próxima apertura
   let items: QueueItem[] = [];
   try {
-    items = (await Plugin.takeQueue()).items || [];
+    const r = await Plugin.takeQueue();
+    items = r.items || [];
+    // Se tocó el aviso de la noche: llevar a la bandeja de pagos.
+    if (r.openInbox) window.dispatchEvent(new Event("settlia:open-bank"));
   } catch {
     return 0;
   }
@@ -84,6 +122,7 @@ export async function drainPaymentQueue(groups: Group[]): Promise<number> {
       category: knownMerchant(it.merchant || "", country)?.category ?? "otros",
       date: /^\d{4}-\d{2}-\d{2}$/.test(it.date) ? it.date : new Date().toLocaleDateString("en-CA"),
       createdBy: personal.meId,
+      ...(it.inbox ? { inbox: true, source: "wallet" as const, importedAt: new Date().toISOString() } : {}),
     });
     n++;
   }
