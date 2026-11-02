@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Automatización de Wallet</title>
+<style>
+/* Layout: un iPhone centrado que reproduce la grabación; debajo, el paso actual y controles. Look único (iOS oscuro), a propósito. */
+:root{
+  --page:#0d1117; --ink:#eef2f6; --muted:#8b95a3; --teal:#0FA3A3;
+  --ios-bg:#000; --ios-card:#1c1c1e; --ios-line:rgba(255,255,255,.1); --ios-blue:#0a84ff; --ios-sub:rgba(235,235,245,.6);
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Roboto,sans-serif;
+  color-scheme:dark;
+}
+html,body{margin:0}body{background:transparent;color:var(--ink);font-family:var(--ui);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:8px}
+.wrap{max-width:420px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:18px}
+h1{font-size:20px;margin:0;text-align:center;text-wrap:balance}
+.lead{margin:0;color:var(--muted);font-size:14px;text-align:center;line-height:1.45}
+.phone{position:relative;width:300px;max-width:100%;aspect-ratio:300/620;border-radius:48px;background:#111;padding:10px;box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 0 0 2px #2b2d31}
+.screen{position:relative;height:100%;border-radius:38px;overflow:hidden;background:var(--ios-bg);font-size:13px}
+.island{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:92px;height:26px;border-radius:20px;background:#000;z-index:30;box-shadow:0 0 0 1px #111}
+.status{position:absolute;top:0;left:0;right:0;height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 26px;font-weight:600;font-size:13px;z-index:20}
+.scene{position:absolute;inset:0;padding-top:46px;transition:transform .45s cubic-bezier(.3,.7,.2,1),opacity .35s;display:flex;flex-direction:column}
+.scene.off-r{transform:translateX(100%)}.scene.off-l{transform:translateX(-30%);opacity:.0}.scene.off-b{transform:translateY(100%)}
+.nav{display:flex;justify-content:space-between;align-items:center;padding:6px 14px;color:var(--ios-blue);font-size:14px;min-height:30px}
+.nav b{color:#fff;font-weight:600}
+.big{font-size:28px;font-weight:700;padding:2px 16px 10px}
+.group{margin:6px 14px;background:var(--ios-card);border-radius:12px;overflow:hidden}
+.row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--ios-line);transition:background .2s}
+.row:last-child{border-bottom:0}
+.row .ic{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:14px;flex-shrink:0}
+.row .t{flex:1;min-width:0}.row .s{font-size:11px;color:var(--ios-sub)}
+.row.hl{background:#3a3a3c}
+.chev{color:#5b5b60}
+.check{color:var(--ios-blue);font-weight:700;opacity:0;transition:opacity .2s}.check.on{opacity:1}
+.tog{width:44px;height:26px;border-radius:14px;background:#34c759;position:relative;transition:background .25s;flex-shrink:0}
+.tog::after{content:"";position:absolute;top:2px;left:20px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .25s}
+.tog.offt{background:#39393d}.tog.offt::after{left:2px}
+.tabbar{margin-top:auto;display:flex;justify-content:space-around;padding:8px 0 22px;border-top:1px solid var(--ios-line);font-size:10px;color:#8e8e93}
+.tabbar .a{color:var(--ios-blue)}
+.search{margin:4px 14px 8px;background:#1c1c1e;border-radius:10px;padding:8px 10px;color:var(--ios-sub);display:flex;gap:6px}
+.search .typed{color:#fff}.caret{display:inline-block;width:1.5px;height:14px;background:var(--ios-blue);vertical-align:-2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.action{margin:10px 14px;background:var(--ios-card);border-radius:12px;padding:12px;line-height:1.9}
+.action .h{display:flex;gap:8px;align-items:center;font-weight:600;margin-bottom:4px}
+.app{width:22px;height:22px;border-radius:6px;background:linear-gradient(145deg,#0f2d54,#0a1a2e);display:grid;place-items:center;color:#2ee6c8;font-size:12px;font-weight:800}
+.param{display:inline-block;padding:0 7px;border-radius:6px;color:var(--ios-blue);background:rgba(10,132,255,.14);transition:all .25s}
+.param.var{background:var(--ios-blue);color:#fff}
+.pop{position:absolute;left:14px;right:14px;background:#2c2c2e;border-radius:14px;box-shadow:0 12px 30px rgba(0,0,0,.5);padding:6px 0;opacity:0;transform:scale(.95);transition:all .2s;pointer-events:none;z-index:15}
+.pop.show{opacity:1;transform:scale(1)}
+.pop .row{border-color:rgba(255,255,255,.08)}
+.lock{background:radial-gradient(120% 80% at 50% 0%,#1d3557,#0a0f1d 70%)}
+.clock{text-align:center;font-size:58px;font-weight:300;letter-spacing:-1px;margin-top:22px}
+.date{text-align:center;color:rgba(255,255,255,.8);font-size:14px}
+.pay{margin:30px auto 0;width:82%;background:rgba(255,255,255,.12);backdrop-filter:blur(12px);border-radius:16px;padding:12px;text-align:center;transition:all .4s}
+.notif{position:absolute;left:10px;right:10px;top:54px;background:rgba(40,40,44,.92);border-radius:18px;padding:11px 12px;transform:translateY(-140%);opacity:0;transition:transform .5s cubic-bezier(.2,.9,.2,1.1),opacity .3s;z-index:12}
+.notif.show{transform:none;opacity:1}
+.notif .btns{display:none;margin-top:9px;flex-direction:column;border-top:1px solid var(--ios-line)}
+.notif.long .btns{display:flex}
+.notif .btns span{padding:8px 2px;border-bottom:1px solid var(--ios-line);color:var(--ios-blue)}
+.finger{position:absolute;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:rgba(255,255,255,.35);border:2px solid rgba(255,255,255,.85);z-index:40;pointer-events:none;transition:left .55s cubic-bezier(.4,0,.2,1),top .55s cubic-bezier(.4,0,.2,1),transform .12s,opacity .3s;opacity:0}
+.finger.press{transform:scale(.75);background:rgba(255,255,255,.6)}
+.caption{min-height:66px;text-align:center;font-size:15px;line-height:1.45;max-width:340px}
+.caption b{color:var(--teal)}
+.ctrls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center}
+.dots{display:flex;gap:6px}
+.dot{width:8px;height:8px;border-radius:5px;border:0;padding:0;background:#3a4250;cursor:pointer;transition:width .2s}
+.dot.on{width:22px;background:var(--teal)}
+button.b{font:inherit;font-size:13px;color:var(--ink);background:#1b2230;border:1px solid #2a3344;border-radius:999px;padding:7px 14px;cursor:pointer}
+button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.scene,.finger,.notif,.tog::after{transition:none}}
+</style>
+</head><body>
+
+<div class="wrap">
+  
+  <div class="phone" aria-label="Animación de la app Atajos">
+    <div class="screen" id="screen">
+      <div class="island"></div>
+      <div class="status"><span>9:41</span><span>100%</span></div>
+
+      <!-- 1 Atajos: Automatización -->
+      <section class="scene" id="s1">
+        <div class="nav"><span></span><span id="plus" style="font-size:22px">＋</span></div>
+        <div class="big">Automatización</div>
+        <div class="group"><div class="row"><div class="ic" style="background:#ff9f0a">⏰</div><div class="t">Al despertar<div class="s">Cuando suena la alarma</div></div></div></div>
+        <div class="tabbar"><span>Atajos</span><span class="a">Automatización</span><span>Galería</span></div>
+      </section>
+
+      <!-- 2 Nueva automatización -->
+      <section class="scene off-b" id="s2">
+        <div class="nav"><span>Cancelar</span><b>Nueva automatización</b><span></span></div>
+        <div class="search">🔍 Buscar</div>
+        <div class="group">
+          <div class="row"><div class="ic" style="background:#ff9f0a">⏰</div><div class="t">Hora del día</div><span class="chev">›</span></div>
+          <div class="row"><div class="ic" style="background:#ff9f0a">⏱</div><div class="t">Alarma</div><span class="chev">›</span></div>
+          <div class="row"><div class="ic" style="background:#0a84ff">✉</div><div class="t">Correo</div><span class="chev">›</span></div>
+          <div class="row"><div class="ic" style="background:#30d158">💬</div><div class="t">Mensaje</div><span class="chev">›</span></div>
+          <div class="row" id="walletRow"><div class="ic" style="background:#111;border:1px solid #333">💳</div><div class="t">Wallet<div class="s">Al acercar una tarjeta o pase de Wallet</div></div><span class="chev">›</span></div>
+          <div class="row"><div class="ic" style="background:#636366">📶</div><div class="t">NFC</div><span class="chev">›</span></div>
+        </div>
+      </section>
+
+      <!-- 3 Wallet -->
+      <section class="scene off-r" id="s3">
+        <div class="nav"><span>‹ Atrás</span><b>Wallet</b><span id="next">Siguiente</span></div>
+        <div class="group">
+          <div class="row"><div class="t">Mi tarjeta<div class="s">Visa ···· 4321</div></div><span class="check on">✓</span></div>
+        </div>
+        <div class="group">
+          <div class="row" id="runNow"><div class="t">Ejecutar inmediatamente</div><span class="check" id="ck1">✓</span></div>
+          <div class="row"><div class="t">Ejecutar tras confirmación</div><span class="check on" id="ck2">✓</span></div>
+          <div class="row" id="notifyRow"><div class="t">Notificar al ejecutarse</div><span class="tog" id="tog"></span></div>
+        </div>
+      </section>
+
+      <!-- 4 Elegir acción -->
+      <section class="scene off-r" id="s4">
+        <div class="nav"><span>‹ Atrás</span><b>Automatización</b><span>OK</span></div>
+        <div class="group" id="blankBtn"><div class="row"><div class="ic" style="background:#0a84ff">＋</div><div class="t">Nueva automatización en blanco</div></div></div>
+        <div class="search" id="search">🔍 <span id="typed" class="typed"></span><span class="caret" id="caret" hidden></span><span id="ph">Buscar apps y acciones</span></div>
+        <div class="group" id="results" style="opacity:0;transition:opacity .25s">
+          <div class="row" id="askRow"><div class="app">S</div><div class="t">Preguntar por un pago<div class="s">Settlia</div></div></div>
+          <div class="row"><div class="app">S</div><div class="t">Añadir gasto<div class="s">Settlia</div></div></div>
+          <div class="row"><div class="app">S</div><div class="t">Escanear ticket<div class="s">Settlia</div></div></div>
+        </div>
+      </section>
+
+      <!-- 5 Comercio / Importe -->
+      <section class="scene off-r" id="s5">
+        <div class="nav"><span>‹ Atrás</span><b>Automatización</b><span id="done">OK</span></div>
+        <div class="action">
+          <div class="h"><div class="app">S</div>Preguntar por un pago</div>
+          Comercio: <span class="param" id="pM">Comercio</span><br>
+          Importe: <span class="param" id="pA">Importe</span>
+        </div>
+        <div class="pop" id="pop" style="top:190px">
+          <div class="row" id="popInput"><div class="ic" style="background:#636366">⤷</div><div class="t">Entrada del atajo</div></div>
+          <div class="row"><div class="ic" style="background:#636366">📋</div><div class="t">Portapapeles</div></div>
+          <div class="row"><div class="ic" style="background:#636366">📅</div><div class="t">Fecha actual</div></div>
+        </div>
+      </section>
+
+      <!-- 6 Al pagar -->
+      <section class="scene lock off-b" id="s6">
+        <div class="clock">9:41</div>
+        <div class="date">lunes, 2 de noviembre</div>
+        <div class="pay" id="pay"><div style="font-size:26px">✓</div>Pagado · Woolworths<br><b>$42,50</b></div>
+        <div class="notif" id="notif">
+          <div style="display:flex;gap:8px;align-items:center;font-size:11px;color:var(--ios-sub)"><div class="app" style="width:18px;height:18px;font-size:10px">S</div>SETTLIA<span style="margin-left:auto">ahora</span></div>
+          <div style="font-weight:600;margin-top:4px">¿Compartir este gasto?</div>
+          <div style="color:var(--ios-sub)">Woolworths · $42,50</div>
+          <div class="btns"><span>Añadir</span><span>Añadir con ticket</span><span>Siempre a Personal</span><span style="border:0">No preguntar por este comercio</span></div>
+        </div>
+      </section>
+
+      <div class="finger" id="finger"></div>
+    </div>
+  </div>
+
+  <div class="caption" id="cap" aria-live="polite"></div>
+  <div class="ctrls">
+    <button class="b" id="playBtn" type="button">Pausar</button>
+    <div class="dots" id="dots"></div>
+    <button class="b" id="restart" type="button">Desde el inicio</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const screen = $("screen"), finger = $("finger");
+
+  const EN = new URLSearchParams(location.search).get("lang") === "en";
+  const T = {"Automatización": "Automation", "Al despertar": "Wake Up", "Cuando suena la alarma": "When alarm stops", "Atajos": "Shortcuts", "Galería": "Gallery", "Cancelar": "Cancel", "Nueva automatización": "New Automation", "Buscar": "Search", "Hora del día": "Time of Day", "Alarma": "Alarm", "Correo": "Email", "Mensaje": "Message", "Al acercar una tarjeta o pase de Wallet": "When I tap a Wallet card or pass", "‹ Atrás": "‹ Back", "Siguiente": "Next", "Mi tarjeta": "My card", "Ejecutar inmediatamente": "Run Immediately", "Ejecutar tras confirmación": "Run After Confirmation", "Notificar al ejecutarse": "Notify When Run", "Nueva automatización en blanco": "New Blank Automation", "Buscar apps y acciones": "Search for apps and actions", "Preguntar por un pago": "Ask about a payment", "Añadir gasto": "Add expense", "Escanear ticket": "Scan receipt", "Comercio": "Merchant", "Importe": "Amount", "Entrada del atajo": "Shortcut Input", "Portapapeles": "Clipboard", "Fecha actual": "Current Date", "lunes, 2 de noviembre": "Monday, November 2", "Pagado · Woolworths": "Paid · Woolworths", "ahora": "now", "¿Compartir este gasto?": "Share this expense?", "Añadir": "Add", "Añadir con ticket": "Add with receipt", "Siempre a Personal": "Always to Personal", "No preguntar por este comercio": "Don't ask for this merchant", "Pausar": "Pause", "Reproducir": "Play", "Desde el inicio": "Restart"};
+  const CAPS_EN = ["Open the <b>Shortcuts</b> app, go to <b>Automation</b> and tap <b>＋</b>.", "Choose <b>Wallet</b>: “When I tap a Wallet card or pass”.", "Select <b>Run Immediately</b> and turn off <b>Notify When Run</b>. Then <b>Next</b>.", "Tap <b>New Blank Automation</b>, search <b>Settlia</b> and pick <b>Ask about a payment</b>.", "Tap <b>Merchant</b> and choose <b>Shortcut Input</b>. Do the same for <b>Amount</b>. Tap <b>Done</b>.", "Done. When you pay with Apple Pay, Settlia sends a notification. <b>Long-press</b> it to see the buttons."];
+  if (EN) {
+    document.documentElement.lang = "en";
+    const walk = document.createTreeWalker(document.querySelector(".wrap"), NodeFilter.SHOW_TEXT);
+    const nodes = []; while (walk.nextNode()) nodes.push(walk.currentNode);
+    nodes.forEach(n => { const k = n.nodeValue.trim(); if (T[k]) n.nodeValue = n.nodeValue.replace(k, T[k]); });
+    $("done").textContent = "Done";
+  }
+  const L = (es, en) => EN ? en : es;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function fingerTo(el, dx = 0, dy = 0) {
+    const s = screen.getBoundingClientRect(), r = el.getBoundingClientRect();
+    finger.style.opacity = 1;
+    finger.style.left = (r.left - s.left + r.width / 2 + dx) + "px";
+    finger.style.top = (r.top - s.top + r.height / 2 + dy) + "px";
+  }
+  function press(el) { finger.classList.add("press"); el && el.classList.add("hl"); setTimeout(() => { finger.classList.remove("press"); el && el.classList.remove("hl"); }, 260); }
+  function show(id, from) { const e = $(id); e.className = "scene" + (e.classList.contains("lock") ? " lock" : ""); }
+  function hide(id, cls) { const e = $(id); e.className = "scene " + cls + (id === "s6" ? " lock" : ""); }
+
+  function reset() {
+    ["s2","s6"].forEach(i => hide(i, "off-b")); ["s3","s4","s5"].forEach(i => hide(i, "off-r")); show("s1");
+    $("ck1").classList.remove("on"); $("ck2").classList.add("on"); $("tog").classList.remove("offt");
+    $("typed").textContent = ""; $("ph").hidden = false; $("caret").hidden = true; $("results").style.opacity = 0;
+    $("pM").className = "param"; $("pM").textContent = L("Comercio","Merchant"); $("pA").className = "param"; $("pA").textContent = L("Importe","Amount");
+    $("pop").classList.remove("show"); $("notif").className = "notif"; finger.style.opacity = 0;
+  }
+
+  // Pasos: texto + acciones con tiempos (ms desde el inicio del paso)
+  const steps = [
+    { cap: "Abre la app <b>Atajos</b>, ve a <b>Automatización</b> y toca <b>＋</b>.", ms: 2600, run: [
+      [300, () => fingerTo($("plus"))], [1200, () => press()], [1500, () => show("s2")] ]},
+    { cap: "Elige <b>Wallet</b>: «Al acercar una tarjeta o pase de Wallet».", ms: 2600, run: [
+      [300, () => fingerTo($("walletRow"))], [1300, () => press($("walletRow"))], [1700, () => { hide("s1","off-l"); hide("s2","off-l"); show("s3"); }] ]},
+    { cap: "Marca <b>Ejecutar inmediatamente</b> y apaga <b>Notificar al ejecutarse</b>. Luego <b>Siguiente</b>.", ms: 4200, run: [
+      [300, () => fingerTo($("runNow"))], [1100, () => { press($("runNow")); $("ck1").classList.add("on"); $("ck2").classList.remove("on"); }],
+      [1500, () => fingerTo($("tog"))], [2300, () => { press(); $("tog").classList.add("offt"); }],
+      [2800, () => fingerTo($("next"))], [3500, () => press()], [3800, () => { hide("s3","off-l"); show("s4"); }] ]},
+    { cap: "Toca <b>Nueva automatización en blanco</b>, busca <b>Settlia</b> y elige <b>Preguntar por un pago</b>.", ms: 5200, run: [
+      [300, () => fingerTo($("blankBtn"))], [1000, () => press($("blankBtn").firstElementChild)],
+      [1400, () => fingerTo($("search"))], [2000, () => { press(); $("ph").hidden = true; $("caret").hidden = false; }],
+      ...[..."Settlia"].map((c, k) => [2200 + k * 110, () => { $("typed").textContent += c; }]),
+      [3100, () => { $("results").style.opacity = 1; }],
+      [3400, () => fingerTo($("askRow"))], [4300, () => press($("askRow"))], [4700, () => { hide("s4","off-l"); show("s5"); }] ]},
+    { cap: "Toca <b>Comercio</b> y elige <b>Entrada del atajo</b>. Haz lo mismo con <b>Importe</b>. Toca <b>OK</b>.", ms: 6000, run: [
+      [300, () => fingerTo($("pM"))], [1000, () => { press(); $("pop").classList.add("show"); }],
+      [1500, () => fingerTo($("popInput"))], [2100, () => { press($("popInput")); }],
+      [2350, () => { $("pop").classList.remove("show"); $("pM").className = "param var"; $("pM").textContent = "⤷ " + L("Comercio","Merchant"); }],
+      [2700, () => fingerTo($("pA"))], [3300, () => { press(); $("pop").classList.add("show"); }],
+      [3700, () => fingerTo($("popInput"))], [4200, () => press($("popInput"))],
+      [4450, () => { $("pop").classList.remove("show"); $("pA").className = "param var"; $("pA").textContent = "⤷ " + L("Importe","Amount"); }],
+      [4900, () => fingerTo($("done"))], [5500, () => press()] ]},
+    { cap: "Listo. Al pagar con Apple Pay te llega el aviso de Settlia. <b>Mantén pulsado</b> para ver los botones.", ms: 5600, run: [
+      [100, () => { finger.style.opacity = 0; hide("s5","off-l"); show("s6"); }],
+      [1300, () => $("notif").classList.add("show")],
+      [2600, () => fingerTo($("notif"))], [3200, () => { finger.classList.add("press"); }],
+      [3800, () => { finger.classList.remove("press"); $("notif").classList.add("long"); }],
+      [4300, () => { finger.style.opacity = 0; }] ]},
+  ];
+
+  const dots = $("dots");
+  steps.forEach((_, k) => { const d = document.createElement("button"); d.className = "dot"; d.type = "button"; d.setAttribute("aria-label", L("Paso ","Step ") + (k + 1)); d.onclick = () => go(k, true); dots.appendChild(d); });
+
+  let timers = [], cur = 0, playing = !reduce;
+  function clear() { timers.forEach(clearTimeout); timers = []; }
+
+  // Lleva la pantalla al estado del inicio del paso k (ejecutando al instante los anteriores)
+  function settleTo(k) {
+    reset();
+    for (let i = 0; i < k; i++) steps[i].run.forEach(([, f]) => f());
+    finger.style.opacity = 0; finger.classList.remove("press");
+    document.querySelectorAll(".row.hl").forEach(e => e.classList.remove("hl"));
+  }
+  function render(k) {
+    $("cap").innerHTML = `<b>${k + 1}/${steps.length}</b> · ` + (EN ? CAPS_EN[k] : steps[k].cap);
+    [...dots.children].forEach((d, i) => d.classList.toggle("on", i === k));
+  }
+  function go(k, user) {
+    clear(); cur = k; settleTo(k); render(k);
+    if (user && !playing) { steps[k].run.forEach(([, f]) => f()); finger.style.opacity = 0; return; }
+    if (!playing) return;
+    steps[k].run.forEach(([t, f]) => timers.push(setTimeout(f, t)));
+    timers.push(setTimeout(() => go((k + 1) % steps.length), steps[k].ms + 900));
+  }
+  $("playBtn").onclick = () => { playing = !playing; $("playBtn").textContent = playing ? L("Pausar","Pause") : L("Reproducir","Play"); go(cur, !playing); };
+  $("restart").onclick = () => { playing = true; $("playBtn").textContent = L("Pausar","Pause"); go(0); };
+  if (!playing) $("playBtn").textContent = L("Reproducir","Play");
+  requestAnimationFrame(() => go(0, !playing));
+})();
+</script>
+
+</body></html>

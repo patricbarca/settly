@@ -1,9 +1,8 @@
-import { WalletGuideAnimation } from "./WalletGuideAnimation";
 import { useEffect, useState } from "react";
 import { getPaymentPrefs, setPaymentPrefs, enableInboxMode, disableInboxMode, type PaymentPrefs, type MerchantRef } from "../lib/walletPrefs";
 import { decimalInput } from "../lib/format";
 import { createPortal } from "react-dom";
-import { useT } from "../lib/i18n";
+import { useT, useLang } from "../lib/i18n";
 import { Icon } from "./Icon";
 
 // "Siri y Atajos": lo que la app expone a iOS (ios/App/App/SettliaIntents.swift)
@@ -45,6 +44,7 @@ function CopyChip({ text }: { text: string }) {
 
 export function SiriShortcutsModal({ onClose }: { onClose: () => void }) {
   const t = useT();
+  const lang = useLang();
   if (typeof document === "undefined") return null;
 
   const steps: { text: string; copy?: string[] }[] = [
@@ -90,7 +90,12 @@ export function SiriShortcutsModal({ onClose }: { onClose: () => void }) {
 
               <div className="rounded-2xl p-3" style={{ background: "rgba(15,163,163,0.10)" }}>
                 <div className="text-sm font-semibold mb-1">{t("siri.guideTitle")}</div>
-                <div className="my-3"><WalletGuideAnimation /></div>
+                <iframe
+                  src={`/guides/wallet-automation.html?lang=${lang}`}
+                  title={t("siri.guideTitle")}
+                  className="w-full my-2 border-0"
+                  style={{ height: 760, background: "transparent" }}
+                />
                 <p className="text-xs text-muted mb-2 leading-relaxed">{t("siri.manualNote")}</p>
                 <ol className="space-y-2.5 mt-2">
                   {steps.map((s, i) => (
