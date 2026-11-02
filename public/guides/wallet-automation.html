@@ -13,11 +13,11 @@ html,body{margin:0}body{background:transparent;color:var(--ink);font-family:var(
 .wrap{max-width:420px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:18px}
 h1{font-size:20px;margin:0;text-align:center;text-wrap:balance}
 .lead{margin:0;color:var(--muted);font-size:14px;text-align:center;line-height:1.45}
-.phone{position:relative;width:300px;max-width:100%;aspect-ratio:300/620;border-radius:48px;background:#111;padding:10px;box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 0 0 2px #2b2d31}
-.screen{position:relative;height:100%;border-radius:38px;overflow:hidden;background:var(--ios-bg);font-size:13px}
+.phone{position:relative;box-sizing:border-box;width:min(300px,100%);aspect-ratio:300/620;border-radius:48px;background:#111;padding:10px;box-shadow:0 24px 60px rgba(0,0,0,.55),inset 0 0 0 2px #2b2d31}
+.screen{position:relative;height:100%;border-radius:38px;overflow:hidden;isolation:isolate;transform:translateZ(0);-webkit-mask-image:-webkit-radial-gradient(white,black);background:var(--ios-bg);font-size:13px}
 .island{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:92px;height:26px;border-radius:20px;background:#000;z-index:30;box-shadow:0 0 0 1px #111}
 .status{position:absolute;top:0;left:0;right:0;height:44px;display:flex;justify-content:space-between;align-items:center;padding:0 26px;font-weight:600;font-size:13px;z-index:20}
-.scene{position:absolute;inset:0;padding-top:46px;transition:transform .45s cubic-bezier(.3,.7,.2,1),opacity .35s;display:flex;flex-direction:column}
+.scene{position:absolute;inset:0;padding-top:46px;background:var(--ios-bg);box-sizing:border-box;overflow:hidden;transition:transform .45s cubic-bezier(.3,.7,.2,1),opacity .35s;display:flex;flex-direction:column}
 .scene.off-r{transform:translateX(100%)}.scene.off-l{transform:translateX(-30%);opacity:.0}.scene.off-b{transform:translateY(100%)}
 .nav{display:flex;justify-content:space-between;align-items:center;padding:6px 14px;color:var(--ios-blue);font-size:14px;min-height:30px}
 .nav b{color:#fff;font-weight:600}

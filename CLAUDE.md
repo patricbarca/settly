@@ -54,6 +54,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 ### Apple Pay automático → directo a Mis gastos, no a la bandeja (2026-11-02, `migrate_v36` ✅ aplicada vía MCP)
 - A pedido del usuario: el modo "Guardar en la bandeja" pasa a **"Guardar directo en Mis gastos"**. `wallet_capture` ya no pone `inbox:true` (solo `source:"wallet"`), así el pago cuenta en Mis gastos al momento; sigue saliendo en Mis gastos → Banco → "Pagos con Apple Pay". `drainPaymentQueue` (cola sin red) igual. El aviso nocturno dice "Guardamos N pagos con Apple Pay en Mis gastos. ¿Alguno era compartido?" y al tocarlo abre **Mis gastos** (`settlia:open-mine`). Para compartir uno: tocarlo → "Pasar a un grupo". Internamente el modo sigue llamándose `inbox`. El texto del aviso es Swift → requiere build de Codemagic.
 
+### Fix guía animada: pantallas sin fondo se superponían y el contenido se salía del marco en iPhone (2026-11-02)
+- Cada pantalla lleva fondo opaco y `.screen` recorta con máscara (WebKit no recortaba hijos con transform por `border-radius`).
+
 ### Guía de la automatización: flujo real de iOS 26 (2026-11-02)
 - Con capturas del usuario: en iOS 26 se entra por **Atajos → ＋ (abajo) → pantalla de IA "Describe a shortcut" → Edit → chip Automation → buscar "Wallet" → "When I tap a Wallet Card or Pass"** → "When Any Card is tapped" (⌄: Automation on, Notify off) → buscador de abajo "Settlia" → Ask about a payment → Merchant/Amount vía variable **Transaction**. Animación (`public/guides/wallet-automation.html`) rehecha a 7 pasos con esas pantallas (ES/EN) y textos `siri.step1-6` actualizados (mencionan también el camino de iOS anteriores). Revisada en capturas de navegador. El usuario completó la automatización en su iPhone; falta confirmar que llega el aviso al pagar.
 
