@@ -7,6 +7,7 @@ import { resolveToCode } from "../lib/currencies";
 import { getDailyRate } from "../lib/fxCache";
 import { monthKey, monthLabel } from "../lib/report";
 import { CATEGORIES } from "../lib/types";
+import { StatementsView } from "./StatementsView";
 import { myItems, useEnsurePersonalGroup, type MyItem } from "../lib/personal";
 import { Icon } from "./Icon";
 import { AddExpense } from "./AddExpense";
@@ -24,7 +25,7 @@ import { fixedItems } from "../lib/projection";
 import { usePlan } from "../lib/plan";
 import { Paywall } from "./Paywall";
 
-type Mode = "converted" | "byCurrency" | "projection";
+type Mode = "converted" | "byCurrency" | "projection" | "bank";
 
 const catIcon = (c: string) => CATEGORIES.find((x) => x.id === c)?.icon ?? "other";
 
@@ -59,7 +60,15 @@ export function MySpending() {
     return [...s].sort().reverse();
   }, [all, nowKey]);
   const [period, setPeriod] = useState<string>("thisMonth");
-  const [mode, setMode] = useState<Mode>("converted");
+  const [mode, setMode] = useState<Mode>(() => {
+    try { if (sessionStorage.getItem("settlia.mineBank")) { sessionStorage.removeItem("settlia.mineBank"); return "bank"; } } catch {}
+    return "converted";
+  });
+  useEffect(() => {
+    const toBank = () => { try { sessionStorage.removeItem("settlia.mineBank"); } catch {} setMode("bank"); };
+    window.addEventListener("settlia:mine-bank", toBank);
+    return () => window.removeEventListener("settlia:mine-bank", toBank);
+  }, []);
   // all = grupos activos + personal · allArch = también archivados · personal · id de grupo
   const [source, setSource] = useState<string>("all");
   const [cat, setCat] = useState<string>("all");
@@ -219,18 +228,21 @@ export function MySpending() {
           </div>
           {/* Vista */}
           <div className="seg mb-3" role="tablist">
-            <button role="tab" aria-selected={mode === "converted"} onClick={() => { haptic("selection"); setMode("converted"); }}>
+            <button style={{ fontSize: 12, padding: "6px 4px" }} role="tab" aria-selected={mode === "converted"} onClick={() => { haptic("selection"); setMode("converted"); }}>
               {t("mine.allIn", { cur: mainCur })}
             </button>
-            <button role="tab" aria-selected={mode === "byCurrency"} onClick={() => { haptic("selection"); setMode("byCurrency"); }}>
+            <button style={{ fontSize: 12, padding: "6px 4px" }} role="tab" aria-selected={mode === "byCurrency"} onClick={() => { haptic("selection"); setMode("byCurrency"); }}>
               {t("mine.byCurrency")}
             </button>
-            <button role="tab" aria-selected={mode === "projection"} onClick={() => { haptic("selection"); setMode("projection"); }}>
+            <button style={{ fontSize: 12, padding: "6px 4px" }} role="tab" aria-selected={mode === "projection"} onClick={() => { haptic("selection"); setMode("projection"); }}>
               {t("mine.projection")}
+            </button>
+            <button style={{ fontSize: 12, padding: "6px 4px" }} role="tab" aria-selected={mode === "bank"} onClick={() => { haptic("selection"); setMode("bank"); }}>
+              {t("nav.bank")}
             </button>
           </div>
 
-          {mode !== "projection" && (<>
+          {(mode === "converted" || mode === "byCurrency") && (<>
           {/* Filtros: periodo y grupo */}
           <div className="flex gap-2 mb-3">
             <select value={period} onChange={(e) => setPeriod(e.target.value)} className="glass rounded-xl px-3 py-2.5 text-sm font-semibold flex-1 min-w-0" aria-label={t("mine.period")}>
@@ -266,7 +278,7 @@ export function MySpending() {
 
           </>)}
 
-          {mode !== "projection" && personal && (
+          {(mode === "converted" || mode === "byCurrency") && personal && (
             <SavingTips
               personal={personal}
               items={all.filter((i) => !i.archived)}
@@ -276,7 +288,9 @@ export function MySpending() {
               pro={pro}
             />
           )}
-          {mode === "projection" ? (
+          {mode === "bank" ? (
+            <StatementsView embedded />
+          ) : mode === "projection" ? (
             personal && (
               <ProjectionView
                 personal={personal}
@@ -324,11 +338,11 @@ export function MySpending() {
           )}
 
           {/* Movimientos */}
-          {mode !== "projection" && items.length > 0 && (
+          {(mode === "converted" || mode === "byCurrency") && items.length > 0 && (
             <>
               {pendingBank > 0 && (
                 <button
-                  onClick={() => window.dispatchEvent(new Event("settlia:open-bank"))}
+                  onClick={() => { haptic("selection"); setMode("bank"); }}
                   className="glass rounded-2xl w-full mt-5 p-3 flex items-center gap-3 text-left hover-lift"
                 >
                   <span className="inline-flex items-center justify-center h-9 w-9 rounded-xl shrink-0" style={{ background: "rgba(232,146,12,0.16)", color: "var(--amber)" }}><Icon name="doc" size={18} /></span>

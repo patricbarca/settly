@@ -22,7 +22,7 @@ interface Stmt {
 
 /** Sección "Banco": tus estados de cuenta importados, cada uno con sus fechas.
  *  Tocar uno muestra sus movimientos para revisarlos y pasarlos a Mis gastos. */
-export function StatementsView() {
+export function StatementsView({ embedded = false }: { embedded?: boolean } = {}) {
   const t = useT();
   const personal = useEnsurePersonalGroup();
   const pro = usePlan() === "pro";
@@ -50,7 +50,7 @@ export function StatementsView() {
   const open = stmts.find((s) => s.id === openId);
 
   return (
-    <div className="px-4 pt-3 pb-28 max-w-md mx-auto">
+    <div className={embedded ? "pt-1" : "px-4 pt-3 pb-28 max-w-md mx-auto"}>
       {open ? (
         <>
           <button onClick={() => setOpenId(null)} className="text-sm font-semibold inline-flex items-center gap-1 mb-1" style={{ color: "var(--teal)" }}>

@@ -37,7 +37,6 @@ export function BottomNav({
   const items: { key: NavKey; label: string; icon: IconName; onClick: () => void }[] = [
     { key: "groups", label: t("nav.groups"), icon: "home", onClick: onGroups },
     { key: "mine", label: t("nav.mine"), icon: "card", onClick: onMine },
-    { key: "bank", label: t("nav.bank"), icon: "doc", onClick: onBank },
     { key: "friends", label: t("nav.friends"), icon: "users", onClick: onFriends },
     { key: "activity", label: t("nav.activity"), icon: "bell", onClick: onActivity },
   ];

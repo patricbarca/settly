@@ -136,7 +136,12 @@ export default function App() {
     window.addEventListener("settlia:open-profile", open);
     const openMine = () => { setShowActivity(false); setShowAccount(false); setActiveGroup(null); setHomeTab("mine"); };
     window.addEventListener("settlia:open-mine", openMine);
-    const openBank = () => { setShowActivity(false); setShowAccount(false); setActiveGroup(null); setHomeTab("bank"); };
+    const openBank = () => {
+      setShowActivity(false); setShowAccount(false); setActiveGroup(null);
+      try { sessionStorage.setItem("settlia.mineBank", "1"); } catch {}
+      setHomeTab("mine");
+      window.dispatchEvent(new Event("settlia:mine-bank"));
+    };
     window.addEventListener("settlia:open-bank", openBank);
     return () => {
       window.removeEventListener("settlia:open-profile", open);
@@ -469,7 +474,7 @@ export default function App() {
         }}
         onBank={() => {
           setActiveGroup(null);
-          setHomeTab("bank");
+          setHomeTab("mine");
           setShowActivity(false);
           setShowAccount(false);
         }}
