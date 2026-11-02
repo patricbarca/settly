@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Guía de la automatización adaptada a iOS 26 (2026-11-02)
+- Capturas del usuario (iOS 26): el disparador es "When <tarjeta> is tapped" con interruptores **Automation** y **Notify** (ya no "Ejecutar inmediatamente"), la acción se busca en el buscador de abajo (sin "Nuevo atajo en blanco") y la variable se llama **Transaction** (hay que tocarla y elegir Merchant/Amount). El usuario se quedó con Merchant vacío. Pasos `siri.step2-5` reescritos para iOS 26 y versiones anteriores; la animación `public/guides/wallet-automation.html` muestra los interruptores, el buscador y la variable Transacción.
+
 ### "Banco" pasa dentro de Mis gastos (2026-11-02)
 - Se quita la pestaña **Banco** de la barra inferior (5 botones). Ahora es la 4ª vista de **Mis gastos** (Todo en X · Por moneda · Proyección · **Banco**), que pinta `StatementsView embedded`. El evento `settlia:open-bank` (enlace "N movimientos por revisar" y el aviso nocturno de Apple Pay) abre Mis gastos en la vista Banco (`sessionStorage settlia.mineBank` + evento `settlia:mine-bank`). Pestañas a 12 px para que quepan. `tsc` limpio; no probado en pantalla.
 

@@ -105,16 +105,17 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
           <div class="row"><div class="t">Mi tarjeta<div class="s">Visa ···· 4321</div></div><span class="check on">✓</span></div>
         </div>
         <div class="group">
-          <div class="row" id="runNow"><div class="t">Ejecutar inmediatamente</div><span class="check" id="ck1">✓</span></div>
-          <div class="row"><div class="t">Ejecutar tras confirmación</div><span class="check on" id="ck2">✓</span></div>
-          <div class="row" id="notifyRow"><div class="t">Notificar al ejecutarse</div><span class="tog" id="tog"></span></div>
+          <div class="row"><div class="t">Categorías</div><span style="color:var(--ios-blue)">Todas</span></div>
+          <div class="row"><div class="t">Comercios</div><span style="color:var(--ios-blue)">Todos</span></div>
+          <div class="row" id="runNow"><div class="t">Automatización</div><span class="tog offt" id="tog2"></span><span id="ck1" hidden></span><span id="ck2" hidden></span></div>
+          <div class="row" id="notifyRow"><div class="t">Notificar</div><span class="tog" id="tog"></span></div>
         </div>
       </section>
 
       <!-- 4 Elegir acción -->
       <section class="scene off-r" id="s4">
         <div class="nav"><span>‹ Atrás</span><b>Automatización</b><span>OK</span></div>
-        <div class="group" id="blankBtn"><div class="row"><div class="ic" style="background:#0a84ff">＋</div><div class="t">Nueva automatización en blanco</div></div></div>
+        <div class="group" id="blankBtn" hidden><div class="row"><div class="ic" style="background:#0a84ff">＋</div><div class="t">Nueva automatización en blanco</div></div></div>
         <div class="search" id="search">🔍 <span id="typed" class="typed"></span><span class="caret" id="caret" hidden></span><span id="ph">Buscar apps y acciones</span></div>
         <div class="group" id="results" style="opacity:0;transition:opacity .25s">
           <div class="row" id="askRow"><div class="app">S</div><div class="t">Preguntar por un pago<div class="s">Settlia</div></div></div>
@@ -132,7 +133,7 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
           Importe: <span class="param" id="pA">Importe</span>
         </div>
         <div class="pop" id="pop" style="top:190px">
-          <div class="row" id="popInput"><div class="ic" style="background:#636366">⤷</div><div class="t">Entrada del atajo</div></div>
+          <div class="row" id="popInput"><div class="ic" style="background:#636366">⤷</div><div class="t">Transacción<div class="s">elige Comercio / Importe</div></div></div>
           <div class="row"><div class="ic" style="background:#636366">📋</div><div class="t">Portapapeles</div></div>
           <div class="row"><div class="ic" style="background:#636366">📅</div><div class="t">Fecha actual</div></div>
         </div>
@@ -169,8 +170,8 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
   const screen = $("screen"), finger = $("finger");
 
   const EN = new URLSearchParams(location.search).get("lang") === "en";
-  const T = {"Automatización": "Automation", "Al despertar": "Wake Up", "Cuando suena la alarma": "When alarm stops", "Atajos": "Shortcuts", "Galería": "Gallery", "Cancelar": "Cancel", "Nueva automatización": "New Automation", "Buscar": "Search", "Hora del día": "Time of Day", "Alarma": "Alarm", "Correo": "Email", "Mensaje": "Message", "Al acercar una tarjeta o pase de Wallet": "When I tap a Wallet card or pass", "‹ Atrás": "‹ Back", "Siguiente": "Next", "Mi tarjeta": "My card", "Ejecutar inmediatamente": "Run Immediately", "Ejecutar tras confirmación": "Run After Confirmation", "Notificar al ejecutarse": "Notify When Run", "Nueva automatización en blanco": "New Blank Automation", "Buscar apps y acciones": "Search for apps and actions", "Preguntar por un pago": "Ask about a payment", "Añadir gasto": "Add expense", "Escanear ticket": "Scan receipt", "Comercio": "Merchant", "Importe": "Amount", "Entrada del atajo": "Shortcut Input", "Portapapeles": "Clipboard", "Fecha actual": "Current Date", "lunes, 2 de noviembre": "Monday, November 2", "Pagado · Woolworths": "Paid · Woolworths", "ahora": "now", "¿Compartir este gasto?": "Share this expense?", "Añadir": "Add", "Añadir con ticket": "Add with receipt", "Siempre a Personal": "Always to Personal", "No preguntar por este comercio": "Don't ask for this merchant", "Pausar": "Pause", "Reproducir": "Play", "Desde el inicio": "Restart"};
-  const CAPS_EN = ["Open the <b>Shortcuts</b> app, go to <b>Automation</b> and tap <b>＋</b>.", "Choose <b>Wallet</b>: “When I tap a Wallet card or pass”.", "Select <b>Run Immediately</b> and turn off <b>Notify When Run</b>. Then <b>Next</b>.", "Tap <b>New Blank Automation</b>, search <b>Settlia</b> and pick <b>Ask about a payment</b>.", "Tap <b>Merchant</b> and choose <b>Shortcut Input</b>. Do the same for <b>Amount</b>. Tap <b>Done</b>.", "Done. When you pay with Apple Pay, Settlia sends a notification. <b>Long-press</b> it to see the buttons."];
+  const T = {"Automatización": "Automation", "Al despertar": "Wake Up", "Cuando suena la alarma": "When alarm stops", "Atajos": "Shortcuts", "Galería": "Gallery", "Cancelar": "Cancel", "Nueva automatización": "New Automation", "Buscar": "Search", "Hora del día": "Time of Day", "Alarma": "Alarm", "Correo": "Email", "Mensaje": "Message", "Al acercar una tarjeta o pase de Wallet": "When I tap a Wallet card or pass", "‹ Atrás": "‹ Back", "Siguiente": "Next", "Mi tarjeta": "My card", "Ejecutar inmediatamente": "Run Immediately", "Ejecutar tras confirmación": "Run After Confirmation", "Notificar al ejecutarse": "Notify When Run", "Nueva automatización en blanco": "New Blank Automation", "Buscar apps y acciones": "Search for apps and actions", "Preguntar por un pago": "Ask about a payment", "Añadir gasto": "Add expense", "Escanear ticket": "Scan receipt", "Comercio": "Merchant", "Categorías": "Categories", "Comercios": "Merchants", "Todas": "Any Category", "Todos": "Any Merchant", "Notificar": "Notify", "Transacción": "Transaction", "elige Comercio / Importe": "pick Merchant / Amount", "Importe": "Amount", "Entrada del atajo": "Shortcut Input", "Portapapeles": "Clipboard", "Fecha actual": "Current Date", "lunes, 2 de noviembre": "Monday, November 2", "Pagado · Woolworths": "Paid · Woolworths", "ahora": "now", "¿Compartir este gasto?": "Share this expense?", "Añadir": "Add", "Añadir con ticket": "Add with receipt", "Siempre a Personal": "Always to Personal", "No preguntar por este comercio": "Don't ask for this merchant", "Pausar": "Pause", "Reproducir": "Play", "Desde el inicio": "Restart"};
+  const CAPS_EN = ["Open the <b>Shortcuts</b> app, go to <b>Automation</b> and tap <b>＋</b>.", "Choose <b>Wallet</b>: “When I tap a Wallet card or pass”.", "Turn on <b>Automation</b> (runs by itself) and turn off <b>Notify</b>. Then <b>Next</b>.", "In the search bar at the bottom type <b>Settlia</b> and pick <b>Ask about a payment</b>.", "Tap the grey <b>Merchant</b>, choose the <b>Transaction</b> variable and pick <b>Merchant</b> in its list. Same for <b>Amount</b> → <b>Amount</b>.", "Done. When you pay with Apple Pay, Settlia sends a notification. <b>Long-press</b> it to see the buttons."];
   if (EN) {
     document.documentElement.lang = "en";
     const walk = document.createTreeWalker(document.querySelector(".wrap"), NodeFilter.SHOW_TEXT);
@@ -193,7 +194,7 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 
   function reset() {
     ["s2","s6"].forEach(i => hide(i, "off-b")); ["s3","s4","s5"].forEach(i => hide(i, "off-r")); show("s1");
-    $("ck1").classList.remove("on"); $("ck2").classList.add("on"); $("tog").classList.remove("offt");
+    $("ck1").classList.remove("on"); $("ck2").classList.add("on"); $("tog").classList.remove("offt"); $("tog2").classList.add("offt");
     $("typed").textContent = ""; $("ph").hidden = false; $("caret").hidden = true; $("results").style.opacity = 0;
     $("pM").className = "param"; $("pM").textContent = L("Comercio","Merchant"); $("pA").className = "param"; $("pA").textContent = L("Importe","Amount");
     $("pop").classList.remove("show"); $("notif").className = "notif"; finger.style.opacity = 0;
@@ -205,17 +206,16 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
       [300, () => fingerTo($("plus"))], [1200, () => press()], [1500, () => show("s2")] ]},
     { cap: "Elige <b>Wallet</b>: «Al acercar una tarjeta o pase de Wallet».", ms: 2600, run: [
       [300, () => fingerTo($("walletRow"))], [1300, () => press($("walletRow"))], [1700, () => { hide("s1","off-l"); hide("s2","off-l"); show("s3"); }] ]},
-    { cap: "Marca <b>Ejecutar inmediatamente</b> y apaga <b>Notificar al ejecutarse</b>. Luego <b>Siguiente</b>.", ms: 4200, run: [
-      [300, () => fingerTo($("runNow"))], [1100, () => { press($("runNow")); $("ck1").classList.add("on"); $("ck2").classList.remove("on"); }],
+    { cap: "Activa <b>Automatización</b> (se ejecuta sola) y apaga <b>Notificar</b>. Luego <b>Siguiente</b>.", ms: 4200, run: [
+      [300, () => fingerTo($("tog2"))], [1100, () => { press(); $("tog2").classList.remove("offt"); }],
       [1500, () => fingerTo($("tog"))], [2300, () => { press(); $("tog").classList.add("offt"); }],
       [2800, () => fingerTo($("next"))], [3500, () => press()], [3800, () => { hide("s3","off-l"); show("s4"); }] ]},
-    { cap: "Toca <b>Nueva automatización en blanco</b>, busca <b>Settlia</b> y elige <b>Preguntar por un pago</b>.", ms: 5200, run: [
-      [300, () => fingerTo($("blankBtn"))], [1000, () => press($("blankBtn").firstElementChild)],
+    { cap: "En el buscador de abajo escribe <b>Settlia</b> y elige <b>Preguntar por un pago</b>.", ms: 5200, run: [
       [1400, () => fingerTo($("search"))], [2000, () => { press(); $("ph").hidden = true; $("caret").hidden = false; }],
       ...[..."Settlia"].map((c, k) => [2200 + k * 110, () => { $("typed").textContent += c; }]),
       [3100, () => { $("results").style.opacity = 1; }],
       [3400, () => fingerTo($("askRow"))], [4300, () => press($("askRow"))], [4700, () => { hide("s4","off-l"); show("s5"); }] ]},
-    { cap: "Toca <b>Comercio</b> y elige <b>Entrada del atajo</b>. Haz lo mismo con <b>Importe</b>. Toca <b>OK</b>.", ms: 6000, run: [
+    { cap: "Toca <b>Comercio</b> (en gris), elige la variable <b>Transacción</b> y en su lista marca <b>Comercio</b>. Igual con <b>Importe</b> → <b>Importe</b>.", ms: 6000, run: [
       [300, () => fingerTo($("pM"))], [1000, () => { press(); $("pop").classList.add("show"); }],
       [1500, () => fingerTo($("popInput"))], [2100, () => { press($("popInput")); }],
       [2350, () => { $("pop").classList.remove("show"); $("pM").className = "param var"; $("pM").textContent = "⤷ " + L("Comercio","Merchant"); }],
