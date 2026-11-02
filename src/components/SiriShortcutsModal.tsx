@@ -1,3 +1,4 @@
+import { WalletGuideAnimation } from "./WalletGuideAnimation";
 import { useEffect, useState } from "react";
 import { getPaymentPrefs, setPaymentPrefs, enableInboxMode, disableInboxMode, type PaymentPrefs, type MerchantRef } from "../lib/walletPrefs";
 import { decimalInput } from "../lib/format";
@@ -89,6 +90,7 @@ export function SiriShortcutsModal({ onClose }: { onClose: () => void }) {
 
               <div className="rounded-2xl p-3" style={{ background: "rgba(15,163,163,0.10)" }}>
                 <div className="text-sm font-semibold mb-1">{t("siri.guideTitle")}</div>
+                <div className="my-3"><WalletGuideAnimation /></div>
                 <p className="text-xs text-muted mb-2 leading-relaxed">{t("siri.manualNote")}</p>
                 <ol className="space-y-2.5 mt-2">
                   {steps.map((s, i) => (

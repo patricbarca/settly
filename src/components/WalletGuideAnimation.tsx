@@ -113,14 +113,15 @@ export function WalletGuideAnimation() {
       title: t("siriAnim.s4Title"),
       caption: t("siri.step4"),
       body: (
-        <div className="space-y-2 pt-2">
+        <div className="space-y-2 pt-2 text-[12px]" style={{ color: "#fff" }}>
+          <div className="mx-2 rounded-lg px-2 py-1.5 flex items-center gap-1.5" style={{ background: "#1C1C1E" }}>
+            <span style={{ color: "rgba(255,255,255,0.5)" }}>🔍</span>
+            <span>Settlia</span>
+          </div>
           <Group>
-            <div className="px-3 py-2 text-[12px]" style={{ color: "#fff" }}>
-              <div className="text-[10px] mb-1" style={{ color: "#BF5AF2" }}>☰ {t("siriAnim.chooseMenu")}</div>
-              <div className="rounded-md px-2 py-1 mb-1.5" style={{ background: "rgba(255,255,255,0.08)" }}>{t("siri.menuPrompt")}</div>
-              <div className="flex items-center gap-1.5 py-0.5">{t("siri.menuScan")}<Tap /></div>
-              <div className="py-0.5">{t("siri.menuNoReceipt")}</div>
-            </div>
+            <Row hot sub="Ask about a payment">{t("siriAnim.askPayment")}</Row>
+            <Row sub="Settlia">{t("siriAnim.addExpense")}</Row>
+            <Row sub="Settlia">{t("siriAnim.scanReceipt")}</Row>
           </Group>
         </div>
       ),
@@ -129,30 +130,18 @@ export function WalletGuideAnimation() {
       title: t("siriAnim.s5Title"),
       caption: t("siri.step5"),
       body: (
-        <div className="space-y-2 pt-2 text-[12px]" style={{ color: "#fff" }}>
-          <div className="px-3 text-[10px]" style={{ color: "rgba(255,255,255,0.6)" }}>{t("siri.menuScan")}</div>
-          <Group><Row hot sub="Settlia">{t("siriAnim.scanReceipt")}</Row></Group>
-          <div className="px-3 text-[10px]" style={{ color: "rgba(255,255,255,0.6)" }}>{t("siri.menuNoReceipt")}</div>
-          <Group><Row hot sub="Settlia">{t("siriAnim.addExpense")}</Row></Group>
-        </div>
-      ),
-    },
-    {
-      title: t("siriAnim.s6Title"),
-      caption: t("siri.step6"),
-      body: (
         <div className="space-y-2 pt-2">
           <Group>
             <div className="px-3 py-2 text-[12px]" style={{ color: "#fff" }}>
-              <div className="text-[10px] mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>Settlia · {t("siriAnim.addExpense")}</div>
+              <div className="text-[10px] mb-1.5" style={{ color: "rgba(255,255,255,0.6)" }}>Settlia · {t("siriAnim.askPayment")}</div>
               <div className="flex items-center gap-1.5 py-1">
                 <span className="w-16 shrink-0" style={{ color: "rgba(255,255,255,0.6)" }}>{t("siriAnim.merchant")}</span>
-                <span className="rounded-md px-1.5 py-0.5" style={{ background: "#0A84FF" }}>{t("siriAnim.input")} › {t("siriAnim.merchant")}</span>
+                <span className="rounded-md px-1.5 py-0.5 truncate" style={{ background: "#0A84FF" }}>{t("siriAnim.input")} › {t("siriAnim.merchant")}</span>
                 <Tap />
               </div>
               <div className="flex items-center gap-1.5 py-1">
                 <span className="w-16 shrink-0" style={{ color: "rgba(255,255,255,0.6)" }}>{t("siriAnim.amount")}</span>
-                <span className="rounded-md px-1.5 py-0.5" style={{ background: "#0A84FF" }}>{t("siriAnim.input")} › {t("siriAnim.amount")}</span>
+                <span className="rounded-md px-1.5 py-0.5 truncate" style={{ background: "#0A84FF" }}>{t("siriAnim.input")} › {t("siriAnim.amount")}</span>
                 <Tap />
               </div>
             </div>
@@ -161,20 +150,18 @@ export function WalletGuideAnimation() {
       ),
     },
     {
-      title: t("siriAnim.s7Title"),
-      caption: t("siriAnim.s7Caption"),
+      title: t("siriAnim.s6Title"),
+      caption: t("siri.step6"),
       body: (
         <div className="flex flex-col h-full justify-center gap-3 px-2">
           <div className="rounded-xl px-3 py-2 text-[11px]" style={{ background: "rgba(255,255,255,0.12)", color: "#fff" }}>
              Pay · Woolworths · $42.50 ✓
           </div>
           <div className="rounded-xl px-3 py-2 text-[12px]" style={{ background: "#2C2C2E", color: "#fff" }}>
-            <div className="text-[10px] mb-1" style={{ color: "rgba(255,255,255,0.55)" }}>{t("siriAnim.shortcuts")}</div>
-            <div className="font-semibold mb-1">{t("siri.menuPrompt")}</div>
-            <div className="flex items-center gap-1.5 py-0.5" style={{ color: "#0A84FF" }}>{t("siri.menuNoReceipt")}<Tap /></div>
-          </div>
-          <div className="rounded-xl px-3 py-2 text-[11px] flex items-center gap-2" style={{ background: "var(--teal)", color: "#fff" }}>
-            <Icon name="check" size={13} /> Settlia · Woolworths · $42.50
+            <div className="text-[10px] mb-1 flex items-center gap-1" style={{ color: "rgba(255,255,255,0.55)" }}><Icon name="check" size={10} /> Settlia</div>
+            <div className="font-semibold">{t("siriAnim.notifTitle")}</div>
+            <div className="text-[11px] mb-1.5" style={{ color: "rgba(255,255,255,0.7)" }}>Woolworths · $42.50</div>
+            <div className="flex items-center gap-1.5 py-0.5" style={{ color: "#0A84FF" }}>{t("siriAnim.notifAdd")}<Tap /></div>
           </div>
         </div>
       ),
