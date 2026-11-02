@@ -307,8 +307,8 @@ enum WalletCapture {
         let c = UNMutableNotificationContent()
         c.title = L("Pagos por revisar", "Payments to review")
         c.body = n == 1
-            ? L("Tienes 1 pago con Apple Pay en tu bandeja. ¿Lo repartimos?", "You have 1 Apple Pay payment in your inbox. Split it?")
-            : L("Tienes \(n) pagos con Apple Pay en tu bandeja. ¿Los repartimos?", "You have \(n) Apple Pay payments in your inbox. Split them?")
+            ? L("Guardamos 1 pago con Apple Pay en Mis gastos. ¿Era compartido?", "We saved 1 Apple Pay payment to Spending. Was it shared?")
+            : L("Guardamos \(n) pagos con Apple Pay en Mis gastos. ¿Alguno era compartido?", "We saved \(n) Apple Pay payments to Spending. Was any shared?")
         c.categoryIdentifier = PaymentNotifications.digestCategory
         c.sound = .default
         let fc = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
