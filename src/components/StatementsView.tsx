@@ -35,7 +35,7 @@ export function StatementsView() {
     for (const e of personal?.expenses ?? []) {
       const k = stmtKey(e);
       if (!k) continue;
-      const s = m.get(k) ?? { id: k, name: e.statementName || t("bank.legacy"), importedAt: e.importedAt || "", from: e.date, to: e.date, items: [], pending: 0 };
+      const s = m.get(k) ?? { id: k, name: e.statementName || (k === "wallet" ? t("bank.wallet") : t("bank.legacy")), importedAt: e.importedAt || "", from: e.date, to: e.date, items: [], pending: 0 };
       s.items.push(e);
       if (e.inbox) s.pending++;
       if (e.date < s.from) s.from = e.date;

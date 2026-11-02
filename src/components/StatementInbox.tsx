@@ -192,6 +192,7 @@ export function StatementInbox({ personal, statementId, title }: { personal: Gro
 /** Clave de la importación de un gasto (las viejas sin statementId van juntas). */
 export function stmtKey(e: Expense): string | null {
   if (e.statementId) return e.statementId;
+  if (e.source === "wallet") return "wallet";
   if (e.source === "statement" || e.id.startsWith("stm_")) return "legacy";
   return null;
 }

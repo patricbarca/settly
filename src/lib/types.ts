@@ -80,7 +80,7 @@ export interface Expense {
   /** Importado de un estado de cuenta y aún en la bandeja (no cuenta en Mis gastos). */
   inbox?: boolean | null;
   /** De dónde vino el gasto ("statement" = estado de cuenta del banco). */
-  source?: "statement";
+  source?: "statement" | "wallet";
   /** Importación a la que pertenece (agrupa los movimientos de un mismo estado de cuenta). */
   statementId?: string;
   statementName?: string;

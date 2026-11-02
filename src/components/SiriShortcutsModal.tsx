@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getPaymentPrefs, setPaymentPrefs, type PaymentPrefs, type MerchantRef } from "../lib/walletPrefs";
+import { getPaymentPrefs, setPaymentPrefs, enableInboxMode, disableInboxMode, type PaymentPrefs, type MerchantRef } from "../lib/walletPrefs";
 import { decimalInput } from "../lib/format";
 import { createPortal } from "react-dom";
 import { useT } from "../lib/i18n";
@@ -155,6 +155,8 @@ function PaymentPrefsCard() {
   const t = useT();
   const [p, setP] = useState<PaymentPrefs | null | undefined>(undefined);
   const [min, setMin] = useState("");
+  const [modeBusy, setModeBusy] = useState(false);
+  const [modeErr, setModeErr] = useState(false);
   useEffect(() => {
     void getPaymentPrefs().then((r) => {
       setP(r);
@@ -199,6 +201,54 @@ function PaymentPrefsCard() {
           {t("pp.notifOff")}
         </p>
       )}
+      <div>
+        <div className="text-xs font-semibold text-muted">{t("pp.mode")}</div>
+        <div className="seg mt-1.5" role="tablist">
+          {(["ask", "inbox"] as const).map((m) => (
+            <button
+              key={m}
+              role="tab"
+              aria-selected={(p.mode ?? "ask") === m}
+              disabled={modeBusy}
+              onClick={async () => {
+                if ((p.mode ?? "ask") === m) return;
+                setModeBusy(true);
+                setModeErr(false);
+                if (m === "inbox") {
+                  const ok = await enableInboxMode(p.digestHour ?? 20);
+                  if (ok) setP({ ...p, mode: "inbox", digestHour: p.digestHour ?? 20 });
+                  else setModeErr(true);
+                } else {
+                  await disableInboxMode();
+                  setP({ ...p, mode: "ask" });
+                }
+                setModeBusy(false);
+              }}
+              className="flex-1 text-xs"
+            >
+              {m === "ask" ? t("pp.modeAsk") : t("pp.modeInbox")}
+            </button>
+          ))}
+        </div>
+        {modeErr && <p className="text-xs mt-1" style={{ color: "var(--coral)" }}>{t("pp.modeError")}</p>}
+        {p.mode === "inbox" && (
+          <>
+            <p className="text-[11px] text-muted mt-1.5 leading-snug">{t("pp.modeInboxHint")}</p>
+            <label className="flex items-center gap-2 mt-2 text-xs font-semibold text-muted">
+              {t("pp.digestAt")}
+              <select
+                value={p.digestHour ?? 20}
+                onChange={(e) => save({ digestHour: Number(e.target.value) })}
+                className="glass rounded-xl px-2 py-1.5 text-sm"
+              >
+                {Array.from({ length: 24 }, (_, h) => (
+                  <option key={h} value={h}>{String(h).padStart(2, "0")}:00</option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
+      </div>
       <div>
         <label className="text-xs font-semibold text-muted">{t("pp.min")}</label>
         <div className="flex items-center gap-2 mt-1">

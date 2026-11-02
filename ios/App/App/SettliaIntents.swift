@@ -168,6 +168,30 @@ enum PaymentPrefs {
     static let personalKey = "pay.personal"
     static let queueKey = "pay.queue"
     static let langKey = "pay.lang"
+    // Bandeja de pagos: cada pago se guarda al momento en el servidor y por la noche llega un solo aviso.
+    static let modeKey = "pay.mode"            // "ask" (notificación por pago) | "inbox"
+    static let tokenKey = "pay.token"          // token de dispositivo (RPC wallet_device_token)
+    static let apiUrlKey = "pay.apiUrl"        // URL de Supabase
+    static let apiKeyKey = "pay.apiKey"        // clave pública (anon) de Supabase
+    static let digestHourKey = "pay.digestHour"
+    static let digestCountKey = "pay.digestCount"
+    static let digestDayKey = "pay.digestDay"
+    static let openInboxKey = "pay.openInbox"
+
+    static var inboxMode: Bool {
+        defaults.string(forKey: modeKey) == "inbox" && !(defaults.string(forKey: tokenKey) ?? "").isEmpty
+    }
+    static var digestHour: Int {
+        let h = defaults.object(forKey: digestHourKey) as? Int ?? 20
+        return min(max(h, 0), 23)
+    }
+    static func dayString(_ d: Date) -> String {
+        let f = DateFormatter()
+        f.calendar = Calendar(identifier: .gregorian)
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyy-MM-dd"
+        return f.string(from: d)
+    }
 
     static var minAmount: Double { defaults.double(forKey: minKey) }
 
@@ -185,13 +209,11 @@ enum PaymentPrefs {
     }
 
     /// Pagos que van solos a "Personal": la web los recoge al abrirse.
-    static func enqueue(merchant: String, amount: String) {
+    static func enqueue(merchant: String, amount: String, inbox: Bool = false, id: String = UUID().uuidString) {
         var q = list(queueKey)
-        let f = DateFormatter()
-        f.calendar = Calendar(identifier: .gregorian)
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "yyyy-MM-dd"
-        q.append(["id": UUID().uuidString, "merchant": String(merchant.prefix(80)), "amount": amount, "date": f.string(from: Date())])
+        var item = ["id": id, "merchant": String(merchant.prefix(80)), "amount": amount, "date": dayString(Date())]
+        if inbox { item["inbox"] = "1" }
+        q.append(item)
         defaults.set(Array(q.suffix(200)), forKey: queueKey)
     }
 
@@ -233,10 +255,74 @@ enum PaymentPrefs {
     static func L(_ es: String, _ en: String) -> String { spanish ? es : en }
 }
 
+/// Guarda un pago en la bandeja del grupo Personal sin abrir la app (RPC
+/// wallet_capture con la clave pública + el token de este dispositivo).
+enum WalletCapture {
+    static func send(merchant: String, amount: Double, id: String) async -> Bool {
+        let d = PaymentPrefs.defaults
+        guard let base = d.string(forKey: PaymentPrefs.apiUrlKey), !base.isEmpty,
+              let key = d.string(forKey: PaymentPrefs.apiKeyKey), !key.isEmpty,
+              let tok = d.string(forKey: PaymentPrefs.tokenKey), !tok.isEmpty,
+              let url = URL(string: base + "/rest/v1/rpc/wallet_capture") else { return false }
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.timeoutInterval = 15
+        req.setValue(key, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer " + key, forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Any] = [
+            "p_token": tok, "p_id": id, "p_merchant": String(merchant.prefix(80)),
+            "p_amount": amount, "p_date": PaymentPrefs.dayString(Date()),
+        ]
+        req.httpBody = try? JSONSerialization.data(withJSONObject: body)
+        do {
+            let (data, resp) = try await URLSession.shared.data(for: req)
+            guard (resp as? HTTPURLResponse)?.statusCode == 200,
+                  let s = String(data: data, encoding: .utf8) else { return false }
+            return s.contains("ok") || s.contains("dup")
+        } catch {
+            return false
+        }
+    }
+
+    /// Un solo aviso por la noche ("Tienes N pagos por revisar"). Se reprograma
+    /// con el mismo id en cada pago, así solo queda uno con el número al día.
+    static func bumpDigest() async {
+        let d = PaymentPrefs.defaults
+        let cal = Calendar.current
+        var comps = cal.dateComponents([.year, .month, .day], from: Date())
+        comps.hour = PaymentPrefs.digestHour
+        comps.minute = 0
+        var fire = cal.date(from: comps) ?? Date()
+        if fire <= Date() { fire = cal.date(byAdding: .day, value: 1, to: fire) ?? fire }
+        let day = PaymentPrefs.dayString(fire)
+        let n = (d.string(forKey: PaymentPrefs.digestDayKey) == day ? d.integer(forKey: PaymentPrefs.digestCountKey) : 0) + 1
+        d.set(n, forKey: PaymentPrefs.digestCountKey)
+        d.set(day, forKey: PaymentPrefs.digestDayKey)
+
+        let center = UNUserNotificationCenter.current()
+        let s = await center.notificationSettings()
+        guard s.authorizationStatus == .authorized || s.authorizationStatus == .provisional else { return }
+        let L = PaymentPrefs.L
+        let c = UNMutableNotificationContent()
+        c.title = L("Pagos por revisar", "Payments to review")
+        c.body = n == 1
+            ? L("Tienes 1 pago con Apple Pay en tu bandeja. ¿Lo repartimos?", "You have 1 Apple Pay payment in your inbox. Split it?")
+            : L("Tienes \(n) pagos con Apple Pay en tu bandeja. ¿Los repartimos?", "You have \(n) Apple Pay payments in your inbox. Split them?")
+        c.categoryIdentifier = PaymentNotifications.digestCategory
+        c.sound = .default
+        let fc = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
+        let req = UNNotificationRequest(identifier: "settlia.digest", content: c,
+                                        trigger: UNCalendarNotificationTrigger(dateMatching: fc, repeats: false))
+        try? await center.add(req)
+    }
+}
+
 /// Notificación "¿Compartir este gasto?" y lo que pasa al tocar sus botones.
 final class PaymentNotifications: NSObject, NotificationHandlerProtocol, UNUserNotificationCenterDelegate {
     static let shared = PaymentNotifications()
     static let category = "SETTLIA_PAY"
+    static let digestCategory = "SETTLIA_DIGEST"
 
     /// Delegado de Capacitor al que se reenvía todo lo que no es nuestro.
     weak var router: NotificationRouter?
@@ -281,7 +367,7 @@ final class PaymentNotifications: NSObject, NotificationHandlerProtocol, UNUserN
     }
 
     private func isOurs(_ n: UNNotification) -> Bool {
-        n.request.content.categoryIdentifier == Self.category
+        n.request.content.categoryIdentifier == Self.category || n.request.content.categoryIdentifier == Self.digestCategory
     }
 
     func willPresent(notification: UNNotification) -> UNNotificationPresentationOptions {
@@ -289,6 +375,12 @@ final class PaymentNotifications: NSObject, NotificationHandlerProtocol, UNUserN
     }
 
     func didReceive(response: UNNotificationResponse) {
+        if response.notification.request.content.categoryIdentifier == Self.digestCategory {
+            // Al abrir la app, la web lleva a la bandeja (WalletPrefs.takeQueue → openInbox).
+            PaymentPrefs.defaults.set(true, forKey: PaymentPrefs.openInboxKey)
+            PaymentPrefs.defaults.set(0, forKey: PaymentPrefs.digestCountKey)
+            return
+        }
         let info = response.notification.request.content.userInfo
         let merchant = info["merchant"] as? String ?? ""
         let amount = info["amount"] as? String ?? ""
@@ -370,6 +462,16 @@ struct PaymentPromptIntent: AppIntent {
         if min > 0, let v = PaymentPrefs.parseAmount(paid), v < min {
             return .result()
         }
+        // Modo bandeja: se guarda al momento, sin preguntar; aviso único por la noche.
+        if PaymentPrefs.inboxMode, let v = PaymentPrefs.parseAmount(paid) {
+            let id = UUID().uuidString
+            if !(await WalletCapture.send(merchant: shop, amount: v, id: id)) {
+                // Sin red o error: queda en cola y la app lo sube a la bandeja al abrirse.
+                PaymentPrefs.enqueue(merchant: shop, amount: paid, inbox: true, id: id)
+            }
+            await WalletCapture.bumpDigest()
+            return .result()
+        }
         if !(await PaymentNotifications.post(merchant: shop, amount: paid, key: key)) {
             throw PaymentPromptError.notificationsOff
         }
@@ -396,6 +498,8 @@ public class WalletPrefsPlugin: CAPPlugin, CAPBridgedPlugin {
                 "ignored": PaymentPrefs.list(PaymentPrefs.ignoredKey),
                 "personal": PaymentPrefs.list(PaymentPrefs.personalKey),
                 "notifications": s.authorizationStatus == .authorized || s.authorizationStatus == .provisional,
+                "mode": PaymentPrefs.inboxMode ? "inbox" : "ask",
+                "digestHour": PaymentPrefs.digestHour,
             ])
         }
     }
@@ -404,6 +508,11 @@ public class WalletPrefsPlugin: CAPPlugin, CAPBridgedPlugin {
         let d = PaymentPrefs.defaults
         if let m = call.getDouble("minAmount") { d.set(max(0, m), forKey: PaymentPrefs.minKey) }
         if let l = call.getString("lang") { d.set(l, forKey: PaymentPrefs.langKey) }
+        if let m = call.getString("mode") { d.set(m == "inbox" ? "inbox" : "ask", forKey: PaymentPrefs.modeKey) }
+        if let t = call.getString("token") { d.set(t, forKey: PaymentPrefs.tokenKey) }
+        if let u = call.getString("apiUrl") { d.set(u, forKey: PaymentPrefs.apiUrlKey) }
+        if let k = call.getString("apiKey") { d.set(k, forKey: PaymentPrefs.apiKeyKey) }
+        if let h = call.getInt("digestHour") { d.set(min(max(h, 0), 23), forKey: PaymentPrefs.digestHourKey) }
         for (field, key) in [("ignored", PaymentPrefs.ignoredKey), ("personal", PaymentPrefs.personalKey)] {
             if let arr = call.getArray(field) as? [[String: Any]] {
                 let clean = arr.compactMap { o -> [String: String]? in
@@ -419,6 +528,8 @@ public class WalletPrefsPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func takeQueue(_ call: CAPPluginCall) {
         let q = PaymentPrefs.list(PaymentPrefs.queueKey)
         PaymentPrefs.defaults.removeObject(forKey: PaymentPrefs.queueKey)
-        call.resolve(["items": q])
+        let open = PaymentPrefs.defaults.bool(forKey: PaymentPrefs.openInboxKey)
+        PaymentPrefs.defaults.removeObject(forKey: PaymentPrefs.openInboxKey)
+        call.resolve(["items": q, "openInbox": open])
     }
 }

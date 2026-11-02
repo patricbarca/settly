@@ -52,6 +52,8 @@ Bloquean lanzamiento serio / publicación en stores.
 
 - 🔧 **Gastos por WhatsApp (Twilio)** — bot + vinculación por código hechos (`whatsapp-webhook`, `migrate_v34`); falta configurar Twilio (secretos + webhook), mostrar el botón (`VITE_WA_NUMBER`) y probar. Luego: push a los demás miembros, fotos de tickets, número propio aprobado por Meta.
 
+- 🔧 **Apple Pay → bandeja de pagos + aviso nocturno** — servidor (`migrate_v35`) y código hechos; falta build de Codemagic y probar en iPhone.
+
 ## Fase 1.5 — Pre-lanzamiento: analítica, legal y seguridad
 > La app ya es funcional y online; **no hacen falta las tiendas para empujar tráfico**. Esto es lo que hay que cerrar antes de lanzar en Product Hunt / redes.
 
