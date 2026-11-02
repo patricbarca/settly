@@ -51,6 +51,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Animación de la guía de Wallet vuelve, con los pasos nuevos (2026-11-02)
+- `WalletGuideAnimation` (iPhone dibujado, 6 pantallas que avanzan solas cada 3,8 s, se pausan al tocar) actualizada al flujo actual: Atajos ＋ → Wallet → Ejecutar inmediatamente → buscar Settlia y añadir "Preguntar por un pago" → Comercio/Importe = Entrada del atajo → notificación "¿Compartir este gasto?". Se muestra en "Siri y Atajos" encima de los pasos escritos. Strings `siriAnim.askPayment/notifTitle/notifAdd`. `tsc` limpio; no probado en iPhone.
+
 ### Reseña del App Store tras 4-5★ + aviso de feedback cada 90 días (2026-11-02)
 - `FeedbackModal`: al enviar una valoración de **4 o 5 estrellas**, en la app de iPhone se pide la ventana nativa de Apple (`SKStoreReviewController`, plugin propio `StoreReview` en `MainViewController.swift`, `src/lib/storeReview.ts`). Apple decide si sale (máx. 3/año). 1-3★ solo se guarda el comentario. Decisión del usuario (Apple desaconseja filtrar).
 - `feedbackPrompt.ts`: tras ENVIAR feedback el aviso automático no vuelve en **90 días** (`settly.feedbackSentAt`); si no envió, sigue semanal. Necesita build de Codemagic; no probado en iPhone.
