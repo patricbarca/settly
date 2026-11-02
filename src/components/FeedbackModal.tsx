@@ -7,6 +7,7 @@ import { Overlay } from "./Overlay";
 import { Icon } from "./Icon";
 import { useT } from "../lib/i18n";
 import { sendFeedback, type FeedbackType } from "../lib/feedback";
+import { requestStoreReview } from "../lib/storeReview";
 
 function Star({ filled, onClick, onHover }: { filled: boolean; onClick: () => void; onHover: () => void }) {
   return (
@@ -45,6 +46,8 @@ export function FeedbackModal({ onClose }: { onClose: () => void }) {
     setSending(false);
     if (r.ok) {
       setDone(true);
+      // Contento (4-5★) → le ofrecemos la reseña del App Store.
+      if (mode === "rating" && rating >= 4) setTimeout(() => void requestStoreReview(), 900);
     } else {
       setError(r.error === "no-session" ? t("feedback.errorSession") : t("feedback.errorGeneric"));
     }

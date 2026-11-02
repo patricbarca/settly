@@ -51,6 +51,10 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 - **Dark mode**: `[data-theme="dark"]` on `<html>`
 
 ## Recent work completed
+### Reseña del App Store tras 4-5★ + aviso de feedback cada 90 días (2026-11-02)
+- `FeedbackModal`: al enviar una valoración de **4 o 5 estrellas**, en la app de iPhone se pide la ventana nativa de Apple (`SKStoreReviewController`, plugin propio `StoreReview` en `MainViewController.swift`, `src/lib/storeReview.ts`). Apple decide si sale (máx. 3/año). 1-3★ solo se guarda el comentario. Decisión del usuario (Apple desaconseja filtrar).
+- `feedbackPrompt.ts`: tras ENVIAR feedback el aviso automático no vuelve en **90 días** (`settly.feedbackSentAt`); si no envió, sigue semanal. Necesita build de Codemagic; no probado en iPhone.
+
 ### "Siri y Atajos" simplificado (2026-11-02)
 - `SiriShortcutsModal` muestra solo: botón grande **Abrir Atajos** arriba, los 6 pasos de la automatización de Wallet y "Qué pagos te pregunta". Se quitaron las frases de Siri, la intro y el bloque "¿se abre Atajos y no hace nada?". Apple no permite instalar automatizaciones con un clic. `tsc` limpio; no probado en pantalla.
 

@@ -4,7 +4,7 @@
 import { supabase } from "./supabase";
 import { getLang } from "./i18n";
 import { isStandalone, isIOS } from "./pwa";
-import { markFeedbackPromptShown } from "./feedbackPrompt";
+import { markFeedbackSent } from "./feedbackPrompt";
 
 export type FeedbackType = "rating" | "bug";
 
@@ -42,6 +42,6 @@ export async function sendFeedback(input: FeedbackInput): Promise<{ ok: boolean;
 
   if (error) return { ok: false, error: error.message };
   // Tras enviar, reinicia el contador para que el aviso vuelva en ~1 semana.
-  markFeedbackPromptShown();
+  markFeedbackSent();
   return { ok: true };
 }
