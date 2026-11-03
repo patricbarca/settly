@@ -110,7 +110,7 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
         <div class="nav"><span>‹</span><b>Atajo nuevo</b><span></span></div>
         <div class="s" style="text-align:center;margin-top:30px;color:var(--ios-sub)">Añade acciones desde abajo.</div>
         <div class="sheet">
-          <div class="search" id="search3">🔍 <span id="chip" class="chip" hidden>Automatización</span> <span id="typed3" class="typed"></span></div>
+          <div class="search" id="search3">🔍 <span id="typed3" class="typed"></span></div>
           <div class="chips" id="chips"><span class="chipb" id="chipAuto">⏱ Automatización</span><span class="chipb">Scripting</span><span class="chipb">Controles</span></div>
           <div class="group" id="res3" style="opacity:0;transition:opacity .25s">
             <div class="row" id="walletRow"><div class="ic" style="background:#0a84ff">💳</div><div class="t">Wallet<div class="s">“Al acercar una tarjeta o pase de Wallet”</div></div></div>
@@ -214,7 +214,7 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
 
   function reset() {
     ["s2","s6"].forEach(i => hide(i, "off-b")); ["s3","s4","s5"].forEach(i => hide(i, "off-r")); show("s1");
-    $("chip").hidden = true; $("chips").style.display = ""; $("typed3").textContent = ""; $("res3").style.opacity = 0;
+    $("chips").style.display = ""; $("typed3").textContent = ""; $("res3").style.opacity = 0;
     $("trigMore").style.display = "none";
     $("typed").textContent = ""; $("ph").hidden = false; $("caret").hidden = true; $("results").style.opacity = 0;
     $("pM").className = "param"; $("pM").textContent = L("Comercio","Merchant"); $("pA").className = "param"; $("pA").textContent = L("Importe","Amount");
@@ -235,7 +235,7 @@ button:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
     { cap: "Si sale «Describe un atajo», toca <b>Editar</b> arriba a la derecha.", ms: 2400, run: [
       [300, () => fingerTo($("edit"))], [1100, () => press()], [1400, () => { hide("s1","off-l"); hide("s2","off-l"); show("s3"); }] ]},
     { cap: "Toca <b>Automatización</b>, escribe <b>Wallet</b> y elige «Al acercar una tarjeta o pase de Wallet».", ms: 4600, run: [
-      [300, () => fingerTo($("chipAuto"))], [1000, () => { press($("chipAuto")); $("chip").hidden = false; $("chips").style.display = "none"; }],
+      [300, () => fingerTo($("chipAuto"))], [1000, () => { press($("chipAuto")); $("chips").style.display = "none"; }],
       ...[..."Wallet"].map((c, k) => [1300 + k * 110, () => { $("typed3").textContent += c; }]),
       [2100, () => { $("res3").style.opacity = 1; }],
       [2500, () => fingerTo($("walletRow"))], [3300, () => press($("walletRow"))], [3700, () => { hide("s3","off-l"); show("s4"); }] ]},
