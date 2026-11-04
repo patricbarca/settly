@@ -69,6 +69,8 @@ export interface Member {
 }
 
 export interface Expense {
+  /** Cuándo se añadió (ISO), para ordenar gastos del mismo día. */
+  addedAt?: string;
   id: string;
   label: string;
   amount: number;

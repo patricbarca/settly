@@ -54,6 +54,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 ### Apple Pay automático → directo a Mis gastos, no a la bandeja (2026-11-02, `migrate_v36` ✅ aplicada vía MCP)
 - A pedido del usuario: el modo "Guardar en la bandeja" pasa a **"Guardar directo en Mis gastos"**. `wallet_capture` ya no pone `inbox:true` (solo `source:"wallet"`), así el pago cuenta en Mis gastos al momento; sigue saliendo en Mis gastos → Banco → "Pagos con Apple Pay". `drainPaymentQueue` (cola sin red) igual. El aviso nocturno dice "Guardamos N pagos con Apple Pay en Mis gastos. ¿Alguno era compartido?" y al tocarlo abre **Mis gastos** (`settlia:open-mine`). Para compartir uno: tocarlo → "Pasar a un grupo". Internamente el modo sigue llamándose `inbox`. El texto del aviso es Swift → requiere build de Codemagic.
 
+### Mis gastos: dentro del mismo día, primero lo último añadido (2026-11-04)
+- `Expense.addedAt` (ISO) nuevo, puesto en `addExpense`; `myItems` desempata por `addedAt` y, si no hay, por posición en el array (los nuevos van primero). Builds viejos no ponen `addedAt` (cae al orden del array). `tsc` limpio.
+
 ### "Pasar a un grupo" con escaneo del ticket (2026-11-04)
 - En `MoveToGroupModal`, botón **"Escanear el ticket y repartir por platos"**: abre `ScanReceiptModal` en el grupo elegido con `paidTotal` = importe del pago (si la moneda coincide) y, al guardar (`onSaved` nuevo), borra el gasto del Personal; en Mis gastos queda solo tu parte. Strings `move.scan/scanHint`. `tsc` limpio; no probado en pantalla.
 
