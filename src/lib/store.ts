@@ -484,6 +484,7 @@ export async function addExpense(
   expense: Expense,
   opts?: { activity?: ActivityEvent; notifAdd?: AppNotification }
 ) {
+  if (!expense.addedAt) expense = { ...expense, addedAt: new Date().toISOString() };
   const apply = (g: Group): Group => ({
     ...g,
     expenses: [expense, ...g.expenses],

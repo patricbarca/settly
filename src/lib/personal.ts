@@ -80,6 +80,8 @@ export interface MyItem {
   currency: string; // ISO
   amount: number; // mi parte
   total: number; // importe total del gasto
+  /** Para ordenar dentro del mismo día: más alto = añadido después. */
+  seq?: number;
 }
 
 /** Mi parte de cada gasto de todos mis grupos (incl. archivados) + los
@@ -90,10 +92,10 @@ export function myItems(groups: Group[], localArchived: Set<string> = new Set())
   for (const g of groups) {
     if (g.deletedAt) continue;
     const ids = g.members.map((m) => m.id);
-    for (const e of g.expenses) {
-      if (e.inbox) continue;
+    g.expenses.forEach((e, idx) => {
+      if (e.inbox) return;
       const mine = g.personal ? e.amount : shareFor(e, ids)[g.meId] || 0;
-      if (Math.abs(mine) < 0.005) continue;
+      if (Math.abs(mine) < 0.005) return;
       out.push({
         key: `${g.id}:${e.id}`,
         expenseId: e.id,
@@ -109,8 +111,10 @@ export function myItems(groups: Group[], localArchived: Set<string> = new Set())
         currency: currencyOf(e, g),
         amount: mine,
         total: e.amount,
+        // Los nuevos van al principio del array: sin addedAt, menor índice = más nuevo.
+        seq: e.addedAt ? Date.parse(e.addedAt) : -idx,
       });
-    }
+    });
   }
-  return out.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+  return out.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : (b.seq ?? 0) - (a.seq ?? 0)));
 }
