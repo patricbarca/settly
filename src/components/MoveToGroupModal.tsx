@@ -13,6 +13,7 @@ import { Icon } from "./Icon";
 import { haptic } from "../lib/haptics";
 import { ExpenseForm, draftToExpenseFields, type ExpenseDraft } from "./ExpenseForm";
 import { initialSplit } from "../lib/defaultSplit";
+import { ScanReceiptModal } from "./ScanReceiptModal";
 
 /** Pasa un gasto del grupo Personal a un grupo compartido: lo pagaste tú y se
  *  reparte a partes iguales entre quienes elijas. Se borra del Personal. */
@@ -26,7 +27,7 @@ export function MoveToGroupModal({ personal, expense, onClose }: { personal: Gro
   );
   const [gid, setGid] = useState(options[0]?.id ?? "");
   const target = options.find((g) => g.id === gid);
-  const [step, setStep] = useState<"pick" | "form">("pick");
+  const [step, setStep] = useState<"pick" | "form" | "scan">("pick");
   const cur = resolveToCode(expense.currency ?? personal.currency);
 
   function draftFor(g: Group): ExpenseDraft {
@@ -80,6 +81,18 @@ export function MoveToGroupModal({ personal, expense, onClose }: { personal: Gro
     onClose();
   }
 
+  if (step === "scan" && target) {
+    const same = cur === resolveToCode(target.currency);
+    return (
+      <ScanReceiptModal
+        group={target}
+        paidTotal={same ? expense.amount : undefined}
+        onSaved={() => { deleteExpense(personal.id, expense.id); haptic("success"); }}
+        onClose={onClose}
+      />
+    );
+  }
+
   return (
     <Overlay onClose={onClose}>
       <div className="glass-strong rounded-3xl w-full max-w-md p-5 anim-pop max-h-[88dvh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -113,6 +126,10 @@ export function MoveToGroupModal({ personal, expense, onClose }: { personal: Gro
             <button disabled={!target} onClick={() => setStep("form")} className="w-full rounded-2xl py-3 text-sm font-semibold text-white mt-4 disabled:opacity-40" style={{ background: "var(--teal)" }}>
               {t("move.next")}
             </button>
+            <button disabled={!target} onClick={() => setStep("scan")} className="w-full rounded-2xl py-3 text-sm font-semibold mt-2 glass disabled:opacity-40 flex items-center justify-center gap-2">
+              <Icon name="camera" size={16} /> {t("move.scan")}
+            </button>
+            <p className="text-xs text-muted mt-2">{t("move.scanHint")}</p>
           </>
         )}
       </div>
