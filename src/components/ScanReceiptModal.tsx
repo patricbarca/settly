@@ -26,6 +26,7 @@ export function ScanReceiptModal({
   group,
   paidTotal,
   initialFile,
+  onSaved,
   onClose,
 }: {
   group: Group;
@@ -33,6 +34,8 @@ export function ScanReceiptModal({
   initialFile?: File;
   /** Lo cobrado en la tarjeta (automatización de Wallet), en la moneda del grupo. */
   paidTotal?: number;
+  /** Se llama tras guardar el gasto (antes de onClose). */
+  onSaved?: () => void;
   onClose: () => void;
 }) {
   const t = useT();
@@ -376,6 +379,7 @@ export function ScanReceiptModal({
         : t("notif.expense_added", { name: meName, label: "Ticket", amt: money(r.amount, group.currency) }),
       r.askEveryone ? "requests" : "expenses"
     );
+    onSaved?.();
     onClose();
   }
 

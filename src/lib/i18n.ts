@@ -489,6 +489,8 @@ const DICT: Record<string, { es: string; en: string }> = {
   "move.next": { es: "Siguiente", en: "Next" },
   "move.to": { es: "Al guardar se pasa a {g} y se quita de tu Personal.", en: "On save it moves to {g} and is removed from your Personal." },
   "move.cta": { es: "Pasar a {g}", en: "Move to {g}" },
+  "move.scan": { es: "Escanear el ticket y repartir por platos", en: "Scan the receipt and split by item" },
+  "move.scanHint": { es: "Comprobamos que el ticket cuadra con lo pagado. Al guardar se quita de tu Personal y en Mis gastos queda solo tu parte.", en: "We check the receipt matches what you paid. On save it leaves your Personal and only your share stays in Spending." },
   "move.none": { es: "Aún no tienes grupos compartidos.", en: "You don't have any shared groups yet." },
   "mine.delete": { es: "Eliminar", en: "Delete" },
   "mine.deleteTitle": { es: "¿Eliminar este gasto personal?", en: "Delete this personal expense?" },
