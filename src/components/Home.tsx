@@ -130,6 +130,10 @@ export function Home({ tab }: { tab: HomeTab }) {
   const overallCur = mainCur;
   const { spent, owe, owed } = converted ?? rawTotals;
   const showOverall = active.length > 0 && spent > 0.01;
+  const [startMin, setStartMinRaw] = useState(() => { try { return localStorage.getItem("settlia.startMin") === "1"; } catch { return false; } });
+  const [startHidden, setStartHiddenRaw] = useState(() => { try { return localStorage.getItem("settlia.startHidden") === "1"; } catch { return false; } });
+  const setStartMin = (v: boolean) => { setStartMinRaw(v); try { localStorage.setItem("settlia.startMin", v ? "1" : "0"); } catch { /* sin storage */ } };
+  const setStartHidden = (v: boolean) => { setStartHiddenRaw(v); try { localStorage.setItem("settlia.startHidden", v ? "1" : "0"); } catch { /* sin storage */ } };
 
   // Pestaña Amigos: pantalla propia con cabecera fija (igual que Actividad),
   // en vez de scrollear junto con el resto del contenido de Grupos.
@@ -224,9 +228,19 @@ export function Home({ tab }: { tab: HomeTab }) {
 
       <>
       {/* Getting started checklist — shows until all 3 steps done */}
-      {!allDone && (
+      {!allDone && !startHidden && (
         <div className="space-y-2 mt-6">
-          <p className="text-xs font-semibold text-muted px-1 uppercase tracking-wide">{t("onboard.checklist")}</p>
+          <div className="flex items-center justify-between gap-2 px-1">
+            <button onClick={() => setStartMin(!startMin)} className="flex items-center gap-1.5 text-xs font-semibold text-muted uppercase tracking-wide" aria-expanded={!startMin}>
+              {t("onboard.checklist")}
+              <span className="normal-case font-normal">· {[hasGroup, hasExpense, hasSettlement].filter(Boolean).length}/3</span>
+              <span style={{ display: "inline-block", transform: startMin ? "rotate(-90deg)" : "none", transition: "transform .2s" }}>⌄</span>
+            </button>
+            <button onClick={() => setStartHidden(true)} className="h-6 w-6 rounded-full flex items-center justify-center text-muted" style={{ background: "var(--seg-track)" }} aria-label={t("common.close")}>
+              <Icon name="close" size={12} />
+            </button>
+          </div>
+          {!startMin && <>
           <StartStep
             n={1}
             done={hasGroup}
@@ -250,6 +264,7 @@ export function Home({ tab }: { tab: HomeTab }) {
             title={t("onboard.step3t")}
             desc={t("onboard.step3d")}
           />
+          </>}
         </div>
       )}
 
