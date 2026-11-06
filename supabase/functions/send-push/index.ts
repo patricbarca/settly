@@ -19,6 +19,7 @@
 // ============================================================
 import webpush from "npm:web-push@3.6.7";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { callGuard } from "../_shared/callGuard.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -161,6 +162,10 @@ Deno.serve(async (req) => {
       const { data: g } = await admin.from("groups").select("owner_id").eq("id", groupId).maybeSingle();
       if (!reqRow || !g || !toUserId || toUserId !== g.owner_id) return json({ error: "forbidden" }, 403);
     }
+
+    // Tope por usuario: 120 avisos / hora (RPC call_guard). Evita que un
+    // miembro mande notificaciones en bucle a todo el grupo.
+    if (!(await callGuard(req, "push"))) return json({ error: "rate_limited" }, 429);
 
     let userIds = [
       ...new Set((members ?? []).map((m) => m.user_id).filter((id) => id && id !== callerId)),
