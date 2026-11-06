@@ -197,6 +197,9 @@ body.splash-active {
   to { opacity: 1; transform: none; }
 }
 .add-expand { transform-origin: bottom right; animation: addExpand 0.32s cubic-bezier(0.2, 0.9, 0.25, 1) both; }
+/* Panel de añadir: fondo opaco en todos los navegadores (en Android el cristal dejaba ver el texto de atrás). */
+.add-expand { background-color: var(--glass-strong-solid); }
+.add-expand .glass, .add-expand .glass-strong { background-color: var(--glass-strong-solid); }
 
 /* Control segmentado estilo iOS (pestañas del grupo). */
 .seg {

@@ -54,6 +54,9 @@ Settlia (plain wordmark — the old **Settl·iA** "iA" accent was dropped; it's 
 ### Apple Pay automático → directo a Mis gastos, no a la bandeja (2026-11-02, `migrate_v36` ✅ aplicada vía MCP)
 - A pedido del usuario: el modo "Guardar en la bandeja" pasa a **"Guardar directo en Mis gastos"**. `wallet_capture` ya no pone `inbox:true` (solo `source:"wallet"`), así el pago cuenta en Mis gastos al momento; sigue saliendo en Mis gastos → Banco → "Pagos con Apple Pay". `drainPaymentQueue` (cola sin red) igual. El aviso nocturno dice "Guardamos N pagos con Apple Pay en Mis gastos. ¿Alguno era compartido?" y al tocarlo abre **Mis gastos** (`settlia:open-mine`). Para compartir uno: tocarlo → "Pasar a un grupo". Internamente el modo sigue llamándose `inbox`. El texto del aviso es Swift → requiere build de Codemagic.
 
+### Panel de añadir gasto opaco (Android) (2026-11-06)
+- En la web en Android el cristal del panel (+) dejaba ver el texto de atrás. `.add-expand` y sus `.glass` internas usan `--glass-strong-solid`. Build limpio; no probado en Android.
+
 ### "Primeros pasos" en Home: se puede plegar o cerrar (2026-11-05)
 - Cabecera con contador N/3 que pliega la lista (`settlia.startMin`) y una ✕ que la oculta del todo (`settlia.startHidden`), ambos en localStorage. `tsc` limpio; no probado en pantalla.
 
